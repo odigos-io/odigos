@@ -590,14 +590,52 @@
       "title": "ignoreOdigosNamespace"
     },
     "ignoredContainers": {
-      "default": "",
-      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented\nset by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init\nyou can add additional container names to ignore by adding them to the list",
+      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
       "required": [],
       "title": "ignoredContainers"
     },
     "ignoredNamespaces": {
-      "default": "",
-      "description": "namespaces list not to show in odigos ui\nset by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease\nyou can add additional namespaces to ignore by adding them to the list",
+      "description": "Namespaces excluded from the Odigos UI so system and infrastructure namespaces\n(service meshes, local storage, lease holders, etc.) do not clutter the sources list.\nThe Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.\nWhen openshift.enabled is true, OpenShift system namespaces are also ignored automatically.",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
       "required": [],
       "title": "ignoredNamespaces"
     },
@@ -629,9 +667,322 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-insights",
       "required": [],
       "title": "images"
+    },
+    "insights": {
+      "additionalProperties": false,
+      "description": "Configuration for the Odigos Insights service (enterprise).\nWhen enabled, deploys a Go service that ingests OTLP traces, learns\nper-route baselines across multiple deviation classes (D1..D6), and\nserves anomaly queries to the UI. Requires an enterprise on-prem token\n(odigos-pro secret).",
+      "properties": {
+        "affinity": {
+          "additionalProperties": true,
+          "required": [],
+          "title": "affinity"
+        },
+        "autoscaling": {
+          "additionalProperties": false,
+          "description": "CPU-based HorizontalPodAutoscaler for insights (always on; requires\nmetrics-server). The HPA owns the replica count. min/max replicas default\nto the gateway's values.",
+          "properties": {
+            "cpuTargetUtilization": {
+              "default": "80",
+              "description": "Target average CPU utilization percentage.",
+              "maximum": 100,
+              "minimum": 1,
+              "required": [],
+              "title": "cpuTargetUtilization"
+            },
+            "maxReplicas": {
+              "default": "10",
+              "description": "Max replicas. Defaults to the gateway's maximum; uncomment to override.",
+              "minimum": 1,
+              "required": [],
+              "title": "maxReplicas"
+            },
+            "minReplicas": {
+              "default": "2",
+              "description": "Min replicas. Defaults to the gateway's minimum; uncomment to override.",
+              "minimum": 1,
+              "required": [],
+              "title": "minReplicas"
+            }
+          },
+          "required": [],
+          "title": "autoscaling"
+        },
+        "clickhouse": {
+          "additionalProperties": false,
+          "description": "Bundled ClickHouse for the insights service. Single replica, no\nreplication, no backups. Data is on a PVC by default\n(insights.clickhouse.storage.persistence); set that to false for\nemptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at\none replica. User and database name stay hardcoded (odigos_insights);\nimage, resources, scheduling, and storage are tunable.",
+          "properties": {
+            "affinity": {
+              "additionalProperties": true,
+              "required": [],
+              "title": "affinity"
+            },
+            "config": {
+              "additionalProperties": false,
+              "description": "Curated ClickHouse server settings mounted into config.d / users.d.\nDefaults follow common Kubernetes guidance: leave headroom under the\npod memory limit, bound concurrent queries, and cap single-query memory.",
+              "properties": {
+                "extraConfig": {
+                  "default": "",
+                  "description": "Optional raw XML merged as config.d/odigos-extra.xml. Escape hatch\nfor advanced tuning; prefer the curated knobs above when possible.\nExample:\n  extraConfig: |\n    \u003cclickhouse\u003e\n      \u003ctimezone\u003eUTC\u003c/timezone\u003e\n    \u003c/clickhouse\u003e",
+                  "required": [],
+                  "title": "extraConfig"
+                },
+                "logLevel": {
+                  "default": "information",
+                  "description": "ClickHouse logger level (trace, debug, information, warning, error).",
+                  "required": [],
+                  "title": "logLevel"
+                },
+                "maxConcurrentQueries": {
+                  "default": "100",
+                  "description": "Max queries executing at once (server-wide). Caps concurrent load\nfrom Insights flushes and UI reads.",
+                  "minimum": 1,
+                  "required": [],
+                  "title": "maxConcurrentQueries"
+                },
+                "maxMemoryUsagePerQuery": {
+                  "default": "1Gi",
+                  "description": "Per-query memory cap (users.xml). Examples: \"1Gi\"\nEmpty string keeps ClickHouse's default.",
+                  "required": [],
+                  "title": "maxMemoryUsagePerQuery"
+                },
+                "maxServerMemoryUsageToRamRatio": {
+                  "default": "0.85",
+                  "description": "Fraction of detected RAM (pod limit) ClickHouse may use.\nLeave headroom for the OS page cache and background merges so the\nkubelet does not OOM-kill the pod.",
+                  "maximum": 1,
+                  "minimum": 0.1,
+                  "required": [],
+                  "title": "maxServerMemoryUsageToRamRatio"
+                }
+              },
+              "required": [],
+              "title": "config"
+            },
+            "image": {
+              "additionalProperties": false,
+              "description": "ClickHouse server image. Third-party image (not built by Odigos);\noverride repository/tag for private mirrors or version pins.",
+              "properties": {
+                "pullPolicy": {
+                  "default": "IfNotPresent",
+                  "description": "Image pull policy.",
+                  "required": [],
+                  "title": "pullPolicy"
+                },
+                "repository": {
+                  "default": "clickhouse/clickhouse-server",
+                  "description": "Container image repository.",
+                  "required": [],
+                  "title": "repository"
+                },
+                "tag": {
+                  "default": "24.8-alpine",
+                  "description": "Container image tag.",
+                  "required": [],
+                  "title": "tag"
+                }
+              },
+              "required": [],
+              "title": "image"
+            },
+            "nodeSelector": {
+              "default": "",
+              "description": "Override the global nodeSelector for ClickHouse. Use this to pin the\nDB to nodes with suitable disk (e.g. SSD / stateful pool). Falls back\nto values.nodeSelector when unset. Independent of insights.nodeSelector\nso the stateful DB can be scheduled separately from the app pods.",
+              "required": [],
+              "title": "nodeSelector"
+            },
+            "priorityClassName": {
+              "default": "",
+              "description": "Priority class name for ClickHouse. Prefer a higher priority than\ngeneral workloads so the single-replica DB is not evicted under pressure.",
+              "required": [],
+              "title": "priorityClassName"
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "2000m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "2Gi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "100m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "512Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            },
+            "storage": {
+              "additionalProperties": false,
+              "properties": {
+                "persistence": {
+                  "default": "true",
+                  "description": "When true (default), ClickHouse keeps Insights data on a persistent\nvolume so it survives pod restarts. Set to false only for\ndevelopment or testing: ClickHouse then uses emptyDir, and all\nInsights data is lost when the pod is recreated or rescheduled.",
+                  "required": [],
+                  "title": "persistence"
+                },
+                "size": {
+                  "default": "8Gi",
+                  "description": "PVC size for the ClickHouse data volume. Growth is driven mainly by\ntransaction cardinality and trace_observations retention (TTL).\nExpand only if the StorageClass supports volume expansion.",
+                  "required": [],
+                  "title": "size"
+                },
+                "storageClassName": {
+                  "default": "",
+                  "description": "StorageClass for the ClickHouse PVC. Empty string uses the cluster\ndefault. Prefer a class backed by fast local/SSD block storage;\navoid slow shared NFS for MergeTree. The class is fixed at PVC\ncreation — changing this value after install does not migrate an\nexisting volume. The PVC is kept across helm uninstall\n(helm.sh/resource-policy: keep).",
+                  "required": [],
+                  "title": "storageClassName"
+                }
+              },
+              "required": [],
+              "title": "storage",
+              "type": "object"
+            },
+            "tolerations": {
+              "items": {
+                "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+                "properties": {
+                  "effect": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "operator": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "required": [],
+              "title": "tolerations"
+            }
+          },
+          "required": [],
+          "title": "clickhouse"
+        },
+        "enabled": {
+          "default": "false",
+          "description": "When true, deploys the insights service. Default false (off).",
+          "required": [],
+          "title": "enabled"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "1000m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "1Gi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "128Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "items": {
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "title": "tolerations"
+        }
+      },
+      "required": [],
+      "title": "insights"
     },
     "instrumentor": {
       "additionalProperties": false,
@@ -1234,7 +1585,7 @@
           "description": "Configuration for the data-collection container.",
           "properties": {
             "capabilities": {
-              "description": "capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher",
+              "description": "capabilities to add to the data-collection container when running non-privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nSYSLOG and SYS_RESOURCE are added automatically when profiling.enabled is true.",
               "items": {
                 "anyOf": [
                   {
@@ -1254,6 +1605,25 @@
               },
               "required": [],
               "title": "capabilities"
+            },
+            "privileged": {
+              "default": "false",
+              "description": "Run the data-collection container as a privileged container.",
+              "required": [],
+              "title": "privileged"
+            },
+            "seLinuxOptions": {
+              "additionalProperties": false,
+              "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThis is an advanced option and should only be changed if you know what you are doing.",
+              "properties": {
+                "type": {
+                  "default": "spc_t",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "seLinuxOptions"
             }
           },
           "required": [],
@@ -1459,7 +1829,7 @@
           "properties": {
             "appArmorProfile": {
               "additionalProperties": false,
-              "description": "apparmorProfile for the odiglet container when running as unPrivileged.\nthis will be ignored when running as privileged.",
+              "description": "apparmorProfile for the odiglet container when running non-privileged.\nthis will be ignored when running as privileged.",
               "properties": {
                 "type": {
                   "default": "Unconfined",
@@ -1471,9 +1841,15 @@
               "title": "appArmorProfile"
             },
             "capabilities": {
-              "description": "capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps",
+              "description": "capabilities to add to the odiglet container when running non-privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nKILL is added automatically on community installations, where the go instrumentation\nchecks that the target process is alive by signalling it.\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps",
               "items": {
                 "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
                   {
                     "type": "string"
                   },
@@ -1555,6 +1931,12 @@
               "title": "livenessProbe",
               "type": "object"
             },
+            "privileged": {
+              "default": "false",
+              "description": "Run the odiglet container, and its init container, as privileged containers.",
+              "required": [],
+              "title": "privileged"
+            },
             "readinessProbe": {
               "additionalProperties": false,
               "properties": {
@@ -1585,6 +1967,24 @@
               "required": [],
               "title": "readinessProbe",
               "type": "object"
+            },
+            "seLinuxOptions": {
+              "additionalProperties": false,
+              "description": "SELinux options for the odiglet container when running non-privileged.\nIgnored when running as privileged, since container runtimes drop the label in that mode.\nOn SELinux enforcing nodes odiglet needs a privileged SELinux domain to inspect and\ninstrument application processes. \"spc_t\" is that domain in the standard container policy\n(https://github.com/containers/container-selinux/blob/v2.232.1/container.te#L105), and on\nBottlerocket, which aliases it to its own \"control_t\".\nAdjust the type if your nodes use a custom SELinux policy, or set to null to leave the\nlabel to the container runtime.\nThis is an advanced option and should only be changed if you know what you are doing.",
+              "properties": {
+                "level": {
+                  "default": "s0",
+                  "title": "level",
+                  "type": "string"
+                },
+                "type": {
+                  "default": "spc_t",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "seLinuxOptions"
             }
           },
           "required": [],
@@ -1604,9 +2004,29 @@
         },
         "runAsNonRoot": {
           "default": "false",
-          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 65532).\nby default (false), all containers are forced to run as UID/GID 0.\n\nThis setting only changes the UID the containers run as. It does not change the Linux capabilities\ngranted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).\nOperations relying on root's implicit filesystem access can fail as non-root:\ne.g. writing agent files to root-owned host paths (/var/odigos).",
+          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 65532).\nby default (false), all containers are forced to run as UID/GID 0.\n\nThis setting only changes the UID the containers run as. It does not change the Linux capabilities\ngranted to odiglet (those are controlled separately via the per-container privileged and capabilities values).\nOperations relying on root's implicit filesystem access can fail as non-root:\ne.g. writing agent files to root-owned host paths (/var/odigos).",
           "required": [],
           "title": "runAsNonRoot"
+        },
+        "scheduleOnlyOnInstrumentedNodes": {
+          "additionalProperties": false,
+          "description": "Schedule odiglet only on nodes that already have at least one instrumented\npod. Reduces the resources Odigos uses on the cluster, which is useful when\nthere are many nodes and few instrumented pods.\nRequires instrumentor.mountMethod to be set to k8s-init-container.\nCons: the first time an instrumented pod starts on a node there is a period\nwithout telemetry until odiglet starts on that node; assumes additional RBAC\npermissions to patch and update node labels.",
+          "properties": {
+            "enabled": {
+              "default": "false",
+              "description": "When true, odiglet runs only on nodes that already have instrumented pods.\nBy default (false), odiglet runs on all nodes (subject to nodeSelector,\naffinity, and tolerations).\nWhen enabled together with a non-default nodeSelector, affinity, or\ntolerations, those settings still apply: odiglet is scheduled only on\nnodes that both carry the instrumented-pod label and satisfy the other\nconstraints (they are combined, not replaced).",
+              "required": [],
+              "title": "enabled"
+            },
+            "nodeLabelRetention": {
+              "default": "5m",
+              "description": "How long to keep odiglet scheduled on a node after its last instrumented\npod leaves. Acts as a rate limit so odiglet is not started and stopped\ntoo frequently. Go duration string (e.g. 5m, 1h). Set to 0s to stop\nimmediately. Default is 5m.",
+              "title": "nodeLabelRetention",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "scheduleOnlyOnInstrumentedNodes"
         },
         "tolerations": {
           "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
@@ -1637,12 +2057,6 @@
           "description": "traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.\nsupported only in odigos pro (not available in community tier)",
           "required": [],
           "title": "traceIdSuffix"
-        },
-        "unPrivileged": {
-          "default": "false",
-          "description": "run the odiglet pod without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
-          "required": [],
-          "title": "unPrivileged"
         }
       },
       "required": [],
@@ -2202,12 +2616,6 @@
           "additionalProperties": true,
           "required": [],
           "title": "affinity"
-        },
-        "centralBackendURL": {
-          "default": "",
-          "description": "centralBackendURL:\n - This flag sets the URL of the central backend.\n - If not set, the UI will not connect to the central backend.",
-          "required": [],
-          "title": "centralBackendURL"
         },
         "deploymentName": {
           "default": "odigos-ui",

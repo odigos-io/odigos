@@ -264,6 +264,21 @@ load-to-kind-victoria-metrics:
 		-
 	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
 
+# Victoria Metrics is not built from this repo — pull the published image and retag for e2e.
+# Materialize a single-platform image via buildx --load so kind load does not fail on
+# multi-arch manifests (ctr: content digest ... not found).
+# kind's LoadImageArchive always runs: ctr images import --all-platforms
+# See https://github.com/kubernetes-sigs/kind/issues/3795
+.PHONY: load-to-kind-victoria-metrics
+load-to-kind-victoria-metrics:
+	printf 'FROM $(ORG)/odigos-victoria-metrics:latest\n' | docker buildx build \
+		--platform=linux/$$(docker version -f '{{.Server.Arch}}') \
+		--pull \
+		-t $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG) \
+		--load \
+		-
+	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
+
 .PHONY: load-to-kind
 load-to-kind:
 	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
@@ -345,10 +360,10 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.151.0
-STABLE_COLLECTOR_VERSION=v1.57.0
-STABLE_OTEL_GO_VERSION=v1.44.0
-UNSTABLE_OTEL_GO_VERSION=v0.68.0
+UNSTABLE_COLLECTOR_VERSION=v0.159.0
+STABLE_COLLECTOR_VERSION=v1.65.0
+STABLE_OTEL_GO_VERSION=v1.46.0
+UNSTABLE_OTEL_GO_VERSION=v0.70.0
 
 .PHONY: update-otel
 update-otel:
@@ -560,4 +575,3 @@ install-gatekeeper:
 		backoff=$$((backoff * 2)); \
 		attempt=$$((attempt + 1)); \
 	done
-

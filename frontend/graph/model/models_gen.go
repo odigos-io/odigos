@@ -261,6 +261,7 @@ type Config struct {
 	InstallationStatus    InstallationStatus  `json:"installationStatus"`
 	ClusterName           *string             `json:"clusterName,omitempty"`
 	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
+	InsightsEnabled       bool                `json:"insightsEnabled"`
 }
 
 type ConfigYaml struct {
@@ -718,6 +719,745 @@ type HTTPPayloadCollectionInput struct {
 	MimeTypes           []*string `json:"mimeTypes,omitempty"`
 	MaxPayloadLength    *int      `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
+}
+
+type Insights struct {
+	Services []*InsightsServiceStat `json:"services"`
+	// Every distinct service name Insights has seen. Cluster-wide candidate set for
+	// guardrail caller/callee allowlists — fetch once and combine with a service profile.
+	ServiceNames   []string                `json:"serviceNames"`
+	ServiceProfile *InsightsServiceProfile `json:"serviceProfile"`
+	// Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
+	BlastRadius         *InsightsBlastRadiusSubgraph  `json:"blastRadius"`
+	Transactions        []*InsightsTransactionStat    `json:"transactions"`
+	Transaction         *InsightsTransaction          `json:"transaction,omitempty"`
+	Baseline            []*InsightsBaselineClass      `json:"baseline"`
+	Observations        []*InsightsObservationSummary `json:"observations"`
+	Observation         *InsightsObservation          `json:"observation,omitempty"`
+	Findings            []*InsightsFinding            `json:"findings"`
+	Anomalies           []*InsightsAnomalySummary     `json:"anomalies"`
+	Anomaly             *InsightsAnomalyIssue         `json:"anomaly,omitempty"`
+	Policies            []*InsightsPolicy             `json:"policies"`
+	LearningPolicies    []*InsightsLearningPolicy     `json:"learningPolicies"`
+	Guardrails          []*InsightsGuardrail          `json:"guardrails"`
+	GuardrailViolations []*InsightsGuardrailViolation `json:"guardrailViolations"`
+	// Violation investigate payload (summary + evidence trace). Analogous to anomaly(...).
+	GuardrailViolation *InsightsGuardrailViolationDetail `json:"guardrailViolation,omitempty"`
+	Catalog            *InsightsCatalog                  `json:"catalog"`
+	SystemSettings     *InsightsSystemSettings           `json:"systemSettings"`
+	StorageHealth      *InsightsStorageHealth            `json:"storageHealth"`
+}
+
+type InsightsAnomalyAttrHighlight struct {
+	SpanID string `json:"spanId"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+// Render-ready explanation of one deviation class within an anomaly issue.
+// Built at read time; the UI should render title/summary/highlights and not parse raw evidence.
+type InsightsAnomalyClassFinding struct {
+	Class          InsightsDeviationClass           `json:"class"`
+	Kind           InsightsAnomalyClassFindingKind  `json:"kind"`
+	Title          string                           `json:"title"`
+	Summary        string                           `json:"summary"`
+	SpanHighlights []*InsightsAnomalySpanHighlight  `json:"spanHighlights,omitempty"`
+	AttrHighlights []*InsightsAnomalyAttrHighlight  `json:"attrHighlights,omitempty"`
+	Metric         *InsightsAnomalyMetricComparison `json:"metric,omitempty"`
+	// JSON-encoded original per-class evidence blob (fallback / debug).
+	RawEvidence *string `json:"rawEvidence,omitempty"`
+}
+
+type InsightsAnomalyIssue struct {
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+	Service       string `json:"service"`
+	Namespace     string `json:"namespace"`
+	// Full canonical identity string.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               *InsightsTransactionKind            `json:"kind,omitempty"`
+	TriggeredClasses   []InsightsDeviationClass            `json:"triggeredClasses"`
+	Offending          *string                             `json:"offending,omitempty"`
+	PolicyID           *string                             `json:"policyId,omitempty"`
+	Occurrences        int                                 `json:"occurrences"`
+	MaxScore           int                                 `json:"maxScore"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	FirstSeen          *string                             `json:"firstSeen,omitempty"`
+	LastSeen           *string                             `json:"lastSeen,omitempty"`
+	LastTraceID        *string                             `json:"lastTraceId,omitempty"`
+	Status             InsightsAnomalyStatus               `json:"status"`
+	// JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query.
+	Evidence string                  `json:"evidence"`
+	Risk     *InsightsRiskAssessment `json:"risk,omitempty"`
+	// One render-ready finding per triggered class (title, summary, highlights). Always present on detail.
+	ClassFindings []*InsightsAnomalyClassFinding `json:"classFindings"`
+	// Evidence sample for this issue including rawOtlp. Omitted when no sample was retained.
+	AnomalyTrace *InsightsObservation `json:"anomalyTrace,omitempty"`
+	// Learning-phase example sample including rawOtlp for baseline compare. Omitted when none exist.
+	BaselineTrace *InsightsObservation `json:"baselineTrace,omitempty"`
+}
+
+type InsightsAnomalyMetricComparison struct {
+	Observed int `json:"observed"`
+	Baseline int `json:"baseline"`
+	// us | bytes
+	Unit string `json:"unit"`
+}
+
+type InsightsAnomalyRefInput struct {
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+}
+
+type InsightsAnomalySpanHighlight struct {
+	SpanID string `json:"spanId"`
+	// high | medium | low
+	Severity string `json:"severity"`
+	Reason   string `json:"reason"`
+}
+
+type InsightsAnomalySummary struct {
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+	Service       string `json:"service"`
+	Namespace     string `json:"namespace"`
+	// Full canonical identity string.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               *InsightsTransactionKind            `json:"kind,omitempty"`
+	TriggeredClasses   []InsightsDeviationClass            `json:"triggeredClasses"`
+	Offending          *string                             `json:"offending,omitempty"`
+	PolicyID           *string                             `json:"policyId,omitempty"`
+	Occurrences        int                                 `json:"occurrences"`
+	MaxScore           int                                 `json:"maxScore"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	FirstSeen          *string                             `json:"firstSeen,omitempty"`
+	LastSeen           *string                             `json:"lastSeen,omitempty"`
+	LastTraceID        *string                             `json:"lastTraceId,omitempty"`
+	Status             InsightsAnomalyStatus               `json:"status"`
+}
+
+type InsightsBaselineClass struct {
+	TransactionID string                 `json:"transactionId"`
+	Class         InsightsDeviationClass `json:"class"`
+	// Human-readable name for what this class learns on a transaction
+	// (e.g. "Request latency" for D3_latency). Sourced from the risk catalog;
+	// UI should display this and keep `class` as the stable id for promote/reset.
+	ClassLabel string `json:"classLabel"`
+	// Tooltip text describing what this class learns for the transaction.
+	// Suitable for hover UI; not the finding/anomaly wording.
+	ClassDescription string `json:"classDescription"`
+	// JSON-encoded baseline data; shape varies per deviation class.
+	Data *string `json:"data,omitempty"`
+	// Chart-ready histogram for D3_latency / D8_payload_size. Omitted for other classes.
+	Histogram                    *InsightsBaselineHistogram `json:"histogram,omitempty"`
+	DataSchemaVersion            *int                       `json:"dataSchemaVersion,omitempty"`
+	ObservationCount             int                        `json:"observationCount"`
+	Promoted                     bool                       `json:"promoted"`
+	LearningStartedAt            *string                    `json:"learningStartedAt,omitempty"`
+	LastChangedAt                *string                    `json:"lastChangedAt,omitempty"`
+	ObservationCountAtLastChange *int                       `json:"observationCountAtLastChange,omitempty"`
+	Learning                     *InsightsBaselineLearning  `json:"learning"`
+}
+
+// Chart-ready exponential histogram for D3_latency and D8_payload_size.
+// Plot series[].bars; do not recompute bounds from raw data.
+type InsightsBaselineHistogram struct {
+	Unit              InsightsBaselineHistogramUnit      `json:"unit"`
+	LayoutFingerprint *string                            `json:"layoutFingerprint,omitempty"`
+	Series            []*InsightsBaselineHistogramSeries `json:"series"`
+}
+
+type InsightsBaselineHistogramBar struct {
+	Lo    int    `json:"lo"`
+	Hi    int    `json:"hi"`
+	Count int    `json:"count"`
+	Label string `json:"label"`
+}
+
+type InsightsBaselineHistogramSeries struct {
+	Name  string                          `json:"name"`
+	Label string                          `json:"label"`
+	Bars  []*InsightsBaselineHistogramBar `json:"bars"`
+}
+
+// Computed learning/stability snapshot for one baseline class against its
+// resolved learning policy. Always present, including on placeholder classes.
+type InsightsBaselineLearning struct {
+	Phase                       InsightsBaselineLearningPhase      `json:"phase"`
+	ObservationsSinceLastChange int                                `json:"observationsSinceLastChange"`
+	QuietMinutes                int                                `json:"quietMinutes"`
+	Mode                        InsightsLearningMode               `json:"mode"`
+	ReadyToPromote              bool                               `json:"readyToPromote"`
+	Stability                   *InsightsBaselineLearningStability `json:"stability"`
+}
+
+// Both stability signals so the UI can show "X / Y observations" and
+// "grew N minutes ago" together. Under `all`, one dimension `met` does not mean
+// the class promotes — use `readyToPromote`.
+type InsightsBaselineLearningStability struct {
+	Observations *InsightsBaselineStabilityProgress `json:"observations"`
+	Duration     *InsightsBaselineStabilityProgress `json:"duration"`
+}
+
+// One stability dimension. For observations, current/target is a count. For
+// duration, both are minutes. `target` is 0 when there is no policy target —
+// still render `current` as "grew N ago".
+type InsightsBaselineStabilityProgress struct {
+	Current         int  `json:"current"`
+	Target          int  `json:"target"`
+	DrivesPromotion bool `json:"drivesPromotion"`
+	Met             bool `json:"met"`
+}
+
+// A directed client -> server edge from the gateway servicegraph connector.
+// Request/failure counts are rough magnitude, not exact totals.
+type InsightsBlastRadiusEdge struct {
+	ClientNamespace string `json:"clientNamespace"`
+	ClientService   string `json:"clientService"`
+	ServerNamespace string `json:"serverNamespace"`
+	ServerService   string `json:"serverService"`
+	ConnectionType  string `json:"connectionType"`
+	RequestCount    int    `json:"requestCount"`
+	FailedCount     int    `json:"failedCount"`
+	LastSeen        string `json:"lastSeen"`
+}
+
+// One service (or virtual dependency) in a blast-radius subgraph. Identity is (namespace, service).
+type InsightsBlastRadiusNode struct {
+	Namespace string `json:"namespace"`
+	Service   string `json:"service"`
+	// True for an uninstrumented dependency (database, queue, external API).
+	// Virtual nodes are leaves — they have no outgoing calls.
+	IsVirtual bool `json:"isVirtual"`
+}
+
+// Neighborhood around an anchor service: callers and callees out to the requested hop depth.
+type InsightsBlastRadiusSubgraph struct {
+	Root  *InsightsBlastRadiusNode   `json:"root"`
+	Nodes []*InsightsBlastRadiusNode `json:"nodes"`
+	Edges []*InsightsBlastRadiusEdge `json:"edges"`
+}
+
+type InsightsBulkDeleteResult struct {
+	Deleted int `json:"deleted"`
+}
+
+type InsightsBulkPromoteResult struct {
+	Promoted int `json:"promoted"`
+}
+
+type InsightsBulkResolveResult struct {
+	Resolution string `json:"resolution"`
+	Resolved   int    `json:"resolved"`
+}
+
+type InsightsCatalog struct {
+	DeviationClasses []*InsightsCatalogClass         `json:"deviationClasses"`
+	Enrichers        []*InsightsCatalogEnricher      `json:"enrichers"`
+	Categories       []*InsightsCatalogCategory      `json:"categories"`
+	GuardrailRules   []*InsightsCatalogGuardrailRule `json:"guardrailRules"`
+	SeverityBands    []*InsightsSeverityBand         `json:"severityBands"`
+	CorrelationBonus int                             `json:"correlationBonus"`
+	// JSON-encoded map[string]string.
+	Tags string `json:"tags"`
+}
+
+type InsightsCatalogCategory struct {
+	ID    string  `json:"id"`
+	Label string  `json:"label"`
+	Base  int     `json:"base"`
+	Mitre *string `json:"mitre,omitempty"`
+	Owasp *string `json:"owasp,omitempty"`
+}
+
+type InsightsCatalogClass struct {
+	ID          string  `json:"id"`
+	Label       string  `json:"label"`
+	Description *string `json:"description,omitempty"`
+	// Transaction-baseline name for this class (what is learned). Distinct from finding-oriented `label`.
+	BaselineLabel string `json:"baselineLabel"`
+	// Tooltip for what this class learns on a transaction baseline.
+	BaselineDescription *string `json:"baselineDescription,omitempty"`
+	Category            string  `json:"category"`
+	CategoryLabel       *string `json:"categoryLabel,omitempty"`
+	Weight              int     `json:"weight"`
+	Mitre               *string `json:"mitre,omitempty"`
+	Owasp               *string `json:"owasp,omitempty"`
+}
+
+type InsightsCatalogEnricher struct {
+	Source      string                `json:"source"`
+	ParentClass string                `json:"parentClass"`
+	Category    string                `json:"category"`
+	Weight      int                   `json:"weight"`
+	Label       string                `json:"label"`
+	Description *string               `json:"description,omitempty"`
+	List        *InsightsEnricherList `json:"list,omitempty"`
+}
+
+type InsightsCatalogGuardrailRule struct {
+	Key         string  `json:"key"`
+	Label       string  `json:"label"`
+	Description *string `json:"description,omitempty"`
+	Category    string  `json:"category"`
+	Weight      int     `json:"weight"`
+	Hint        *string `json:"hint,omitempty"`
+}
+
+type InsightsEnricherList struct {
+	Key     string   `json:"key"`
+	Label   string   `json:"label"`
+	Hint    *string  `json:"hint,omitempty"`
+	Default []string `json:"default,omitempty"`
+}
+
+type InsightsFinding struct {
+	Kind      InsightsFindingKind `json:"kind"`
+	Service   string              `json:"service"`
+	Namespace string              `json:"namespace"`
+	// Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
+	Title string `json:"title"`
+	// Full canonical transaction operation (anomalies only). Omitted for violations.
+	Operation *string `json:"operation,omitempty"`
+	// Entry-span operation without dimension suffixes (anomalies).
+	OperationName *string `json:"operationName,omitempty"`
+	// Parsed identity dimensions (anomalies only).
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions,omitempty"`
+	Offending          *string                             `json:"offending,omitempty"`
+	Score              int                                 `json:"score"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	Occurrences        int                                 `json:"occurrences"`
+	// Earliest occurrence of this finding (anomaly or guardrail violation).
+	FirstSeen *string `json:"firstSeen,omitempty"`
+	LastSeen  string  `json:"lastSeen"`
+	// Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).
+	Status string `json:"status"`
+	// Anomaly drill-down key; set when kind is anomaly.
+	TransactionID *string `json:"transactionId,omitempty"`
+	// Anomaly drill-down key; set when kind is anomaly.
+	Signature *string `json:"signature,omitempty"`
+	// Anomaly signal classes; empty/absent for violations.
+	TriggeredClasses []InsightsDeviationClass `json:"triggeredClasses,omitempty"`
+	// Violation drill-down key; set when kind is violation.
+	ScopeKey *string `json:"scopeKey,omitempty"`
+	// Violation drill-down key; set when kind is violation.
+	RuleKey *string `json:"ruleKey,omitempty"`
+}
+
+type InsightsGuardrail struct {
+	Scope InsightsPolicyScope `json:"scope"`
+	// Format: namespace/service.
+	ScopeKey string                   `json:"scopeKey"`
+	Rules    []*InsightsGuardrailRule `json:"rules"`
+}
+
+type InsightsGuardrailInput struct {
+	Scope    InsightsPolicyScope           `json:"scope"`
+	ScopeKey string                        `json:"scopeKey"`
+	Rules    []*InsightsGuardrailRuleInput `json:"rules"`
+}
+
+type InsightsGuardrailRule struct {
+	Key       string           `json:"key"`
+	Label     string           `json:"label"`
+	Mode      InsightsRuleMode `json:"mode"`
+	Allowlist []string         `json:"allowlist,omitempty"`
+	// How this rule was created. `auto_transaction_guardrail` means it was created
+	// automatically when the service's transactions promoted (not a manual edit).
+	Origin *string `json:"origin,omitempty"`
+}
+
+type InsightsGuardrailRuleInput struct {
+	Key       string           `json:"key"`
+	Label     string           `json:"label"`
+	Mode      InsightsRuleMode `json:"mode"`
+	Allowlist []string         `json:"allowlist,omitempty"`
+	// Preserved on save so auto-created rules keep their origin across edits.
+	Origin *string `json:"origin,omitempty"`
+}
+
+type InsightsGuardrailSeedInput struct {
+	ScopeKey string            `json:"scopeKey"`
+	Mode     *InsightsRuleMode `json:"mode,omitempty"`
+	// JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress | allowed_transactions.
+	Items string `json:"items"`
+}
+
+type InsightsGuardrailViolation struct {
+	Service     string                  `json:"service"`
+	Namespace   string                  `json:"namespace"`
+	ScopeKey    string                  `json:"scopeKey"`
+	RuleKey     string                  `json:"ruleKey"`
+	RuleLabel   string                  `json:"ruleLabel"`
+	Offending   *string                 `json:"offending,omitempty"`
+	Occurrences int                     `json:"occurrences"`
+	MaxScore    int                     `json:"maxScore"`
+	Severity    InsightsSeverity        `json:"severity"`
+	LastSeen    *string                 `json:"lastSeen,omitempty"`
+	Status      InsightsViolationStatus `json:"status"`
+}
+
+// Full violation for investigate. Detail path only — includes summary, span
+// highlights, and optional evidenceTrace. Identity is (scopeKey, ruleKey, offending).
+type InsightsGuardrailViolationDetail struct {
+	Service     string                  `json:"service"`
+	Namespace   string                  `json:"namespace"`
+	ScopeKey    string                  `json:"scopeKey"`
+	RuleKey     string                  `json:"ruleKey"`
+	RuleLabel   string                  `json:"ruleLabel"`
+	Offending   string                  `json:"offending"`
+	Occurrences int                     `json:"occurrences"`
+	MaxScore    int                     `json:"maxScore"`
+	Severity    InsightsSeverity        `json:"severity"`
+	LastSeen    *string                 `json:"lastSeen,omitempty"`
+	Status      InsightsViolationStatus `json:"status"`
+	// One-line explanation of what broke (service, rule, offending).
+	Summary string `json:"summary"`
+	// Spans on the evidence trace that witness the forbidden edge.
+	SpanHighlights []*InsightsAnomalySpanHighlight `json:"spanHighlights,omitempty"`
+	// Captured sample including rawOtlp. Omitted when no sample was retained.
+	EvidenceTrace *InsightsObservation `json:"evidenceTrace,omitempty"`
+}
+
+type InsightsLearningCondition struct {
+	Type               InsightsLearningConditionType `json:"type"`
+	MinObservations    *int                          `json:"minObservations,omitempty"`
+	MinDurationMinutes *int                          `json:"minDurationMinutes,omitempty"`
+	StableObservations *int                          `json:"stableObservations,omitempty"`
+	StableMinutes      *int                          `json:"stableMinutes,omitempty"`
+}
+
+type InsightsLearningConditionInput struct {
+	Type               InsightsLearningConditionType `json:"type"`
+	MinObservations    *int                          `json:"minObservations,omitempty"`
+	MinDurationMinutes *int                          `json:"minDurationMinutes,omitempty"`
+	StableObservations *int                          `json:"stableObservations,omitempty"`
+	StableMinutes      *int                          `json:"stableMinutes,omitempty"`
+}
+
+type InsightsLearningPolicy struct {
+	Class      InsightsDeviationClass       `json:"class"`
+	Mode       InsightsLearningMode         `json:"mode"`
+	Conditions []*InsightsLearningCondition `json:"conditions,omitempty"`
+	MinMatches *int                         `json:"minMatches,omitempty"`
+	Scope      InsightsPolicyScope          `json:"scope"`
+	ScopeKey   string                       `json:"scopeKey"`
+}
+
+type InsightsLearningPolicyInput struct {
+	Class      InsightsDeviationClass            `json:"class"`
+	Mode       InsightsLearningMode              `json:"mode"`
+	Conditions []*InsightsLearningConditionInput `json:"conditions,omitempty"`
+	MinMatches *int                              `json:"minMatches,omitempty"`
+	Scope      InsightsPolicyScope               `json:"scope"`
+	ScopeKey   string                            `json:"scopeKey"`
+}
+
+type InsightsObservation struct {
+	TraceID       string               `json:"traceId"`
+	TransactionID string               `json:"transactionId"`
+	ObservedAt    string               `json:"observedAt"`
+	DurationMs    int                  `json:"durationMs"`
+	SampleReason  InsightsSampleReason `json:"sampleReason"`
+	// Base64-encoded OTLP protobuf; only available on the single-observation query.
+	RawOtlp string `json:"rawOtlp"`
+}
+
+type InsightsObservationSummary struct {
+	TraceID       string               `json:"traceId"`
+	TransactionID string               `json:"transactionId"`
+	ObservedAt    string               `json:"observedAt"`
+	DurationMs    int                  `json:"durationMs"`
+	SampleReason  InsightsSampleReason `json:"sampleReason"`
+}
+
+type InsightsPolicy struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Enabled     bool   `json:"enabled"`
+	FireAtScore int    `json:"fireAtScore"`
+	// JSON-encoded map[string]int of per-signal weights.
+	SignalWeights *string `json:"signalWeights,omitempty"`
+	// JSON-encoded map[string][]string of enricher keyword lists.
+	EnricherLists *string             `json:"enricherLists,omitempty"`
+	Scope         InsightsPolicyScope `json:"scope"`
+	ScopeKey      string              `json:"scopeKey"`
+}
+
+type InsightsPolicyInput struct {
+	// Server-assigned; omit on create (the policy key is scope + scopeKey).
+	ID          *string `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Enabled     bool    `json:"enabled"`
+	FireAtScore int     `json:"fireAtScore"`
+	// JSON-encoded map[string]int of per-signal weights.
+	SignalWeights *string `json:"signalWeights,omitempty"`
+	// JSON-encoded map[string][]string of enricher keyword lists.
+	EnricherLists *string             `json:"enricherLists,omitempty"`
+	Scope         InsightsPolicyScope `json:"scope"`
+	ScopeKey      string              `json:"scopeKey"`
+}
+
+type InsightsPromoteResult struct {
+	TransactionID string                 `json:"transactionId"`
+	Class         InsightsDeviationClass `json:"class"`
+	Promoted      bool                   `json:"promoted"`
+}
+
+type InsightsRiskAssessment struct {
+	Score            int                   `json:"score"`
+	Severity         InsightsSeverity      `json:"severity"`
+	Correlated       bool                  `json:"correlated"`
+	CorrelationBonus int                   `json:"correlationBonus"`
+	FireAtScore      int                   `json:"fireAtScore"`
+	Categories       []string              `json:"categories,omitempty"`
+	Signals          []*InsightsRiskSignal `json:"signals"`
+}
+
+type InsightsRiskSignal struct {
+	Source       string  `json:"source"`
+	Category     string  `json:"category"`
+	Weight       int     `json:"weight"`
+	Confidence   float64 `json:"confidence"`
+	Contribution int     `json:"contribution"`
+	Rationale    *string `json:"rationale,omitempty"`
+	Mitre        *string `json:"mitre,omitempty"`
+	Owasp        *string `json:"owasp,omitempty"`
+}
+
+type InsightsServiceProfile struct {
+	Namespace    string   `json:"namespace"`
+	Service      string   `json:"service"`
+	Callers      []string `json:"callers"`
+	Callees      []string `json:"callees"`
+	Egress       []string `json:"egress"`
+	Transactions []string `json:"transactions"`
+}
+
+type InsightsServiceStat struct {
+	Namespace        string `json:"namespace"`
+	Service          string `json:"service"`
+	TransactionCount int    `json:"transactionCount"`
+	Volume           int    `json:"volume"`
+	LastSeen         string `json:"lastSeen"`
+}
+
+type InsightsSeverityBand struct {
+	Severity InsightsSeverity `json:"severity"`
+	MinScore int              `json:"minScore"`
+}
+
+type InsightsStorageConnection struct {
+	Reachable     bool    `json:"reachable"`
+	PingLatencyMs int     `json:"pingLatencyMs"`
+	Version       string  `json:"version"`
+	Database      string  `json:"database"`
+	Error         *string `json:"error,omitempty"`
+}
+
+type InsightsStorageDisk struct {
+	InsightsBytes  int                       `json:"insightsBytes"`
+	TotalBytes     int                       `json:"totalBytes"`
+	UsedBytes      int                       `json:"usedBytes"`
+	AvailableBytes int                       `json:"availableBytes"`
+	UsedPercent    float64                   `json:"usedPercent"`
+	Status         InsightsStorageDiskStatus `json:"status"`
+}
+
+type InsightsStorageHealth struct {
+	CheckedAt     string                        `json:"checkedAt"`
+	Status        InsightsStorageHealthStatus   `json:"status"`
+	Connection    *InsightsStorageConnection    `json:"connection"`
+	Disk          *InsightsStorageDisk          `json:"disk"`
+	Memory        *InsightsStorageMemory        `json:"memory"`
+	Queries       *InsightsStorageQueries       `json:"queries"`
+	Tables        []*InsightsStorageTable       `json:"tables"`
+	WritePressure *InsightsStorageWritePressure `json:"writePressure"`
+	Writeback     *InsightsStorageWriteback     `json:"writeback"`
+}
+
+type InsightsStorageMemory struct {
+	ProcessRssBytes int `json:"processRssBytes"`
+	CgroupUsedBytes int `json:"cgroupUsedBytes"`
+	// 0 means no limit.
+	CgroupTotalBytes int     `json:"cgroupTotalBytes"`
+	UptimeSeconds    float64 `json:"uptimeSeconds"`
+}
+
+type InsightsStorageQueries struct {
+	Active          int                     `json:"active"`
+	LongestSeconds  float64                 `json:"longestSeconds"`
+	PeakMemoryBytes int                     `json:"peakMemoryBytes"`
+	Items           []*InsightsStorageQuery `json:"items"`
+	RecentHeaviest  []*InsightsStorageQuery `json:"recentHeaviest"`
+	RecentLatest    []*InsightsStorageQuery `json:"recentLatest"`
+}
+
+type InsightsStorageQuery struct {
+	ElapsedSeconds float64 `json:"elapsedSeconds"`
+	User           string  `json:"user"`
+	MemoryBytes    int     `json:"memoryBytes"`
+	Query          string  `json:"query"`
+	// Omitted for still-running queries.
+	FinishedAt *string `json:"finishedAt,omitempty"`
+}
+
+type InsightsStorageTable struct {
+	Name        string `json:"name"`
+	Rows        int    `json:"rows"`
+	BytesOnDisk int    `json:"bytesOnDisk"`
+	ActiveParts int    `json:"activeParts"`
+}
+
+type InsightsStorageWritePressure struct {
+	UnfinishedMutations int `json:"unfinishedMutations"`
+	ActiveParts         int `json:"activeParts"`
+}
+
+type InsightsStorageWriteback struct {
+	FlushIntervalSeconds int     `json:"flushIntervalSeconds"`
+	EverFlushed          bool    `json:"everFlushed"`
+	LastFlushOk          bool    `json:"lastFlushOk"`
+	LastFlushAt          *string `json:"lastFlushAt,omitempty"`
+	LastFlushError       *string `json:"lastFlushError,omitempty"`
+}
+
+type InsightsSystemCapacitySettings struct {
+	MaxResidentTransactions int `json:"maxResidentTransactions"`
+	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
+}
+
+type InsightsSystemCapacitySettingsInput struct {
+	MaxResidentTransactions int `json:"maxResidentTransactions"`
+	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
+}
+
+type InsightsSystemDetectionSettings struct {
+	// When true, automatically create an enforced allowed_transactions guardrail
+	// when a service finishes promoting. Applies only going forward — already-promoted
+	// services are not backfilled. Per-service disable uses rule mode off.
+	AutoTransactionGuardrail bool `json:"autoTransactionGuardrail"`
+}
+
+type InsightsSystemDetectionSettingsInput struct {
+	AutoTransactionGuardrail bool `json:"autoTransactionGuardrail"`
+}
+
+// Extra dimensions appended to transaction Operation before hashing.
+// Each enabled dimension multiplies cardinality. Use only low-cardinality attributes.
+type InsightsSystemIdentitySettings struct {
+	TransactionIdentityDimensions []*InsightsSystemTransactionIdentityDimension `json:"transactionIdentityDimensions"`
+}
+
+type InsightsSystemIdentitySettingsInput struct {
+	TransactionIdentityDimensions []*InsightsSystemTransactionIdentityDimensionInput `json:"transactionIdentityDimensions"`
+}
+
+type InsightsSystemRetentionSettings struct {
+	ObservationRetentionDays int `json:"observationRetentionDays"`
+}
+
+type InsightsSystemRetentionSettingsInput struct {
+	ObservationRetentionDays int `json:"observationRetentionDays"`
+}
+
+type InsightsSystemSamplingSettings struct {
+	ExamplesPerTransaction       int `json:"examplesPerTransaction"`
+	ExampleSampleIntervalSeconds int `json:"exampleSampleIntervalSeconds"`
+}
+
+type InsightsSystemSamplingSettingsInput struct {
+	ExamplesPerTransaction       int `json:"examplesPerTransaction"`
+	ExampleSampleIntervalSeconds int `json:"exampleSampleIntervalSeconds"`
+}
+
+type InsightsSystemSettings struct {
+	Sampling  *InsightsSystemSamplingSettings  `json:"sampling"`
+	Retention *InsightsSystemRetentionSettings `json:"retention"`
+	Capacity  *InsightsSystemCapacitySettings  `json:"capacity"`
+	Writeback *InsightsSystemWritebackSettings `json:"writeback"`
+	Detection *InsightsSystemDetectionSettings `json:"detection"`
+	Identity  *InsightsSystemIdentitySettings  `json:"identity"`
+}
+
+type InsightsSystemSettingsInput struct {
+	Sampling  *InsightsSystemSamplingSettingsInput  `json:"sampling"`
+	Retention *InsightsSystemRetentionSettingsInput `json:"retention"`
+	Capacity  *InsightsSystemCapacitySettingsInput  `json:"capacity"`
+	Writeback *InsightsSystemWritebackSettingsInput `json:"writeback"`
+	Detection *InsightsSystemDetectionSettingsInput `json:"detection"`
+	Identity  *InsightsSystemIdentitySettingsInput  `json:"identity"`
+	// Write-only. When true and identity dimensions changed vs stored settings,
+	// delete all transactions and related baselines/samples/findings before applying.
+	// Never returned by GET.
+	ResetTransactions *bool `json:"resetTransactions,omitempty"`
+}
+
+// One low-cardinality attribute (or built-in resolver key) folded into transaction identity
+// from the sub-transaction entry span only.
+type InsightsSystemTransactionIdentityDimension struct {
+	Key     string `json:"key"`
+	Enabled bool   `json:"enabled"`
+}
+
+type InsightsSystemTransactionIdentityDimensionInput struct {
+	Key     string `json:"key"`
+	Enabled bool   `json:"enabled"`
+}
+
+type InsightsSystemWritebackSettings struct {
+	FlushIntervalSeconds int `json:"flushIntervalSeconds"`
+}
+
+type InsightsSystemWritebackSettingsInput struct {
+	FlushIntervalSeconds int `json:"flushIntervalSeconds"`
+}
+
+type InsightsTransaction struct {
+	ID        string `json:"id"`
+	Service   string `json:"service"`
+	Namespace string `json:"namespace"`
+	// Full canonical identity string (hashed, guardrails). Includes [key=value] suffixes when identity dimensions are enabled.
+	Operation string `json:"operation"`
+	// Human-readable entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               InsightsTransactionKind             `json:"kind"`
+}
+
+// One parsed low-cardinality dimension from the stored operation identity suffix ([key=value]).
+// For display only — canonical identity remains in `operation`.
+type InsightsTransactionIdentityValue struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type InsightsTransactionStat struct {
+	ID        string `json:"id"`
+	Service   string `json:"service"`
+	Namespace string `json:"namespace"`
+	// Full canonical identity string (hashed). Includes [key=value] suffixes when identity dimensions are enabled.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               InsightsTransactionKind             `json:"kind"`
+	Volume             int                                 `json:"volume"`
+	LastSeen           string                              `json:"lastSeen"`
+	HasBaseline        *bool                               `json:"hasBaseline,omitempty"`
+	Promoted           *bool                               `json:"promoted,omitempty"`
+}
+
+type InsightsViolationActionInput struct {
+	ScopeKey  string `json:"scopeKey"`
+	RuleKey   string `json:"ruleKey"`
+	Offending string `json:"offending"`
 }
 
 type InstrumentationInstanceAnalyze struct {
@@ -2361,6 +3101,798 @@ func (e *FieldType) UnmarshalGQL(v any) error {
 }
 
 func (e FieldType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyClassFindingKind string
+
+const (
+	InsightsAnomalyClassFindingKindStructural InsightsAnomalyClassFindingKind = "structural"
+	InsightsAnomalyClassFindingKindMetric     InsightsAnomalyClassFindingKind = "metric"
+)
+
+var AllInsightsAnomalyClassFindingKind = []InsightsAnomalyClassFindingKind{
+	InsightsAnomalyClassFindingKindStructural,
+	InsightsAnomalyClassFindingKindMetric,
+}
+
+func (e InsightsAnomalyClassFindingKind) IsValid() bool {
+	switch e {
+	case InsightsAnomalyClassFindingKindStructural, InsightsAnomalyClassFindingKindMetric:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyClassFindingKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyClassFindingKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyClassFindingKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyClassFindingKind", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyClassFindingKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyResolution string
+
+const (
+	InsightsAnomalyResolutionAccept  InsightsAnomalyResolution = "accept"
+	InsightsAnomalyResolutionDismiss InsightsAnomalyResolution = "dismiss"
+	InsightsAnomalyResolutionReopen  InsightsAnomalyResolution = "reopen"
+)
+
+var AllInsightsAnomalyResolution = []InsightsAnomalyResolution{
+	InsightsAnomalyResolutionAccept,
+	InsightsAnomalyResolutionDismiss,
+	InsightsAnomalyResolutionReopen,
+}
+
+func (e InsightsAnomalyResolution) IsValid() bool {
+	switch e {
+	case InsightsAnomalyResolutionAccept, InsightsAnomalyResolutionDismiss, InsightsAnomalyResolutionReopen:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyResolution) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyResolution) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyResolution(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyResolution", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyResolution) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyStatus string
+
+const (
+	InsightsAnomalyStatusOpen      InsightsAnomalyStatus = "open"
+	InsightsAnomalyStatusAccepted  InsightsAnomalyStatus = "accepted"
+	InsightsAnomalyStatusDismissed InsightsAnomalyStatus = "dismissed"
+)
+
+var AllInsightsAnomalyStatus = []InsightsAnomalyStatus{
+	InsightsAnomalyStatusOpen,
+	InsightsAnomalyStatusAccepted,
+	InsightsAnomalyStatusDismissed,
+}
+
+func (e InsightsAnomalyStatus) IsValid() bool {
+	switch e {
+	case InsightsAnomalyStatusOpen, InsightsAnomalyStatusAccepted, InsightsAnomalyStatusDismissed:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsBaselineHistogramUnit string
+
+const (
+	InsightsBaselineHistogramUnitUs    InsightsBaselineHistogramUnit = "us"
+	InsightsBaselineHistogramUnitBytes InsightsBaselineHistogramUnit = "bytes"
+)
+
+var AllInsightsBaselineHistogramUnit = []InsightsBaselineHistogramUnit{
+	InsightsBaselineHistogramUnitUs,
+	InsightsBaselineHistogramUnitBytes,
+}
+
+func (e InsightsBaselineHistogramUnit) IsValid() bool {
+	switch e {
+	case InsightsBaselineHistogramUnitUs, InsightsBaselineHistogramUnitBytes:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBaselineHistogramUnit) String() string {
+	return string(e)
+}
+
+func (e *InsightsBaselineHistogramUnit) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBaselineHistogramUnit(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBaselineHistogramUnit", str)
+	}
+	return nil
+}
+
+func (e InsightsBaselineHistogramUnit) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Coarse learning state for one baseline class. `promoted` means the baseline is
+// frozen. `empty` means it has never grown. `learning` means it has grown and is
+// still in the learning phase.
+type InsightsBaselineLearningPhase string
+
+const (
+	InsightsBaselineLearningPhasePromoted InsightsBaselineLearningPhase = "promoted"
+	InsightsBaselineLearningPhaseEmpty    InsightsBaselineLearningPhase = "empty"
+	InsightsBaselineLearningPhaseLearning InsightsBaselineLearningPhase = "learning"
+)
+
+var AllInsightsBaselineLearningPhase = []InsightsBaselineLearningPhase{
+	InsightsBaselineLearningPhasePromoted,
+	InsightsBaselineLearningPhaseEmpty,
+	InsightsBaselineLearningPhaseLearning,
+}
+
+func (e InsightsBaselineLearningPhase) IsValid() bool {
+	switch e {
+	case InsightsBaselineLearningPhasePromoted, InsightsBaselineLearningPhaseEmpty, InsightsBaselineLearningPhaseLearning:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBaselineLearningPhase) String() string {
+	return string(e)
+}
+
+func (e *InsightsBaselineLearningPhase) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBaselineLearningPhase(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBaselineLearningPhase", str)
+	}
+	return nil
+}
+
+func (e InsightsBaselineLearningPhase) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsBulkResolution string
+
+const (
+	InsightsBulkResolutionAccept  InsightsBulkResolution = "accept"
+	InsightsBulkResolutionDismiss InsightsBulkResolution = "dismiss"
+)
+
+var AllInsightsBulkResolution = []InsightsBulkResolution{
+	InsightsBulkResolutionAccept,
+	InsightsBulkResolutionDismiss,
+}
+
+func (e InsightsBulkResolution) IsValid() bool {
+	switch e {
+	case InsightsBulkResolutionAccept, InsightsBulkResolutionDismiss:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBulkResolution) String() string {
+	return string(e)
+}
+
+func (e *InsightsBulkResolution) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBulkResolution(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBulkResolution", str)
+	}
+	return nil
+}
+
+func (e InsightsBulkResolution) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsDeviationClass string
+
+const (
+	InsightsDeviationClassD1CallEdges     InsightsDeviationClass = "D1_call_edges"
+	InsightsDeviationClassD2Egress        InsightsDeviationClass = "D2_egress"
+	InsightsDeviationClassD3Latency       InsightsDeviationClass = "D3_latency"
+	InsightsDeviationClassD4ArgsReturns   InsightsDeviationClass = "D4_args_returns"
+	InsightsDeviationClassD5Libraries     InsightsDeviationClass = "D5_libraries"
+	InsightsDeviationClassD6AttrRelations InsightsDeviationClass = "D6_attr_relations"
+	InsightsDeviationClassD7DbAccess      InsightsDeviationClass = "D7_db_access"
+	InsightsDeviationClassD8PayloadSize   InsightsDeviationClass = "D8_payload_size"
+)
+
+var AllInsightsDeviationClass = []InsightsDeviationClass{
+	InsightsDeviationClassD1CallEdges,
+	InsightsDeviationClassD2Egress,
+	InsightsDeviationClassD3Latency,
+	InsightsDeviationClassD4ArgsReturns,
+	InsightsDeviationClassD5Libraries,
+	InsightsDeviationClassD6AttrRelations,
+	InsightsDeviationClassD7DbAccess,
+	InsightsDeviationClassD8PayloadSize,
+}
+
+func (e InsightsDeviationClass) IsValid() bool {
+	switch e {
+	case InsightsDeviationClassD1CallEdges, InsightsDeviationClassD2Egress, InsightsDeviationClassD3Latency, InsightsDeviationClassD4ArgsReturns, InsightsDeviationClassD5Libraries, InsightsDeviationClassD6AttrRelations, InsightsDeviationClassD7DbAccess, InsightsDeviationClassD8PayloadSize:
+		return true
+	}
+	return false
+}
+
+func (e InsightsDeviationClass) String() string {
+	return string(e)
+}
+
+func (e *InsightsDeviationClass) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsDeviationClass(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsDeviationClass", str)
+	}
+	return nil
+}
+
+func (e InsightsDeviationClass) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsFindingKind string
+
+const (
+	InsightsFindingKindAnomaly   InsightsFindingKind = "anomaly"
+	InsightsFindingKindViolation InsightsFindingKind = "violation"
+)
+
+var AllInsightsFindingKind = []InsightsFindingKind{
+	InsightsFindingKindAnomaly,
+	InsightsFindingKindViolation,
+}
+
+func (e InsightsFindingKind) IsValid() bool {
+	switch e {
+	case InsightsFindingKindAnomaly, InsightsFindingKindViolation:
+		return true
+	}
+	return false
+}
+
+func (e InsightsFindingKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsFindingKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsFindingKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsFindingKind", str)
+	}
+	return nil
+}
+
+func (e InsightsFindingKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsLearningConditionType string
+
+const (
+	InsightsLearningConditionTypeMinObservations    InsightsLearningConditionType = "min_observations"
+	InsightsLearningConditionTypeMinDuration        InsightsLearningConditionType = "min_duration"
+	InsightsLearningConditionTypeStableObservations InsightsLearningConditionType = "stable_observations"
+	InsightsLearningConditionTypeStableDuration     InsightsLearningConditionType = "stable_duration"
+)
+
+var AllInsightsLearningConditionType = []InsightsLearningConditionType{
+	InsightsLearningConditionTypeMinObservations,
+	InsightsLearningConditionTypeMinDuration,
+	InsightsLearningConditionTypeStableObservations,
+	InsightsLearningConditionTypeStableDuration,
+}
+
+func (e InsightsLearningConditionType) IsValid() bool {
+	switch e {
+	case InsightsLearningConditionTypeMinObservations, InsightsLearningConditionTypeMinDuration, InsightsLearningConditionTypeStableObservations, InsightsLearningConditionTypeStableDuration:
+		return true
+	}
+	return false
+}
+
+func (e InsightsLearningConditionType) String() string {
+	return string(e)
+}
+
+func (e *InsightsLearningConditionType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsLearningConditionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsLearningConditionType", str)
+	}
+	return nil
+}
+
+func (e InsightsLearningConditionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsLearningMode string
+
+const (
+	InsightsLearningModeAll InsightsLearningMode = "all"
+	InsightsLearningModeAny InsightsLearningMode = "any"
+	InsightsLearningModeKOf InsightsLearningMode = "k_of"
+)
+
+var AllInsightsLearningMode = []InsightsLearningMode{
+	InsightsLearningModeAll,
+	InsightsLearningModeAny,
+	InsightsLearningModeKOf,
+}
+
+func (e InsightsLearningMode) IsValid() bool {
+	switch e {
+	case InsightsLearningModeAll, InsightsLearningModeAny, InsightsLearningModeKOf:
+		return true
+	}
+	return false
+}
+
+func (e InsightsLearningMode) String() string {
+	return string(e)
+}
+
+func (e *InsightsLearningMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsLearningMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsLearningMode", str)
+	}
+	return nil
+}
+
+func (e InsightsLearningMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsPolicyScope string
+
+const (
+	InsightsPolicyScopeGlobal      InsightsPolicyScope = "global"
+	InsightsPolicyScopeService     InsightsPolicyScope = "service"
+	InsightsPolicyScopeTransaction InsightsPolicyScope = "transaction"
+)
+
+var AllInsightsPolicyScope = []InsightsPolicyScope{
+	InsightsPolicyScopeGlobal,
+	InsightsPolicyScopeService,
+	InsightsPolicyScopeTransaction,
+}
+
+func (e InsightsPolicyScope) IsValid() bool {
+	switch e {
+	case InsightsPolicyScopeGlobal, InsightsPolicyScopeService, InsightsPolicyScopeTransaction:
+		return true
+	}
+	return false
+}
+
+func (e InsightsPolicyScope) String() string {
+	return string(e)
+}
+
+func (e *InsightsPolicyScope) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsPolicyScope(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsPolicyScope", str)
+	}
+	return nil
+}
+
+func (e InsightsPolicyScope) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsRuleMode string
+
+const (
+	InsightsRuleModeSuggest InsightsRuleMode = "suggest"
+	InsightsRuleModeEnforce InsightsRuleMode = "enforce"
+)
+
+var AllInsightsRuleMode = []InsightsRuleMode{
+	InsightsRuleModeSuggest,
+	InsightsRuleModeEnforce,
+}
+
+func (e InsightsRuleMode) IsValid() bool {
+	switch e {
+	case InsightsRuleModeSuggest, InsightsRuleModeEnforce:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRuleMode) String() string {
+	return string(e)
+}
+
+func (e *InsightsRuleMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRuleMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRuleMode", str)
+	}
+	return nil
+}
+
+func (e InsightsRuleMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsSampleReason string
+
+const (
+	InsightsSampleReasonExample         InsightsSampleReason = "example"
+	InsightsSampleReasonAnomalyEvidence InsightsSampleReason = "anomaly_evidence"
+	// Guardrail violation evidence sample (`guardrail:<rule>:<offending>` in storage).
+	InsightsSampleReasonGuardrailEvidence InsightsSampleReason = "guardrail_evidence"
+)
+
+var AllInsightsSampleReason = []InsightsSampleReason{
+	InsightsSampleReasonExample,
+	InsightsSampleReasonAnomalyEvidence,
+	InsightsSampleReasonGuardrailEvidence,
+}
+
+func (e InsightsSampleReason) IsValid() bool {
+	switch e {
+	case InsightsSampleReasonExample, InsightsSampleReasonAnomalyEvidence, InsightsSampleReasonGuardrailEvidence:
+		return true
+	}
+	return false
+}
+
+func (e InsightsSampleReason) String() string {
+	return string(e)
+}
+
+func (e *InsightsSampleReason) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsSampleReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsSampleReason", str)
+	}
+	return nil
+}
+
+func (e InsightsSampleReason) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsSeverity string
+
+const (
+	InsightsSeverityInfo     InsightsSeverity = "info"
+	InsightsSeverityLow      InsightsSeverity = "low"
+	InsightsSeverityMedium   InsightsSeverity = "medium"
+	InsightsSeverityHigh     InsightsSeverity = "high"
+	InsightsSeverityCritical InsightsSeverity = "critical"
+)
+
+var AllInsightsSeverity = []InsightsSeverity{
+	InsightsSeverityInfo,
+	InsightsSeverityLow,
+	InsightsSeverityMedium,
+	InsightsSeverityHigh,
+	InsightsSeverityCritical,
+}
+
+func (e InsightsSeverity) IsValid() bool {
+	switch e {
+	case InsightsSeverityInfo, InsightsSeverityLow, InsightsSeverityMedium, InsightsSeverityHigh, InsightsSeverityCritical:
+		return true
+	}
+	return false
+}
+
+func (e InsightsSeverity) String() string {
+	return string(e)
+}
+
+func (e *InsightsSeverity) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsSeverity(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsSeverity", str)
+	}
+	return nil
+}
+
+func (e InsightsSeverity) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsStorageDiskStatus string
+
+const (
+	InsightsStorageDiskStatusOk       InsightsStorageDiskStatus = "ok"
+	InsightsStorageDiskStatusWarning  InsightsStorageDiskStatus = "warning"
+	InsightsStorageDiskStatusCritical InsightsStorageDiskStatus = "critical"
+)
+
+var AllInsightsStorageDiskStatus = []InsightsStorageDiskStatus{
+	InsightsStorageDiskStatusOk,
+	InsightsStorageDiskStatusWarning,
+	InsightsStorageDiskStatusCritical,
+}
+
+func (e InsightsStorageDiskStatus) IsValid() bool {
+	switch e {
+	case InsightsStorageDiskStatusOk, InsightsStorageDiskStatusWarning, InsightsStorageDiskStatusCritical:
+		return true
+	}
+	return false
+}
+
+func (e InsightsStorageDiskStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsStorageDiskStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsStorageDiskStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsStorageDiskStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsStorageDiskStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsStorageHealthStatus string
+
+const (
+	InsightsStorageHealthStatusHealthy     InsightsStorageHealthStatus = "healthy"
+	InsightsStorageHealthStatusDegraded    InsightsStorageHealthStatus = "degraded"
+	InsightsStorageHealthStatusCritical    InsightsStorageHealthStatus = "critical"
+	InsightsStorageHealthStatusUnreachable InsightsStorageHealthStatus = "unreachable"
+)
+
+var AllInsightsStorageHealthStatus = []InsightsStorageHealthStatus{
+	InsightsStorageHealthStatusHealthy,
+	InsightsStorageHealthStatusDegraded,
+	InsightsStorageHealthStatusCritical,
+	InsightsStorageHealthStatusUnreachable,
+}
+
+func (e InsightsStorageHealthStatus) IsValid() bool {
+	switch e {
+	case InsightsStorageHealthStatusHealthy, InsightsStorageHealthStatusDegraded, InsightsStorageHealthStatusCritical, InsightsStorageHealthStatusUnreachable:
+		return true
+	}
+	return false
+}
+
+func (e InsightsStorageHealthStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsStorageHealthStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsStorageHealthStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsStorageHealthStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsStorageHealthStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsTransactionKind string
+
+const (
+	InsightsTransactionKindHTTP     InsightsTransactionKind = "HTTP"
+	InsightsTransactionKindGrpc     InsightsTransactionKind = "GRPC"
+	InsightsTransactionKindConsumer InsightsTransactionKind = "CONSUMER"
+	InsightsTransactionKindProducer InsightsTransactionKind = "PRODUCER"
+	InsightsTransactionKindCron     InsightsTransactionKind = "CRON"
+	InsightsTransactionKindInternal InsightsTransactionKind = "INTERNAL"
+)
+
+var AllInsightsTransactionKind = []InsightsTransactionKind{
+	InsightsTransactionKindHTTP,
+	InsightsTransactionKindGrpc,
+	InsightsTransactionKindConsumer,
+	InsightsTransactionKindProducer,
+	InsightsTransactionKindCron,
+	InsightsTransactionKindInternal,
+}
+
+func (e InsightsTransactionKind) IsValid() bool {
+	switch e {
+	case InsightsTransactionKindHTTP, InsightsTransactionKindGrpc, InsightsTransactionKindConsumer, InsightsTransactionKindProducer, InsightsTransactionKindCron, InsightsTransactionKindInternal:
+		return true
+	}
+	return false
+}
+
+func (e InsightsTransactionKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsTransactionKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsTransactionKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsTransactionKind", str)
+	}
+	return nil
+}
+
+func (e InsightsTransactionKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsViolationStatus string
+
+const (
+	InsightsViolationStatusOpen      InsightsViolationStatus = "open"
+	InsightsViolationStatusDismissed InsightsViolationStatus = "dismissed"
+	InsightsViolationStatusAccepted  InsightsViolationStatus = "accepted"
+)
+
+var AllInsightsViolationStatus = []InsightsViolationStatus{
+	InsightsViolationStatusOpen,
+	InsightsViolationStatusDismissed,
+	InsightsViolationStatusAccepted,
+}
+
+func (e InsightsViolationStatus) IsValid() bool {
+	switch e {
+	case InsightsViolationStatusOpen, InsightsViolationStatusDismissed, InsightsViolationStatusAccepted:
+		return true
+	}
+	return false
+}
+
+func (e InsightsViolationStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsViolationStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsViolationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsViolationStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsViolationStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

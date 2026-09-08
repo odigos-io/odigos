@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { getCrdIds, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
+import { cyExec, getCrdIds, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
 
 describe('Onboarding', () => {
   beforeEach(() => {
@@ -96,7 +96,7 @@ describe('Onboarding', () => {
 
   it(`Should have ${CRD_NAMES.INSTRUMENTATION_CONFIG} CRDs in the cluster`, () => {
     // Each workload in the namespace gets its own instrumentationconfig
-    cy.exec(`kubectl get ${CRD_NAMES.INSTRUMENTATION_CONFIG} -n ${NAMESPACES.APPS} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
+    cyExec(`kubectl get ${CRD_NAMES.INSTRUMENTATION_CONFIG} -n ${NAMESPACES.APPS} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
       const count = stdout.split('\n').filter((s) => !!s).length;
       expect(count).to.be.gte(SELECTED_ENTITIES.NAMESPACE_SOURCES.length);
     });
@@ -109,8 +109,8 @@ describe('Onboarding', () => {
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
   it('Should cleanup sources created during onboarding', () => {
-    cy.exec(`kubectl delete ${CRD_NAMES.SOURCE} --all -n ${NAMESPACES.APPS}`, { failOnNonZeroExit: false });
-    cy.exec(`kubectl delete ${CRD_NAMES.INSTRUMENTATION_CONFIG} --all -n ${NAMESPACES.APPS}`, { failOnNonZeroExit: false });
+    cyExec(`kubectl delete ${CRD_NAMES.SOURCE} --all -n ${NAMESPACES.APPS}`, { failOnNonZeroExit: false });
+    cyExec(`kubectl delete ${CRD_NAMES.INSTRUMENTATION_CONFIG} --all -n ${NAMESPACES.APPS}`, { failOnNonZeroExit: false });
 
     cy.wait(3000).then(() => {
       getCrdIds({ namespace: NAMESPACES.APPS, crdName: CRD_NAMES.SOURCE, expectedError: TEXTS.NO_RESOURCES(NAMESPACES.APPS), expectedLength: 0 });
@@ -118,7 +118,7 @@ describe('Onboarding', () => {
   });
 
   it('Should cleanup destinations created during onboarding', () => {
-    cy.exec(`kubectl delete ${CRD_NAMES.DESTINATION} --all -n ${NAMESPACES.ODIGOS}`, { failOnNonZeroExit: false });
+    cyExec(`kubectl delete ${CRD_NAMES.DESTINATION} --all -n ${NAMESPACES.ODIGOS}`, { failOnNonZeroExit: false });
 
     cy.wait(3000).then(() => {
       getCrdIds({ namespace: NAMESPACES.ODIGOS, crdName: CRD_NAMES.DESTINATION, expectedError: TEXTS.NO_RESOURCES(NAMESPACES.ODIGOS), expectedLength: 0 });

@@ -160,7 +160,7 @@ jobs:
             with:
               ref: ${{ inputs.tag }}
 
-          - uses: actions/setup-go@v6
+          - uses: actions/setup-go@v7
             with:
               go-version-file: cli/go.mod
 

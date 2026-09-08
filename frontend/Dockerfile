@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:20.19.0 AS deps
+FROM --platform=$BUILDPLATFORM node:24 AS deps
 WORKDIR /app
 COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
 COPY frontend/webapp/.yalc* ./.yalc/
@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
       yarn install --frozen-lockfile; \
     fi
 
-FROM --platform=$BUILDPLATFORM node:20.19.0 AS builder
+FROM --platform=$BUILDPLATFORM node:24 AS builder
 WORKDIR /webapp
 COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/webapp .

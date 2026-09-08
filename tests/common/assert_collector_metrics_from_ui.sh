@@ -152,10 +152,13 @@ if [[ "$services_node" == "null" || -z "$services_node" ]]; then
 fi
 
 
-# Assert total number of top-level services [user, frontend, coupon]
+# Assert total number of top-level services.
+# After CORE-1525 (widened virtual_node_peer_attributes), HTTP peers resolve by
+# server.address instead of collapsing to "unknown", so currency also appears as
+# a top-level source (user, frontend, membership, coupon, currency).
 service_count=$(echo "$services_node" | jq 'length')
-if [[ "$service_count" -ne 4 ]]; then
-    echo "❌ Error: Expected 4 top-level services, found $service_count."
+if [[ "$service_count" -ne 5 ]]; then
+    echo "❌ Error: Expected 5 top-level services, found $service_count."
     exit 1
 fi
 
@@ -172,8 +175,10 @@ if [[ -z "$frontend_count" || "$frontend_count" == "null" ]]; then
     exit 1
 fi
 
-if [[ "$frontend_count" -ne 5 ]]; then
-    echo "❌ Error: Expected 'frontend' or 'frontend-reported' to have 5 downstream services, found $frontend_count."
+# frontend → coupon, currency, geolocation, inventory, pricing, shipping
+# (shipping used to collapse into "unknown" before CORE-1525)
+if [[ "$frontend_count" -ne 6 ]]; then
+    echo "❌ Error: Expected 'frontend' or 'frontend-reported' to have 6 downstream services, found $frontend_count."
     exit 1
 fi
 

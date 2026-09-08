@@ -60,6 +60,12 @@ const (
 	ServiceGraphConnectorName = "servicegraph"
 	ServiceGraphEndpointPort  = 9090
 
+	// ServiceGraphInsightsExporterName is the OTLP gRPC exporter that ships the
+	// servicegraph connector's metrics to the odigos-insights service so it can
+	// build the blast-radius topology. Added as a second exporter on the existing
+	// metrics/servicegraph pipeline when insights is active.
+	ServiceGraphInsightsExporterName = "otlp_grpc/servicegraph-insights"
+
 	ServiceIOConnectorName                       = "serviceio"
 	TraceCorrelationsMetricsPipelineName         = "metrics/tracecorrelations"
 	TraceCorrelationsMetricsServiceName          = "odigos-correlations-metrics"

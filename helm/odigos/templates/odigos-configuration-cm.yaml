@@ -50,9 +50,6 @@ data:
     {{- if .Values.ui.uiRemoteUrl }}
     uiRemoteUrl: {{ .Values.ui.uiRemoteUrl }}
     {{- end }}
-    {{- if .Values.ui.centralBackendURL }}
-    centralBackendURL: {{ .Values.ui.centralBackendURL }}
-    {{- end }}
     {{- if or .Values.ui.oidcTenantUrl .Values.ui.oidcClientId .Values.ui.oidcClientSecret }}
     oidc:
       {{- if .Values.ui.oidcTenantUrl }}
@@ -64,6 +61,17 @@ data:
       {{- if .Values.ui.oidcClientSecret }}
       clientSecret: secretRef:odigos-oidc
       {{- end }}
+    {{- end }}
+    {{- /*
+    Gated on odigos.secretExists exactly like every templates/insights/* resource:
+    odigos-insights runs the enterprise-insights image, so without an on-prem token
+    none of its workloads are rendered. Advertising the feature here anyway would make
+    the gateway force traces on cluster-wide, buffer them in groupbytrace and export to
+    a Service that does not exist.
+    */}}
+    {{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+    insights:
+      enabled: {{ .Values.insights.enabled }}
     {{- end }}
     {{- if .Values.profiling.enabled }}
     {{- $pex := .Values.profiling.exporter | default dict }}

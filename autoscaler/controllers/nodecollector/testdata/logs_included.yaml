@@ -217,6 +217,8 @@ service:
             prometheus:
               host: 0.0.0.0
               port: 55682
+              without_type_suffix: false
+              without_units: false
     resource:
       attributes:
       - name: k8s.node.name

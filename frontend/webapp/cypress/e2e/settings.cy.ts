@@ -1,12 +1,12 @@
 import { CONFIG_MAPS, DATA_IDS, NAMESPACES, ROUTES, TEXTS } from '../constants';
-import { awaitToast, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
+import { awaitToast, cyExec, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
 
 const namespace = NAMESPACES.ODIGOS;
 const testClusterName = 'cypress-e2e-test';
 let originalClusterName = '';
 
 const getConfigMapYaml = (configMapName: string, callback: (yaml: string) => void) => {
-  cy.exec(`kubectl get configmap ${configMapName} -n ${namespace} -o jsonpath='{.data.config\\.yaml}'`).then(({ stdout }) => {
+  cyExec(`kubectl get configmap ${configMapName} -n ${namespace} -o jsonpath='{.data.config\\.yaml}'`).then(({ stdout }) => {
     callback(stdout);
   });
 };
@@ -127,7 +127,7 @@ describe('Settings CRUD', () => {
   // ── Setup ─────────────────────────────────────────────────────────────────
 
   it('Should capture initial state from the cluster', () => {
-    cy.exec(`kubectl delete configmap ${CONFIG_MAPS.LOCAL_UI_CONFIG} -n ${namespace}`, { failOnNonZeroExit: false });
+    cyExec(`kubectl delete configmap ${CONFIG_MAPS.LOCAL_UI_CONFIG} -n ${namespace}`, { failOnNonZeroExit: false });
     cy.wait(10000);
 
     getConfigMapYaml(CONFIG_MAPS.EFFECTIVE_CONFIG, (yaml) => {

@@ -372,25 +372,40 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 	return urlPath, odigosattributes.UrlTemplatizationResultStaticPath.Ptr()
 }
 
-func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string) {
-	currentName := span.Name()
-	if currentName != httpMethod {
-		// be conservative and only update the name for the use case "GET" => "GET /user/{id}"
-		// if the span name is set to something else, keep it and don't override it.
-		// we might want to revisit this in the future based on real world feedback.
-		return
-	}
-
+func updateHttpSpanName(span ptrace.Span, httpMethod string, originalPath string, templatedUrl string) {
 	// if the templated url is not available, we keep the span name as is.
 	if templatedUrl == "" {
 		return
 	}
 
-	// generate span name based on semantic conventions:
-	// HTTP span names SHOULD be {method} {target} if there is a (low-cardinality) target available.
-	// the "target" in our case is the templated url (which is either http.route or url.template attributes).
-	newSpanName := fmt.Sprintf("%s %s", httpMethod, templatedUrl)
-	span.SetName(newSpanName)
+	currentName := span.Name()
+	if currentName == httpMethod {
+		// generate span name based on semantic conventions:
+		// HTTP span names SHOULD be {method} {target} if there is a (low-cardinality) target available.
+		// the "target" in our case is the templated url (which is either http.route or url.template attributes).
+		span.SetName(fmt.Sprintf("%s %s", httpMethod, templatedUrl))
+		return
+	}
+
+	// if the original path appears in the span name, replace it with the templated path.
+	// skip "/" to avoid matching arbitrary slashes in unrelated names.
+	if originalPath == "" || originalPath == "/" || originalPath == templatedUrl {
+		return
+	}
+	idx := strings.Index(currentName, originalPath)
+	if idx < 0 {
+		return
+	}
+	end := idx + len(originalPath)
+	// only replace when the path is a complete match (end of name, or followed by a non-path char).
+	// avoids treating "/user/1234" as a match inside "/user/12345".
+	if end < len(currentName) {
+		next := currentName[end]
+		if next != ' ' && next != '?' && next != '#' {
+			return
+		}
+	}
+	span.SetName(currentName[:idx] + templatedUrl + currentName[end:])
 }
 
 func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod string, targetAttribute string, config workloadUrlTemplatizationConfig) {
@@ -404,7 +419,7 @@ func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod
 			return
 		}
 		if val.Str() == "" {
-			updateHttpSpanName(span, httpMethod, "/")
+			updateHttpSpanName(span, httpMethod, "", "/")
 		}
 		// avoid overriding the attribute if it is already set
 		return
@@ -415,10 +430,12 @@ func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod
 		return
 	}
 
+	originalPath, _ := resolveUrlPath(attr)
+
 	// set the templated url in the target attribute and update the span name if needed
 	attr.PutStr(targetAttribute, templatedUrl)
 	attr.PutStr(odigosattributes.UrlTemplatizationResultAttribute, string(*templatizationResult))
-	updateHttpSpanName(span, httpMethod, templatedUrl)
+	updateHttpSpanName(span, httpMethod, originalPath, templatedUrl)
 }
 
 // processSpanWithRules enhances an HTTP span with templated URL using the given rules.
