@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,7 +72,8 @@ func (m *stubManager) GetCache() cache.Cache                { return nil }
 func (m *stubManager) GetControllerOptions() config.Controller {
 	// controller names are registered process-wide, so skipping the check keeps
 	// tests independent of each other and of their execution order.
-	return config.Controller{SkipNameValidation: ptr.To(true)}
+	skipNameValidation := true
+	return config.Controller{SkipNameValidation: &skipNameValidation}
 }
 
 func (m *stubManager) Add(runnable manager.Runnable) error {
