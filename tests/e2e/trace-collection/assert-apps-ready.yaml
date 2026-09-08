@@ -11,7 +11,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -26,7 +25,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -41,7 +39,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -56,7 +53,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -71,7 +67,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -86,7 +81,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -101,7 +95,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -116,7 +109,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -131,7 +123,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -146,7 +137,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -161,7 +151,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -176,7 +165,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -191,7 +179,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -206,7 +193,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -221,7 +207,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -236,7 +221,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -251,7 +235,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -266,7 +249,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -281,7 +263,6 @@ status:
     - status: "True"
   (conditions[?type == 'Progressing']):
     - status: "True"
-  replicas: 1
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
