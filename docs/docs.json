@@ -882,16 +882,41 @@
     "primary": {
       "type": "github",
       "href": "https://github.com/odigos-io/odigos"
-    }
+    },
+    "links": [
+      {
+        "label": "Enterprise docs (API key required)",
+        "href": "https://enterprise.docs.odigos.io"
+      }
+    ]
   },
   "footer": {
     "socials": {
       "x": "https://twitter.com/odigosio",
       "github": "https://github.com/odigos-io/odigos",
       "slack": "https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email"
-    }
+    },
+    "links": [
+      {
+        "header": "Documentation",
+        "items": [
+          {
+            "label": "Public docs",
+            "href": "https://docs.odigos.io"
+          },
+          {
+            "label": "Protected Enterprise docs",
+            "href": "https://enterprise.docs.odigos.io"
+          }
+        ]
+      }
+    ]
   },
   "redirects": [
+    {
+      "source": "/cli/odigos_pro",
+      "destination": "/enterprise/cli/odigos_pro"
+    },
     {
       "source": "/overview",
       "destination": "/oss/overview"
@@ -1012,5 +1037,9 @@
       "source": "/central/remote-clusters",
       "destination": "/central/adding-connections/remote-clusters"
     }
-  ]
+  ],
+  "banner": {
+    "content": "Password-protected documentation is available at <a href=\"https://enterprise.docs.odigos.io\">enterprise.docs.odigos.io</a>.",
+    "dismissible": false
+  }
 }

@@ -22,3 +22,9 @@ mint dev
 Changes will be deployed to production automatically after pushing to the default branch.
 
 You can also preview changes using PRs, which generates a preview link of the docs.
+
+## Protected documentation site
+
+The password-protected site at [enterprise.docs.odigos.io](https://enterprise.docs.odigos.io) is maintained in `odigos-enterprise/docs`. Both repositories currently retain the complete documentation set. Page moves, removals, and edition-specific navigation changes will be handled in separate migration PRs. This public site keeps its existing pages and redirects.
+
+Run `node scripts/check-docs.mjs` to validate navigation, imports, and image references. The check permits both editions and does not impose page ownership.

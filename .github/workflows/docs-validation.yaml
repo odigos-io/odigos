@@ -1,0 +1,17 @@
+name: Documentation source validation
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-validation.yaml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: node docs/scripts/check-docs.mjs
