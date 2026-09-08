@@ -892,11 +892,19 @@ odiglet:
 
     # @schema
     # description: |-
-    #   capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.
+    #   Run the odiglet container, and its init container, as privileged containers.
+    # @schema
+    privileged: false
+
+    # @schema
+    # description: |-
+    #   capabilities to add to the odiglet container when running non-privileged - this will be ignored when running as privileged.
     #   SYS_ADMIN required when running in unprivileged mode if one of the following is true:
     #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
     #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
     #   IPC_LOCK required for mmap of perf buffers
+    #   KILL is added automatically on community installations, where the go instrumentation
+    #   checks that the target process is alive by signalling it.
     #   SYS_RESOURCE required only for kernels < 5.11, used for setting rlimit for BPF maps
     # @schema
     capabilities:
@@ -911,10 +919,14 @@ odiglet:
       - SETUID
       # required for jattach - dynamically instrumenting java processes.
       - SETGID
+      # required for OBI Traffic Control programs. Can be removed if OBI is not being used.
+      - NET_ADMIN
+      # required for OBI socket filter programs. Can be removed if OBI is not being used.
+      - NET_RAW
 
     # @schema
     # description: |-
-    #   apparmorProfile for the odiglet container when running as unPrivileged.
+    #   apparmorProfile for the odiglet container when running non-privileged.
     #   this will be ignored when running as privileged.
     # @schema
     appArmorProfile:
@@ -922,7 +934,7 @@ odiglet:
 
     # @schema
     # description: |-
-    #   SELinux options for the odiglet container when running as unPrivileged.
+    #   SELinux options for the odiglet container when running non-privileged.
     #   Ignored when running as privileged, since container runtimes drop the label in that mode.
     #   On SELinux enforcing nodes odiglet needs a privileged SELinux domain to inspect and
     #   instrument application processes. "spc_t" is that domain in the standard container policy
@@ -930,6 +942,7 @@ odiglet:
     #   Bottlerocket, which aliases it to its own "control_t".
     #   Adjust the type if your nodes use a custom SELinux policy, or set to null to leave the
     #   label to the container runtime.
+    #   This is an advanced option and should only be changed if you know what you are doing.
     # @schema
     seLinuxOptions:
       type: "spc_t"
@@ -959,16 +972,32 @@ odiglet:
 
     # @schema
     # description: |-
-    #   capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.
+    #   capabilities to add to the data-collection container when running non-privileged - this will be ignored when running as privileged.
     #   SYS_ADMIN required when running in unprivileged mode if one of the following is true:
     #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
     #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
+    #   SYSLOG and SYS_RESOURCE are added automatically when profiling.enabled is true.
     # @schema
     capabilities:
       - SYS_ADMIN
       - BPF
       - PERFMON
       - IPC_LOCK
+
+    # @schema
+    # description: |-
+    #   Run the data-collection container as a privileged container.
+    # @schema
+    privileged: false
+
+    # @schema
+    # description: |-
+    #   seLinuxOptions for the data-collection container when running non-privileged.
+    #   "spc_t" is the SELinux domain the container already gets when running privileged.
+    #   This is an advanced option and should only be changed if you know what you are doing.
+    # @schema
+    seLinuxOptions:
+      type: "spc_t"
 
   # @schema
   # description: Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -1003,6 +1032,39 @@ odiglet:
   # additionalProperties: true
   # @schema
   affinity: {}
+
+  # @schema
+  # description: |-
+  #   Schedule odiglet only on nodes that already have at least one instrumented
+  #   pod. Reduces the resources Odigos uses on the cluster, which is useful when
+  #   there are many nodes and few instrumented pods.
+  #   Requires instrumentor.mountMethod to be set to k8s-init-container.
+  #   Cons: the first time an instrumented pod starts on a node there is a period
+  #   without telemetry until odiglet starts on that node; assumes additional RBAC
+  #   permissions to patch and update node labels.
+  # @schema
+  scheduleOnlyOnInstrumentedNodes:
+    # @schema
+    # description: |-
+    #   When true, odiglet runs only on nodes that already have instrumented pods.
+    #   By default (false), odiglet runs on all nodes (subject to nodeSelector,
+    #   affinity, and tolerations).
+    #   When enabled together with a non-default nodeSelector, affinity, or
+    #   tolerations, those settings still apply: odiglet is scheduled only on
+    #   nodes that both carry the instrumented-pod label and satisfy the other
+    #   constraints (they are combined, not replaced).
+    # @schema
+    enabled: false
+
+    # @schema
+    # description: |-
+    #   How long to keep odiglet scheduled on a node after its last instrumented
+    #   pod leaves. Acts as a rate limit so odiglet is not started and stopped
+    #   too frequently. Go duration string (e.g. 5m, 1h). Set to 0s to stop
+    #   immediately. Default is 5m.
+    # type: string
+    # @schema
+    # nodeLabelRetention: "5m"
 
   # @schema
   # description: Priority class name. Set to empty string to disable.
@@ -1104,20 +1166,12 @@ odiglet:
 
   # @schema
   # description: |-
-  #   run the odiglet pod without privileged containers.
-  #   when set to true, odiglet will use the set of capabilities required for eBPF operations.
-  #   by default, odiglet runs as a privileged container.
-  # @schema
-  unPrivileged: false
-
-  # @schema
-  # description: |-
   #   runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.
   #   when true, each container uses the non-root USER declared in its image (e.g. 65532).
   #   by default (false), all containers are forced to run as UID/GID 0.
   #
   #   This setting only changes the UID the containers run as. It does not change the Linux capabilities
-  #   granted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).
+  #   granted to odiglet (those are controlled separately via the per-container privileged and capabilities values).
   #   Operations relying on root's implicit filesystem access can fail as non-root:
   #   e.g. writing agent files to root-owned host paths (/var/odigos).
   # @schema

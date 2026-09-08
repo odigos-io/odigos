@@ -136,7 +136,7 @@ spec:
             timeout: 2m
             content: |
               # Upgrade existing installation to CSI driver mount method
-              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-csi-driver
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-csi-driver --set odiglet.odiglet.privileged=true
 
     - name: '[3 - CSI Driver Test] Assert config changed successfully'
       try:

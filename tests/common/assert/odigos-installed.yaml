@@ -78,10 +78,10 @@ spec:
     - name: odiglet
       resources: {}
       securityContext:
-        privileged: true
+        privileged: false
     - name: data-collection
       securityContext:
-        privileged: true
+        privileged: false
       env:
         - name: NODE_NAME
           valueFrom:

@@ -253,7 +253,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		podswebhook.MountPodVolumeToHostPath(pod)
 	}
 
-	if odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
+	if mountMethod == common.K8sInitContainerMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolumeToEmptyDir(pod)
 		if len(dirsToCopy) > 0 {
