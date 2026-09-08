@@ -914,6 +914,10 @@
   },
   "redirects": [
     {
+      "source": "/cli/odigos_pro",
+      "destination": "/enterprise/cli/odigos_pro"
+    },
+    {
       "source": "/overview",
       "destination": "/oss/overview"
     },
