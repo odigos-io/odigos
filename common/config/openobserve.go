@@ -35,7 +35,7 @@ func (j *OpenObserve) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authorization": "Basic ${OPEN_OBSERVE_API_KEY}",
+			"Authorization": "Basic " + SecretEnvPlaceholder("OPEN_OBSERVE_API_KEY", dest),
 			"stream-name":   streamName,
 		},
 	}
