@@ -1,9 +1,6 @@
 package config
 
-import (
-	"strings"
-	"unicode"
-)
+import "strings"
 
 // DestSecretEnvPrefix returns the envFrom prefix used when mounting a Destination's
 // Secret into the gateway. Secret keys stay as field names (e.g. DATADOG_API_KEY);
@@ -13,7 +10,7 @@ import (
 // Dynamic destinations keep unprefixed envFrom so user-authored ${ENV} names in
 // raw exporter YAML continue to work.
 func DestSecretEnvPrefix(destID string) string {
-	return "ODIGOS_DEST_" + SanitizeEnvIdent(destID) + "_"
+	return "ODIGOS_DEST_" + SanitizeDestinationID(destID) + "_"
 }
 
 // SecretEnvVarName is the process environment variable name for a secret field
@@ -23,25 +20,23 @@ func SecretEnvVarName(fieldName, destID string) string {
 }
 
 // SecretEnvPlaceholder returns a collector config placeholder that expands from
-// the destination-scoped env var, e.g. ${ODIGOS_DEST_odigos_io_dest_otlp_abc_DATADOG_API_KEY}.
+// the destination-scoped env var, e.g. ${ODIGOS_DEST_odigos-io-dest-otlp-abc_DATADOG_API_KEY}.
 func SecretEnvPlaceholder(fieldName string, dest ExporterConfigurer) string {
 	return "${" + SecretEnvVarName(fieldName, dest.GetID()) + "}"
 }
 
-// SanitizeEnvIdent maps an arbitrary destination ID to a Kubernetes C_IDENTIFIER
-// fragment (letters, digits, underscore).
-func SanitizeEnvIdent(s string) string {
-	if s == "" {
+// SanitizeDestinationID maps a Destination metadata.name to a fragment safe for
+// envFrom.prefix and other k8s identifiers. Destination names use dots
+// (odigos.io.dest.<type>-<suffix>); we replace dots with dashes, matching the
+// transform already used when mounting destination secrets (e.g. ClickHouse CA
+// volumes in autoscaler/k8sconfig/clickhouse.go).
+//
+// envFrom.prefix must be a C_IDENTIFIER on all supported clusters regardless of
+// KEP-4369 (relaxed env var names); this keeps older clusters working without
+// relying on secret-key normalization from that KEP.
+func SanitizeDestinationID(destID string) string {
+	if destID == "" {
 		return "unknown"
 	}
-	var b strings.Builder
-	b.Grow(len(s))
-	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' {
-			b.WriteRune(r)
-		} else {
-			b.WriteByte('_')
-		}
-	}
-	return b.String()
+	return strings.ReplaceAll(destID, ".", "-")
 }

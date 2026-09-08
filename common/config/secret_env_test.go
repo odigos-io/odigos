@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSanitizeEnvIdent(t *testing.T) {
-	assert.Equal(t, "odigos_io_dest_otlphttp_abc123", SanitizeEnvIdent("odigos.io.dest.otlphttp-abc123"))
-	assert.Equal(t, "simple", SanitizeEnvIdent("simple"))
-	assert.Equal(t, "unknown", SanitizeEnvIdent(""))
+func TestSanitizeDestinationID(t *testing.T) {
+	assert.Equal(t, "odigos-io-dest-otlphttp-abc123", SanitizeDestinationID("odigos.io.dest.otlphttp-abc123"))
+	assert.Equal(t, "simple", SanitizeDestinationID("simple"))
+	assert.Equal(t, "unknown", SanitizeDestinationID(""))
 }
 
 func TestDestSecretEnvPrefix(t *testing.T) {
-	assert.Equal(t, "ODIGOS_DEST_odigos_io_dest_otlp_x_", DestSecretEnvPrefix("odigos.io.dest.otlp-x"))
+	assert.Equal(t, "ODIGOS_DEST_odigos-io-dest-otlp-x_", DestSecretEnvPrefix("odigos.io.dest.otlp-x"))
 }
 
 func TestSecretEnvPlaceholder_DistinctPerDestination(t *testing.T) {
@@ -24,8 +24,8 @@ func TestSecretEnvPlaceholder_DistinctPerDestination(t *testing.T) {
 	pa := SecretEnvPlaceholder("OTLP_HTTP_CLIENT_KEY_PEM", a)
 	pb := SecretEnvPlaceholder("OTLP_HTTP_CLIENT_KEY_PEM", b)
 
-	assert.Equal(t, "${ODIGOS_DEST_odigos_io_dest_otlphttp_aaaa_OTLP_HTTP_CLIENT_KEY_PEM}", pa)
-	assert.Equal(t, "${ODIGOS_DEST_odigos_io_dest_otlphttp_bbbb_OTLP_HTTP_CLIENT_KEY_PEM}", pb)
+	assert.Equal(t, "${ODIGOS_DEST_odigos-io-dest-otlphttp-aaaa_OTLP_HTTP_CLIENT_KEY_PEM}", pa)
+	assert.Equal(t, "${ODIGOS_DEST_odigos-io-dest-otlphttp-bbbb_OTLP_HTTP_CLIENT_KEY_PEM}", pb)
 	assert.NotEqual(t, pa, pb)
 }
 
