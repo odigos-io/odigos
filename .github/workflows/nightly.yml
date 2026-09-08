@@ -39,6 +39,17 @@ jobs:
   build-images:
     uses: ./.github/workflows/build-dev-images.yml
 
+  kubernetes-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        kubernetes-version: ["1.21.12", "1.37"]
+    uses: ./.github/workflows/e2e.yaml
+    with:
+      kubernetes-version: ${{ matrix.kubernetes-version }}
+    secrets:
+      slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+
   chaos-tests:
     runs-on: depot-ubuntu-24.04-8
     needs: build-images
@@ -96,4 +107,3 @@ jobs:
           suite_name: cross-cloud-tests
           suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}, "platform": "${{ matrix.platform }}"}'
           slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
-
