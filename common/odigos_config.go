@@ -667,6 +667,8 @@ type OdigosConfiguration struct {
 	ClickhouseJsonTypeEnabledProperty *bool                           `json:"clickhouseJsonTypeEnabled,omitempty"`
 	CheckDeviceHealthBeforeInjection  *bool                           `json:"checkDeviceHealthBeforeInjection,omitempty"`
 	ResourceSizePreset                string                          `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+	// Currently not exposed in the UI or helm chart since we use wasp automatically when required
+	// based on probing the underlying kernel in odiglet.
 	WaspEnabled                       *bool                           `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
 	MetricsSources                    *MetricsSourceConfiguration     `json:"metricsSources,omitempty" yaml:"metricsSources"`
 	TraceCorrelations                 *TraceCorrelationsConfiguration `json:"traceCorrelations,omitempty" yaml:"traceCorrelations"`

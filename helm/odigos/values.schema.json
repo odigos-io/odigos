@@ -2891,19 +2891,6 @@
       },
       "required": [],
       "title": "userInstrumentationEnvs"
-    },
-    "wasp": {
-      "additionalProperties": false,
-      "description": "controls the wasp settings",
-      "properties": {
-        "enabled": {
-          "default": false,
-          "title": "enabled",
-          "type": "boolean"
-        }
-      },
-      "required": [],
-      "title": "wasp"
     }
   },
   "required": [],

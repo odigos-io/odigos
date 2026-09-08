@@ -12269,7 +12269,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLocalUiConfigSpanSamplingAttributesInput,
 		ec.unmarshalInputLocalUiConfigTraceCorrelationsInput,
 		ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput,
-		ec.unmarshalInputLocalUiConfigWaspInput,
 		ec.unmarshalInputMessagingPayloadCollectionInput,
 		ec.unmarshalInputNoisyOperationRuleInput,
 		ec.unmarshalInputPatchSourceRequestInput,
@@ -84471,7 +84470,7 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "wasp", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "traceCorrelations"}
+	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "traceCorrelations"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -84527,13 +84526,6 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 				return it, err
 			}
 			it.AllowConcurrentAgents = data
-		case "wasp":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wasp"))
-			data, err := ec.unmarshalOLocalUiConfigWaspInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigWaspInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Wasp = data
 		case "rollout":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rollout"))
 			data, err := ec.unmarshalOLocalUiConfigRolloutInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigRolloutInput(ctx, v)
@@ -84822,33 +84814,6 @@ func (ec *executionContext) unmarshalInputLocalUiConfigTraceCorrelationsServiceI
 				return it, err
 			}
 			it.MetricsFlushInterval = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputLocalUiConfigWaspInput(ctx context.Context, obj any) (model.LocalUIConfigWaspInput, error) {
-	var it model.LocalUIConfigWaspInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"enabled"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "enabled":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Enabled = data
 		}
 	}
 
@@ -111821,14 +111786,6 @@ func (ec *executionContext) unmarshalOLocalUiConfigTraceCorrelationsServiceIOInp
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOLocalUiConfigWaspInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigWaspInput(ctx context.Context, v any) (*model.LocalUIConfigWaspInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputLocalUiConfigWaspInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
