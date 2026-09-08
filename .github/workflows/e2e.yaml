@@ -4,12 +4,56 @@ on:
   merge_group:
   pull_request:
     branches: [main, "releases/**"]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_call:
+    inputs:
+      profile:
+        description: "Kubernetes version selection profile"
+        type: string
+        default: pr
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
+  prepare-additional-kubernetes-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
+      has_versions: ${{ steps.versions.outputs.has_versions }}
+    steps:
+      - name: Select Kubernetes versions
+        id: versions
+        shell: bash
+        env:
+          PROFILE: ${{ inputs.profile }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          PR_VERSION="1.32"
+          LOWEST_VERSION="1.21.12"
+
+          if [[ "$PROFILE" == "nightly" ]]; then
+            VERSIONS=$(jq -cn \
+              --arg lowest "$LOWEST_VERSION" \
+              '[$lowest]')
+          else
+            VERSIONS=$(jq -cn \
+              --arg pr "$PR_VERSION" \
+              --argjson labels "${PR_LABELS:-null}" \
+              '[
+                ($labels // [])[]
+                | select(startswith("test-k8s/"))
+                | sub("^test-k8s/"; "")
+                | select(. != $pr)
+              ] | unique')
+          fi
+
+          HAS_VERSIONS=$(jq -r 'length > 0' <<< "$VERSIONS")
+          echo "Selected additional Kubernetes versions: $VERSIONS"
+          echo "versions=$VERSIONS" >> "$GITHUB_OUTPUT"
+          echo "has_versions=$HAS_VERSIONS" >> "$GITHUB_OUTPUT"
+
   build-cli:
     runs-on: depot-ubuntu-24.04
     steps:
@@ -96,29 +140,29 @@ jobs:
       # control-plane load better than serializing the matrix (which stretched CI
       # wall-clock). Reintroduce a cap only if signal:killed / OOM returns.
       matrix:
-        kube-version: ["1.21.12", "1.22", "1.23", "1.24", "1.25", "1.26", "1.27", "1.28", "1.29", "1.30", "1.31", "1.32", "1.33", "1.34", "1.35", "1.36", "1.37"]
+        kube-version: ["1.32"]
         test-scenario:
-          # - "ui"
+          - "ui"
           - "helm-chart"
-          # - "cli-upgrade"
-          # - "helm-upgrade"
-          # - "runtime-detection"
-          # - "instrumentation-lifecycle"
-          # - "instrumentation-rollback"
-          # - "instrumentation-rollback-stability-window"
-          # - "environment-variables"
-          # - "trace-collection"
-          # - "log-collection"
-          # - "source"
-          # - "webhooks"
-          # - "env-injection"
-          # - "data-streams"
-          # - "mount-method"
-          # - "argo-rollouts"
-          # - "head-sampling-http-nodejs"
-          # - "head-sampling-http-python"
-          # - "head-sampling-http-java"
-          # - "tail-sampling-nodejs"
+          - "cli-upgrade"
+          - "helm-upgrade"
+          - "runtime-detection"
+          - "instrumentation-lifecycle"
+          - "instrumentation-rollback"
+          - "instrumentation-rollback-stability-window"
+          - "environment-variables"
+          - "trace-collection"
+          - "log-collection"
+          - "source"
+          - "webhooks"
+          - "env-injection"
+          - "data-streams"
+          - "mount-method"
+          - "argo-rollouts"
+          - "head-sampling-http-nodejs"
+          - "head-sampling-http-python"
+          - "head-sampling-http-java"
+          - "tail-sampling-nodejs"
         include:
           - kube-version: "1.32"
             test-scenario: "karpenter-mount-methods"
@@ -145,6 +189,47 @@ jobs:
 
       - name: Run Kubernetes test
         if: steps.should-run.outputs.skip != 'true'
+        uses: ./.github/actions/kubernetes-tests
+        with:
+          kubernetes-version: ${{ matrix.kube-version }}
+          test-scenario: ${{ matrix.test-scenario }}
+
+  additional-kubernetes-tests:
+    needs: [prepare-additional-kubernetes-versions, build-odigos-images, build-cli]
+    if: needs.prepare-additional-kubernetes-versions.outputs.has_versions == 'true'
+    runs-on: depot-ubuntu-24.04-8
+    strategy:
+      fail-fast: false
+      matrix:
+        kube-version: ${{ fromJSON(needs.prepare-additional-kubernetes-versions.outputs.versions) }}
+        test-scenario:
+          - "ui"
+          - "helm-chart"
+          - "cli-upgrade"
+          - "helm-upgrade"
+          - "runtime-detection"
+          - "instrumentation-lifecycle"
+          - "instrumentation-rollback"
+          - "instrumentation-rollback-stability-window"
+          - "environment-variables"
+          - "trace-collection"
+          - "log-collection"
+          - "source"
+          - "webhooks"
+          - "env-injection"
+          - "data-streams"
+          - "mount-method"
+          - "argo-rollouts"
+          - "head-sampling-http-nodejs"
+          - "head-sampling-http-python"
+          - "head-sampling-http-java"
+          - "tail-sampling-nodejs"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Run Kubernetes test
         uses: ./.github/actions/kubernetes-tests
         with:
           kubernetes-version: ${{ matrix.kube-version }}
