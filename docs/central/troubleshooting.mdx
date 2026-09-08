@@ -1,0 +1,83 @@
+---
+title: 'Troubleshooting'
+description: 'Diagnose Odigos Central startup, Keycloak, SSO, and remote-cluster connection issues.'
+sidebarTitle: 'Troubleshooting'
+---
+
+Use this page when Central installs, but pods stay NotReady, SSO fails, or remote clusters cannot connect. For production URL and ingress routing, see [Authentication](/central/authentication). For remote cluster Helm values, see [Connecting Remote Clusters](/central/adding-connections/remote-clusters).
+
+## Waiting for Keycloak to become ready
+
+`central-backend` logs `Waiting for Keycloak to become ready` while it is still initializing. During that time:
+
+- **Liveness** (`/healthz`) returns 200 as soon as the process binds port 8081, so Kubernetes does not restart the pod.
+- **Readiness** (`/readyz`) stays 503 until Keycloak and Redis init finish. Treat `/readyz` as the signal that Central is usable, not `/healthz`.
+
+The backend waits until both succeed:
+
+1. `GET http://keycloak:8080/realms/master/.well-known/openid-configuration`
+2. A password grant against the Keycloak **master** admin (`admin-cli`) using the credentials in the `keycloak-admin-credentials` secret
+
+Keycloak itself is only Ready when `/health/live` and `/health/ready` succeed. Those endpoints exist because Odigos ships a **custom Keycloak image** with health checks enabled at **build time**. Use `auth.image` from the [`odigos-central` Helm values file](https://github.com/odigos-io/odigos/blob/main/helm/odigos-central/values.yaml) as the source of truth. Replacing it with the official Keycloak image while keeping `start --optimized` and the chart probes typically leaves `central-backend` stuck in this wait. See [Installation](/central/installation#keycloak-image).
+
+```bash
+kubectl logs deploy/central-backend -n odigos-central --tail=50
+kubectl logs deploy/keycloak -n odigos-central --tail=50
+kubectl get pods -n odigos-central
+```
+
+## Keycloak persistence and resets
+
+Keycloak persistence is **disabled by default** (`auth.persistence.enabled: false`). Without a PVC, restarting or recreating the Keycloak pod wipes realm data, identity-provider config, and users stored in Keycloak.
+
+After you reset Keycloak **without** persistence:
+
+1. Confirm Keycloak becomes Ready.
+2. Restart `central-backend` so it can recreate Keycloak clients, roles, and broker configuration:
+
+```bash
+kubectl rollout restart deployment/central-backend -n odigos-central
+```
+
+The backend watches Keycloak health and can re-apply some state automatically, but if login still fails after a Keycloak reset, restart `central-backend`.
+
+When persistence is enabled, a bad identity-provider configuration written into the Keycloak database can leave **all pods Ready** while OAuth still fails. Logs may not mention the PVC. Recover by deleting the Keycloak PVC (after backing up if needed), recreating Keycloak, and restarting `central-backend`.
+
+Helm `auth.adminPassword` is used only on **first install** when the `keycloak-admin-credentials` secret does not exist. On upgrade, the chart **reuses the existing secret** and ignores the value in Helm. Read the live password with:
+
+```bash
+kubectl get secret keycloak-admin-credentials -n odigos-central \
+  -o jsonpath='{.data.admin-password}' | base64 -d; echo
+```
+
+If you recreate the secret without wiping Keycloak data, the password in the secret and the password Keycloak stored will not match, and the backend cannot obtain an admin token.
+
+## Admin credentials vs Central UI login
+
+`auth.adminUsername` and `auth.adminPassword` configure the **Keycloak master admin**. `central-backend` uses that account to manage Keycloak. They are **not** Central UI users.
+
+Sign in to the Central UI with:
+
+- An SSO provider configured in the UI (the first successful SSO user becomes an admin), or
+- A user created later in Central Access Management
+
+Using the Helm admin username and password on the Central UI sign-in form returns **invalid credentials**.
+
+## Azure OAuth
+
+Keycloak (inside the cluster) must reach Microsoft Entra ID. Allow egress at least to:
+
+- `login.microsoftonline.com` (authorization, token, JWKS, discovery)
+- `graph.microsoft.com` (OIDC userinfo)
+
+Also allow the exact discovery, token, and authorization URLs configured for your tenant.
+
+Azure Tenant ID is required for the Azure OIDC provider. See [Authentication](/central/authentication) and [Role Mappings](/central/role-mappings).
+
+Keycloak often shows only `couldNotSendAuthenticationRequestMessage` for network, DNS, TLS, and permission failures. That string does not distinguish a blocked domain from insufficient Entra app permissions. Check Keycloak logs and your egress policy.
+
+## Remote cluster cannot connect (WebSocket)
+
+Remote proxies, VM agents, and cloud connectors connect to `central-backend` at **`/ws/proxy`** (not `/wss/proxy`). `wss` is the TLS scheme when the backend URL host ends with `:443`.
+
+If your ingress sends `/` to `central-ui`, you must add an explicit `/ws/proxy` rule to `central-backend` and enable WebSocket upgrades. See [Authentication](/central/authentication#production-ingress-configuration).

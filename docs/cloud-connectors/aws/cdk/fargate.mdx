@@ -1,0 +1,274 @@
+---
+title: 'CDK: Fargate'
+description: 'Instrument ECS Fargate services from your CDK app with OdigosFargateInstrumentation — every option, and the edge cases to know about.'
+sidebarTitle: 'Fargate'
+---
+
+`OdigosFargateInstrumentation` instruments containers running in ECS Fargate services defined in your CDK
+app.
+
+<Note>
+  Read [Odigos AWS CDK](/cloud-connectors/aws/cdk/overview) first — it covers
+  installing the package and how Odigos recognizes an instrumented workload — then
+  [Destinations](/cloud-connectors/aws/cdk/destinations) for the shared `destination`
+  options. This page covers only what's specific to Fargate.
+</Note>
+
+## Basic usage
+
+```typescript
+import { OdigosFargateInstrumentation, OdigosFargateLanguage } from '@odigos/aws-cdk';
+
+const odigos = new OdigosFargateInstrumentation(this, 'Odigos', {
+  destination: { httpEndpoint: 'https://otlp.example.com:4318' },
+});
+
+odigos.instrument({
+  container: apiContainer,               // the container to instrument
+  language: OdigosFargateLanguage.JAVA,  // stated, not detected — see below
+  service: apiService,                   // used to read the service name
+});
+```
+
+You create the construct once, then call `instrument()` for each container you want instrumented. There's
+no automatic sweep of a whole stack — you name each container explicitly.
+
+## How it works
+
+The construct sets up four things that work together:
+
+1. **A shared scratch volume** on the task definition, named `odigos-agent`.
+2. **An extra container**, also named `odigos-agent`, that copies the right language agent into that volume
+   and then exits. It's marked non-essential, because finishing and exiting is its whole job — it isn't
+   part of your running application.
+3. **A read-only mount** of that volume at `/var/odigos` in your application container, which is set to
+   wait until the copy step has finished successfully before it starts.
+4. **Environment variables** on your application container that load the agent and configure where
+   telemetry goes.
+
+<Warning>
+  All four are one mechanism, which is why they're one construct call rather than
+  four options. A container can have a perfectly correct set of environment
+  variables while the copy step is missing — the application then starts, finds
+  nothing at `/var/odigos`, and sends no telemetry while still *reporting* as
+  instrumented.
+</Warning>
+
+## Where telemetry goes
+
+**Straight from your application to your destination.** There's no intermediate collector inside the task,
+so your application's own OpenTelemetry exporter is what makes the network call — which means a slow or
+unreachable destination is felt by the application itself.
+
+Two practical consequences: the destination endpoint has to be reachable from the task's network, and it's
+worth pointing it somewhere with headroom, since your application is doing the sending.
+
+## Stating the language
+
+<ParamField path="language" type="OdigosFargateLanguage" required>
+  One of `JAVA`, `PYTHON`, `NODEJS`, `DOTNET`, `PHP`, `RUBY`.
+</ParamField>
+
+| Language | Loaded through | `runtimeVersion` prop |
+| --- | --- | --- |
+| `JAVA` — also Kotlin, Scala | `JAVA_TOOL_OPTIONS` | Ignored — one agent covers the supported JVM range |
+| `PYTHON` | `PYTHONPATH` | Ignored — one agent covers the supported Python range |
+| `NODEJS` | `NODE_OPTIONS` | Ignored — one agent covers the supported Node.js range |
+| `DOTNET` | `CORECLR_*` / `DOTNET_*` | Ignored — one agent covers the supported .NET range |
+| `PHP` | `PHP_INI_SCAN_DIR` | **Required** — picks the per-version agent folder |
+| `RUBY` | `RUBYOPT` | **Required** — picks the per-version agent folder |
+
+There's no auto-detection here, and that's a platform constraint rather than a preference. A container
+declares only an *image* — nothing in the task definition says which language runs inside it. Working that
+out would mean downloading and inspecting the image, which is network I/O a build can't do. So you state it.
+
+<Warning>
+  A wrong language here fails quietly. Staging the Java agent into a Python
+  container leaves it uninstrumented, and setting `JAVA_TOOL_OPTIONS` on an image
+  with no JVM is simply ignored — nothing errors loudly enough to notice.
+</Warning>
+
+<ParamField path="runtimeVersion" type="string">
+  Your application's language version as `major.minor` — for example `"8.3"` or `"3.3"`. Required for PHP
+  and Ruby (their agents are laid out per version in the bundle). Ignored for Java, Python, Node.js, and
+  .NET — those ship one agent that covers a range of runtime versions, so you don't declare which one.
+
+  <Warning>
+    PHP and Ruby agents are stored per version inside the bundle, and this value
+    selects the folder the loader points at. Anything other than an exact
+    `major.minor` names a folder that doesn't exist, and the container starts with
+    no agent at all.
+  </Warning>
+</ParamField>
+
+<Info>
+  **Go can't be instrumented on Fargate at all** — not an omission, a platform
+  limit. Go's only zero-code instrumentation is eBPF-based, and Fargate doesn't
+  allow the privileged access eBPF needs. Use the OpenTelemetry Go SDK in your code
+  instead.
+</Info>
+
+## Naming your service
+
+`OTEL_SERVICE_NAME` here **must be the ECS service's name** — not the task definition family, and not the
+container name. Odigos compares it against the workload's name, and a mismatch is reported as drift rather
+than treated as a naming preference. There's no default, so you set one of these two:
+
+<ParamField path="service" type="ecs.BaseService">
+  The ECS service running this task definition. Only its name is read.
+</ParamField>
+
+<ParamField path="serviceName" type="string">
+  The name directly — use this when the service is defined somewhere else (another stack, Terraform, or the
+  console).
+</ParamField>
+
+<Warning>
+  The service's name has to be one your stack **sets explicitly**. A name
+  CloudFormation generates is a reference to the service, and a task definition
+  referring back to the service that runs it is a circular dependency
+  CloudFormation rejects. A generated name stops the build and points you at
+  `serviceName`.
+</Warning>
+
+## Variables your container already sets
+
+For Java, Node.js, and Python, the construct reads whatever your container already has in its loader
+variable and **adds to it** — joined by that language's separator (a space for Java and Node.js, a colon
+for Python):
+
+```typescript
+taskDefinition.addContainer('App', {
+  image,
+  environment: { JAVA_TOOL_OPTIONS: '-Xmx512m' },
+});
+// result: -Xmx512m -javaagent:/var/odigos/java/javaagent.jar
+```
+
+<ParamField path="existingLoaderValue" type="string">
+  Only needed as an override — pass this when the existing value isn't visible to CDK at build time,
+  because it comes from an `environmentFiles` entry, the image's own `ENV`, or `secrets`.
+</ParamField>
+
+<Warning>
+  **PHP and Ruby work differently.** Odigos compares `PHP_INI_SCAN_DIR` and
+  `RUBYOPT` exactly, so they're set outright rather than added to. If your container
+  already sets one, you get a build warning — fold whatever your application needs
+  into the value Odigos sets.
+</Warning>
+
+## Transport
+
+Fargate accepts **both** endpoint formats at once, and often should get both:
+
+```typescript
+destination: {
+  endpoint: 'otlp.example.com:4317',              // OTLP/gRPC
+  httpEndpoint: 'https://otlp.example.com:4318',  // OTLP/HTTP
+}
+```
+
+Every agent in the bundle prefers HTTP. Java, Python, Node.js, and .NET will fall back to gRPC if that's all
+you provide. Giving both lets each language use what it prefers.
+
+<Warning>
+  **PHP and Ruby can only speak HTTP** —
+  Instrumenting a PHP or Ruby container against a gRPC-only destination stops the
+  build, rather than deploying a task that silently sends nothing.
+</Warning>
+
+## Instrumenting several containers
+
+A task definition holding more than one application — in more than one language — is a normal shape. Call
+`instrument()` once per container, or use `instrumentAll()`:
+
+```typescript
+odigos.instrumentAll([
+  { container: apiContainer,    language: OdigosFargateLanguage.JAVA,   service: svc },
+  { container: workerContainer, language: OdigosFargateLanguage.PYTHON, service: svc },
+]);
+```
+
+There's still only **one** copy-step container for the whole task definition — it just copies every language
+that's needed.
+
+<Info>
+  AWS allows at most 10 containers per task definition, and the copy step needs one
+  of them. A task definition already at the limit stops the build, rather than
+  failing later during deployment.
+</Info>
+
+## The agents image
+
+The copy step pulls its files from an image. Leave this unset unless your tasks cannot reach the public
+registry — the construct defaults to `registry.odigos.io/odigos-fargate-agents` at the tag this package
+release ships (multi-arch: Intel and ARM/Graviton).
+
+<Warning>
+  **This image is pulled by your task's execution role every time a task starts.** A
+  task in a private subnet with no NAT gateway and no registry endpoint can't reach
+  the default public registry, and the pull failure will block your application
+  container from starting.
+</Warning>
+
+<ParamField path="agentsImage" type="string">
+  Only set this if tasks cannot pull from `registry.odigos.io` (or your org requires images to live in a
+  registry you own). Point the copy step at your own mirror:
+
+  ```typescript
+  agentsImage: '111122223333.dkr.ecr.eu-west-1.amazonaws.com/odigos-fargate-agents:v0.0.15',
+  ```
+
+  See [Preload the Fargate agents image](/cloud-connectors/aws/workloads/fargate/preload) for how to build
+  that mirror.
+</ParamField>
+
+The image is a normal container image whose filesystem holds the language agents (under
+`/instrumentations/<language>/…`). The construct sets environment variables that point at those exact
+paths after the copy step stages them into `/var/odigos`. A private-registry override must therefore be a
+**byte-for-byte mirror** of that image — retag and push the published `odigos-fargate-agents` image; do not
+rebuild or rearrange it. See [Preload the Fargate agents image](/cloud-connectors/aws/workloads/fargate/preload)
+for the mirror steps (and [Amazon ECR private registries](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+if you need the AWS side of hosting it).
+
+The agents themselves are Linux and glibc only: a Windows task definition stops the build, and Alpine/musl
+application images have no .NET profiler available.
+
+Whichever image you use is recorded in the `ODIGOS_IAC` marker, and Odigos holds the task to *that* image
+rather than to whatever the connector's own build happens to use. Two useful consequences:
+
+- Your mirror is judged against itself, not flagged for differing from the default.
+- Upgrading this package ahead of the connector isn't drift either — the service stays conformant until you
+  redeploy.
+
+<Note>
+  What *is* reported: two containers in the same task definition recording different
+  agents images. There's one copy step and it can't stage two different images.
+</Note>
+
+## API reference
+
+| Export | What it is |
+| --- | --- |
+| `OdigosFargateInstrumentation` | The construct. Methods: `instrument(target)`, `instrumentAll(targets)`. |
+| `OdigosFargateTarget` | One container to instrument: `container`, `language`, `service` or `serviceName`, `runtimeVersion`, `existingLoaderValue`. |
+| `OdigosFargateLanguage` | `JAVA` \| `PYTHON` \| `NODEJS` \| `DOTNET` \| `PHP` \| `RUBY` |
+| `sidecarCommand`, `evaluateAppendPattern`, `appendSeparator` | The copy-step command and loader-value rendering, if you want to inspect what they produce. |
+| `FARGATE_AGENTS_IMAGE` | The agents image this package version uses by default. |
+| `FARGATE_DISTROS_VERSION` | The Odigos distros release the activation recipes were mirrored from. |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="CDK overview" icon="code" href="/cloud-connectors/aws/cdk/overview">
+    Install, constructs, and how Odigos recognizes instrumented workloads.
+  </Card>
+
+  <Card title="Destinations" icon="tower-broadcast" href="/cloud-connectors/aws/cdk/destinations">
+    Endpoint formats, credentials, and which signals to enable.
+  </Card>
+
+  <Card title="Preload the agents image" icon="download" href="/cloud-connectors/aws/workloads/fargate/preload">
+    Mirror the image into a registry your tasks can reach.
+  </Card>
+</CardGroup>

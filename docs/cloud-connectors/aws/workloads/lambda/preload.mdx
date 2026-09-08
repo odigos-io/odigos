@@ -1,0 +1,69 @@
+---
+title: 'Preload the Lambda Layer'
+description: 'Preload the Lambda OpenTelemetry layer into your own AWS account before instrumenting with IaC.'
+sidebarTitle: 'Preload'
+---
+
+<Note>
+  If you use **Odigos-managed** Lambda instrumentation, you can skip this page — the
+  connector publishes the layer version into your account itself
+  (`lambda:PublishLayerVersion`) the first time it instruments a function. Nothing to
+  preload.
+</Note>
+
+If you **self-manage** instrumentation, you have two choices for where the layer your CloudFormation, CDK,
+or Terraform attaches actually lives:
+
+<Tabs>
+  <Tab title="Reference the public Odigos layer">
+    Simplest option: attach the public layer ARN Odigos publishes in every region
+    (`arn:aws:lambda:<region>:<odigos-account>:layer:odigos-otel-<language>-<arch>:<n>`) directly in your
+    function resource. No preloading, no extra deploy — for next steps see
+    [Instrument Lambda](/cloud-connectors/aws/workloads/lambda/instrument). If your organization's policy
+    forbids attaching a Lambda layer owned by another AWS account, use the
+    **Preload into your own account (SAR)** tab instead.
+  </Tab>
+
+  <Tab title="Preload into your own account (SAR)">
+    Deploy the Odigos layer from the AWS Serverless Application Repository (SAR) so the resulting
+    `AWS::Lambda::LayerVersion` is owned by **your** account. Then attach that stack's `LayerVersionArn`
+    instead of the public Odigos layer ARN.
+
+    Deploying a SAR application is an AWS workflow — follow
+    [Deploying applications](https://docs.aws.amazon.com/serverlessrepo/latest/devguide/serverlessrepo-how-to-consume.html)
+    (Console or CLI). For nesting the app in your own template, see
+    [`AWS::Serverless::Application`](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-application.html).
+
+    What Odigos supplies for that deploy:
+
+    - **Application IDs** — `SAR_APPLICATIONS` in `@odigos/aws-cdk`, keyed by `language/architecture`
+      (for example `python/arm64`). Search the console for `odigos-otel-<language>-<arch>` if you prefer.
+    - **Semantic version** — `SAR_SEMANTIC_VERSION` in the same package. Pin it; SAR versions are immutable
+      and that pin keeps the layer bytes stable across deploys.
+
+    With the Odigos CDK construct, you do not call SAR yourself — set
+    `layerSource: OdigosLayerSource.IN_ACCOUNT` and the construct nests the application using those exports.
+    See [Where the layer comes from](/cloud-connectors/aws/cdk/lambda#where-the-layer-comes-from).
+    The deploying principal needs `serverlessrepo:CreateCloudFormationTemplate` and
+    `serverlessrepo:GetApplication`.
+
+    <Info>
+      Layer versions are retained, never deleted, when a stack update supersedes them
+      — a function still pinned to an older version would break at cold start the
+      moment it disappeared. Clean up old versions yourself once nothing references
+      them.
+    </Info>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Instrument Lambda" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
+    CDK and CloudFormation for every supported Lambda language.
+  </Card>
+
+  <Card title="CDK reference" icon="code" href="/cloud-connectors/aws/cdk/lambda">
+    Every option on the Lambda CDK construct, in depth.
+  </Card>
+</CardGroup>

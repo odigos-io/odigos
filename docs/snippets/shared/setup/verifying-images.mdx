@@ -99,6 +99,10 @@ artifact is signed from lives in
 | --- | --- |
 | Component images (`odigos-*`) | `^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*$` |
 | CLI image + `odigos-victoria-metrics` | `^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$` |
+| Enterprise images (`odigos-enterprise-*`) | `^https://github\.com/odigos-io/odigos-enterprise/\.github/workflows/release-images\.yml@refs/(tags/.*\|heads/.*)$` |
+| `wasp-init` | `^https://github\.com/odigos-io/ebpf-core/\.github/workflows/build-sender\.yml@refs/(heads/main\|heads/releases/.*\|tags/.*)$` |
+| `odigos-cli-offsets` | `^https://github\.com/odigos-io/enterprise-go-instrumentation/\.github/workflows/offsets-push\.yml@refs/heads/.*$` |
+| `odigos-vmagent-instrumentations` | `^https://github\.com/odigos-io/vm-agent/\.github/workflows/publish-agents\.yml@refs/(heads/.*\|tags/agents/.*)$` |
 
 To also cover retroactively signed history, combine the release identity with the
 backfill identity in one pattern, as the commands above do:
@@ -120,8 +124,14 @@ version listed in [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/
 - **Odigos platform**: `odigos-autoscaler`, `odigos-scheduler`, `odigos-instrumentor`,
   `odigos-collector`, `odigos-odiglet`, `odigos-ui`, `odigos-operator`, `odigos-agents`,
   `odigos-cli`, `odigos-victoria-metrics`
-
-Enterprise and VM Agent image verification is covered in the [Odigos Enterprise docs](https://enterprise.docs.odigos.io/enterprise/setup/verifying-images).
+- **Odigos Enterprise**: `odigos-enterprise-odiglet`, `odigos-enterprise-instrumentor`,
+  `odigos-enterprise-ui`, `odigos-enterprise-collector`, `odigos-enterprise-central-proxy`,
+  `odigos-enterprise-central-backend`, `odigos-enterprise-central-ui`, `odigos-enterprise-agents`,
+  `odigos-enterprise-connector-runtime`, `odigos-enterprise-connector-aws`,
+  `odigos-enterprise-connector-azure`, `odigos-enterprise-connector-gcp` — `odiglet`
+  and `agents` also publish `-extended` variants (separate digests, same identity)
+- **Supporting images**: `wasp-init`, `odigos-cli-offsets`, and
+  `odigos-vmagent-instrumentations` (signed for publishes after 2026-08-12)
 
 ## Air-gapped verification
 

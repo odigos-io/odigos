@@ -1,0 +1,164 @@
+---
+title: "ECS Configuration Reference"
+sidebarTitle: "Configuration Reference"
+description: "Every environment variable of the Odigos ECS Agent and ECS Proxy, how platform names are derived, and where configuration is persisted."
+---
+
+import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+
+<EnterpriseVMAgent />
+
+On ECS the **task definition is the configuration surface**. On a fresh
+container instance it is the only input the agent has, so the Central endpoint
+and any other defaults travel inside it — nothing depends on service discovery
+or a pre-provisioned file.
+
+Everything beyond bootstrap — [sources](/vmagent/setup/configuration/add-sources),
+[destinations](/vmagent/setup/configuration/add-destinations),
+[actions](/vmagent/setup/configuration/actions/overview), and
+[instrumentation rules](/vmagent/setup/configuration/instrumentation-rules/overview) —
+is managed from Odigos Central or with
+[`odictl`](/vmagent/setup/configuration/odictl), exactly as on any VM Agent.
+
+## Agent environment variables
+
+| Variable | Required | Effect |
+|---|---|---|
+| `ODIGOS_DEFAULT_CONFIG` | Recommended | A full config document (YAML **or** JSON, same shape as `config.yaml`) that seeds the agent on a fresh node. This is where you set the Central endpoint: `{"central":{"enabled":true,"endpoint":"central.example.com:443"}}`. In Agent + Proxy mode, point it at the proxy instead. |
+| `ODIGOS_ONPREM_TOKEN` | Yes, unless `license.jwt` is pre-provisioned | Written to `/etc/odigos-ecs-agent/license.jwt` at startup. Deliver it from AWS Secrets Manager via the task definition's `secrets` block, not as a plain `environment` value. |
+| `ODIGOS_CENTRAL_ENDPOINT` | No | Shorthand for just the endpoint (`host:port` or URL) when you don't need a full document; equivalent to setting `central.enabled` + `central.endpoint`. `ODIGOS_DEFAULT_CONFIG` wins if both are set. |
+| `ODIGOS_ECS_BEHIND_PROXY` | Agent + Proxy mode | `true` tells the agent it connects to an `odigos-ecs-proxy` rather than to Central. Set it in [Agent + Proxy](/vmagent/ecs/installation-with-proxy) mode; omit it in [Agent only](/vmagent/ecs/installation-agent-only) mode. An endpoint alone cannot distinguish the two, and the reported platform name differs per mode. |
+| `ODIGOS_AGENT_NAME` | No | Platform name reported upstream, overriding the per-mode default below. |
+| `ODIGOS_ECS_CLUSTER_NAME` | No | The ECS cluster name. Normally unnecessary — the agent reads the cluster from the ECS task metadata endpoint. Set it when metadata is unavailable, or to report a different name. |
+
+<Note>
+  `:443` in an endpoint implies `wss`. The connection is **outbound-only**, so a
+  public Central endpoint or one in a different AWS account works with no inbound
+  rules on the cluster.
+</Note>
+
+### Platform naming per mode
+
+The agent's name depends on the topology so each mode displays naturally in the Central UI:
+
+| Mode | Platform name | Why |
+|---|---|---|
+| **Agent only** (no proxy) | the **ECS cluster name**, auto-detected | Each node registers with Central directly; naming the platform after the cluster is what makes a single-node cluster appear as the cluster rather than as an EC2 hostname. |
+| **Agent + Proxy** | the **node hostname** | The proxy is what reports the cluster name upstream; it identifies its agents per node, and its coverage check matches agent names against the instances' private DNS. |
+
+`ODIGOS_AGENT_NAME` overrides both. In Agent-only mode, if the cluster cannot be
+determined (task metadata unavailable), the agent falls back to the hostname and
+logs a warning.
+
+Both modes register with platform type **`aws.ecs`**, so a cluster presents
+consistently in Central either way.
+
+### Configuration precedence and persistence
+
+`ODIGOS_DEFAULT_CONFIG` is a **default**, not an override. Precedence, lowest to
+highest:
+
+<Steps>
+  <Step title="Built-in ECS distribution defaults">The baseline shipped in the image.</Step>
+  <Step title="Discrete env vars">`ODIGOS_CENTRAL_ENDPOINT`, `ODIGOS_AGENT_NAME`, and so on.</Step>
+  <Step title="ODIGOS_DEFAULT_CONFIG">The inline document from the task definition.</Step>
+  <Step title="The persisted config.yaml">Whatever Central or `odictl` has written. **This wins on every boot after the first.**</Step>
+</Steps>
+
+The config tree persists on the container **instance** at
+`/etc/odigos-ecs-agent` (a host bind mount), so the agent keeps its deployment
+identity and configuration across task restarts and image upgrades.
+
+<Warning>
+  Because the persisted `config.yaml` takes precedence, **editing
+  `ODIGOS_DEFAULT_CONFIG` does not change a value that has already been
+  persisted**. To change a seeded value after first boot, update it through
+  Central or `odictl` — or clear the persisted config on the instance so the new
+  default is applied again.
+</Warning>
+
+## Proxy environment variables
+
+| Variable | Required | Effect |
+|---|---|---|
+| `ODIGOS_CLUSTER_NAME` | Yes | The ECS cluster this proxy represents. Becomes Central's platform name and derives the proxy ID (`ecs-cluster/<name>`). |
+| `ODIGOS_CENTRAL_ENDPOINT` | No | Central `host:port`. Empty runs the proxy downstream-only (agents still aggregate against it). |
+| `ODIGOS_CENTRAL_SECURE_WS` | No | `true` forces `wss` upstream (also implied by `:443`). |
+| `ODIGOS_PLATFORM_TYPE` | No | Platform type reported upstream. Defaults to `aws.ecs`, matching the per-node agent. |
+| `ODIGOS_PROXY_ID` | No | Overrides the derived Central connection id. |
+| `ODIGOS_PROXY_LISTEN` | No | Agent listen address. Default `:4321`. |
+| `ODIGOS_PROXY_JOURNAL` | No | Config-journal **file** path. Default `/var/lib/odigos-ecs-proxy/journal.jsonl`. Point it at a file on an [EFS mount](/vmagent/ecs/installation-with-proxy#persist-the-config-journal-on-efs) if the journal must survive task replacement. |
+| `ODIGOS_COVERAGE_CHECK` | No | `true` enables the expected-vs-connected check: the proxy lists the cluster's container instances through the ECS/EC2 APIs and reports ACTIVE instances that have no connected agent. Requires `ecs:ListContainerInstances`, `ecs:DescribeContainerInstances`, and `ec2:DescribeInstances` on the task role. |
+| `ODIGOS_COVERAGE_INTERVAL` | No | Coverage check period (Go duration). Default `60s`. |
+
+The proxy is unprivileged — no host PID, no Docker socket, no host mounts.
+
+### What the proxy does with requests
+
+| Request | Routing |
+|---|---|
+| Config queries (`sources`, `destinations`, `actions`, `instrumentationRules`, `config`, …) | Any one healthy agent — the config is identical on every node. |
+| Live-state queries (`workloadReports`, counters) | Fan out to all agents; lists merged. |
+| Mixed queries (config + live fields in one operation) | Fan out; live lists concatenate, config fields keep a single agent's value so they are never multiplied by node count. |
+| Config mutations (`createSource`, `updateDestination`, …) | Broadcast to every agent **and journaled**. |
+| Live mutations (`restartSource`, …) | Broadcast, not journaled. |
+| Profiling jobs, diagnose bundles | One agent. |
+
+The journal replays config mutations to agents that connect later, so a node
+that joins the cluster — or a task that migrates to a fresh instance — converges
+to the cluster configuration automatically. Each agent's replay position is
+tracked by its stable deployment id, so a reconnecting agent replays only what it
+missed.
+
+### Membership and lifecycle events
+
+- Agent connects and disconnects are logged and forwarded to Central as
+  `ecs-proxy.agent-lifecycle` events; departed agents keep a tombstone (id, node,
+  last seen).
+- Coverage changes are logged and forwarded as `ecs-proxy.coverage` events.
+- `GET /healthz` on port 4321 returns the whole view: connected agents, departed
+  tombstones, and the last coverage result. See
+  [checking the healthz endpoint](/vmagent/ecs/troubleshooting#check-the-proxy-healthz-endpoint).
+
+## What gets instrumented
+
+| | Behavior on ECS |
+|---|---|
+| ECS-managed containers | **Instrumented.** Discovered through the instance's Docker daemon. |
+| Host processes and `systemd` services on the container instance | **Ignored.** Unlike the [VM Agent](/vmagent/setup/installation) and [Docker deployment](/vmagent/setup/docker), the ECS distribution only classifies ECS tasks. |
+| Task restarts | **Never.** All instrumentation is direct attach; ECS owns the container lifecycle, so the agent does not restart, recreate, or modify tasks. |
+| Java, Go, C++ | Their dynamic eBPF SDKs (Java via dynamic attach). |
+| Python, Node.js, .NET, PHP, Ruby, others | Covered by [OBI](/oss/instrumentations/obi), which also attaches with no restart. Restart-based environment injection is intentionally not used on ECS. |
+
+The agent's own binaries, the `amazon-ecs-agent`, the SSM agent, and `awsvpc`
+pause containers are excluded from instrumentation automatically.
+
+## How the collector runs
+
+As in the [Docker deployment](/vmagent/setup/docker#how-the-collector-runs),
+there is no `systemd` inside the container:
+
+- `odigos-otelcol` runs as a **supervised child process** of the agent, so its
+  lifecycle follows the agent task.
+- Agent and collector **share the task's stdout**, captured by the `awslogs`
+  driver into the `/odigos/ecs-agent` log group.
+- With host networking, the collector and OpAMP server listen on the instance's
+  network namespace, reachable by instrumented tasks on localhost or the instance
+  IP.
+- Collector logs are JSON-formatted on ECS; the `awslogs` driver ships them to
+  CloudWatch Logs as the primary log stream.
+- [systemd memory limits](/vmagent/setup/configuration/services-mem-limits-configuration)
+  do not apply — cap the agent with the task definition's `cpu`, `memory`, and
+  `memoryReservation` instead.
+
+## Instrumentation file sync
+
+The image bakes the Java instrumentation files into a staging directory. On
+startup the agent rsyncs them onto the container instance's `/var/odigos` (the
+task definition bind mount), and seeds them into a workload's container namespace
+when it attaches. Go, C++, and the OBI fallback are compiled into the agent
+binary and need no on-disk files.
+
+This is why `/var/odigos` must be a writable host mount. The full list of
+elevated task settings is under
+[required permissions](/vmagent/ecs/requirements#required-permissions).

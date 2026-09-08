@@ -1,0 +1,96 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+The VM Agent exports continuous profiles to external backends using the same **destinations** model as traces.
+
+For profiling, add a destination whose **signals** include `PROFILES`. Any backend which accepts OTLP Profiles is supported.
+
+## Pyroscope destination fields
+
+See the [Pyroscope backend reference](/enterprise/backends/pyroscope) for all fields. Defaults for a local Pyroscope container on the same host:
+
+| YAML / env key | UI label | Example | Notes |
+|----------------|----------|---------|--------|
+| `PYROSCOPE_URL` | Pyroscope Endpoint | `localhost:4040` | Distributor `host:port`. Odigos appends `/v1development/profiles` — do **not** include any path suffix. |
+| `PYROSCOPE_TLS_ENABLED` | Enable TLS | `false` | Set to `true` when Pyroscope is fronted by TLS. |
+| `signals` | Profiles checkbox | `[PROFILES]` | Required — Pyroscope only emits profiles. |
+
+## Add destination with odictl
+
+<Steps>
+  <Step title="Launch odictl">
+    ```shell
+    odictl
+    ```
+  </Step>
+  <Step title="Open the destination type list">
+    Press `d` to focus **Destinations**, then `Enter` (or click **+ Add Destination**) and search for **profiles** to filter the list to backends that support the `PROFILES` signal.
+
+    <img
+      src="/images/vmagent/profiling/2-profile-destination.png"
+      alt="odictl destination type selector filtered by profiles"
+    />
+
+    Highlight **Pyroscope** and press `Enter`.
+  </Step>
+  <Step title="Configure the destination">
+    Fill in **Pyroscope Endpoint** and toggle **Enable TLS** if needed. Leave **Profiles: Yes**.
+
+    <img
+      src="/images/vmagent/profiling/3-pyroscope-example.png"
+      alt="odictl Pyroscope destination form with localhost:4040 and TLS disabled"
+    />
+
+    Press `Ctrl+S` (or focus **Apply** with `Tab` and press `Enter`) to save.
+  </Step>
+  <Step title="Confirm">
+    ```shell
+    sudo journalctl -u odigos-vmagent | grep 'Destination signals configured'
+    ```
+    Look for a line containing `signals=[PROFILES]` for the new destination.
+  </Step>
+</Steps>
+
+## Add destination with YAML
+
+Create a file under `/etc/odigos-vmagent/destinations.d/`, for example `pyroscope.yaml`:
+
+```yaml
+- name: pyroscope
+  type: pyroscope
+  signals:
+    - PROFILES
+  config:
+    PYROSCOPE_URL: "localhost:4040"
+    PYROSCOPE_TLS_ENABLED: "false"
+```
+
+The destination controller picks the file up automatically.
+
+## Run Pyroscope on the host
+
+Quick local run, useful for testing:
+
+```shell
+docker run -d --name pyroscope -p 4040:4040 grafana/pyroscope:latest
+```
+
+If Pyroscope listens only on localhost, port-forward from your laptop:
+
+```shell
+ssh -L 4040:localhost:4040 <your-vm>
+```
+
+## View profiles
+
+Open Pyroscope at `http://localhost:4040`. Pick profile type **`process_cpu`** and filter by **`service.name`** matching one of your enabled sources.
+
+<img
+  src="/images/vmagent/profiling/4-pyroscope-ui.png"
+  alt="Pyroscope UI showing a process_cpu flame graph for odigos-demo-coupon"
+/>
+
+## Other OTLP Profiles backends
+
+Any backend that accepts **OTLP Profiles** can be used with destination type `otlp` (gRPC) or `otlphttp` and `signals: [PROFILES]`. Pyroscope is documented here because it is easy to setup self-hosted target for VM deployments, the configuration shape for other backends is identical aside from their own endpoint fields.
+
+<GettingHelp />

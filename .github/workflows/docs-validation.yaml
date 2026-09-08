@@ -1,9 +1,9 @@
-name: Open Source docs boundaries
+name: Documentation source validation
 on:
   pull_request:
     paths:
       - 'docs/**'
-      - '.github/workflows/docs-edition-boundary.yaml'
+      - '.github/workflows/docs-validation.yaml'
 permissions:
   contents: read
 jobs:

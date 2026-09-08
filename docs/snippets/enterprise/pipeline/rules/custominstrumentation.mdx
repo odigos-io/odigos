@@ -1,0 +1,137 @@
+## Considerations
+If you wish to create custom instrumentations for Go, Java, or PHP applications, you can define a "Custom Instrumentation" rule via the Odigos InstrumentationRule CRD or the Odigos UI.
+
+This feature is a great way to extend Odigos's auto-instrumentation capabilities to cover your specific use cases and application logic.
+
+For Go and Java, custom instrumentation is applied dynamically via eBPF. For PHP, probes are delivered as environment variables and require a pod restart to take effect.
+
+## Configuration Options
+<AccordionGroup>
+    <Accordion title="Golang">
+    <Warning>
+  When `functionName` is specified, `receiverName` and `receiverMethodName` must NOT be specified, and vice versa, if `receiverName` and `receiverMethodName` are specified, `functionName` must NOT be specified.
+
+  `packageName` is required in all cases.
+    </Warning>
+        <AccordionGroup>
+                    <Accordion title="packageName">
+                        **packageName** `string` - The name of the package containing the function to instrument.
+                        - This field is *required*
+                    </Accordion>
+                    <Accordion title="functionName">
+                        **functionName** `string` - The name of the function to instrument.
+                        - This field is *optional*
+                    </Accordion>
+                    <Accordion title="receiverName">
+                        **receiverName** `string` - The name of the receiver type if the function is a method.
+                        - This field is *optional*
+                    </Accordion>
+                    <Accordion title="receiverMethodName">
+                        **receiverMethodName** `string` - The name of the method receiver if the function is a method.
+                        - This field is *optional*
+                    </Accordion>
+        </AccordionGroup>
+    </Accordion>
+    <Accordion title="Java">
+        <AccordionGroup>
+                    <Accordion title="className">
+                        **className** `string` - The fully qualified name of the class containing the method to instrument.
+                        - This field is *required*
+                    </Accordion>
+                    <Accordion title="methodName">
+                        **methodName** `string` - The name of the method to instrument.
+                        - This field is *required*
+                    </Accordion>
+        </AccordionGroup>
+    </Accordion>
+    <Accordion title="PHP">
+        <AccordionGroup>
+                    <Accordion title="className">
+                        **className** `string` - The fully qualified class name to instrument. Leave empty for a global function.
+                        - This field is *optional*
+                    </Accordion>
+                    <Accordion title="functionName">
+                        **functionName** `string` - The name of the function or method to instrument.
+                        - This field is *required*
+                    </Accordion>
+        </AccordionGroup>
+    </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example shows how to create a "Custom Instrumentation" rule that instruments a function named `ProcessOrder` in the `github.com/example/ecommerce` package.
+
+<Steps>
+    <Step>
+        Create a YAML file named `custom-instrumentation.yaml` with the following content:
+        <Accordion title="Package and function (Golang)">
+        ```yaml
+        apiVersion: odigos.io/v1alpha1
+        kind: InstrumentationRule
+        metadata:
+            name: custom-instrumentation-rule
+            namespace: odigos-system
+        spec:
+            ruleName: "Custom Instrumentation for ProcessOrder"
+            customInstrumentations:
+                golang:
+                  - packageName: "github.com/example/ecommerce"
+                    functionName: "ProcessOrder"
+        ```
+        </Accordion>
+        <Accordion title="Receiver method (Golang)">
+        ```yaml
+        apiVersion: odigos.io/v1alpha1
+        kind: InstrumentationRule
+        metadata:
+            name: custom-instrumentation-rule
+            namespace: odigos-system
+        spec:
+            ruleName: "Custom Instrumentation for ProcessOrder Method"
+            customInstrumentations:
+                golang:
+                  - packageName: "github.com/example/ecommerce"
+                    receiverName: "OrderProcessor"
+                    receiverMethodName: "ProcessOrder"
+        ```
+        </Accordion>
+        <Accordion title="Class and method (Java)">
+        ```yaml
+        apiVersion: odigos.io/v1alpha1
+        kind: InstrumentationRule
+        metadata:
+            name: custom-instrumentation-rule
+            namespace: odigos-system
+        spec:
+            ruleName: "Custom Instrumentation for getCurrencyInfo"
+            customInstrumentations:
+                java:
+                  - className: "com.example.CurrencyService"
+                    methodName: "getCurrencyInfo"
+        ```
+        </Accordion>
+        <Accordion title="Class and function (PHP)">
+        ```yaml
+        apiVersion: odigos.io/v1alpha1
+        kind: InstrumentationRule
+        metadata:
+            name: custom-instrumentation-rule
+            namespace: odigos-system
+        spec:
+            ruleName: "Custom Instrumentation for processOrder"
+            customInstrumentations:
+                php:
+                  - className: "App\\Service\\OrderService"
+                    functionName: "processOrder"
+        ```
+        </Accordion>
+    </Step>
+    <Step>
+    Apply the action to the cluster:
+
+    ```shell
+    kubectl apply -f custom-instrumentation.yaml
+    ```
+    </Step>
+</Steps>

@@ -1,0 +1,39 @@
+---
+title: "Uninstall"
+sidebarTitle: "Uninstall"
+description: "Uninstall the Odigos VM Agent from your Linux host"
+---
+
+<Note>
+  Running the agent as a container? See [Docker Deployment](/vmagent/setup/docker#uninstall)
+  for how to remove it.
+</Note>
+
+To uninstall the Odigos VM Agent, run the following based on your Linux package manager:
+
+<Tabs>
+  <Tab title="DNF">
+    Using `dnf` (RHEL, Fedora, Rocky Linux):
+
+    ```shell
+    sudo dnf remove odigos
+    ```
+  </Tab>
+  <Tab title="APT">
+    Using `apt` (Debian, Ubuntu):
+
+    ```shell
+    sudo apt remove odigos
+    ```
+  </Tab>
+  <Tab title="RPM">
+
+    If you use a package manager other than `dnf` or `apt`, run the following to uninstall the agent:
+
+    <Note>Replace \<otelcol-version\> and \<agent-version\> with the versions you downloaded.</Note>
+
+    ```shell
+    rpm -ev odigos odigos-otelcol
+    ```
+  </Tab>
+</Tabs>

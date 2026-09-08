@@ -1,0 +1,64 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+This guide walks you through enabling the eBPF profiling pipeline on a host, and adding a destination that accepts OTLP profiles.
+
+## Step 1: Enable the profiling pipeline
+
+Turn on the eBPF profiles pipeline on **odigos-otelcol**. You can use `odictl` or edit `/etc/odigos-vmagent/config.yaml` directly.
+
+<Tabs>
+  <Tab title="odictl">
+    <Steps>
+      <Step title="Open the Configuration Editor">
+        ```shell
+        odictl
+        ```
+        Press <Badge color="blue">c</Badge> to open the Configuration Editor, then navigate to **Profiling**.
+      </Step>
+      <Step title="Set profiling.enabled to true">
+        Set **profiling.enabled** to `true` and press <Badge color="blue">Ctrl+S</Badge> to save. The collector reloads automatically.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="YAML">
+    Add to `/etc/odigos-vmagent/config.yaml`:
+
+    ```yaml
+    profiling:
+      enabled: true
+    ```
+  </Tab>
+</Tabs>
+
+## Step 2: Enable sources for the workloads you want to profile
+
+Profiling only retains samples for **enabled sources**. Open `odictl`, focus the **Sources** pane (press `o`), and instrument the services you want sampled. The screenshot below shows the demo workloads enabled (`Instrumented`) alongside other host processes that stay untouched (`Not Instrumented`).
+
+<img
+  src="/images/vmagent/profiling/1-ensure-source-enabled.png"
+  alt="Sources panel in odictl showing the demo services instrumented"
+/>
+
+See [Sources](../../setup/configuration/add-sources) for the full walkthrough (TUI and YAML).
+
+<Tip>
+  Toggling a source on or off takes effect within seconds — no vm-agent restart is needed. The collector keeps streaming profiles, but only samples for currently-enabled PIDs are exported.
+</Tip>
+
+## Step 3: Add a destination that accepts PROFILES
+
+Open **Destinations → + Add Destination** and search for **profiles**. Any destination whose **Signals** column includes `PROFILES` or they accept OTLP Profiles signal works.
+
+<img
+  src="/images/vmagent/profiling/2-profile-destination.png"
+  alt="odictl destination type selector filtered by profiles"
+/>
+
+As an example for step-by-step Pyroscope configuration, jump to [Export to Pyroscope](./export-pyroscope). For any other OTLP Profiles backend (e.g. `otlp` or `otlphttp`), follow the standard [Add destinations](../../setup/configuration/add-destinations).
+
+## Step 4: View profiles in the destination
+
+Open your destination's UI and you should be able to access the application profiles collected.
+eg in Pyroscope, select profile type **`process_cpu`** and filter by **`service.name`** values that match your sources. See [Export to Pyroscope → View profiles](./export-pyroscope#view-profiles) for detailed example.
+
+<GettingHelp />
