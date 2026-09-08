@@ -1,0 +1,223 @@
+name: "Kubernetes Tests"
+description: "Run an Odigos end-to-end test on a kind cluster"
+
+inputs:
+  kubernetes-version:
+    description: "Kubernetes version to test"
+    required: true
+  test-scenario:
+    description: "Name of the test scenario under tests/e2e"
+    required: true
+  supported-versions:
+    description: >-
+      JSON map of every supported Kubernetes version to its kind node image and minor version.
+      Add an entry here to test against a new version.
+    # 1.21.12 is pinned because it is the first 1.21 patch with the systemd cgroups
+    # compatibility changes required by kind.
+    default: >-
+      {
+        "1.21.12": { "nodeImage": "kindest/node:v1.21.12@sha256:ae05d44cc636ee961068399ea5123ae421790f472c309900c151a44ee35c3e3e", "minorVersion": 21 },
+        "1.22":    { "nodeImage": "kindest/node:v1.22.17@sha256:f5b2e5698c6c9d6d0adc419c0deae21a425c07d81bbf3b6a6834042f25d4fba2", "minorVersion": 22 },
+        "1.23":    { "nodeImage": "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3", "minorVersion": 23 },
+        "1.24":    { "nodeImage": "kindest/node:v1.24.17@sha256:bad10f9b98d54586cba05a7eaa1b61c6b90bfc4ee174fdc43a7b75ca75c95e51", "minorVersion": 24 },
+        "1.25":    { "nodeImage": "kindest/node:v1.25.16@sha256:6110314339b3b44d10da7d27881849a87e092124afab5956f2e10ecdb463b025", "minorVersion": 25 },
+        "1.26":    { "nodeImage": "kindest/node:v1.26.15@sha256:c79602a44b4056d7e48dc20f7504350f1e87530fe953428b792def00bc1076dd", "minorVersion": 26 },
+        "1.27":    { "nodeImage": "kindest/node:v1.27.16@sha256:2d21a61643eafc439905e18705b8186f3296384750a835ad7a005dceb9546d20", "minorVersion": 27 },
+        "1.28":    { "nodeImage": "kindest/node:v1.28.15@sha256:a7c05c7ae043a0b8c818f5a06188bc2c4098f6cb59ca7d1856df00375d839251", "minorVersion": 28 },
+        "1.29":    { "nodeImage": "kindest/node:v1.29.14@sha256:8703bd94ee24e51b778d5556ae310c6c0fa67d761fae6379c8e0bb480e6fea29", "minorVersion": 29 },
+        "1.30":    { "nodeImage": "kindest/node:v1.30.13@sha256:397209b3d947d154f6641f2d0ce8d473732bd91c87d9575ade99049aa33cd648", "minorVersion": 30 },
+        "1.31":    { "nodeImage": "kindest/node:v1.31.14@sha256:6f86cf509dbb42767b6e79debc3f2c32e4ee01386f0489b3b2be24b0a55aac2b", "minorVersion": 31 },
+        "1.32":    { "nodeImage": "kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8", "minorVersion": 32 },
+        "1.33":    { "nodeImage": "kindest/node:v1.33.12@sha256:3f5c8443c620245e4d355cfe09e96a91ead32ceaa569d3f1ca9edf0cb2fe2ff4", "minorVersion": 33 },
+        "1.34":    { "nodeImage": "kindest/node:v1.34.11@sha256:44e222ee2132dab25ff87301682f89eb82c7880ea3a1bf543bfe9708fd08d67d", "minorVersion": 34 },
+        "1.35":    { "nodeImage": "kindest/node:v1.35.8@sha256:07b2536e30b803ed61d1677a79df6115f798ce64c80f9e22f6ed45afd09323c0", "minorVersion": 35 },
+        "1.36":    { "nodeImage": "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed", "minorVersion": 36 },
+        "1.37":    { "nodeImage": "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5", "minorVersion": 37 }
+      }
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        KUBERNETES_VERSION: ${{ inputs.kubernetes-version }}
+        NODE_IMAGE: ${{ fromJSON(inputs.supported-versions)[inputs.kubernetes-version].nodeImage }}
+        TEST_SCENARIO: ${{ inputs.test-scenario }}
+      run: |
+        if [[ -z "$NODE_IMAGE" ]]; then
+          echo "::error::Unsupported Kubernetes version '$KUBERNETES_VERSION'. Add it to the 'supported-versions' input of .github/actions/kubernetes-tests"
+          exit 1
+        fi
+
+        if [[ ! -d "tests/e2e/$TEST_SCENARIO" ]]; then
+          echo "::error::Unknown test scenario '$TEST_SCENARIO': tests/e2e/$TEST_SCENARIO does not exist"
+          exit 1
+        fi
+
+    - name: Set up Go
+      if: inputs.test-scenario == 'karpenter-mount-methods'
+      uses: actions/setup-go@v7
+      with:
+        go-version: "~1.26.6"
+        check-latest: true
+        cache: true
+
+    - name: Install ko
+      if: inputs.test-scenario == 'karpenter-mount-methods'
+      uses: ko-build/setup-ko@v0.9
+
+    - name: Install jq
+      if: inputs.test-scenario == 'karpenter-mount-methods'
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y jq
+
+    - name: Set up Helm
+      uses: azure/setup-helm@v4
+      with:
+        version: v3.9.0
+
+    - name: Install chainsaw
+      uses: kyverno/action-install-chainsaw@v0.2.13
+
+    - name: Create kind cluster
+      uses: helm/kind-action@v1.12.0
+      with:
+        node_image: ${{ fromJSON(inputs.supported-versions)[inputs.kubernetes-version].nodeImage }}
+        version: "v0.33.0"
+        cluster_name: kind
+        config: tests/common/apply/kind-config.yaml
+        # Ephemeral GHA runners: don't fail the job if kind/docker cleanup races.
+        ignore_failed_clean: true
+
+    - name: Wait for cluster readiness
+      shell: bash
+      run: bash tests/common/wait_for_kind_ready.sh
+
+    - name: Restore cached Odigos images
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          odigos-images.tar
+          cli-image.tar
+          victoria-metrics-image.tar
+        fail-on-cache-miss: true
+        key: ${{ github.run_id }}-odigos-images
+
+    - name: Load Odigos images into kind cluster
+      shell: bash
+      run: |
+        kind load image-archive odigos-images.tar
+        kind load image-archive cli-image.tar
+        kind load image-archive victoria-metrics-image.tar
+
+    - name: Restore cached CLI binary
+      uses: actions/cache/restore@v4
+      with:
+        path: cli/odigos
+        fail-on-cache-miss: true
+        key: ${{ github.run_id }}-odigos-cli
+
+    - name: Make CLI binary executable
+      shell: bash
+      run: chmod +x cli/odigos
+
+    - name: Get latest release tag for branch from Helm
+      id: get-latest-tag
+      shell: bash
+      env:
+        BRANCH: ${{ github.base_ref || github.ref_name }}
+      run: |
+        echo "📦 Updating Helm repositories..."
+        helm repo add odigos https://odigos-io.github.io/odigos/ || true
+        helm repo update
+
+        if [[ "$BRANCH" == releases/* ]]; then
+          VERSION_PREFIX=$(echo "$BRANCH" | sed -E 's|releases/v([0-9]+\.[0-9]+)\..*|\1|')
+          echo "Release branch detected, looking for v${VERSION_PREFIX}.* in Helm"
+          LATEST_RELEASE_TAG=$(helm search repo odigos/odigos --versions | awk -v prefix="^v${VERSION_PREFIX}\\." '$1 == "odigos/odigos" && $3 ~ prefix {print $3; exit}')
+        else
+          echo "Non-release branch, using latest Helm chart version"
+          LATEST_RELEASE_TAG=$(helm search repo odigos/odigos | awk '$1 == "odigos/odigos" {print $3}')
+        fi
+        echo "LATEST_RELEASE_TAG=$LATEST_RELEASE_TAG" >> "$GITHUB_OUTPUT"
+        echo "Latest release tag for branch $BRANCH: $LATEST_RELEASE_TAG"
+
+    - name: Recheck cluster readiness before E2E
+      shell: bash
+      run: bash tests/common/wait_for_kind_ready.sh
+
+    - name: Run E2E tests
+      shell: bash
+      env:
+        LATEST_RELEASE_TAG: ${{ steps.get-latest-tag.outputs.LATEST_RELEASE_TAG }}
+        TEST_SCENARIO: ${{ inputs.test-scenario }}
+        KUBERNETES_MINOR_VERSION: ${{ fromJSON(inputs.supported-versions)[inputs.kubernetes-version].minorVersion }}
+        IS_HELM: ${{ inputs.test-scenario == 'helm-chart' || inputs.test-scenario == 'helm-upgrade' }}
+      run: |
+        chainsaw test "tests/e2e/$TEST_SCENARIO" \
+          --apply-timeout 30s \
+          --values - <<EOF
+        k8sMinorVersion: ${KUBERNETES_MINOR_VERSION}
+        isHelm: ${IS_HELM}
+        EOF
+
+    - name: Cluster diagnostics
+      if: failure()
+      shell: bash
+      run: |
+        echo "==== Nodes ===="; kubectl get nodes -o wide
+        echo "==== Pods (all namespaces) ===="; kubectl get pods -A -o wide
+        echo "==== Events (last 10m) ===="; kubectl get events -A --sort-by=.lastTimestamp | tail -n 200
+        echo "==== Deployments not ready ===="
+        kubectl get deploy -A -o json | \
+          jq -r '.items[]
+            | select((.status.readyReplicas // 0) != (.status.replicas // 0))
+            | "\(.metadata.namespace) \(.metadata.name)"' \
+          | while read ns name; do
+            echo "--- describe deploy $ns/$name ---"
+            kubectl -n "$ns" describe deploy "$name" || true
+          done
+        echo "==== Runner memory ===="; free -h || true
+        echo "==== dmesg OOM / kill hints ===="
+        (sudo dmesg -T 2>/dev/null || dmesg -T 2>/dev/null || true) | \
+          grep -Ei "killed process|out of memory|oom|Memory cgroup" | tail -n 80 || true
+
+    - name: Run diagnose command
+      if: failure() && inputs.test-scenario != 'ui'
+      shell: bash
+      run: ./cli/odigos diagnose
+      continue-on-error: true
+
+    - name: Upload diagnose artifact
+      if: failure() && inputs.test-scenario != 'ui'
+      uses: actions/upload-artifact@v4
+      with:
+        name: run-details-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }}
+        path: odigos_debug*.tar.gz
+      continue-on-error: true
+
+    - name: Upload UI screenshots artifact
+      if: failure() && inputs.test-scenario == 'ui'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ui-screenshots-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }}
+        path: frontend/webapp/cypress/screenshots
+      continue-on-error: true
+
+    - name: Upload UI videos artifact
+      if: failure() && inputs.test-scenario == 'ui'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ui-videos-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }}
+        path: frontend/webapp/cypress/videos
+      continue-on-error: true
+
+    - name: Delete pipeline build caches on success
+      if: success()
+      shell: bash
+      run: |
+        gh extension install actions/gh-actions-cache || true
+        gh actions-cache delete odigos-build-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }} --confirm || true
+        gh actions-cache delete odigos-deps-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }} --confirm || true
+      continue-on-error: true
