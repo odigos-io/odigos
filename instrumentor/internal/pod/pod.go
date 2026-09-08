@@ -7,7 +7,12 @@ import (
 )
 
 func AddOdigletInstalledAffinity(pod *corev1.Pod) {
-	odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
+	odigletInstalledRequirement := corev1.NodeSelectorRequirement{
+		Key:      k8snode.DetermineNodeOdigletInstalledLabelByTier(),
+		Operator: corev1.NodeSelectorOpIn,
+		Values:   []string{k8sconsts.OdigletInstalledLabelValue},
+	}
+
 	// Ensure Affinity exists
 	if pod.Spec.Affinity == nil {
 		pod.Spec.Affinity = &corev1.Affinity{}
@@ -25,32 +30,38 @@ func AddOdigletInstalledAffinity(pod *corev1.Pod) {
 		}
 	}
 
-	// Check if the term already exists to avoid duplicates
-	for _, term := range pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
-		for _, expr := range term.MatchExpressions {
-			if expr.Key == odigletInstalledLabel && expr.Operator == corev1.NodeSelectorOpIn {
-				for _, val := range expr.Values {
-					if val == k8sconsts.OdigletInstalledLabelValue {
-						// return without adding a duplicate
-						return
-					}
-				}
+	terms := &pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+
+	// node selector terms are ORed while the match expressions within a single term are ANDed,
+	// so the requirement has to be added to every existing term. appending it as a new term would
+	// both let the pod schedule on nodes without odiglet and drop the workload's own node affinity.
+	if len(*terms) == 0 {
+		*terms = append(*terms, corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{odigletInstalledRequirement},
+		})
+		return
+	}
+
+	for i := range *terms {
+		if termHasOdigletInstalledRequirement((*terms)[i], odigletInstalledRequirement) {
+			// avoid adding a duplicate
+			continue
+		}
+		(*terms)[i].MatchExpressions = append((*terms)[i].MatchExpressions, odigletInstalledRequirement)
+	}
+}
+
+func termHasOdigletInstalledRequirement(term corev1.NodeSelectorTerm, requirement corev1.NodeSelectorRequirement) bool {
+	for _, expr := range term.MatchExpressions {
+		if expr.Key != requirement.Key || expr.Operator != requirement.Operator {
+			continue
+		}
+		for _, val := range expr.Values {
+			if val == k8sconsts.OdigletInstalledLabelValue {
+				return true
 			}
 		}
 	}
 
-	// Append the new NodeSelectorTerm if it doesn't exist
-	newTerm := corev1.NodeSelectorTerm{
-		MatchExpressions: []corev1.NodeSelectorRequirement{
-			{
-				Key:      odigletInstalledLabel,
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{k8sconsts.OdigletInstalledLabelValue},
-			},
-		},
-	}
-	pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(
-		pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
-		newTerm,
-	)
+	return false
 }
