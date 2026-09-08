@@ -5,24 +5,13 @@ on:
   pull_request:
     branches: [main, "releases/**"]
     types: [opened, synchronize, reopened, labeled, unlabeled]
-  workflow_call:
-    inputs:
-      kubernetes-version:
-        description: "Kubernetes version to test"
-        type: string
-        required: true
-    secrets:
-      slack_webhook_url:
-        description: "Slack webhook used for nightly Kubernetes test reports"
-        required: false
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-${{ inputs.kubernetes-version || 'pr' }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   prepare-additional-kubernetes-versions:
-    if: inputs.kubernetes-version == ''
     runs-on: ubuntu-latest
     outputs:
       versions: ${{ steps.versions.outputs.versions }}
@@ -86,7 +75,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: cli/odigos
-          key: ${{ github.run_id }}-${{ inputs.kubernetes-version || 'pr' }}-odigos-cli
+          key: ${{ github.run_id }}-odigos-cli
 
   build-odigos-images:
     runs-on: depot-ubuntu-24.04-8
@@ -125,11 +114,10 @@ jobs:
             odigos-images.tar
             cli-image.tar
             victoria-metrics-image.tar
-          key: ${{ github.run_id }}-${{ inputs.kubernetes-version || 'pr' }}-odigos-images
+          key: ${{ github.run_id }}-odigos-images
 
   kubernetes-test:
     needs: [build-odigos-images, build-cli]
-    if: inputs.kubernetes-version == ''
     runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
@@ -193,7 +181,7 @@ jobs:
 
   additional-kubernetes-tests:
     needs: [prepare-additional-kubernetes-versions, build-odigos-images, build-cli]
-    if: inputs.kubernetes-version == '' && needs.prepare-additional-kubernetes-versions.outputs.has_versions == 'true'
+    if: needs.prepare-additional-kubernetes-versions.outputs.has_versions == 'true'
     runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
@@ -231,61 +219,3 @@ jobs:
         with:
           kubernetes-version: ${{ matrix.kube-version }}
           test-scenario: ${{ matrix.test-scenario }}
-
-  nightly-kubernetes-tests:
-    needs: [build-odigos-images, build-cli]
-    if: inputs.kubernetes-version != ''
-    runs-on: depot-ubuntu-24.04-8
-    strategy:
-      fail-fast: false
-      matrix:
-        kube-version: ["${{ inputs.kubernetes-version }}"]
-        test-scenario:
-          - "ui"
-          - "helm-chart"
-          - "cli-upgrade"
-          - "helm-upgrade"
-          - "runtime-detection"
-          - "instrumentation-lifecycle"
-          - "instrumentation-rollback"
-          - "instrumentation-rollback-stability-window"
-          - "environment-variables"
-          - "trace-collection"
-          - "log-collection"
-          - "source"
-          - "webhooks"
-          - "env-injection"
-          - "data-streams"
-          - "mount-method"
-          - "argo-rollouts"
-          - "head-sampling-http-nodejs"
-          - "head-sampling-http-python"
-          - "head-sampling-http-java"
-          - "tail-sampling-nodejs"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Run Kubernetes test
-        uses: ./.github/actions/kubernetes-tests
-        with:
-          kubernetes-version: ${{ matrix.kube-version }}
-          test-scenario: ${{ matrix.test-scenario }}
-          cache-key-suffix: ${{ inputs.kubernetes-version }}
-
-  nightly-kubernetes-tests-report:
-    if: always() && inputs.kubernetes-version != ''
-    needs: nightly-kubernetes-tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Report Kubernetes version test outcome
-        uses: ./.github/actions/nightly/report
-        with:
-          status: ${{ needs.nightly-kubernetes-tests.result }}
-          suite_name: kubernetes-tests-${{ inputs.kubernetes-version }}
-          suite_parameters: '{"kubernetes_version": "${{ inputs.kubernetes-version }}"}'
-          slack_webhook_url: ${{ secrets.slack_webhook_url }}

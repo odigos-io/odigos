@@ -8,9 +8,6 @@ inputs:
   test-scenario:
     description: "Name of the test scenario under tests/e2e"
     required: true
-  cache-key-suffix:
-    description: "Suffix used to isolate workflow build caches"
-    default: pr
   supported-versions:
     description: >-
       JSON map of every supported Kubernetes version to its kind node image and minor version.
@@ -105,7 +102,7 @@ runs:
           cli-image.tar
           victoria-metrics-image.tar
         fail-on-cache-miss: true
-        key: ${{ github.run_id }}-${{ inputs.cache-key-suffix }}-odigos-images
+        key: ${{ github.run_id }}-odigos-images
 
     - name: Load Odigos images into kind cluster
       shell: bash
@@ -119,7 +116,7 @@ runs:
       with:
         path: cli/odigos
         fail-on-cache-miss: true
-        key: ${{ github.run_id }}-${{ inputs.cache-key-suffix }}-odigos-cli
+        key: ${{ github.run_id }}-odigos-cli
 
     - name: Make CLI binary executable
       shell: bash

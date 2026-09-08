@@ -39,16 +39,138 @@ jobs:
   build-images:
     uses: ./.github/workflows/build-dev-images.yml
 
+  build-cli:
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "~1.26.6"
+          check-latest: true
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.2
+
+      - name: Build CLI
+        run: |
+          cd cli
+          TAG=0.0.0-e2e-test
+          sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos/Chart.yaml
+          sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos-central/Chart.yaml
+          helm package ../helm/odigos -d pkg/helm/embedded
+          helm package ../helm/odigos-central -d pkg/helm/embedded
+          go build -tags=embed_manifests \
+            -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=${TAG#v}" \
+            -o odigos
+
+      - name: Save CLI binary to cache
+        uses: actions/cache/save@v4
+        with:
+          path: cli/odigos
+          key: ${{ github.run_id }}-odigos-cli
+
+  build-odigos-images:
+    runs-on: depot-ubuntu-24.04-8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build Odigos Images
+        run: |
+          TAG=e2e-test make build-images
+          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
+
+      - uses: ko-build/setup-ko@v0.9
+
+      - name: Build CLI Image
+        run: |
+          TAG=e2e-test make build-cli-image
+          docker save docker.io/keyval/odigos-cli:e2e-test -o cli-image.tar
+
+      # Victoria Metrics is published, not built in this repo. Materialize a single-platform
+      # image (buildx --load) so kind load does not fail on multi-arch manifests.
+      - name: Prepare Victoria Metrics Image
+        run: |
+          printf 'FROM docker.io/keyval/odigos-victoria-metrics:latest\n' | docker buildx build \
+            --platform=linux/$(docker version -f '{{.Server.Arch}}') \
+            --pull \
+            -t docker.io/keyval/odigos-victoria-metrics:e2e-test \
+            --load \
+            -
+          docker save docker.io/keyval/odigos-victoria-metrics:e2e-test -o victoria-metrics-image.tar
+
+      - name: Save Odigos images to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            odigos-images.tar
+            cli-image.tar
+            victoria-metrics-image.tar
+          key: ${{ github.run_id }}-odigos-images
+
   kubernetes-tests:
+    needs: [build-cli, build-odigos-images]
+    runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
       matrix:
         kubernetes-version: ["1.21.12", "1.37"]
-    uses: ./.github/workflows/e2e.yaml
-    with:
-      kubernetes-version: ${{ matrix.kubernetes-version }}
-    secrets:
-      slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+        test-scenario:
+          - "ui"
+          - "helm-chart"
+          - "cli-upgrade"
+          - "helm-upgrade"
+          - "runtime-detection"
+          - "instrumentation-lifecycle"
+          - "instrumentation-rollback"
+          - "instrumentation-rollback-stability-window"
+          - "environment-variables"
+          - "trace-collection"
+          - "log-collection"
+          - "source"
+          - "webhooks"
+          - "env-injection"
+          - "data-streams"
+          - "mount-method"
+          - "argo-rollouts"
+          - "head-sampling-http-nodejs"
+          - "head-sampling-http-python"
+          - "head-sampling-http-java"
+          - "tail-sampling-nodejs"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Run Kubernetes test
+        uses: ./.github/actions/kubernetes-tests
+        with:
+          kubernetes-version: ${{ matrix.kubernetes-version }}
+          test-scenario: ${{ matrix.test-scenario }}
+
+  kubernetes-tests-report:
+    if: always()
+    needs: kubernetes-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Report Test Outcome
+        uses: ./.github/actions/nightly/report
+        with:
+          status: ${{ needs.kubernetes-tests.result }}
+          suite_name: kubernetes-tests
+          suite_parameters: '{"kubernetes_versions": "1.21.12, 1.37"}'
+          slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
 
   chaos-tests:
     runs-on: depot-ubuntu-24.04-8
