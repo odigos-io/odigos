@@ -170,6 +170,7 @@ service:
       - odigostrafficmetrics
       receivers:
       - filelog
+      - otlp/in
     metrics:
       exporters:
       - otlp_grpc/out-cluster-collector-metrics
