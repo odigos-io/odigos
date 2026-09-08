@@ -27,7 +27,7 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:4317", endpoint),
 		"headers": GenericMap{
-			"api-key": "${NEWRELIC_API_KEY}",
+			"api-key": SecretEnvPlaceholder("NEWRELIC_API_KEY", dest),
 		},
 	}
 	var pipelineNames []string

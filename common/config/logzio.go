@@ -41,7 +41,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		exporterName := "logzio/tracing-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"region":        region,
-			"account_token": "${LOGZIO_TRACING_TOKEN}",
+			"account_token": SecretEnvPlaceholder("LOGZIO_TRACING_TOKEN", dest),
 		}
 		tracesPipelineName := "traces/logzio-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
@@ -59,7 +59,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 				"p8s_logzio_name": "odigos",
 			},
 			"headers": GenericMap{
-				"authorization": "Bearer ${LOGZIO_METRICS_TOKEN}",
+				"authorization": "Bearer " + SecretEnvPlaceholder("LOGZIO_METRICS_TOKEN", dest),
 			},
 		}
 		metricsPipelineName := "metrics/logzio-" + dest.GetID()
@@ -73,7 +73,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		exporterName := "logzio/logs-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"region":        region,
-			"account_token": "${LOGZIO_LOGS_TOKEN}",
+			"account_token": SecretEnvPlaceholder("LOGZIO_LOGS_TOKEN", dest),
 		}
 		currentConfig.Processors["attributes/logzio"] = GenericMap{
 			"actions": []GenericMap{

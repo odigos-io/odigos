@@ -35,7 +35,7 @@ func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 			"insecure": isTlsDisabled,
 		},
 		"headers": GenericMap{
-			"authorization": "Bearer ${ELASTIC_APM_SECRET_TOKEN}",
+			"authorization": "Bearer " + SecretEnvPlaceholder("ELASTIC_APM_SECRET_TOKEN", dest),
 		},
 	}
 
