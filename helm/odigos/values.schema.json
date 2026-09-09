@@ -2891,6 +2891,20 @@
       },
       "required": [],
       "title": "userInstrumentationEnvs"
+    },
+    "wasp": {
+      "additionalProperties": false,
+      "description": "controls the wasp settings",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "odiglet uses wasp automatically when the kernel requires it. set to false to opt out.",
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "wasp"
     }
   },
   "required": [],

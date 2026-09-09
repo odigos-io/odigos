@@ -1712,6 +1712,13 @@ clickhouseDestinationJsonType:
   enabled: false
 
 # @schema
+# description: controls the wasp settings
+# @schema
+wasp:
+  # odiglet uses wasp automatically when the kernel requires it. set to false to opt out.
+  enabled: true
+
+# @schema
 # description: |-
 #   configuration for metrics sources (where odigos collects metrics from)
 #   only relevant when a metrics destination is enabled
