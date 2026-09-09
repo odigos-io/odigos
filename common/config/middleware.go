@@ -28,9 +28,9 @@ func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	exporterName := "otlp_grpc/middleware-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
-		"endpoint": "${MW_TARGET}",
+		"endpoint": SecretEnvPlaceholder("MW_TARGET", dest),
 		"headers": GenericMap{
-			"authorization": "${MW_API_KEY}",
+			"authorization": SecretEnvPlaceholder("MW_API_KEY", dest),
 		},
 	}
 	var pipelineNames []string

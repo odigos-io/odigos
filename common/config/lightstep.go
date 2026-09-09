@@ -17,7 +17,7 @@ func (l *Lightstep) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"endpoint": "ingest.lightstep.com:443",
 			"headers": GenericMap{
-				"lightstep-access-token": "${LIGHTSTEP_ACCESS_TOKEN}",
+				"lightstep-access-token": SecretEnvPlaceholder("LIGHTSTEP_ACCESS_TOKEN", dest),
 			},
 		}
 

@@ -33,7 +33,7 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"X-Seq-ApiKey": "${SEQ_API_KEY}",
+			"X-Seq-ApiKey": SecretEnvPlaceholder("SEQ_API_KEY", dest),
 		},
 	}
 

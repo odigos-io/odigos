@@ -28,7 +28,7 @@ func (s *SignalFx) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 
 	exporterName := "signalfx/" + dest.GetID()
 	exporterConfig := GenericMap{
-		"access_token": "${SIGNALFX_ACCESS_TOKEN}",
+		"access_token": SecretEnvPlaceholder("SIGNALFX_ACCESS_TOKEN", dest),
 		"realm":        realm,
 		"api_url":      fmt.Sprintf("https://api.%s.signalfx.com", realm),
 		"ingest_url":   fmt.Sprintf("https://ingest.%s.signalfx.com", realm),

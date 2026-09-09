@@ -37,7 +37,7 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authorization": "LumigoToken ${LUMIGO_TOKEN}",
+			"Authorization": "LumigoToken " + SecretEnvPlaceholder("LUMIGO_TOKEN", dest),
 		},
 	}
 

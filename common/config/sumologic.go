@@ -13,7 +13,7 @@ func (s *SumoLogic) DestType() common.DestinationType {
 func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	exporterName := "otlp_http/sumologic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
-		"endpoint": "${SUMOLOGIC_COLLECTION_URL}",
+		"endpoint": SecretEnvPlaceholder("SUMOLOGIC_COLLECTION_URL", dest),
 	}
 
 	var pipelineNames []string

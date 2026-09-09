@@ -61,7 +61,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		currentConfig.Extensions[authExtensionName] = GenericMap{
 			"client_auth": GenericMap{
 				"username": lokiUsername,
-				"password": fmt.Sprintf("${%s}", lokiPasswordKey),
+				"password": SecretEnvPlaceholder(lokiPasswordKey, dest),
 			},
 		}
 		exporterConf["auth"] = GenericMap{
