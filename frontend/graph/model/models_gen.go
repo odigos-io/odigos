@@ -2296,7 +2296,7 @@ type Query struct {
 
 type Recommendation struct {
 	Name                    string                              `json:"name"`
-	Type                    RecommendationType                  `json:"type"`
+	Type                    string                              `json:"type"`
 	Applied                 bool                                `json:"applied"`
 	ConditionsMet           bool                                `json:"conditionsMet"`
 	Dismissed               bool                                `json:"dismissed"`
@@ -2333,6 +2333,7 @@ type RecommendationCatalogRemediation struct {
 	Type          string                               `json:"type"`
 	ButtonText    string                               `json:"buttonText"`
 	Tooltip       string                               `json:"tooltip"`
+	CanApplyViaUI bool                                 `json:"canApplyViaUi"`
 	ApplyExamples []*RecommendationCatalogApplyExample `json:"applyExamples"`
 }
 
@@ -4496,53 +4497,6 @@ func (e *ProgrammingLanguage) UnmarshalGQL(v any) error {
 }
 
 func (e ProgrammingLanguage) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type RecommendationType string
-
-const (
-	RecommendationTypeInferDBAttributes   RecommendationType = "InferDBAttributes"
-	RecommendationTypeAutoGoOffsetUpdater RecommendationType = "AutoGoOffsetUpdater"
-	RecommendationTypeEnableOwnMetrics    RecommendationType = "EnableOwnMetrics"
-	RecommendationTypeSampleHealthProbes  RecommendationType = "SampleHealthProbes"
-	RecommendationTypeURLTemplatization   RecommendationType = "UrlTemplatization"
-)
-
-var AllRecommendationType = []RecommendationType{
-	RecommendationTypeInferDBAttributes,
-	RecommendationTypeAutoGoOffsetUpdater,
-	RecommendationTypeEnableOwnMetrics,
-	RecommendationTypeSampleHealthProbes,
-	RecommendationTypeURLTemplatization,
-}
-
-func (e RecommendationType) IsValid() bool {
-	switch e {
-	case RecommendationTypeInferDBAttributes, RecommendationTypeAutoGoOffsetUpdater, RecommendationTypeEnableOwnMetrics, RecommendationTypeSampleHealthProbes, RecommendationTypeURLTemplatization:
-		return true
-	}
-	return false
-}
-
-func (e RecommendationType) String() string {
-	return string(e)
-}
-
-func (e *RecommendationType) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = RecommendationType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RecommendationType", str)
-	}
-	return nil
-}
-
-func (e RecommendationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

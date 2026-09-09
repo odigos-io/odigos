@@ -23,6 +23,7 @@ export const SET_RECOMMENDATION_DISMISSED = gql`
         type
         buttonText
         tooltip
+        canApplyViaUi
         applyExamples { type content }
       }
     }
@@ -30,7 +31,7 @@ export const SET_RECOMMENDATION_DISMISSED = gql`
 `;
 
 export const APPLY_RECOMMENDATION_REMEDIATION = gql`
-  mutation ApplyRecommendationRemediation($recommendationType: RecommendationType!, $remediationType: String!) {
+  mutation ApplyRecommendationRemediation($recommendationType: String!, $remediationType: String!) {
     applyRecommendationRemediation(recommendationType: $recommendationType, remediationType: $remediationType)
   }
 `;
