@@ -979,7 +979,8 @@ odiglet:
     #   SYS_ADMIN required when running in unprivileged mode if one of the following is true:
     #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
     #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
-    #   SYSLOG and SYS_RESOURCE are added automatically when profiling.enabled is true.
+    #   SYSLOG and SYS_RESOURCE are added automatically when profiling.enabled is true,
+    #   or when aiden.interrogation.enabled turns on the profiling pipeline.
     # @schema
     capabilities:
       - SYS_ADMIN
@@ -992,6 +993,17 @@ odiglet:
     #   Run the data-collection container as a privileged container.
     # @schema
     privileged: false
+
+    # @schema
+    # description: |-
+    #   AppArmor profile for data-collection when gke.enabled and the profiling
+    #   pipeline is on (profiling.enabled or aiden.interrogation.enabled).
+    #   GKE's default profile denies mkdir /sys/fs/bpf/otel, which the eBPF
+    #   profiler needs to pin traces_ctx_v1 for profile↔span links.
+    #   Ignored when privileged, or when gke.enabled is false.
+    # @schema
+    appArmorProfile:
+      type: "Unconfined"
 
     # @schema
     # description: |-
@@ -1556,10 +1568,10 @@ aiden:
 
   # @schema
   # description: |-
-  #   OpenClaw image for Aiden. Defaults to the locally built Odigos Aiden image
-  #   (registry.odigos.io/odigos-aiden:dev) produced by `make build-aiden-image`, which bundles
-  #   Slack via OPENCLAW_EXTENSIONS, Gemini runtime support, and the Jaeger skill. Build before
-  #   enabling Aiden, or override repository/tag for a registry-hosted custom build.
+  #   OpenClaw image for Aiden. Defaults to registry.odigos.io/odigos-aiden produced by
+  #   `make build-aiden-image` / `make push-aiden`. Tag follows image.tag (then Chart.AppVersion)
+  #   unless aiden.image.tag is set. Build before enabling Aiden, or override repository/tag
+  #   for a registry-hosted custom build.
   # @schema
   image:
     # @schema
@@ -1568,10 +1580,10 @@ aiden:
     repository: registry.odigos.io/odigos-aiden
     # @schema
     # description: |-
-    #   OpenClaw image tag. Local Kind workflows use `dev` (see `make deploy-aiden`). Publish a
-    #   versioned tag to your registry for non-Kind clusters.
+    #   Optional Aiden-only tag override. Empty (default) uses image.tag, then Chart.AppVersion,
+    #   same as other Odigos components.
     # @schema
-    tag: "dev"
+    tag: ''
     # @schema
     # description: |-
     #   Image pull policy. `make deploy-aiden` patches this to Never after loading into Kind.

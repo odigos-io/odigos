@@ -65,7 +65,7 @@
         },
         "image": {
           "additionalProperties": false,
-          "description": "OpenClaw image for Aiden. Defaults to the locally built Odigos Aiden image\n(registry.odigos.io/odigos-aiden:dev) produced by `make build-aiden-image`, which bundles\nSlack via OPENCLAW_EXTENSIONS, Gemini runtime support, and the Jaeger skill. Build before\nenabling Aiden, or override repository/tag for a registry-hosted custom build.",
+          "description": "OpenClaw image for Aiden. Defaults to registry.odigos.io/odigos-aiden produced by\n`make build-aiden-image` / `make push-aiden`. Tag follows image.tag (then Chart.AppVersion)\nunless aiden.image.tag is set. Build before enabling Aiden, or override repository/tag\nfor a registry-hosted custom build.",
           "properties": {
             "pullPolicy": {
               "default": "IfNotPresent",
@@ -85,8 +85,8 @@
               "title": "repository"
             },
             "tag": {
-              "default": "dev",
-              "description": "OpenClaw image tag. Local Kind workflows use `dev` (see `make deploy-aiden`). Publish a\nversioned tag to your registry for non-Kind clusters.",
+              "default": "",
+              "description": "Optional Aiden-only tag override. Empty (default) uses image.tag, then Chart.AppVersion,\nsame as other Odigos components.",
               "required": [],
               "title": "tag"
             }
@@ -1833,6 +1833,19 @@
               },
               "required": [],
               "title": "capabilities"
+            },
+            "appArmorProfile": {
+              "additionalProperties": false,
+              "description": "AppArmor profile for data-collection when gke.enabled and the profiling pipeline is on (profiling.enabled or aiden.interrogation.enabled). GKE's default profile denies mkdir /sys/fs/bpf/otel. Ignored when privileged.",
+              "properties": {
+                "type": {
+                  "default": "Unconfined",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "appArmorProfile"
             },
             "privileged": {
               "default": "false",

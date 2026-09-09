@@ -23,6 +23,7 @@
       "agents" (dict
         "defaults" (dict
           "workspace" "~/.openclaw/workspace"
+          "skipBootstrap" true
           "model" (dict "primary" (.Values.aiden.gemini.model | default "google/gemini-3-flash-preview"))
         )
         "list" (list
@@ -30,6 +31,10 @@
             "id" "default"
             "name" "Odigos Aiden"
             "workspace" "~/.openclaw/workspace"
+            "identity" (dict
+              "name" "Aiden"
+              "theme" "concise Odigos Enterprise assistant"
+            )
           )
         )
       )

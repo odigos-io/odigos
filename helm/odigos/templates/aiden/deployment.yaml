@@ -1,4 +1,5 @@
 {{- if .Values.aiden.enabled }}
+{{- $aidenImageTag := .Values.aiden.image.tag | default .Values.image.tag | default .Chart.AppVersion }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -54,10 +55,11 @@ spec:
         # Seed-if-missing: /home/node/.openclaw is a plain emptyDir here (no PVC), so it is
         # reseeded on every pod (re)start; OpenClaw itself still owns the file once running
         # (onboard, channels add, doctor --fix, Control UI edits) for the lifetime of that pod.
-        # openclaw.json comes from the odigos-aiden-config ConfigMap; AGENTS.md is bundled in
-        # the Aiden image (see odigos-enterprise/aiden/AGENTS.md).
+        # openclaw.json comes from the odigos-aiden-config ConfigMap; workspace files
+        # (AGENTS.md, IDENTITY.md, SOUL.md) are bundled in the Aiden image.
+        # skipBootstrap is on so OpenClaw must not seed BOOTSTRAP.md (name/vibe ritual).
         - name: init-config
-          image: "{{ .Values.aiden.image.repository }}:{{ .Values.aiden.image.tag }}"
+          image: "{{ .Values.aiden.image.repository }}:{{ $aidenImageTag }}"
           imagePullPolicy: {{ .Values.aiden.image.pullPolicy | default "IfNotPresent" }}
           command:
             - sh
@@ -66,7 +68,15 @@ spec:
               set -e
               [ -f /home/node/.openclaw/openclaw.json ] || cp /config/openclaw.json /home/node/.openclaw/openclaw.json
               mkdir -p /home/node/.openclaw/workspace
-              [ -f /home/node/.openclaw/workspace/AGENTS.md ] || cp /app/aiden/AGENTS.md /home/node/.openclaw/workspace/AGENTS.md
+              # Copy only when the image has the file. Older Aiden images have
+              # AGENTS.md but not IDENTITY.md/SOUL.md; skipBootstrap + identity
+              # in openclaw.json still skip the name/vibe ritual.
+              for f in AGENTS.md IDENTITY.md SOUL.md; do
+                if [ ! -f /home/node/.openclaw/workspace/"$f" ] && [ -f /app/aiden/"$f" ]; then
+                  cp /app/aiden/"$f" /home/node/.openclaw/workspace/"$f"
+                fi
+              done
+              rm -f /home/node/.openclaw/workspace/BOOTSTRAP.md
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
@@ -90,7 +100,7 @@ spec:
               mountPath: /config
       containers:
       - name: aiden
-        image: "{{ .Values.aiden.image.repository }}:{{ .Values.aiden.image.tag }}"
+        image: "{{ .Values.aiden.image.repository }}:{{ $aidenImageTag }}"
         imagePullPolicy: {{ .Values.aiden.image.pullPolicy | default "IfNotPresent" }}
         # Official OpenClaw gateway entrypoint; see https://docs.openclaw.dev/install/kubernetes.
         command:
