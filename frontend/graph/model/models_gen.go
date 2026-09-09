@@ -1961,7 +1961,6 @@ type LocalUIConfigInput struct {
 	ClusterName           *string                                  `json:"clusterName,omitempty"`
 	Instrumentor          *LocalUIConfigInstrumentorInput          `json:"instrumentor,omitempty"`
 	AllowConcurrentAgents *LocalUIConfigAllowConcurrentAgentsInput `json:"allowConcurrentAgents,omitempty"`
-	Wasp                  *LocalUIConfigWaspInput                  `json:"wasp,omitempty"`
 	Rollout               *LocalUIConfigRolloutInput               `json:"rollout,omitempty"`
 	AutoRollback          *LocalUIConfigAutoRollbackInput          `json:"autoRollback,omitempty"`
 	GoAutoOffsetsCron     *string                                  `json:"goAutoOffsetsCron,omitempty"`
@@ -2004,10 +2003,6 @@ type LocalUIConfigTraceCorrelationsServiceIOInput struct {
 	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
 	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
 	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
-}
-
-type LocalUIConfigWaspInput struct {
-	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type MessagingPayloadCollection struct {
