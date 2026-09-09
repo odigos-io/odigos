@@ -329,10 +329,6 @@ input LocalUiConfigAllowConcurrentAgentsInput {
   enabled: Boolean
 }
 
-input LocalUiConfigWaspInput {
-  enabled: Boolean
-}
-
 input LocalUiConfigSpanSamplingAttributesInput {
   disabled: Boolean
   samplingCategoryDisabled: Boolean
@@ -377,7 +373,6 @@ input LocalUiConfigInput {
   clusterName: String
   instrumentor: LocalUiConfigInstrumentorInput
   allowConcurrentAgents: LocalUiConfigAllowConcurrentAgentsInput
-  wasp: LocalUiConfigWaspInput
   rollout: LocalUiConfigRolloutInput
   autoRollback: LocalUiConfigAutoRollbackInput
   goAutoOffsetsCron: String

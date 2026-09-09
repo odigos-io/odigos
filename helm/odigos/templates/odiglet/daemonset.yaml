@@ -169,8 +169,8 @@ spec:
           {{- if .Values.odiglet.traceIdSuffix }}
             - --trace-id-suffix={{ .Values.odiglet.traceIdSuffix }}
           {{- end }}
-          {{- if .Values.wasp.enabled }}
-            - --wasp-enabled
+          {{- if .Values.wasp.disabled }}
+            - --wasp-disabled
           {{- end }}
           command:
             - /root/odiglet
@@ -420,6 +420,12 @@ spec:
 # if runAsNonRoot is set, we must be using mountMethod of "k8s-init-container", since copying/writing files on the host (/var/odigos) requires root privileges
 {{- if and .Values.odiglet.runAsNonRoot (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
 {{ fail "odiglet.runAsNonRoot is only supported with instrumentor.mountMethod=k8s-init-container" }}
+{{- end }}
+# Without the host PID namespace, uprobes cannot be scoped to a single process, so they apply
+# to every process sharing the agent files. k8s-init-container gives each pod its own copy,
+# which keeps that scope contained to the pod.
+{{- if and .Values.odiglet.noHostPid (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
+{{ fail "odiglet.noHostPid is only supported with instrumentor.mountMethod=k8s-init-container" }}
 {{- end }}
 # to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
 # and to have hostMounts allowed
