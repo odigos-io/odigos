@@ -397,7 +397,7 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	return signals, nil
 }
 
-func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
+func isTracingLoadBalancingNeeded(ctx context.Context, c client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
 	// Tracing load balancing is required by every gateway feature that aggregates a whole trace.
 	// Without it the node collectors round-robin over the gateway replicas, so spans of the same
 	// trace reach different pods and each one only ever sees a fragment of the trace.
@@ -408,5 +408,11 @@ func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCol
 		clusterCollectorGroup.Spec.TailSampling.Disabled != nil &&
 		!*clusterCollectorGroup.Spec.TailSampling.Disabled
 	traceCorrelationsEnabled := clusterCollectorGroup.Spec.TraceCorrelations != nil
-	return serviceGraphEnabled || tailSamplingEnabled || traceCorrelationsEnabled, nil
+	interrogationEnabled := false
+	if c != nil {
+		if cfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
+			interrogationEnabled = odigoscommon.InterrogationActive(cfg.Interrogation)
+		}
+	}
+	return serviceGraphEnabled || tailSamplingEnabled || traceCorrelationsEnabled || interrogationEnabled, nil
 }

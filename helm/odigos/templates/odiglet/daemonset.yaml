@@ -57,6 +57,12 @@ spec:
         # Prior to Kubernetes v1.30, AppArmor profile was specified through annotations.
         container.apparmor.security.beta.kubernetes.io/odiglet: unconfined
         {{- end }}
+        {{- /* GKE AppArmor blocks mkdir /sys/fs/bpf/otel unless data-collection is Unconfined.
+             The profiling receiver pins traces_ctx_v1 there so probe-linked profile samples
+             can carry span IDs. Same trigger as the host-bpffs mount. */}}
+        {{- if and .Values.gke.enabled (or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled)) (not .Values.odiglet.dataCollection.privileged) (semverCompare "<1.30.0" $k8sVersion) }}
+        container.apparmor.security.beta.kubernetes.io/data-collection: unconfined
+        {{- end }}
         kubectl.kubernetes.io/default-container: odiglet
     spec:
       {{- $nodeSelector := dict }}
@@ -289,6 +295,10 @@ spec:
             - name: hostproc
               mountPath: /hostproc
           {{- end }}
+          {{- if and (or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled)) (not .Values.odiglet.noHostPathMounts) }}
+            - name: host-bpffs
+              mountPath: /sys/fs/bpf
+          {{- end }}
              # needed to load eBPF tracepoints - used by runtime-detector
             - name: sys-kernel
               mountPath: /sys/kernel
@@ -316,7 +326,8 @@ spec:
             capabilities:
               add:
               {{- $caps := .Values.odiglet.dataCollection.capabilities | default list }}
-              {{- if .Values.profiling.enabled }}
+              {{- /* Match odigos-configuration: interrogation also enables the profiling pipeline. */}}
+              {{- if or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled) }}
               {{- /* the eBPF profiler reads /proc/kallsyms addresses and raises RLIMIT_MEMLOCK */}}
               {{- if not (has "SYSLOG" $caps) }}{{- $caps = append $caps "SYSLOG" }}{{- end }}
               {{- if not (has "SYS_RESOURCE" $caps) }}{{- $caps = append $caps "SYS_RESOURCE" }}{{- end }}
@@ -324,6 +335,12 @@ spec:
               {{- toYaml $caps | nindent 14 }}
               drop:
                 - ALL
+            {{- if and .Values.gke.enabled (or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled)) (semverCompare ">=1.30.0" $k8sVersion) }}
+            {{- with (.Values.odiglet.dataCollection.appArmorProfile | default (dict "type" "Unconfined")) }}
+            appArmorProfile:
+              {{ toYaml . | nindent 14 }}
+            {{- end }}
+            {{- end }}
             {{- with .Values.odiglet.dataCollection.seLinuxOptions }}
             seLinuxOptions:
               {{- toYaml . | nindent 14 }}
@@ -411,6 +428,10 @@ spec:
             - name: sys-kernel
               mountPath: /sys/kernel
               readOnly: true
+            {{- if and (or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled)) (not .Values.odiglet.noHostPathMounts) }}
+            - name: host-bpffs
+              mountPath: /sys/fs/bpf
+            {{- end }}
             - name: exchange-dir
               mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
@@ -617,6 +638,12 @@ spec:
         - name: host-cgroup
           hostPath:
             path: /sys/fs/cgroup
+            type: Directory
+      {{- end }}
+      {{- if and (or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled)) (not .Values.odiglet.noHostPathMounts) }}
+        - name: host-bpffs
+          hostPath:
+            path: /sys/fs/bpf
             type: Directory
       {{- end }}
         - name: odigos-go-offsets
