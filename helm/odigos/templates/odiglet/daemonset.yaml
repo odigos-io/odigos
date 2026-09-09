@@ -169,7 +169,7 @@ spec:
           {{- if .Values.odiglet.traceIdSuffix }}
             - --trace-id-suffix={{ .Values.odiglet.traceIdSuffix }}
           {{- end }}
-          {{- if not .Values.wasp.enabled }}
+          {{- if .Values.wasp.disabled }}
             - --wasp-disabled
           {{- end }}
           command:

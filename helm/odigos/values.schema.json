@@ -2896,10 +2896,10 @@
       "additionalProperties": false,
       "description": "controls the wasp settings",
       "properties": {
-        "enabled": {
-          "default": true,
-          "description": "odiglet uses wasp automatically when the kernel requires it. set to false to opt out.",
-          "title": "enabled",
+        "disabled": {
+          "default": false,
+          "description": "odiglet uses wasp automatically when the kernel requires it. set to true to opt out.",
+          "title": "disabled",
           "type": "boolean"
         }
       },

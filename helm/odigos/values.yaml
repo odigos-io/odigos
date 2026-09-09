@@ -1715,8 +1715,8 @@ clickhouseDestinationJsonType:
 # description: controls the wasp settings
 # @schema
 wasp:
-  # odiglet uses wasp automatically when the kernel requires it. set to false to opt out.
-  enabled: true
+  # odiglet uses wasp automatically when the kernel requires it. set to true to opt out.
+  disabled: false
 
 # @schema
 # description: |-
