@@ -29,7 +29,6 @@ import (
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -217,8 +216,8 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		if len(dirsToCopy) > 0 {
 			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
 			createInitContainer(pod, dirsToCopy, odigosConfiguration)
-			if err := ensureImagePullSecretsForPod(ctx, p.Client, odigosNamespace, pw.Namespace, pod, odigosConfiguration.ImagePullSecrets); err != nil {
-				logger.Error(err, "failed to ensure image pull secrets for init container")
+			for _, name := range odigosConfiguration.ImagePullSecrets {
+				injectImagePullSecret(pod, name)
 			}
 		}
 	}
@@ -550,18 +549,10 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
 }
 
-func ensureImagePullSecretsForPod(ctx context.Context, c client.Client, odigosNamespace, podNamespace string, pod *corev1.Pod, configuredSecrets []string) error {
-	present, err := pro.CopyImagePullSecretsIfMissing(ctx, c, c, odigosNamespace, podNamespace, configuredSecrets)
-	if err != nil {
-		return err
-	}
-	for _, name := range present {
-		injectImagePullSecret(pod, name)
-	}
-	return nil
-}
-
 func injectImagePullSecret(pod *corev1.Pod, secretName string) {
+	if secretName == "" {
+		return
+	}
 	for _, existing := range pod.Spec.ImagePullSecrets {
 		if existing.Name == secretName {
 			return
