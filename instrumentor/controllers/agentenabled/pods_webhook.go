@@ -216,6 +216,9 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		if len(dirsToCopy) > 0 {
 			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
 			createInitContainer(pod, dirsToCopy, odigosConfiguration)
+			for _, name := range odigosConfiguration.ImagePullSecrets {
+				injectImagePullSecret(pod, name)
+			}
 		}
 	}
 
@@ -544,6 +547,18 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 		}
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
+}
+
+func injectImagePullSecret(pod *corev1.Pod, secretName string) {
+	if secretName == "" {
+		return
+	}
+	for _, existing := range pod.Spec.ImagePullSecrets {
+		if existing.Name == secretName {
+			return
+		}
+	}
+	pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secretName})
 }
 
 func getInitContainerImage(config common.OdigosConfiguration) string {
