@@ -129,6 +129,82 @@ spec:
                   - type
                   type: object
                 type: array
+              customProbes:
+                properties:
+                  probes:
+                    items:
+                      properties:
+                        expiresAt:
+                          format: date-time
+                          maxLength: 35
+                          type: string
+                        generation:
+                          pattern: ^[0-9a-f]{32}$
+                          type: string
+                        message:
+                          maxLength: 1024
+                          type: string
+                        probe:
+                          maxLength: 1024
+                          minLength: 1
+                          type: string
+                        reason:
+                          maxLength: 64
+                          type: string
+                        revision:
+                          description: Revision identifies this transition within
+                            the native runtime lifetime.
+                          format: int64
+                          minimum: 1
+                          type: integer
+                        state:
+                          description: Installed and retired describe native resources,
+                            not telemetry delivery.
+                          enum:
+                          - pending
+                          - installed
+                          - draining
+                          - retired
+                          - failed
+                          type: string
+                        updatedAt:
+                          format: date-time
+                          maxLength: 35
+                          type: string
+                      required:
+                      - generation
+                      - probe
+                      - reason
+                      - revision
+                      - state
+                      - updatedAt
+                      type: object
+                    maxItems: 128
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - probe
+                    - generation
+                    x-kubernetes-list-type: map
+                  revision:
+                    description: Revision is monotonic only within RuntimeID.
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  runtimeId:
+                    description: RuntimeID identifies one native instrumentation lifetime,
+                      not a process ID.
+                    maxLength: 128
+                    minLength: 1
+                    type: string
+                  truncated:
+                    description: Missing generations are unknown. They never acknowledge
+                      retirement.
+                    type: boolean
+                required:
+                - probes
+                - revision
+                - runtimeId
+                type: object
               healthy:
                 description: |-
                   Healthy true means that the odigos agent has started the SDK, and there are no errors. User can expect telemetry to be generated.

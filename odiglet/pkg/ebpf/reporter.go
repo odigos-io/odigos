@@ -2,6 +2,7 @@ package ebpf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -81,6 +82,31 @@ func (r *k8sReporter) OnRun(ctx context.Context, pid int, err error, e *K8sProce
 	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToRun, err.Error(), instrumentation.Status{})
 }
 
+func (r *k8sReporter) OnStatus(ctx context.Context, pid int, e *K8sProcessDetails, status instrumentation.Status) error {
+	if status.CustomProbes == nil {
+		return nil
+	}
+	var current odigosv1.InstrumentationInstance
+	key := client.ObjectKey{Namespace: e.Pod.Namespace, Name: instance.InstrumentationInstanceName(e.Pod.Name, pid)}
+	if err := r.client.Get(ctx, key, &current); err != nil {
+		if apierrors.IsNotFound(err) {
+			return r.OnLoad(ctx, pid, nil, e, status)
+		}
+		return err
+	}
+	owner := metav1.GetControllerOf(&current)
+	if owner == nil || owner.UID != e.Pod.UID || current.Spec.ContainerName != e.ContainerName {
+		return errors.New("instrumentation status owner changed")
+	}
+	previous := current.Status.CustomProbes
+	if previous != nil && previous.RuntimeID == status.CustomProbes.RuntimeID && previous.Revision >= status.CustomProbes.Revision {
+		return nil
+	}
+	before := current.DeepCopy()
+	current.Status.CustomProbes = status.CustomProbes.DeepCopy()
+	return r.client.Status().Patch(ctx, &current, client.MergeFromWithOptions(before, client.MergeFromWithOptimisticLock{}))
+}
+
 func (r *k8sReporter) OnExit(ctx context.Context, pid int, e *K8sProcessDetails) error {
 	if err := r.client.Delete(ctx, &odigosv1.InstrumentationInstance{
 		ObjectMeta: metav1.ObjectMeta{
@@ -113,6 +139,7 @@ func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, k
 	return instance.UpdateInstrumentationInstanceStatus(ctx, ke.Pod, ke.ContainerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
 		instance.WithHealthy(&healthy, string(reason), &msg),
 		instance.WithComponents(components),
+		instance.WithCustomProbes(status.CustomProbes),
 		instance.WithAttributes([]odigosv1.Attribute{
 			{
 				Key:   string(semconv.ProcessPIDKey),

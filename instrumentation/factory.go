@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/cilium/ebpf"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -95,5 +96,13 @@ type Instrumentation interface {
 // Status is used to identify the status of an instrumentation and its libraries.
 type Status struct {
 	// Components is a map of component names (such as instrumentation library names) to their status.
-	Components map[string]error
+	Components   map[string]error
+	CustomProbes *instrumentationrules.CustomProbeReport
+}
+
+// StatusProvider is optional. Revision must be cheap to read and change only
+// when Status changes. The manager coalesces changes before reporting them.
+type StatusProvider interface {
+	StatusRevision() uint64
+	Status() (Status, uint64)
 }
