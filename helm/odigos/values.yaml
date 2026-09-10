@@ -976,7 +976,7 @@ odiglet:
     #   SYS_ADMIN required when running in unprivileged mode if one of the following is true:
     #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
     #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
-    #   SYSLOG and SYS_RESOURCE are added automatically when profiling.enabled is true.
+    #   SYSLOG, SYS_RESOURCE and SYS_PTRACE are added automatically when profiling.enabled is true.
     # @schema
     capabilities:
       - SYS_ADMIN
