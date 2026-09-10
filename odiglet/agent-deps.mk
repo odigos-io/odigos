@@ -21,6 +21,8 @@ upgrade-agent:
 			$(MAKE) -f $(MK) upgrade-image-agent-version AGENT_DISTRO=ruby-community AGENT_VERSION=$(AGENT_VERSION) ;; \
 		nodejs|nodejs-community) \
 			$(MAKE) -f $(MK) upgrade-image-agent-version AGENT_DISTRO=nodejs-community AGENT_VERSION=$(AGENT_VERSION) ;; \
+		browser|browser-community) \
+			$(MAKE) -f $(MK) upgrade-image-agent-version AGENT_DISTRO=browser-community AGENT_VERSION=$(AGENT_VERSION) ;; \
 		python|python-community) \
 			$(MAKE) -f $(MK) upgrade-python-community-version AGENT_VERSION=$(AGENT_VERSION) ;; \
 		*) \

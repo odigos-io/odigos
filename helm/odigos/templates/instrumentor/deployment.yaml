@@ -108,6 +108,8 @@ spec:
             {{- else }}
             value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "agents" "Tag" $imageTag) }}
             {{- end }}
+          - name: ODIGOS_BROWSER_PROXY_IMAGE
+            value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "browser-proxy" "Tag" $imageTag) }}
           {{- if dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict) }}
           - name: ODIGOS_INSTRUMENTED_PODS_NODE_LABEL_RETENTION
             value: {{ dig "scheduleOnlyOnInstrumentedNodes" "nodeLabelRetention" "5m" (.Values.odiglet | default dict) | quote }}

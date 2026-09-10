@@ -77,7 +77,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;EnabledWithOtherAgents;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;EnabledWithOtherAgents;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff;BrowserPortMissing
 type AgentEnabledReason string
 
 const (
@@ -102,6 +102,10 @@ const (
 	// used for the rollback feature, when an application was instrumented and it caused an ImagePullBackOff
 	// We're marking it as that and rolling back the instrumentation
 	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
+	// browser instrumentation is delivered by the odigos-browser-proxy sidecar, which transparently
+	// redirects inbound traffic to the app container's TCP port. If the app container declares no TCP
+	// containerPort, the sidecar cannot be wired and browser instrumentation cannot be applied.
+	AgentEnabledReasonBrowserPortMissing AgentEnabledReason = "BrowserPortMissing"
 )
 
 // Used to return that an agent should be disabled for a container.
@@ -151,6 +155,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 45
 	case AgentEnabledReasonInjectionConflict:
 		return 48
+	case AgentEnabledReasonBrowserPortMissing:
+		return 55
 	case AgentEnabledReasonUnsupportedProgrammingLanguage:
 		return 50
 	case AgentEnabledReasonUnsupportedRuntimeVersion:
@@ -173,7 +179,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 func IsReasonStatusDisabled(reason string) bool {
 	switch reason {
 	// Agent-related reasons
-	case string(RuntimeDetectionReasonNoRunningPods):
+	case string(RuntimeDetectionReasonNoRunningPods),
+		string(AgentEnabledReasonBrowserPortMissing):
 		return true
 
 	// rollout-related reasons

@@ -10,7 +10,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
@@ -28,7 +27,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -44,7 +42,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -60,7 +57,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -76,7 +72,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -92,7 +87,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -109,7 +103,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -125,7 +118,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -141,7 +133,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -157,7 +148,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -173,7 +163,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -189,7 +178,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -212,7 +200,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -237,7 +224,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -260,7 +246,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -276,7 +261,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -292,7 +276,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---
@@ -308,7 +291,6 @@ status:
     - type: Progressing
       status: "True"
   readyReplicas: 1
-  replicas: 1
   updatedReplicas: 1
   availableReplicas: 1
 ---

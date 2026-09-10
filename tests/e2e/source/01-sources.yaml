@@ -112,3 +112,22 @@ spec:
   containerOverrides:
     - containerName: shipping
       otelDistroName: opentelemetry-ebpf-instrumentation
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: browser-frontend
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: browser-frontend
+    namespace: default
+    kind: Deployment
+  otelServiceName: browser-frontend-reported
+  # Browser instrumentation is opt-in: explicitly select the browser distribution on the serving
+  # container. Odigos then injects the odigos-browser-proxy sidecar instead of an in-pod agent.
+  containerOverrides:
+    - containerName: browser-frontend
+      otelDistroName: browser-community

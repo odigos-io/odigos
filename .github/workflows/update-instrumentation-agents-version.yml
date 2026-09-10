@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       instrumentation_agent:
-        description: "Canonical agent category (e.g. python, php, ruby, nodejs)"
+        description: "Canonical agent category (e.g. python, php, ruby, nodejs, browser)"
         required: true
         type: string
       new_agent_version:

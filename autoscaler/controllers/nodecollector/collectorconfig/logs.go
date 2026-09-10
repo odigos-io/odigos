@@ -113,6 +113,9 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
 	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace, opts.Tier)
+	// Always accept OTLP logs on the node collector (agents, browser-proxy clicks/events).
+	// otlp/in itself is defined in the common_application_telemetry domain.
+	pipelineReceivers = append(pipelineReceivers, OTLPInReceiverName)
 
 	return config.Config{
 		Receivers: receivers,

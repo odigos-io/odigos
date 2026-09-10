@@ -1,0 +1,26 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: browser-community
+spec:
+  name: browser-community
+  language: browser
+  runtimeEnvironments:
+    - name: browser
+      supportedVersions: '*'
+  displayName: 'Browser Community Native Instrumentation'
+  description: |
+    This distribution instruments front-end web applications using the OpenTelemetry Web SDK
+    and instrumentation libraries from the OpenTelemetry community.
+
+    Unlike server-side distributions, the telemetry SDK runs in the end-user's browser. Odigos
+    does not mount agent files into the application container or set runtime environment variables.
+    Instead, the odigos-browser-proxy sidecar is injected in front of the web server: it injects a
+    <script> tag that loads the OpenTelemetry Web SDK bundle into served HTML responses, and proxies
+    the browser's OTLP/HTTP telemetry (same-origin) back to the node-local collector.
+  browserSidecar:
+    agentDirectory: '{{ODIGOS_AGENTS_DIR}}/browser'
+    agentFileName: 'agent.js'
+  traces:
+    headersCollection:
+      supported: true

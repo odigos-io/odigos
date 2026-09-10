@@ -1,0 +1,27 @@
+# Asserts that the webhook injected the browser-proxy sidecar and the iptables redirect init
+# container into the browser-frontend pod. Chainsaw matches container slice length/order, so the
+# app container must be listed first (as injected by the Deployment), then the sidecar.
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: browser-frontend
+spec:
+  initContainers:
+    - name: odigos-browser-proxy-init
+      args:
+        - init
+      securityContext:
+        capabilities:
+          add:
+            - NET_ADMIN
+  containers:
+    - name: browser-frontend
+    - name: odigos-browser-proxy
+      ports:
+        - containerPort: 15001
+      securityContext:
+        runAsUser: 1337
+status:
+  phase: Running
