@@ -101,3 +101,22 @@ spec:
                 fi
                 sleep 1
               done
+
+    - name: Assert WebClient (Reactor Netty) Context Propagation
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/webclient-context-propagation.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 3
+              done
+      catch:
+        - script:
+            content: |
+              java_client_pod=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^java-http-client)
+              echo "=== java-http-client logs ==="
+              kubectl logs $java_client_pod -n default --tail=50
