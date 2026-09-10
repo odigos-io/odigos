@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	instrumentationrules "github.com/odigos-io/odigos/common/api/instrumentationrules"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,6 +46,7 @@ type InstrumentationInstanceStatusApplyConfiguration struct {
 	Reason         *string                                          `json:"reason,omitempty"`
 	LastStatusTime *v1.Time                                         `json:"lastStatusTime,omitempty"`
 	Components     []InstrumentationLibraryStatusApplyConfiguration `json:"components,omitempty"`
+	CustomProbes   *instrumentationrules.CustomProbeReport          `json:"customProbes,omitempty"`
 }
 
 // InstrumentationInstanceStatusApplyConfiguration constructs a declarative configuration of the InstrumentationInstanceStatus type for use with
@@ -121,5 +123,13 @@ func (b *InstrumentationInstanceStatusApplyConfiguration) WithComponents(values 
 		}
 		b.Components = append(b.Components, *values[i])
 	}
+	return b
+}
+
+// WithCustomProbes sets the CustomProbes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CustomProbes field is set to the value of the last call.
+func (b *InstrumentationInstanceStatusApplyConfiguration) WithCustomProbes(value instrumentationrules.CustomProbeReport) *InstrumentationInstanceStatusApplyConfiguration {
+	b.CustomProbes = &value
 	return b
 }
