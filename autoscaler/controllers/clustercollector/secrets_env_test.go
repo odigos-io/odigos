@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -58,4 +59,12 @@ func TestGetSecretsFromDests_ScopesManagedDestinations(t *testing.T) {
 
 	assert.Equal(t, "secret-c", sources[2].SecretRef.Name)
 	assert.Empty(t, sources[2].Prefix, "dynamic destinations keep unprefixed envFrom")
+
+	// envFrom.prefix is documented as a C_IDENTIFIER, and more importantly the env var
+	// it produces has to be resolvable by the collector's confmap env provider, which
+	// rejects any ${VAR} outside the identical C_IDENTIFIER character set.
+	for _, src := range sources[:2] {
+		assert.Empty(t, validation.IsCIdentifier(src.Prefix),
+			"envFrom prefix %q is not a C_IDENTIFIER, so the collector cannot expand ${%sFIELD}", src.Prefix, src.Prefix)
+	}
 }

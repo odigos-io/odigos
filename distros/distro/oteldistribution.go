@@ -122,7 +122,8 @@ type RuntimeAgent struct {
 	// If true, the agent supports ld-preload injection of "append" environment variables.
 	LdPreloadInjectionSupported bool `yaml:"ldPreloadInjectionSupported,omitempty"`
 
-	// If true, the agent supports wasp
+	// If true, the agent supports wasp.
+	// This field used to be inspected by the pods webhook, it is currently no used - keep it for clarity and future use.
 	WaspSupported bool `yaml:"waspSupported,omitempty"`
 
 	// If true, the instrumentation applied by this agent does not require application restart.

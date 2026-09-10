@@ -64,9 +64,6 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 	if config.AllowConcurrentAgents != nil {
 		provenance["allowConcurrentAgents"] = sourceName
 	}
-	if config.WaspEnabled != nil {
-		provenance["waspEnabled"] = sourceName
-	}
 	if config.Rollout != nil {
 		if config.Rollout.AutomaticRolloutDisabled != nil {
 			provenance["rollout.automaticRolloutDisabled"] = sourceName
@@ -233,18 +230,6 @@ func detectProfileProvenance(base, remote, local, effective *common.OdigosConfig
 	}
 	if !reflect.DeepEqual(preCheckHealth, effective.CheckDeviceHealthBeforeInjection) {
 		provenance["checkDeviceHealthBeforeInjection"] = "profile"
-	}
-
-	// waspEnabled: settable by overlays
-	preWasp := base.WaspEnabled
-	if remote != nil && remote.WaspEnabled != nil {
-		preWasp = remote.WaspEnabled
-	}
-	if local != nil && local.WaspEnabled != nil {
-		preWasp = local.WaspEnabled
-	}
-	if !reflect.DeepEqual(preWasp, effective.WaspEnabled) {
-		provenance["waspEnabled"] = "profile"
 	}
 
 	// metricsSources: only base config and profiles can set this
