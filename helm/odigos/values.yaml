@@ -893,6 +893,9 @@ odiglet:
     # @schema
     # description: |-
     #   Run the odiglet container, and its init container, as privileged containers.
+    #   Forced on when openshift.enabled is true, since those containers mount the host
+    #   SELinux store with Bidirectional mount propagation, which Kubernetes only permits
+    #   for privileged containers.
     # @schema
     privileged: false
 

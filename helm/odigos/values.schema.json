@@ -1933,7 +1933,7 @@
             },
             "privileged": {
               "default": "false",
-              "description": "Run the odiglet container, and its init container, as privileged containers.",
+              "description": "Run the odiglet container, and its init container, as privileged containers.\nForced on when openshift.enabled is true, since those containers mount the host\nSELinux store with Bidirectional mount propagation, which Kubernetes only permits\nfor privileged containers.",
               "required": [],
               "title": "privileged"
             },

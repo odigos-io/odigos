@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - helm/**
+      - tests/e2e/helm-chart/**
 
 jobs:
   lint-charts:
@@ -15,6 +16,9 @@ jobs:
         uses: azure/setup-helm@v4
       - name: Lint Charts
         run: helm lint helm/odigos helm/odigos-central
+      - name: Check odiglet privileged mount propagation
+        working-directory: tests/e2e/helm-chart
+        run: ./check-odiglet-privileged-mounts.sh "../../.."
 
   generate-schema:
     runs-on: ubuntu-latest

@@ -22,6 +22,11 @@
   {{- end -}}
 {{- end -}}
 {{- $k8sVersion := include "utils.cleanKubeVersion" . }}
+{{- /* On OpenShift the init and odiglet containers mount the host SELinux store with
+       Bidirectional mount propagation, which the API server only allows for privileged
+       containers, and relabeling /var/odigos with semanage/restorecon needs an
+       unconfined SELinux domain. Both force privileged regardless of the default. */}}
+{{- $odigletPrivileged := or .Values.odiglet.odiglet.privileged .Values.openshift.enabled -}}
 {{- if and $networkMetricsEnabled .Values.odiglet.noHostNetwork }}
 {{ fail "odiglet.noHostNetwork cannot be true when metricsSources.networkMetrics.enabled is true, since OBI network metrics require hostNetwork" }}
 {{- end }}
@@ -53,7 +58,7 @@ spec:
         app.kubernetes.io/name: odiglet
         odigos.io/collector-role: NODE_COLLECTOR
       annotations:
-        {{- if and (not .Values.odiglet.odiglet.privileged) (semverCompare "<1.30.0" $k8sVersion) }}
+        {{- if and (not $odigletPrivileged) (semverCompare "<1.30.0" $k8sVersion) }}
         # Prior to Kubernetes v1.30, AppArmor profile was specified through annotations.
         container.apparmor.security.beta.kubernetes.io/odiglet: unconfined
         {{- end }}
@@ -103,7 +108,7 @@ spec:
           {{- end }}
           {{- end }}
           securityContext:
-          {{- if .Values.odiglet.odiglet.privileged}}
+          {{- if $odigletPrivileged }}
             privileged: true
           {{- end }}
           env:
@@ -176,7 +181,7 @@ spec:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
           securityContext:
-            {{- if .Values.odiglet.odiglet.privileged }}
+            {{- if $odigletPrivileged }}
             privileged: true
             {{- else }}
             privileged: false
@@ -477,7 +482,7 @@ spec:
 {{- toYaml .Values.odiglet.deviceplugin.readinessProbe | nindent 12 }}
 {{- end }}
 # CSI driver is only supported in privileged mode
-{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") (not .Values.odiglet.odiglet.privileged) }}
+{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") (not $odigletPrivileged) }}
 {{ fail "CSI driver mount method requires privileged mode, this is not supported in unprivileged mode" }}
 {{- end }}
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
