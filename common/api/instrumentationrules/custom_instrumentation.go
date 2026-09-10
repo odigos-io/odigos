@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // +kubebuilder:object:generate=true
@@ -73,6 +74,7 @@ func (jcp *JavaCustomProbe) String() string {
 // which includes the package name, function name or receiver name and method name to be instrumented.
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
+// +kubebuilder:validation:XValidation:rule="!has(self.expiresAt) || (has(self.generation) && size(self.generation) == 32)",message="expiry requires generation"
 type GolangCustomProbe struct {
 	// PackageName is the name of the golang package (ie net/http); Package name is always required
 	PackageName string `json:"packageName" yaml:"packageName"`
@@ -92,10 +94,23 @@ type GolangCustomProbe struct {
 	// +kubebuilder:validation:MaxLength=32
 	// +kubebuilder:validation:XValidation:rule="self != '00000000000000000000000000000000'",message="generation must be nonzero"
 	Generation string `json:"generation,omitempty" yaml:"generation,omitempty"`
+	// ExpiresAt stops new capture for this generation. In-flight calls may drain.
+	// +kubebuilder:validation:Format=date-time
+	// +kubebuilder:validation:MaxLength=35
+	ExpiresAt string `json:"expiresAt,omitempty" yaml:"expiresAt,omitempty"`
 }
 
 // For golang we require package name and either function name or receiver name + method name
 func (gcp *GolangCustomProbe) Verify() error {
+	if gcp.ExpiresAt != "" {
+		if gcp.Generation == "" {
+			return errors.New("custom probe expiry requires an installation generation")
+		}
+		expires, err := time.Parse(time.RFC3339Nano, gcp.ExpiresAt)
+		if len(gcp.ExpiresAt) > 35 || err != nil || expires.IsZero() {
+			return errors.New("custom probe expiry must be a nonzero RFC3339 timestamp")
+		}
+	}
 	if gcp.Generation != "" {
 		if len(gcp.Generation) != 32 || gcp.Generation != strings.ToLower(gcp.Generation) {
 			return errors.New("generation must be a nonzero 128-bit lowercase hex ID")
