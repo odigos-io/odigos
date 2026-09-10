@@ -21,6 +21,7 @@ const RECOMMENDATION_FIELDS = `
     type
     buttonText
     tooltip
+    canApplyViaUi
     applyExamples { type content }
   }
 `;
