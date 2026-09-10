@@ -25,18 +25,6 @@ func TestEnterpriseRegistryPullSecretLabels(t *testing.T) {
 	}
 }
 
-func TestImagePullSecretNamesToCopy(t *testing.T) {
-	t.Parallel()
-
-	names := ImagePullSecretNamesToCopy([]string{"mirror-pull", "", "mirror-pull", k8sconsts.OdigosEnterpriseRegistryPullSecretName})
-	if len(names) != 2 {
-		t.Fatalf("expected 2 unique names, got %#v", names)
-	}
-	if names[0] != "mirror-pull" || names[1] != k8sconsts.OdigosEnterpriseRegistryPullSecretName {
-		t.Fatalf("unexpected name order %#v", names)
-	}
-}
-
 func TestCopyImagePullSecretsIfMissing(t *testing.T) {
 	t.Parallel()
 
@@ -61,39 +49,28 @@ func TestCopyImagePullSecretsIfMissing(t *testing.T) {
 	t.Run("no-op when sources missing", func(t *testing.T) {
 		t.Parallel()
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
-		present, err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"})
-		if err != nil {
+		if err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
-		}
-		if len(present) != 0 {
-			t.Fatalf("expected no secrets to be present, got %#v", present)
 		}
 	})
 
-	t.Run("same namespace is present without copying", func(t *testing.T) {
+	t.Run("same namespace is a no-op", func(t *testing.T) {
 		t.Parallel()
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(enterprise.DeepCopy()).Build()
-		present, err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "odigos-system", nil)
-		if err != nil {
+		if err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "odigos-system", []string{k8sconsts.OdigosEnterpriseRegistryPullSecretName}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
-		}
-		if len(present) != 1 || present[0] != k8sconsts.OdigosEnterpriseRegistryPullSecretName {
-			t.Fatalf("expected enterprise secret in source namespace, got %#v", present)
 		}
 	})
 
-	t.Run("copies configured and enterprise secrets with system-object label", func(t *testing.T) {
+	t.Run("copies configured secrets with system-object label", func(t *testing.T) {
 		t.Parallel()
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(enterprise.DeepCopy(), mirror.DeepCopy()).Build()
-		present, err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"})
-		if err != nil {
+		names := []string{"mirror-pull", k8sconsts.OdigosEnterpriseRegistryPullSecretName}
+		if err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", names); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if len(present) != 2 {
-			t.Fatalf("expected both secrets copied, got %#v", present)
-		}
 
-		for _, name := range []string{"mirror-pull", k8sconsts.OdigosEnterpriseRegistryPullSecretName} {
+		for _, name := range names {
 			var dest corev1.Secret
 			if err := c.Get(context.Background(), client.ObjectKey{Namespace: "app", Name: name}, &dest); err != nil {
 				t.Fatalf("expected copied secret %q: %v", name, err)
@@ -115,12 +92,8 @@ func TestCopyImagePullSecretsIfMissing(t *testing.T) {
 			Data: map[string][]byte{corev1.DockerConfigJsonKey: []byte("existing")},
 		}
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(mirror.DeepCopy(), existing).Build()
-		present, err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"})
-		if err != nil {
+		if err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
-		}
-		if len(present) != 1 || present[0] != "mirror-pull" {
-			t.Fatalf("expected existing secret to count as present, got %#v", present)
 		}
 
 		var dest corev1.Secret

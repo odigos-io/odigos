@@ -57,6 +57,12 @@ true
 {{- end -}}
 {{- end -}}
 
+{{- define "odigos.needsImagePullSecretCopy" -}}
+{{- if and (eq .Values.instrumentor.mountMethod "k8s-init-container") (or (gt (len (.Values.imagePullSecrets | default list)) 0) (include "odigos.hasEnterpriseRegistryPullSecret" .)) -}}
+true
+{{- end -}}
+{{- end -}}
+
 {{- define "odigos.validateEnterpriseRegistryPullSecrets" -}}
 {{- if and (include "odigos.secretExists" .) (include "odigos.usesOdigosRegistry" .) (not (include "odigos.onPremToken" .)) (not (.Values.externalOnpremPullSecret | default false)) -}}
 {{- fail "Odigos images pull from registry.odigos.io but no on-prem token is available to the chart. Set onPremToken, set externalOnpremPullSecret to true when providing odigos-enterprise-registry externally, or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
