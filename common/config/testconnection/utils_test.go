@@ -53,6 +53,24 @@ func TestReplacePlaceholders(t *testing.T) {
 	assert.Equal(t, 123, gmap["key2"])
 }
 
+func TestReplacePlaceholders_OtherDestinationsScopeIsLeftUnresolved(t *testing.T) {
+	fields := map[string]string{
+		"OTLP_HTTP_CLIENT_KEY_PEM": "pem-a",
+	}
+	destID := "odigos.io.dest.otlphttp-aaaa"
+	otherDestPlaceholder := "${" + config.SecretEnvVarName("OTLP_HTTP_CLIENT_KEY_PEM", "odigos.io.dest.otlphttp-bbbb") + "}"
+
+	gmap := config.GenericMap{
+		"tls": map[string]any{
+			"key_pem": otherDestPlaceholder,
+		},
+	}
+	replacePlaceholders(gmap, fields, destID)
+
+	// resolving it would test the connection with a credential belonging to another destination.
+	assert.Equal(t, map[string]any{"key_pem": otherDestPlaceholder}, gmap["tls"])
+}
+
 func TestReplacePlaceholders_ScopedSecretEnv(t *testing.T) {
 	fields := map[string]string{
 		"OTLP_HTTP_CLIENT_KEY_PEM": "pem-a",
