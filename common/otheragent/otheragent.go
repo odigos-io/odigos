@@ -5,6 +5,7 @@ package otheragent
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"strings"
 
@@ -120,9 +121,10 @@ func agentMatchesProcess(p Process, agent *KnownAgent) bool {
 
 // mapsContains reports whether any line of a process maps reader contains name.
 func mapsContains(r io.Reader, name string) bool {
+	needle := []byte(name)
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), name) {
+		if bytes.Contains(scanner.Bytes(), needle) {
 			return true
 		}
 	}
