@@ -448,6 +448,17 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 		}
 	}
 
+	if input.CustomInstrumentations.Cpp != nil {
+		customInstrumentations.Cpp = make([]instrumentationrules.CppCustomProbe, 0, len(input.CustomInstrumentations.Cpp))
+		for _, probe := range input.CustomInstrumentations.Cpp {
+			apiProbe := instrumentationrules.CppCustomProbe{}
+			if probe.Signature != nil {
+				apiProbe.Signature = *probe.Signature
+			}
+			customInstrumentations.Cpp = append(customInstrumentations.Cpp, apiProbe)
+		}
+	}
+
 	// Remove duplicate Golang probes
 	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
 	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
@@ -480,6 +491,17 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 		uniquePhpProbes = append(uniquePhpProbes, probe)
 	}
 	customInstrumentations.Php = uniquePhpProbes
+
+	// Remove duplicate Cpp probes
+	uniqueCppProbes := make([]instrumentationrules.CppCustomProbe, 0, len(customInstrumentations.Cpp))
+	cppSeen := make(map[instrumentationrules.CppCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Cpp {
+		cppSeen[probe] = struct{}{}
+	}
+	for probe := range cppSeen {
+		uniqueCppProbes = append(uniqueCppProbes, probe)
+	}
+	customInstrumentations.Cpp = uniqueCppProbes
 
 	if err := customInstrumentations.Verify(); err != nil {
 		return nil, err
@@ -855,6 +877,13 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			customInstruAsGqlModel.Php = append(customInstruAsGqlModel.Php, &model.PhpCustomProbe{
 				ClassName:    &phpProbe.ClassName,
 				FunctionName: &phpProbe.FunctionName,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Cpp != nil {
+		for _, cppProbe := range customInstruAsInstruRule.Cpp {
+			customInstruAsGqlModel.Cpp = append(customInstruAsGqlModel.Cpp, &model.CppCustomProbe{
+				Signature: &cppProbe.Signature,
 			})
 		}
 	}
