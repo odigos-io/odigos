@@ -327,6 +327,14 @@ type CostReductionRuleInput struct {
 	Notes            *string                            `json:"notes,omitempty"`
 }
 
+type CppCustomProbe struct {
+	Signature *string `json:"signature,omitempty"`
+}
+
+type CppCustomProbeInput struct {
+	Signature *string `json:"signature,omitempty"`
+}
+
 type CustomFormatMasking struct {
 	LookupKey  string               `json:"lookupKey"`
 	DataFormat ExtractionDataFormat `json:"dataFormat"`
@@ -341,12 +349,14 @@ type CustomInstrumentations struct {
 	Golang []*GolangCustomProbe `json:"golang,omitempty"`
 	Java   []*JavaCustomProbe   `json:"java,omitempty"`
 	Php    []*PhpCustomProbe    `json:"php,omitempty"`
+	Cpp    []*CppCustomProbe    `json:"cpp,omitempty"`
 }
 
 type CustomInstrumentationsInput struct {
 	Golang []*GolangCustomProbeInput `json:"golang,omitempty"`
 	Java   []*JavaCustomProbeInput   `json:"java,omitempty"`
 	Php    []*PhpCustomProbeInput    `json:"php,omitempty"`
+	Cpp    []*CppCustomProbeInput    `json:"cpp,omitempty"`
 }
 
 type CustomReadDataLabel struct {
