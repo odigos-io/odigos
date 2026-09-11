@@ -4,23 +4,29 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
-	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 const (
-	chrootDir        = "/host"
-	semanagePath     = "/sbin/semanage"
-	restoreconPath   = "/sbin/restorecon"
+	selinuxXattr = "security.selinux"
+	// index of "type" in a "user:role:type:level" context
+	typeField = 2
+	// what RHEL policy gives files under /var, and containers may not read it
+	varFileType = "var_t"
+	// what container-selinux gives files that any container may read
+	agentsFileType   = "container_ro_file_t"
 	keeplistPath     = "/tmp/keeplist"
 	rsyncDefaultPath = "rsync"
 )
@@ -66,71 +72,83 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string)
 	return nil
 }
 
-// ApplyOpenShiftSELinuxSettings makes auto-instrumentation agents readable by containers on RHEL hosts.
-// Note: This function calls chroot to use the host's PATH to execute selinux commands. Calling it will
-// affect the odiglet running process's apparent filesystem.
-func ApplyOpenShiftSELinuxSettings(dstDir string) error {
-	// Check if the semanage command exists when running on RHEL/CoreOS
-	logger := commonlogger.LoggerCompat().With("subsystem", "agents")
-	logger.Info("Applying selinux settings to host")
-	_, err := exec.LookPath(filepath.Join(chrootDir, semanagePath))
-	if err == nil {
-		err = syscall.Chroot(chrootDir)
-		if err != nil {
-			logger.Error("Error chrooting to host", "err", err)
+// ApplyOpenShiftSELinuxSettings makes the agent files readable by instrumented
+// containers, and reports how many it relabeled. A file's SELinux context is
+// "user:role:type:level", and only the type decides who may read it.
+func ApplyOpenShiftSELinuxSettings(dstDir string) (int, error) {
+	root, err := fileContext(dstDir)
+	if err != nil {
+		return 0, err
+	}
+	// nothing to do on a node without SELinux, which gives no context at all, or
+	// under a policy that gives the agents some type we don't expect:
+	// - varFileType is what the root gets by default on OpenShift
+	// - agentsFileType is what we put and might be here from a previous run
+	if t := contextType(root); t != varFileType && t != agentsFileType {
+		return 0, nil
+	}
+
+	relabeled := 0
+	err = filepath.WalkDir(dstDir, func(path string, _ fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
 		}
-
-		// list existing semanage rules to check if Odigos has already been set
-		cmd := exec.CommandContext(context.Background(), semanagePath, "fcontext", "-l")
-		var out bytes.Buffer
-		cmd.Stdout = &out
-
-		err := cmd.Run()
+		current, err := fileContext(path)
 		if err != nil {
-			logger.Error("Error executing semanage", "err", err)
 			return err
 		}
-
-		pattern := regexp.MustCompile(`/var/odigos(\(/.\*\)\?)?\s+.*container_ro_file_t`)
-		if pattern.Match(out.Bytes()) {
-			logger.Info("Rule for /var/odigos already exists with container_ro_file_t.")
+		// not everything under a var_t directory is var_t: a named type transition
+		// gives a directory called "debug" or "man" a type its contents inherit
+		fields := strings.Split(current, ":")
+		if len(fields) <= typeField || fields[typeField] == agentsFileType {
 			return nil
 		}
+		fields[typeField] = agentsFileType
 
-		// Run the semanage command to add the new directory to the container_ro_file_t context
-		// semanage writes SELinux config to host
-		cmd = exec.CommandContext(context.Background(), semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
-		stdoutBytes, err := cmd.CombinedOutput()
+		if err := unix.Lsetxattr(path, selinuxXattr, []byte(strings.Join(fields, ":")), 0); err != nil {
+			if errors.Is(err, unix.EINVAL) {
+				// the node's policy has no such type; nothing was written
+				return fmt.Errorf("SELinux policy does not define %s, needed to make %s readable by containers", agentsFileType, path)
+			}
+			return fmt.Errorf("labeling %s: %w", path, err)
+		}
+		relabeled++
+		return nil
+	})
+	return relabeled, err
+}
+
+// fileContext returns the file's SELinux context, or "" when it has none.
+// Buffer handling follows go-selinux: ask the kernel for the size only if the
+// fixed buffer turns out to be too small.
+// https://github.com/opencontainers/selinux/blob/v1.12.0/go-selinux/xattrs_linux.go
+func fileContext(path string) (string, error) {
+	buf := make([]byte, 128)
+	n, err := unix.Lgetxattr(path, selinuxXattr, buf)
+	for errors.Is(err, unix.ERANGE) {
+		n, err = unix.Lgetxattr(path, selinuxXattr, nil)
 		if err != nil {
-			logger.Error("Error running semanage command", "err", err, "stdout", string(stdoutBytes))
-			if strings.Contains(string(stdoutBytes), "already defined") {
-				// some versions of selinux return an error when trying to set fcontext where it already exists
-				// if that's the case, we don't need to return an error here
-				return nil
-			}
-			return err
+			break
 		}
-
-		// Check if the restorecon command exists when running on RHEL/CoreOS
-		// restorecon applies the SELinux settings we just created to the host
-		// And we are already chrooted to the host path, so we can just look for restoreconPath now
-		_, err = exec.LookPath(restoreconPath)
-		if err == nil {
-			// Run the restorecon command to apply the new context
-			cmd := exec.CommandContext(context.Background(), restoreconPath, "-r", dstDir)
-			err = cmd.Run()
-			if err != nil {
-				logger.Error("Error running restorecon command", "err", err)
-				return err
-			}
-		} else {
-			logger.Error("Unable to find restorecon path", "err", err)
-			return err
-		}
-	} else {
-		logger.Info("Unable to find semanage path, possibly not on RHEL host")
+		buf = make([]byte, n)
+		n, err = unix.Lgetxattr(path, selinuxXattr, buf)
 	}
-	return nil
+	if err != nil {
+		// no SELinux on this node
+		if errors.Is(err, unix.ENODATA) || errors.Is(err, unix.ENOTSUP) {
+			return "", nil
+		}
+		return "", fmt.Errorf("reading SELinux context of %s: %w", path, err)
+	}
+	return string(bytes.TrimRight(buf[:n], "\x00")), nil
+}
+
+func contextType(c string) string {
+	fields := strings.Split(c, ":")
+	if len(fields) <= typeField {
+		return ""
+	}
+	return fields[typeField]
 }
 
 func isDirEmptyOrNotExist(dir string) (bool, error) {

@@ -93,18 +93,17 @@ spec:
           {{- if not .Values.odiglet.noHostPathMounts}}
             - name: odigos
               mountPath: /var/odigos
-          {{- if .Values.openshift.enabled }}
-            - name: host
-              mountPath: /host
-              readOnly: true
-            - name: selinux
-              mountPath: /host/etc/selinux
-              mountPropagation: Bidirectional
-          {{- end }}
           {{- end }}
           securityContext:
           {{- if .Values.odiglet.odiglet.privileged}}
             privileged: true
+          {{- else }}
+            {{- /* relabeling the agents dir needs a domain with relabelfrom on var_t;
+                   container_t cannot, so the init container shares odiglet's spc_t. */}}
+            {{- with .Values.odiglet.odiglet.seLinuxOptions }}
+            seLinuxOptions:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
           {{- end }}
           env:
             - name: NODE_NAME
@@ -121,6 +120,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            {{- if .Values.openshift.enabled }}
+            - name: ODIGOS_OPENSHIFT_ENABLED
+              value: "true"
+            {{- end }}
             - name: GOMAXPROCS
               valueFrom:
                 resourceFieldRef:
@@ -265,14 +268,6 @@ spec:
              {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
             - name: custom-container-runtime-socket
               mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
-             {{- end }}
-             {{- if .Values.openshift.enabled }}
-            - name: host
-              mountPath: /host
-              readOnly: true
-            - name: selinux
-              mountPath: /host/etc/selinux
-              mountPropagation: Bidirectional
              {{- end }}
             - name: odigos
               mountPath: /var/odigos
@@ -570,14 +565,6 @@ spec:
         - name: custom-container-runtime-socket
           hostPath:
             path: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
-         {{- end }}
-         {{- if .Values.openshift.enabled }}
-        - name: host
-          hostPath:
-            path: /
-        - name: selinux
-          hostPath:
-            path: /etc/selinux
          {{- end }}
         - name: device-plugins-dir
           hostPath:

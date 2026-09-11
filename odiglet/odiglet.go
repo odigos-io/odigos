@@ -291,6 +291,19 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	// Logger already initialized in main() before calling OdigletInitPhase.
 	logger := commonlogger.LoggerCompat().With("subsystem", "init")
 
+	// Runs before the copy because new files inherit their directory's type: on a
+	// fresh install rsync then writes everything already labeled, and on an upgrade
+	// only files predating this run need fixing. Opt-in because OpenShift is the
+	// only platform known to need it.
+	if os.Getenv(k8sconsts.OpenShiftEnabledEnvVar) == "true" {
+		relabeled, err := fs.ApplyOpenShiftSELinuxSettings(k8sconsts.OdigosAgentsDirectory)
+		if err != nil {
+			logger.Error("Failed to label agent files for SELinux", "err", err)
+			os.Exit(-1)
+		}
+		logger.Info("Labeled agent files for SELinux", "dir", k8sconsts.OdigosAgentsDirectory, "relabeled", relabeled)
+	}
+
 	err := fs.CopyAgentsDirectoryToHost(k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory, nil)
 	if err != nil {
 		logger.Error("Failed to copy agents directory to host", "err", err)
@@ -310,13 +323,6 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	} else {
 		logger.Info("Successfully prepared node for Odigos installation")
-	}
-
-	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
-	// executing selinux commands to make agents readable by pods.
-	if err := fs.ApplyOpenShiftSELinuxSettings(k8sconsts.OdigosAgentsDirectory); err != nil {
-		logger.Error("Failed to apply SELinux settings on RHEL host", "err", err)
-		os.Exit(-1)
 	}
 
 	logger.Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
