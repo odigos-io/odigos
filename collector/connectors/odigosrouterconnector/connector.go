@@ -364,10 +364,23 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	return errs
 }
 
+// newProfilesWithDictionary returns an empty Profiles whose dictionary is a copy
+// of src's. Unlike traces/metrics/logs, OTLP profiles keep strings, functions,
+// locations, and stacks in a top-level dictionary; each ResourceProfiles only
+// stores indexes into that table. NewProfiles() has an empty dictionary, so a
+// ResourceProfiles CopyTo onto it produces a valid payload with unresolvable
+// samples. ConsumeProfiles fans out to a default batch and per-consumer batches;
+// both must start from this so appended resources keep resolvable indexes.
+func newProfilesWithDictionary(src pprofile.Profiles) pprofile.Profiles {
+	out := pprofile.NewProfiles()
+	src.Dictionary().CopyTo(out.Dictionary())
+	return out
+}
+
 func (r *routerConnector) ConsumeProfiles(ctx context.Context, pd pprofile.Profiles) error {
 	cfg := r.profilesConfig
 	profilesByConsumer := make(map[xconsumer.Profiles]pprofile.Profiles)
-	defaultProfiles := pprofile.NewProfiles()
+	defaultProfiles := newProfilesWithDictionary(pd)
 	var errs error
 
 	rProfiles := pd.ResourceProfiles()
@@ -389,7 +402,7 @@ func (r *routerConnector) ConsumeProfiles(ctx context.Context, pd pprofile.Profi
 
 			batch, ok := profilesByConsumer[consumer]
 			if !ok {
-				batch = pprofile.NewProfiles()
+				batch = newProfilesWithDictionary(pd)
 			}
 			rp.CopyTo(batch.ResourceProfiles().AppendEmpty())
 			profilesByConsumer[consumer] = batch

@@ -6,6 +6,8 @@ sidebarTitle: 'Remote Clusters'
 
 Once Odigos Central is running, you need to configure your remote clusters to connect to it. This is done by installing Odigos in each remote cluster with the Central Proxy configuration.
 
+Set **`centralProxy.centralBackendURL`** (and **`clusterName`**). That URL is what the Central Proxy uses to open a WebSocket to Central at `/ws/proxy`. It must be reachable **from the remote cluster**, include a scheme (`https://` in production), and match the hostname you expose for `central-backend`. If UI and backend share one ingress host, use that host — and make sure `/ws/proxy` is routed to `central-backend`, not `central-ui`. See [Authentication](/central/authentication#production-ingress-configuration) and [Architecture](/central/architecture#backend-urls-helm-values).
+
 <Note>
   To connect VM hosts, see [VM Agent](/central/adding-connections/vmagent).
   For cloud accounts (AWS, GCP, and more), see [Cloud Connectors](/cloud-connectors/overview).
@@ -92,3 +94,11 @@ kubectl create secret generic central-client-cert \
   --from-file=tls.key=/path/to/client.key \
   -n odigos-system
 ```
+
+The proxy connects to **`/ws/proxy`** (not `/wss/proxy`). It uses the `wss` scheme when the backend URL host ends with `:443`. Verify the connection with:
+
+```bash
+kubectl logs deploy/central-proxy -n odigos-system --tail=20
+```
+
+Look for `WebSocket connection established`.

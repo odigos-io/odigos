@@ -39,7 +39,6 @@ type PodsWebhook struct {
 	DistrosGetter *distros.Getter
 	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
 	Decoder     admission.Decoder
-	WaspMutator func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
 var _ admission.Handler = &PodsWebhook{}
@@ -176,7 +175,6 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	}
 
 	volumeMounted := false
-	waspSupported := false
 
 	dirsToCopy := make(map[string]struct{})
 	for i := range pod.Spec.Containers {
@@ -203,10 +201,6 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			return err
 		}
 
-		if distroMetadata.RuntimeAgent != nil && distroMetadata.RuntimeAgent.WaspSupported {
-			waspSupported = true
-		}
-
 		volumeMounted = volumeMounted || containerVolumeMounted
 		dirsToCopy = mergeMaps(dirsToCopy, containerDirsToCopy)
 	}
@@ -216,7 +210,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		podswebhook.MountPodVolumeToHostPath(pod)
 	}
 
-	if odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
+	if mountMethod == common.K8sInitContainerMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolumeToEmptyDir(pod)
 		if len(dirsToCopy) > 0 {
@@ -228,13 +222,6 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	if mountMethod == common.K8sCsiDriverMountMethod && volumeMounted {
 		// Use CSI driver for volume mounting
 		podswebhook.MountPodVolumeToCSI(pod)
-	}
-
-	if odigosConfiguration.WaspEnabled != nil && *odigosConfiguration.WaspEnabled && waspSupported && p.WaspMutator != nil {
-		err = p.WaspMutator(pod, odigosConfiguration)
-		if err != nil {
-			return fmt.Errorf("failed to do wasp mutation: %w", err)
-		}
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers

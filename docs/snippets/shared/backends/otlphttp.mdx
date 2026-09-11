@@ -101,6 +101,14 @@ To configure basic authentication, use the optional config options `Basic Auth U
 - **OTLP_HTTP_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
   - This field is optional
   - Example: `-----BEGIN CERTIFICATE-----`
+- **OTLP_HTTP_MTLS_ENABLED** `boolean` : Enable mTLS. Use a client certificate and key for mutual TLS authentication with the destination
+  - This field is optional and defaults to `False`
+- **OTLP_HTTP_CLIENT_CERT_PEM** `string` : Client Certificate. Client certificate in PEM format for mutual TLS authentication
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **OTLP_HTTP_CLIENT_KEY_PEM** `string` : Client Key. Client private key in PEM format for mutual TLS authentication
+  - This field is optional
+  - Example: `-----BEGIN PRIVATE KEY-----`
 - **OTLP_HTTP_INSECURE_SKIP_VERIFY** `boolean` : Insecure Skip Verify. Skip TLS certificate verification
   - This field is optional and defaults to `False`
 
@@ -151,6 +159,7 @@ There are two primary methods for configuring destinations in Odigos:
         # OTLP_HTTP_PROFILES_ENDPOINT: <OTLP http profiles Endpoint>
         # OTLP_HTTP_TLS_ENABLED: <Enable TLS>
         # OTLP_HTTP_CA_PEM: <Certificate Authority>
+        # OTLP_HTTP_MTLS_ENABLED: <Enable mTLS>
         # OTLP_HTTP_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
       destinationName: otlphttp
       # Uncomment the 'secretRef' below if you are using the optional Secret.
@@ -169,6 +178,8 @@ There are two primary methods for configuring destinations in Odigos:
     # apiVersion: v1
     # data:
     #   OTLP_HTTP_BASIC_AUTH_PASSWORD: <Base64 Basic Auth Password>
+    #   OTLP_HTTP_CLIENT_CERT_PEM: <Base64 Client Certificate>
+    #   OTLP_HTTP_CLIENT_KEY_PEM: <Base64 Client Key>
     #   OTLP_HTTP_OAUTH2_CLIENT_SECRET: <Base64 OAuth2 Client Secret>
     # kind: Secret
     # metadata:

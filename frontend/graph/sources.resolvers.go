@@ -203,7 +203,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 	otelServiceName := patchSourceRequest.OtelServiceName
 	if otelServiceName != nil {
-		_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", *otelServiceName))
+		_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", *otelServiceName)
 		if err != nil {
 			// unexpected error occurred while trying to update the source
 			return false, err

@@ -27,6 +27,7 @@ func newSourcesMetrics() sourcesMetrics {
 }
 
 func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) {
+	metricName = normalizeTrafficMetricName(metricName)
 	sID, err := common.ResourceAttributesToSourceID(dp.Attributes())
 	if err != nil {
 		return
@@ -93,11 +94,12 @@ func (sourceMetrics *sourcesMetrics) handleNodeCollectorMetrics(senderPod string
 			sm := smSlice.At(j)
 			for k := 0; k < sm.Metrics().Len(); k++ {
 				m := sm.Metrics().At(k)
-				switch m.Name() {
+				metricName := normalizeTrafficMetricName(m.Name())
+				switch metricName {
 				case traceSizeMetricName, metricSizeMetricName, logSizeMetricName:
 					for dataPointIndex := 0; dataPointIndex < m.Sum().DataPoints().Len(); dataPointIndex++ {
 						dataPoint := m.Sum().DataPoints().At(dataPointIndex)
-						sourceMetrics.updateSourceMetrics(dataPoint, m.Name(), senderPod)
+						sourceMetrics.updateSourceMetrics(dataPoint, metricName, senderPod)
 					}
 				}
 			}

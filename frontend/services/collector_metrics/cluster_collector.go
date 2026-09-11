@@ -269,12 +269,13 @@ func (dm *clusterCollectorMetrics) updateAverageEstimates(md pmetric.Metrics) {
 			sm := smSlice.At(j)
 			for k := 0; k < sm.Metrics().Len(); k++ {
 				m := sm.Metrics().At(k)
-				switch m.Name() {
+				metricName := normalizeTrafficMetricName(m.Name())
+				switch metricName {
 				// our processor is recording the number of spans/metrics/logs it accepted
 				case processorAcceptedSpansMetricName, processorAcceptedMetricsMetricName, processorAcceptedLogsMetricName:
 					for dataPointIndex := 0; dataPointIndex < m.Sum().DataPoints().Len(); dataPointIndex++ {
 						dataPoint := m.Sum().DataPoints().At(dataPointIndex)
-						switch m.Name() {
+						switch metricName {
 						case processorAcceptedSpansMetricName:
 							acceptedSpans = int64(dataPoint.DoubleValue())
 						case processorAcceptedMetricsMetricName:

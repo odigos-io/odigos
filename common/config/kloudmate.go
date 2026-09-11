@@ -17,7 +17,7 @@ func (j *KloudMate) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	exporterConfig := GenericMap{
 		"endpoint": "https://otel.kloudmate.com:4318",
 		"headers": GenericMap{
-			"Authorization": "${KLOUDMATE_API_KEY}",
+			"Authorization": SecretEnvPlaceholder("KLOUDMATE_API_KEY", dest),
 		},
 	}
 

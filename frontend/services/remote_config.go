@@ -13,27 +13,40 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/yaml"
 )
 
-// UpdateRemoteConfig updates the remote configuration in the odigos-remote-config ConfigMap.
-func UpdateRemoteConfig(ctx context.Context, config *common.OdigosConfiguration) (*common.OdigosConfiguration, error) {
+// UpdateRemoteConfig applies a mutation to the config document in the odigos-remote-config
+// ConfigMap, creating it with an owner reference if it does not exist yet.
+//
+// The document has several independent writers (the central backend and the UI own
+// different fields) and the scheduler merges it as a whole over the helm baseline, so it
+// is read-modify-written: a caller that manages only a subset of the fields must not drop
+// the fields owned by another writer.
+func UpdateRemoteConfig(ctx context.Context, mutate func(cfg *common.OdigosConfiguration)) error {
 	ns := env.GetCurrentNamespace()
+	configMaps := kube.DefaultClient.CoreV1().ConfigMaps(ns)
 
-	yamlBytes, err := yaml.Marshal(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal remote config: %w", err)
-	}
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		cm, err := configMaps.Get(ctx, consts.OdigosRemoteConfigName, metav1.GetOptions{})
+		if err != nil {
+			if !apierrors.IsNotFound(err) {
+				return fmt.Errorf("failed to get remote config: %w", err)
+			}
 
-	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosRemoteConfigName, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
 			// Fetch odigos-configuration to use as owner reference.
 			// This ensures odigos-remote-config is automatically deleted by Kubernetes GC
 			// when odigos-configuration is deleted (e.g., during Helm uninstall).
-			ownerCm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
-			if err != nil {
-				return nil, fmt.Errorf("failed to get odigos-configuration for owner reference: %w", err)
+			ownerCm, ownerErr := configMaps.Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+			if ownerErr != nil {
+				return fmt.Errorf("failed to get odigos-configuration for owner reference: %w", ownerErr)
+			}
+			cfg := common.OdigosConfiguration{}
+			mutate(&cfg)
+			yamlBytes, marshalErr := yaml.Marshal(cfg)
+			if marshalErr != nil {
+				return fmt.Errorf("failed to marshal remote config: %w", marshalErr)
 			}
 			newCm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -46,21 +59,30 @@ func UpdateRemoteConfig(ctx context.Context, config *common.OdigosConfiguration)
 				},
 				Data: map[string]string{consts.OdigosConfigurationFileName: string(yamlBytes)},
 			}
-			_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Create(ctx, newCm, metav1.CreateOptions{})
-			return config, err
+			_, err = configMaps.Create(ctx, newCm, metav1.CreateOptions{})
+			return err
 		}
-		return nil, fmt.Errorf("failed to get remote config: %w", err)
-	}
 
-	if cm.Data == nil {
-		cm.Data = make(map[string]string)
-	}
-	cm.Data[consts.OdigosConfigurationFileName] = string(yamlBytes)
+		cfg := common.OdigosConfiguration{}
+		if cm.Data != nil && cm.Data[consts.OdigosConfigurationFileName] != "" {
+			if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &cfg); err != nil {
+				return fmt.Errorf("failed to parse existing remote config: %w", err)
+			}
+		}
+		mutate(&cfg)
+		yamlBytes, err := yaml.Marshal(cfg)
+		if err != nil {
+			return fmt.Errorf("failed to marshal remote config: %w", err)
+		}
 
-	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to update remote config ConfigMap: %w", err)
-	}
+		if cm.Data == nil {
+			cm.Data = make(map[string]string)
+		}
+		cm.Data[consts.OdigosConfigurationFileName] = string(yamlBytes)
 
-	return config, nil
+		if _, err := configMaps.Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
+			return fmt.Errorf("failed to update remote config ConfigMap: %w", err)
+		}
+		return nil
+	})
 }

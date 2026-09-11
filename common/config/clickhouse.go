@@ -11,7 +11,7 @@ import (
 const (
 	clickhouseEndpoint                 = "CLICKHOUSE_ENDPOINT"
 	clickhouseUsername                 = "CLICKHOUSE_USERNAME"
-	clickhousePassword                 = "${CLICKHOUSE_PASSWORD}"
+	clickhousePasswordKey              = "CLICKHOUSE_PASSWORD"
 	clickhouseCreateSchema             = "CLICKHOUSE_CREATE_SCHEME"
 	clickhouseDatabaseName             = "CLICKHOUSE_DATABASE_NAME"
 	clickhouseTlsEnabled               = "CLICKHOUSE_TLS_ENABLED"
@@ -82,7 +82,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	if username, userExists := dest.GetConfig()[clickhouseUsername]; userExists {
 		exporterConfig["username"] = username
-		exporterConfig["password"] = clickhousePassword
+		exporterConfig["password"] = SecretEnvPlaceholder(clickhousePasswordKey, dest)
 	}
 
 	createSchema := dest.GetConfig()[clickhouseCreateSchema]

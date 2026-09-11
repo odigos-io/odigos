@@ -47,6 +47,7 @@ runs:
         git tag instrumentor/${{ inputs.tag }}
         git tag k8sutils/${{ inputs.tag }}
         git tag odiglet/${{ inputs.tag }}
+        git tag odiglet/pkg/ebpf/sdks/obi/${{ inputs.tag }}
         git tag odigosauth/${{ inputs.tag }}
         git tag opampserver/${{ inputs.tag }}
         git tag procdiscovery/${{ inputs.tag }}

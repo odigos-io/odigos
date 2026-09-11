@@ -125,11 +125,8 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	conditions := []*model.DesiredConditionStatus{}
 	if ic != nil {
-		autoRollbackConfig := l.GetAutoRollbackConfig()
-
 		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
 		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
-		conditions = append(conditions, status.CalculateAutoRollbackStatus(ic, autoRollbackConfig))
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
 		conditions = append(conditions, &model.DesiredConditionStatus{

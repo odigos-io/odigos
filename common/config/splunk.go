@@ -33,7 +33,7 @@ func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 	if isTracingEnabled(dest) {
 		exporterName := "sapm/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
-			"access_token": "${SPLUNK_ACCESS_TOKEN}",
+			"access_token": SecretEnvPlaceholder("SPLUNK_ACCESS_TOKEN", dest),
 			"endpoint":     fmt.Sprintf("https://ingest.%s.signalfx.com/v2/trace", realm),
 		}
 
@@ -81,7 +81,7 @@ func (s *SplunkOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		exporterName := "otlp_http/" + dest.GetID()
 		exporterConf := GenericMap{
 			"headers": GenericMap{
-				"X-SF-Token": "${SPLUNK_ACCESS_TOKEN}",
+				"X-SF-Token": SecretEnvPlaceholder("SPLUNK_ACCESS_TOKEN", dest),
 			},
 			"traces_endpoint": fmt.Sprintf("https://ingest.%s.signalfx.com/v2/trace/otlp", realm),
 		}

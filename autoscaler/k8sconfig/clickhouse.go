@@ -6,7 +6,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -85,7 +84,7 @@ func (c *Clickhouse) ModifyGatewayCollectorDeployment(ctx context.Context, k8sCl
 	}
 
 	// Kubernetes volume names must not contain dots, so replace them with dashes
-	sanitizedID := strings.ReplaceAll(dest.GetID(), ".", "-")
+	sanitizedID := config.SanitizeDestinationID(dest.GetID())
 	volumeName := config.ClickhouseCaSecretVolumeName + "-" + sanitizedID
 
 	// Add volume mount if it doesn't exist

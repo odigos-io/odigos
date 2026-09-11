@@ -128,6 +128,41 @@ spec:
         tooltip: "When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA"
       renderCondition: ["OTLP_GRPC_TLS_ENABLED", "==", "true"]
       hideFromReadData: ["true"]
+    - name: OTLP_GRPC_MTLS_ENABLED
+      displayName: Enable mTLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: "Use a client certificate and key for mutual TLS authentication with the destination"
+      renderCondition: ["OTLP_GRPC_TLS_ENABLED", "==", "true"]
+      customReadDataLabels:
+        - condition: "true"
+          title: "mTLS"
+          value: "Enabled"
+        - condition: "false"
+          title: "mTLS"
+          value: "Disabled"
+    - name: OTLP_GRPC_CLIENT_CERT_PEM
+      displayName: Client Certificate
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "Client certificate in PEM format for mutual TLS authentication"
+      renderCondition: ["OTLP_GRPC_MTLS_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]
+      secret: true
+    - name: OTLP_GRPC_CLIENT_KEY_PEM
+      displayName: Client Key
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: "-----BEGIN PRIVATE KEY-----"
+        tooltip: "Client private key in PEM format for mutual TLS authentication"
+      renderCondition: ["OTLP_GRPC_MTLS_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]
+      secret: true
     - name: OTLP_GRPC_INSECURE_SKIP_VERIFY
       displayName: Insecure Skip Verify
       componentType: checkbox

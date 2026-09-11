@@ -23,7 +23,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -34,10 +33,9 @@ type Instrumentor struct {
 	certReady          chan struct{}
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
-	waspMutator        func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
-func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator func(*corev1.Pod, common.OdigosConfiguration) error) (*Instrumentor, error) {
+func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
 	err := feature.Setup()
 	if err != nil {
 		return nil, err
@@ -99,7 +97,8 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 	}
 
 	// wire up the controllers and webhooks
-	err = controllers.SetupWithManager(mgr, dp, k8sVersion)
+	scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention := parseFirstInstrumentedPodAtNodeLabelRetention()
+	err = controllers.SetupWithManager(context.Background(), mgr, dp, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +129,6 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 		certReady:          rotatorSetupFinished,
 		dp:                 dp,
 		webhooksRegistered: webhooksRegistered,
-		waspMutator:        waspMutator,
 	}, nil
 }
 
@@ -181,7 +179,6 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		logger.Info("Cert rotator is ready")
 		err := controllers.RegisterWebhooks(i.mgr, controllers.WebhookConfig{
 			DistrosProvider: i.dp,
-			WaspMutator:     i.waspMutator,
 		})
 		if err != nil {
 			return err
@@ -195,4 +192,21 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 	if err != nil {
 		logger.Error("Instrumentor exited with error", "err", err)
 	}
+}
+
+func parseFirstInstrumentedPodAtNodeLabelRetention() (enabled bool, retention time.Duration) {
+	raw := os.Getenv(k8sconsts.FirstInstrumentedPodAtNodeLabelRetentionEnvVar)
+	if raw == "" {
+		return false, 0
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		commonlogger.LoggerCompat().Error("invalid instrumented pods node label retention, using 5m",
+			"env", k8sconsts.FirstInstrumentedPodAtNodeLabelRetentionEnvVar, "value", raw, "err", err)
+		return true, 5 * time.Minute
+	}
+	if d < 0 {
+		d = 0
+	}
+	return true, d
 }

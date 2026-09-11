@@ -25,10 +25,11 @@ You can install Odigos Central using the CLI or Helm chart.
     | Flag | Default | Description |
     |------|---------|-------------|
     | `--set onPremToken` | (required) | Your Odigos Enterprise license token |
-    | `--set centralProxy.centralBackendURL` | (optional) | URL of the central backend |
     | `--set auth.externalUrl` | `http://localhost:8081` | Browser-accessible URL of the Central Backend for SSO redirect flows |
-    | `--set auth.adminPassword` | (auto-generated) | Admin password for Keycloak. If not provided, a random password is generated |
-    | `--set auth.adminUsername` | `admin` | Admin username for Keycloak |
+    | `--set auth.externalUIUrl` | (derived from `auth.externalUrl`) | Browser-accessible URL of the Central UI for OAuth `redirect_uri` (`/signin`). When empty, defaults to `auth.externalUrl`, except for local port-forward (`http://localhost:8081`) where the UI is on port 3000 |
+    | `--set auth.adminPassword` | (auto-generated) | Keycloak **master** admin password for backend API access. If not provided, a random password is generated. Not used for Central UI login. See [Troubleshooting](/central/troubleshooting#admin-credentials-vs-central-ui-login) |
+    | `--set auth.adminUsername` | `admin` | Keycloak master admin username |
+    | `--set auth.persistence.enabled` | `false` | Persist Keycloak data on a PVC. Recommended for production. See [Keycloak persistence](#keycloak-persistence) |
     | `--set cloudConnectors.enabled` | `false` | Enable [Cloud Connectors](/cloud-connectors/enable) (controller, Postgres, CRD) |
     | `--namespace`, `-n` | `odigos-central` | Target namespace for installation |
     | `--version` | (current) | Specify a specific version to install |
@@ -101,6 +102,81 @@ You can install Odigos Central using the CLI or Helm chart.
 
   </Tab>
 </Tabs>
+
+<Tip>
+  `centralProxy.centralBackendURL` is not a Central install flag. Set it when you install the `odigos` chart on each **remote** cluster so the Central Proxy can reach this backend. See [Connecting Remote Clusters](/central/adding-connections/remote-clusters).
+</Tip>
+
+## Keycloak image
+
+Odigos Central deploys Keycloak from the image in `auth.image` (see the [`odigos-central` Helm values file](https://github.com/odigos-io/odigos/blob/main/helm/odigos-central/values.yaml)). That image is based on official Keycloak with health and metrics enabled at build time, which is required for `start --optimized`.
+
+The chart starts Keycloak with `start --optimized --http-enabled=true` and probes `/health/live` and `/health/ready`. Those endpoints are not available on a stock official image in optimized mode.
+
+<Warning>
+  Do not replace `auth.image` in the helm chart with `quay.io/keycloak/keycloak` (or another unmodified official tag) unless you also change the container args and probes. An official image can appear Ready while `central-backend` stays on "Waiting for Keycloak to become ready" and `/readyz` never succeeds. See [Troubleshooting](/central/troubleshooting#waiting-for-keycloak-to-become-ready).
+</Warning>
+
+When mirroring images to a private registry, also pull the Keycloak image from `auth.image` in the Helm values file. See [Custom Docker Registry](#custom-docker-registry).
+
+## Custom Docker Registry
+
+Odigos Central images are hosted at `registry.odigos.io`. To install from a private registry, mirror at least:
+
+| Image | Notes |
+| --- | --- |
+| `registry.odigos.io/odigos-enterprise-central-backend:$VERSION` | Central Backend. Tag matches the Odigos Central version. |
+| `registry.odigos.io/odigos-enterprise-central-ui:$VERSION` | Central UI. Tag matches the Odigos Central version. |
+| Keycloak (`auth.image`) | Bundled Keycloak. Tag is **not** the Odigos version. Do not substitute the official Keycloak image. |
+| Redis (`redis.image`) | Bundled Redis. |
+
+The Keycloak and Redis image versions are defined in the [`odigos-central` Helm values file](https://github.com/odigos-io/odigos/blob/main/helm/odigos-central/values.yaml) (`auth.image` and `redis.image`). Use those values as the source of truth when mirroring; do not rely on tags copied from this page.
+
+If Cloud Connectors are enabled, also mirror `odigos-enterprise-connector-runtime`, `odigos-enterprise-connector-aws`, `odigos-enterprise-connector-gcp`, `odigos-enterprise-connector-azure`, and `odigos-enterprise-connector-postgres`.
+
+Keycloak is set with `auth.image`, not `imagePrefix`. After you push the mirrored Keycloak image, set `auth.image` to that full URL. Copy `auth.image` from the Helm values file first:
+
+```bash
+# Example: registry.odigos.io/keycloak:<tag> from helm/odigos-central/values.yaml
+export KEYCLOAK_IMAGE=<auth.image from values.yaml>
+export KEYCLOAK_TAG=<tag from auth.image>
+
+docker pull --platform $PLATFORM $KEYCLOAK_IMAGE
+docker tag $KEYCLOAK_IMAGE $CUSTOM_DOCKER_REGISTRY/keycloak:$KEYCLOAK_TAG
+docker push $CUSTOM_DOCKER_REGISTRY/keycloak:$KEYCLOAK_TAG
+```
+
+```bash
+helm upgrade --install odigos-central odigos/odigos-central \
+  --namespace odigos-central \
+  --create-namespace \
+  --set onPremToken=$ODIGOS_TOKEN \
+  --set imagePrefix=$CUSTOM_DOCKER_REGISTRY \
+  --set image.tag=$VERSION \
+  --set auth.image=$CUSTOM_DOCKER_REGISTRY/keycloak:$KEYCLOAK_TAG
+```
+
+For mirroring **K8s agent** images (`odigos` chart), see [Custom Docker Registry](/enterprise/setup/docker-registry).
+
+## Keycloak persistence
+
+Persistence is **disabled by default**. Without a PVC, Keycloak stores data in the container filesystem. Restarting or recreating the Keycloak pod wipes SSO configuration and users stored in Keycloak.
+
+For production, enable a PVC:
+
+```yaml
+auth:
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClassName: "gp3"  # omit to use the cluster default
+```
+
+After resetting Keycloak, restart `central-backend` if login does not recover. With persistence enabled, a bad identity-provider config in the database can leave pods Ready while OAuth still fails until the PVC is recreated. See [Troubleshooting](/central/troubleshooting#keycloak-persistence-and-resets).
+
+<Note>
+  `auth.adminUsername` / `auth.adminPassword` are the Keycloak master admin used by `central-backend`, not Central UI login credentials. On upgrade, Helm reuses the existing `keycloak-admin-credentials` secret and ignores a new `auth.adminPassword` value.
+</Note>
 
 ## Optional: Cloud Connectors
 

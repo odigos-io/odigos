@@ -163,3 +163,46 @@ models:
         resolver: true
       workloads:
         resolver: true
+
+  Insights:
+    fields:
+      services:
+        resolver: true
+      serviceNames:
+        resolver: true
+      serviceProfile:
+        resolver: true
+      blastRadius:
+        resolver: true
+      transactions:
+        resolver: true
+      transaction:
+        resolver: true
+      baseline:
+        resolver: true
+      observations:
+        resolver: true
+      observation:
+        resolver: true
+      findings:
+        resolver: true
+      anomalies:
+        resolver: true
+      anomaly:
+        resolver: true
+      policies:
+        resolver: true
+      learningPolicies:
+        resolver: true
+      guardrails:
+        resolver: true
+      guardrailViolations:
+        resolver: true
+      guardrailViolation:
+        resolver: true
+      catalog:
+        resolver: true
+      systemSettings:
+        resolver: true
+      storageHealth:
+        resolver: true

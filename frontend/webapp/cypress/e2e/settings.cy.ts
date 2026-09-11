@@ -1,12 +1,12 @@
 import { CONFIG_MAPS, DATA_IDS, NAMESPACES, ROUTES, TEXTS } from '../constants';
-import { awaitToast, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
+import { awaitToast, cyExec, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
 
 const namespace = NAMESPACES.ODIGOS;
 const testClusterName = 'cypress-e2e-test';
 let originalClusterName = '';
 
 const getConfigMapYaml = (configMapName: string, callback: (yaml: string) => void) => {
-  cy.exec(`kubectl get configmap ${configMapName} -n ${namespace} -o jsonpath='{.data.config\\.yaml}'`).then(({ stdout }) => {
+  cyExec(`kubectl get configmap ${configMapName} -n ${namespace} -o jsonpath='{.data.config\\.yaml}'`).then(({ stdout }) => {
     callback(stdout);
   });
 };
@@ -127,7 +127,7 @@ describe('Settings CRUD', () => {
   // ── Setup ─────────────────────────────────────────────────────────────────
 
   it('Should capture initial state from the cluster', () => {
-    cy.exec(`kubectl delete configmap ${CONFIG_MAPS.LOCAL_UI_CONFIG} -n ${namespace}`, { failOnNonZeroExit: false });
+    cyExec(`kubectl delete configmap ${CONFIG_MAPS.LOCAL_UI_CONFIG} -n ${namespace}`, { failOnNonZeroExit: false });
     cy.wait(10000);
 
     getConfigMapYaml(CONFIG_MAPS.EFFECTIVE_CONFIG, (yaml) => {
@@ -203,7 +203,6 @@ describe('Settings CRUD', () => {
         selectDropdownOption('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
         clickToggle('allowConcurrentAgents.enabled');
         clickToggle('instrumentor.checkDeviceHealthBeforeInjection');
-        clickToggle('wasp.enabled');
 
         // ─ Rollout & Rollback ─
         clickToggle('rollout.automaticRolloutDisabled');
@@ -264,7 +263,6 @@ describe('Settings CRUD', () => {
       expect(yaml).to.contain('agentEnvVarsInjectionMethod: pod-manifest');
       expect(yaml).to.contain('allowConcurrentAgents:');
       expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
-      expect(yaml).to.contain('waspEnabled:');
 
       // ─ Rollout & Rollback (inputs + toggles) ─
       expect(yaml).to.contain('automaticRolloutDisabled:');
@@ -302,7 +300,6 @@ describe('Settings CRUD', () => {
         expect(yaml).to.contain('agentEnvVarsInjectionMethod: pod-manifest');
         expect(yaml).to.contain('allowConcurrentAgents:');
         expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
-        expect(yaml).to.contain('waspEnabled:');
 
         // ─ Rollout & Rollback ─
         expect(yaml).to.contain('automaticRolloutDisabled:');
@@ -345,7 +342,6 @@ describe('Settings CRUD', () => {
         verifyDropdown('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
         verifyToggle('allowConcurrentAgents.enabled', true);
         verifyToggle('instrumentor.checkDeviceHealthBeforeInjection', true);
-        verifyToggle('wasp.enabled', true);
 
         // ─ Rollout & Rollback ─
         verifyToggle('rollout.automaticRolloutDisabled', true);
@@ -415,7 +411,6 @@ describe('Settings CRUD', () => {
         expect(yaml).to.not.contain('cypress-test-container');
         expect(yaml).to.not.contain('maxConcurrentRollouts: 5');
         expect(yaml).to.not.contain('keepPercentage: 50');
-        expect(yaml).to.not.contain('waspEnabled:');
         expect(yaml).to.not.contain('allowConcurrentAgents:');
       });
     });

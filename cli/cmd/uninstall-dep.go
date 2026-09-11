@@ -543,26 +543,21 @@ func uninstallRBAC(ctx context.Context, client *kube.Client, ns, _ string) error
 func cleanupNodeOdigosLabels(ctx context.Context, client *kube.Client, ns, _ string) error {
 	nodeSet := make(map[string]struct{})
 
-	// Step 1: Get OSS nodes
-	ossNodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
-		LabelSelector: k8sconsts.OdigletOSSInstalledLabel,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to list nodes with %s: %w", k8sconsts.OdigletOSSInstalledLabel, err)
+	labelSelectors := []string{
+		k8sconsts.OdigletOSSInstalledLabel,
+		k8sconsts.OdigletEnterpriseInstalledLabel,
+		k8sconsts.FirstInstrumentedPodAtNodeLabel,
 	}
-	for _, node := range ossNodes.Items {
-		nodeSet[node.Name] = struct{}{}
-	}
-
-	// Step 2: Get Enterprise nodes
-	enterpriseNodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
-		LabelSelector: k8sconsts.OdigletEnterpriseInstalledLabel,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to list nodes with %s: %w", k8sconsts.OdigletEnterpriseInstalledLabel, err)
-	}
-	for _, node := range enterpriseNodes.Items {
-		nodeSet[node.Name] = struct{}{}
+	for _, label := range labelSelectors {
+		nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+			LabelSelector: label,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to list nodes with %s: %w", label, err)
+		}
+		for _, node := range nodes.Items {
+			nodeSet[node.Name] = struct{}{}
+		}
 	}
 
 	for nodeName := range nodeSet {
@@ -572,6 +567,7 @@ func cleanupNodeOdigosLabels(ctx context.Context, client *kube.Client, ns, _ str
 					// Setting to `nil` removes the labels if exists, otherwise will ignore
 					k8sconsts.OdigletOSSInstalledLabel:        nil,
 					k8sconsts.OdigletEnterpriseInstalledLabel: nil,
+					k8sconsts.FirstInstrumentedPodAtNodeLabel: nil,
 				},
 			},
 		}

@@ -142,7 +142,6 @@ func CreateNoisyOperationRule(ctx context.Context, samplingID string, input mode
 }
 
 func UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, input model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
-	rule := noisyOperationFromInput(input)
 	var result *model.NoisyOperationRule
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -154,6 +153,7 @@ func UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID str
 		if idx < 0 {
 			return fmt.Errorf("noisy operation rule %s not found in sampling %s", ruleID, samplingID)
 		}
+		rule := mergeNoisyOperationUpdate(cr.Spec.NoisyOperations[idx], input)
 		cr.Spec.NoisyOperations[idx] = rule
 		if _, err := updateSamplingCR(ctx, cr); err != nil {
 			return err
@@ -215,7 +215,6 @@ func CreateHighlyRelevantOperationRule(ctx context.Context, samplingID string, i
 }
 
 func UpdateHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string, input model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
-	rule := highlyRelevantOperationFromInput(input)
 	var result *model.HighlyRelevantOperationRule
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -227,6 +226,7 @@ func UpdateHighlyRelevantOperationRule(ctx context.Context, samplingID string, r
 		if idx < 0 {
 			return fmt.Errorf("highly relevant operation rule %s not found in sampling %s", ruleID, samplingID)
 		}
+		rule := mergeHighlyRelevantOperationUpdate(cr.Spec.HighlyRelevantOperations[idx], input)
 		cr.Spec.HighlyRelevantOperations[idx] = rule
 		if _, err := updateSamplingCR(ctx, cr); err != nil {
 			return err
@@ -288,7 +288,6 @@ func CreateCostReductionRule(ctx context.Context, samplingID string, input model
 }
 
 func UpdateCostReductionRule(ctx context.Context, samplingID string, ruleID string, input model.CostReductionRuleInput) (*model.CostReductionRule, error) {
-	rule := costReductionRuleFromInput(input)
 	var result *model.CostReductionRule
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -300,6 +299,7 @@ func UpdateCostReductionRule(ctx context.Context, samplingID string, ruleID stri
 		if idx < 0 {
 			return fmt.Errorf("cost reduction rule %s not found in sampling %s", ruleID, samplingID)
 		}
+		rule := mergeCostReductionRuleUpdate(cr.Spec.CostReductionRules[idx], input)
 		cr.Spec.CostReductionRules[idx] = rule
 		if _, err := updateSamplingCR(ctx, cr); err != nil {
 			return err

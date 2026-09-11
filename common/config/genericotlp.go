@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -13,6 +12,9 @@ const (
 	genericOtlpUrlKey             = "OTLP_GRPC_ENDPOINT"
 	genericOtlpTlsKey             = "OTLP_GRPC_TLS_ENABLED"
 	genericOtlpCaPemKey           = "OTLP_GRPC_CA_PEM"
+	genericOtlpMtlsEnabledKey     = "OTLP_GRPC_MTLS_ENABLED"
+	genericOtlpClientCertPemKey   = "OTLP_GRPC_CLIENT_CERT_PEM"
+	genericOtlpClientKeyPemKey    = "OTLP_GRPC_CLIENT_KEY_PEM"
 	genericOtlpInsecureSkipVerify = "OTLP_GRPC_INSECURE_SKIP_VERIFY"
 	otlpGrpcOAuth2EnabledKey      = "OTLP_GRPC_OAUTH2_ENABLED"
 	otlpGrpcOAuth2ClientIdKey     = "OTLP_GRPC_OAUTH2_CLIENT_ID"
@@ -39,6 +41,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	userTlsEnabled := dest.GetConfig()[genericOtlpTlsKey] == "true"
+	mtlsEnabled := dest.GetConfig()[genericOtlpMtlsEnabledKey] == "true"
 
 	// Check for OAuth2 authentication early to determine TLS requirements
 	oauth2ExtensionName, oauth2ExtensionConf, err := applyGrpcOAuth2Auth(dest)
@@ -47,8 +50,8 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 	oauth2Enabled := oauth2ExtensionName != ""
 
-	// Determine final TLS setting: gRPC requires TLS when using authentication credentials like OAuth2
-	finalTlsEnabled := userTlsEnabled || oauth2Enabled
+	// Determine final TLS setting: gRPC requires TLS when using authentication credentials like OAuth2 or mTLS
+	finalTlsEnabled := userTlsEnabled || oauth2Enabled || mtlsEnabled
 
 	grpcEndpoint, err := parseOtlpGrpcUrl(url, finalTlsEnabled)
 	if err != nil {
@@ -59,21 +62,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		"endpoint": grpcEndpoint,
 	}
 
-	// Only add TLS config if TLS is needed (user-enabled or OAuth2-required)
-	tlsConfig := GenericMap{
-		"insecure": !finalTlsEnabled,
-	}
-	if finalTlsEnabled {
-		caPem, caExists := config[genericOtlpCaPemKey]
-		if caExists && caPem != "" {
-			tlsConfig["ca_pem"] = caPem
-		}
-		insecureSkipVerify, skipExists := config[genericOtlpInsecureSkipVerify]
-		if skipExists && insecureSkipVerify != "" {
-			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
-		}
-	}
-	exporterConf["tls"] = tlsConfig
+	exporterConf["tls"] = buildGenericOtlpTlsConfig(dest, config, finalTlsEnabled, mtlsEnabled)
 
 	// add OAuth2 authenticator extension if configured
 	if oauth2ExtensionName != "" && oauth2ExtensionConf != nil {
@@ -146,6 +135,27 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	return pipelineNames, nil
 }
 
+func buildGenericOtlpTlsConfig(dest ExporterConfigurer, config map[string]string, finalTlsEnabled, mtlsEnabled bool) GenericMap {
+	tlsConfig := GenericMap{
+		"insecure": !finalTlsEnabled,
+	}
+	if !finalTlsEnabled {
+		return tlsConfig
+	}
+	if caPem, caExists := config[genericOtlpCaPemKey]; caExists && caPem != "" {
+		tlsConfig["ca_pem"] = caPem
+	}
+	if insecureSkipVerify, skipExists := config[genericOtlpInsecureSkipVerify]; skipExists && insecureSkipVerify != "" {
+		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+	}
+	// Client cert/key are stored in the Destination Secret and injected as env vars
+	if mtlsEnabled {
+		tlsConfig["cert_pem"] = SecretEnvPlaceholder(genericOtlpClientCertPemKey, dest)
+		tlsConfig["key_pem"] = SecretEnvPlaceholder(genericOtlpClientKeyPemKey, dest)
+	}
+	return tlsConfig
+}
+
 func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap, err error) {
 	config := dest.GetConfig()
 
@@ -166,7 +176,7 @@ func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensi
 	extensionName = "oauth2client/otlpgrpc-" + dest.GetID()
 	extensionConf = &GenericMap{
 		"client_id":     clientId,
-		"client_secret": fmt.Sprintf("${%s}", otlpGrpcOAuth2ClientSecretKey),
+		"client_secret": SecretEnvPlaceholder(otlpGrpcOAuth2ClientSecretKey, dest),
 		"token_url":     tokenUrl,
 	}
 

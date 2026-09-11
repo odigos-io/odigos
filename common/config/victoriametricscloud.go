@@ -31,7 +31,7 @@ func (j *VictoriaMetricsCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config
 
 	authExtensionName := "bearertokenauth/" + uniqueUri
 	cfg.Extensions[authExtensionName] = GenericMap{
-		"token": "${VICTORIA_METRICS_CLOUD_TOKEN}",
+		"token": SecretEnvPlaceholder("VICTORIA_METRICS_CLOUD_TOKEN", dest),
 	}
 	cfg.Service.Extensions = append(cfg.Service.Extensions, authExtensionName)
 

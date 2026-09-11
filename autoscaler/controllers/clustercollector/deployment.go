@@ -24,6 +24,7 @@ import (
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/k8sconfig"
 	"github.com/odigos-io/odigos/common"
+	cfg "github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -362,15 +363,25 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSource {
 	var result []corev1.EnvFromSource
 	for _, dst := range destList.Items {
-		if dst.Spec.SecretRef != nil {
-			result = append(result, corev1.EnvFromSource{
-				SecretRef: &corev1.SecretEnvSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dst.Spec.SecretRef.Name,
-					},
-				},
-			})
+		if dst.Spec.SecretRef == nil {
+			continue
 		}
+		src := corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: dst.Spec.SecretRef.Name,
+				},
+			},
+		}
+		// Managed destinations emit ${ODIGOS_DEST_<id>_<FIELD>} placeholders. Prefix
+		// envFrom so Secret keys (FIELD) become destination-scoped env vars and do
+		// not collide across destinations of the same type.
+		// Dynamic destinations keep unprefixed envFrom so user-authored ${ENV} names
+		// in raw exporter YAML continue to resolve.
+		if dst.Spec.Type != common.DynamicDestinationType {
+			src.Prefix = cfg.DestSecretEnvPrefix(dst.GetID())
+		}
+		result = append(result, src)
 	}
 
 	return result

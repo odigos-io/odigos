@@ -80,6 +80,7 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 			CorrelationsPromAPI:         deps.CorrelationsPromAPI,
 			CorrelationsMetricsStoreURL: deps.CorrelationsMetricsStoreURL,
 			K8sCacheClient:              deps.K8sCacheClient,
+			InsightsClient:              deps.InsightsClient,
 			ProfileStore:                deps.ProfileStore,
 		},
 	})

@@ -3,7 +3,7 @@ package odigostrafficmetrics
 import (
 	"errors"
 
-	"go.opentelemetry.io/collector/confmap/xconfmap"
+	"go.opentelemetry.io/collector/confmap"
 )
 
 type Config struct {
@@ -17,7 +17,7 @@ type Config struct {
 	SamplingRatio float64 `mapstructure:"sampling_ratio"`
 }
 
-var _ xconfmap.Validator = (*Config)(nil)
+var _ confmap.Validator = (*Config)(nil)
 
 // Validate checks if the processor configuration is valid
 func (c Config) Validate() error {

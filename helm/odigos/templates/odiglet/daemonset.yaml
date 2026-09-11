@@ -21,13 +21,12 @@
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $privilegedRequired := or $collectLogs $collectMetrics -}}
 {{- $k8sVersion := include "utils.cleanKubeVersion" . }}
-{{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
-{{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
-{{- end }}
 {{- if and $networkMetricsEnabled .Values.odiglet.noHostNetwork }}
 {{ fail "odiglet.noHostNetwork cannot be true when metricsSources.networkMetrics.enabled is true, since OBI network metrics require hostNetwork" }}
+{{- end }}
+{{- if and (dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict)) (ne .Values.instrumentor.mountMethod "k8s-init-container") }}
+{{ fail "odiglet.scheduleOnlyOnInstrumentedNodes.enabled requires instrumentor.mountMethod=k8s-init-container" }}
 {{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
@@ -54,20 +53,25 @@ spec:
         app.kubernetes.io/name: odiglet
         odigos.io/collector-role: NODE_COLLECTOR
       annotations:
-        {{- if and (.Values.odiglet.unPrivileged) (semverCompare "<1.30.0" $k8sVersion) }}
+        {{- if and (not .Values.odiglet.odiglet.privileged) (semverCompare "<1.30.0" $k8sVersion) }}
         # Prior to Kubernetes v1.30, AppArmor profile was specified through annotations.
         container.apparmor.security.beta.kubernetes.io/odiglet: unconfined
         {{- end }}
         kubectl.kubernetes.io/default-container: odiglet
     spec:
+      {{- $nodeSelector := dict }}
       {{- if .Values.odiglet.nodeSelector }}
-      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
-      nodeSelector:
-      {{- toYaml .Values.odiglet.nodeSelector | nindent 8 }}
+      {{- range $k, $v := .Values.odiglet.nodeSelector }}
+      {{- $_ := set $nodeSelector $k $v }}
+      {{- end }}
       {{- else if .Values.nodeSelector }}
-      # Global nodeSelector from values.yaml
+      {{- range $k, $v := .Values.nodeSelector }}
+      {{- $_ := set $nodeSelector $k $v }}
+      {{- end }}
+      {{- end }}
+      {{- if $nodeSelector }}
       nodeSelector:
-      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- toYaml $nodeSelector | nindent 8 }}
       {{- end }}
       # we will always have at least one init container
       # if the mountMethod is k8s-init-container, we will pre-pull the agents image here as an init container
@@ -99,7 +103,7 @@ spec:
           {{- end }}
           {{- end }}
           securityContext:
-          {{- if not .Values.odiglet.unPrivileged}}
+          {{- if .Values.odiglet.odiglet.privileged}}
             privileged: true
           {{- end }}
           env:
@@ -165,22 +169,27 @@ spec:
           {{- if .Values.odiglet.traceIdSuffix }}
             - --trace-id-suffix={{ .Values.odiglet.traceIdSuffix }}
           {{- end }}
-          {{- if .Values.wasp.enabled }}
-            - --wasp-enabled
+          {{- if .Values.wasp.disabled }}
+            - --wasp-disabled
           {{- end }}
           command:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
           securityContext:
-            {{- if not .Values.odiglet.unPrivileged }}
+            {{- if .Values.odiglet.odiglet.privileged }}
             privileged: true
             {{- else }}
             privileged: false
             capabilities:
               add:
-              {{- with .Values.odiglet.odiglet.capabilities }}
-              {{- toYaml . | nindent 14 }}
+              {{- $caps := .Values.odiglet.odiglet.capabilities | default list }}
+              {{- if not (include "odigos.secretExists" .) }}
+              {{- /* the community go instrumentation checks that the target process is alive with
+                     kill(pid, 0), which needs CAP_KILL when the target runs as a different user.
+                     the enterprise distro stats /proc/<pid> instead and needs no capability. */}}
+              {{- if not (has "KILL" $caps) }}{{- $caps = append $caps "KILL" }}{{- end }}
               {{- end }}
+              {{- toYaml $caps | nindent 14 }}
               drop:
                 - ALL
             # for Kubernetes >= 1.30 we can specify AppArmor profile in securityContext
@@ -189,6 +198,10 @@ spec:
             appArmorProfile:
               {{ toYaml . | nindent 14 }}
             {{- end }}
+            {{- end }}
+            {{- with .Values.odiglet.odiglet.seLinuxOptions }}
+            seLinuxOptions:
+              {{- toYaml . | nindent 14 }}
             {{- end }}
             {{- end }} # end of securityContext
           livenessProbe:
@@ -296,17 +309,27 @@ spec:
             - --config=k8scm:{{ .Release.Namespace }}/odigos-data-collection/conf
             - --feature-gates=service.profilesSupport
           securityContext:
-            {{- if $privilegedRequired }}
+            {{- if .Values.odiglet.dataCollection.privileged }}
             privileged: true
             {{- else }}
             privileged: false
             capabilities:
               add:
-              {{- with .Values.odiglet.dataCollection.capabilities }}
-              {{- toYaml . | nindent 14 }}
+              {{- $caps := .Values.odiglet.dataCollection.capabilities | default list }}
+              {{- if .Values.profiling.enabled }}
+              {{- /* the eBPF profiler reads /proc/kallsyms addresses and raises RLIMIT_MEMLOCK */}}
+              {{- if not (has "SYSLOG" $caps) }}{{- $caps = append $caps "SYSLOG" }}{{- end }}
+              {{- if not (has "SYS_RESOURCE" $caps) }}{{- $caps = append $caps "SYS_RESOURCE" }}{{- end }}
+              {{- /* the eBPF profiler uses process_vm_readv to read interpreter state, this requires SYS_PTRACE */}}
+              {{- if not (has "SYS_PTRACE" $caps) }}{{- $caps = append $caps "SYS_PTRACE" }}{{- end }}
               {{- end }}
+              {{- toYaml $caps | nindent 14 }}
               drop:
                 - ALL
+            {{- with .Values.odiglet.dataCollection.seLinuxOptions }}
+            seLinuxOptions:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
             {{- end }}
           env:
             - name: NODE_NAME
@@ -400,6 +423,12 @@ spec:
 {{- if and .Values.odiglet.runAsNonRoot (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
 {{ fail "odiglet.runAsNonRoot is only supported with instrumentor.mountMethod=k8s-init-container" }}
 {{- end }}
+# Without the host PID namespace, uprobes cannot be scoped to a single process, so they apply
+# to every process sharing the agent files. k8s-init-container gives each pod its own copy,
+# which keeps that scope contained to the pod.
+{{- if and .Values.odiglet.noHostPid (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
+{{ fail "odiglet.noHostPid is only supported with instrumentor.mountMethod=k8s-init-container" }}
+{{- end }}
 # to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
 # and to have hostMounts allowed
 {{- if or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device") }}
@@ -450,7 +479,7 @@ spec:
 {{- toYaml .Values.odiglet.deviceplugin.readinessProbe | nindent 12 }}
 {{- end }}
 # CSI driver is only supported in privileged mode
-{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") .Values.odiglet.unPrivileged }}
+{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") (not .Values.odiglet.odiglet.privileged) }}
 {{ fail "CSI driver mount method requires privileged mode, this is not supported in unprivileged mode" }}
 {{- end }}
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
@@ -602,9 +631,21 @@ spec:
   {{- if .tolerations }}
       tolerations: {{ toYaml .tolerations | nindent 8 }}
   {{- end }}
-  {{- if .affinity }}
-      affinity: {{ toYaml .affinity | nindent 8 }}
-  {{- end }}
+{{- end }}
+{{- /* Exists match: label value is a discovery timestamp, not a fixed "true". */}}
+{{- if or (and .Values.odiglet.affinity (not (empty .Values.odiglet.affinity))) (dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict)) }}
+      affinity:
+{{- if and .Values.odiglet.affinity (not (empty .Values.odiglet.affinity)) }}
+{{ toYaml .Values.odiglet.affinity | nindent 8 }}
+{{- end }}
+{{- if dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict) }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: odigos.io/first-instrumented-pod-at
+                    operator: Exists
+{{- end }}
 {{- end }}
       # Force UID 0 unless runAsNonRoot is opted in; otherwise image USER (non-zero) is used.
       securityContext:
