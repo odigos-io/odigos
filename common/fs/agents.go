@@ -25,7 +25,9 @@ const (
 	typeField = 2
 	// what RHEL policy gives files under /var, and containers may not read it
 	varFileType = "var_t"
-	// what container-selinux gives files that any container may read
+	// what container-selinux gives files that any container may read. We set this on
+	// the files only, so anything that relabels the node afterwards undoes it, and
+	// the agents stay unreadable until the init container runs again.
 	agentsFileType   = "container_ro_file_t"
 	keeplistPath     = "/tmp/keeplist"
 	rsyncDefaultPath = "rsync"
@@ -75,17 +77,19 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string)
 // ApplyOpenShiftSELinuxSettings makes the agent files readable by instrumented
 // containers, and reports how many it relabeled. A file's SELinux context is
 // "user:role:type:level", and only the type decides who may read it.
-func ApplyOpenShiftSELinuxSettings(dstDir string) (int, error) {
+// It also reports the type the directory had on entry, which explains the count.
+func ApplyOpenShiftSELinuxSettings(dstDir string) (int, string, error) {
 	root, err := fileContext(dstDir)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
+	rootType := contextType(root)
 	// nothing to do on a node without SELinux, which gives no context at all, or
 	// under a policy that gives the agents some type we don't expect:
 	// - varFileType is what the root gets by default on OpenShift
 	// - agentsFileType is what we put and might be here from a previous run
-	if t := contextType(root); t != varFileType && t != agentsFileType {
-		return 0, nil
+	if rootType != varFileType && rootType != agentsFileType {
+		return 0, rootType, nil
 	}
 
 	relabeled := 0
@@ -99,10 +103,10 @@ func ApplyOpenShiftSELinuxSettings(dstDir string) (int, error) {
 		}
 		// not everything under a var_t directory is var_t: a named type transition
 		// gives a directory called "debug" or "man" a type its contents inherit
-		fields := strings.Split(current, ":")
-		if len(fields) <= typeField || fields[typeField] == agentsFileType {
+		if t := contextType(current); t == "" || t == agentsFileType {
 			return nil
 		}
+		fields := strings.Split(current, ":")
 		fields[typeField] = agentsFileType
 
 		if err := unix.Lsetxattr(path, selinuxXattr, []byte(strings.Join(fields, ":")), 0); err != nil {
@@ -115,7 +119,7 @@ func ApplyOpenShiftSELinuxSettings(dstDir string) (int, error) {
 		relabeled++
 		return nil
 	})
-	return relabeled, err
+	return relabeled, rootType, err
 }
 
 // fileContext returns the file's SELinux context, or "" when it has none.
