@@ -1,6 +1,9 @@
 package collectorconfig
 
 import (
+	"fmt"
+	"slices"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -10,6 +13,16 @@ const (
 	kubeletstatsReceiverName  = "kubeletstats"
 	hostmetricsReceiverName   = "hostmetrics"
 	odigosMetricsPipelineName = "metrics"
+
+	// JVM runtime metrics from the eBPF Java agent arrive over OTLP on otlp/in,
+	// which joins the metrics pipeline only with agentsTelemetry. They are
+	// reported whatever that setting says, so without it they get a route of
+	// their own.
+	jvmRuntimeMetricsPipelineName = "metrics/jvm-runtime"
+	jvmRuntimeMetricsFilterName   = "filter/jvm-runtime"
+	// Must equal ebpf-java-instrumentation's jvmmetrics.ScopeName: renaming the
+	// scope there silently filters these metrics out.
+	jvmRuntimeMetricsScopeName = "jvm-ebpf-metrics"
 )
 
 func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings, tier common.OdigosTier) (config.GenericMap, []string) {
@@ -93,25 +106,60 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	if opts.ResourceDetectionEnabled {
 		baseProcessors = append(baseProcessors, resourceDetectionProcessorName)
 	}
-	metricsPipelineProcessors := baseProcessors
-	metricsPipelineProcessors = append(metricsPipelineProcessors, opts.ManifestProcessorNames...)
-	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
+	// keep traffic metrics last for most accurate tracking
+	pipelineProcessors := func(extra ...string) []string {
+		processors := append(slices.Clone(baseProcessors), extra...)
+		processors = append(processors, opts.ManifestProcessorNames...)
+		return append(processors, odigosTrafficMetricsProcessorName)
+	}
 
 	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings, opts.Tier)
-	if len(pipelineReceiverNames) == 0 {
+
+	pipelines := map[string]config.Pipeline{}
+	if len(pipelineReceiverNames) > 0 {
+		pipelines[odigosMetricsPipelineName] = config.Pipeline{
+			Receivers:  pipelineReceiverNames,
+			Processors: pipelineProcessors(),
+			Exporters:  []string{clusterCollectorMetricsExporterName},
+		}
+	}
+
+	// Without agentsTelemetry, otlp/in is not in the metrics pipeline. JVM runtime
+	// metrics never depended on that setting, so they get a pipeline of their own
+	// that admits their scope and nothing else - every other OTLP metric stays
+	// opted out.
+	var processors config.GenericMap
+	if opts.Tier.IsEnterprise() && opts.MetricsConfigSettings.AgentsTelemetry == nil {
+		processors = jvmRuntimeMetricsProcessorConfig()
+		pipelines[jvmRuntimeMetricsPipelineName] = config.Pipeline{
+			Receivers:  []string{OTLPInReceiverName},
+			Processors: pipelineProcessors(jvmRuntimeMetricsFilterName),
+			Exporters:  []string{clusterCollectorMetricsExporterName},
+		}
+	}
+
+	if len(pipelines) == 0 {
 		// if all metrics sources are not enabled, skip the metrics pipeline generation as it has no receivers and will fail the collector
 		return config.Config{}
 	}
 
 	return config.Config{
-		Receivers: receivers,
+		Receivers:  receivers,
+		Processors: processors,
 		Service: config.Service{
-			Pipelines: map[string]config.Pipeline{
-				odigosMetricsPipelineName: {
-					Receivers:  pipelineReceiverNames,
-					Processors: metricsPipelineProcessors,
-					Exporters:  []string{clusterCollectorMetricsExporterName},
-				},
+			Pipelines: pipelines,
+		},
+	}
+}
+
+// jvmRuntimeMetricsProcessorConfig drops every metric outside the eBPF Java
+// agent's JVM runtime scope.
+func jvmRuntimeMetricsProcessorConfig() config.GenericMap {
+	return config.GenericMap{
+		jvmRuntimeMetricsFilterName: config.GenericMap{
+			"error_mode": "ignore",
+			"metrics": config.GenericMap{
+				"metric": []string{fmt.Sprintf("instrumentation_scope.name != %q", jvmRuntimeMetricsScopeName)},
 			},
 		},
 	}
