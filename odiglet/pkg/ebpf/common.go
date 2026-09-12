@@ -28,14 +28,12 @@ type InstrumentationManagerOptions struct {
 	GenericFactories           map[string]instrumentation.Factory
 	DistributionGetter         *distros.Getter
 	OdigletHealthProbeBindPort int
-	// TracesMap, MetricsMap, MetricsAttributesMap and LogsMap are shared eBPF maps owned by the
-	// caller and handed to the instrumentation factories, which then run as external readers.
-	// Creating them and serving their file descriptors is enterprise-only, so OSS leaves these
-	// nil and every factory falls back to the map it creates itself.
-	TracesMap            *cilumebpf.Map
-	MetricsMap           *cilumebpf.Map
-	MetricsAttributesMap *cilumebpf.Map
-	LogsMap              *cilumebpf.Map
+	// TracesMap and LogsMap are shared eBPF maps owned by the caller and handed to the
+	// instrumentation factories, which then run as external readers. Creating them and serving
+	// their file descriptors is enterprise-only, so OSS leaves these nil and every factory falls
+	// back to the map it creates itself.
+	TracesMap *cilumebpf.Map
+	LogsMap   *cilumebpf.Map
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
@@ -80,8 +78,6 @@ func NewManager(
 		ConfigUpdates:           configUpdates,
 		InstrumentationRequests: instrumentationRequests,
 		TracesMap:               opts.TracesMap,
-		MetricsMap:              opts.MetricsMap,
-		MetricsAttributesMap:    opts.MetricsAttributesMap,
 		LogsMap:                 opts.LogsMap,
 	}
 
