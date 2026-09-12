@@ -12,7 +12,9 @@ import (
 
 func TestMetricsConfig_MetricsPipelineProcessorOrder(t *testing.T) {
 	cfg := MetricsConfig(&odigosv1.CollectorsGroup{}, MetricsConfigOptions{
-		MetricsConfigSettings: &odigosv1.CollectorsGroupMetricsCollectionSettings{},
+		MetricsConfigSettings: &odigosv1.CollectorsGroupMetricsCollectionSettings{
+			AgentsTelemetry: &odigosv1.AgentsTelemetrySettings{},
+		},
 	})
 
 	pl, ok := cfg.Service.Pipelines[odigosMetricsPipelineName]
