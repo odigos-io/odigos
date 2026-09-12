@@ -51,7 +51,10 @@ Below are the ClusterRoles used by Odigos components.
 | apps | daemonsets | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | deployments | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | statefulsets | \* | get<br />list<br />watch<br />update<br />patch |
+| \* | pods/finalizers | \* | update |
 | apps | statefulsets/finalizers<br />deployments/finalizers<br />daemonsets/finalizers | \* | update |
+| batch | cronjobs/finalizers<br />jobs/finalizers | \* | update |
+| argoproj.io | rollouts/finalizers | \* | update |
 | apps.openshift.io | deploymentconfigs<br />deploymentconfigs/finalizers | \* | get<br />list<br />watch<br />update<br />patch |
 | argoproj.io | rollouts | \* | get<br />list<br />watch<br />patch |
 | operator.odigos.io | odigos/finalizers | \* | update |
