@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -156,6 +157,105 @@ func assertTemplateAnnotationsStripped(t *testing.T, annotations map[string]stri
 	t.Helper()
 	assert.Contains(t, annotations, "kubernetes.io/restartedAt")
 	assert.NotContains(t, annotations, "prometheus.io/scrape")
+}
+
+func fullContainerStatus(name string) v1.ContainerStatus {
+	return v1.ContainerStatus{
+		Name:         name,
+		Ready:        true,
+		Started:      boolPtr(true),
+		RestartCount: 3,
+		Image:        "nginx:latest",
+		ImageID:      "docker-pullable://nginx@sha256:abc",
+		ContainerID:  "containerd://0123456789abcdef",
+		State: v1.ContainerState{
+			Running: &v1.ContainerStateRunning{},
+		},
+		AllocatedResources: v1.ResourceList{
+			v1.ResourceCPU: resource.MustParse("500m"),
+		},
+		Resources: &v1.ResourceRequirements{
+			Limits: v1.ResourceList{
+				v1.ResourceMemory: resource.MustParse("128Mi"),
+			},
+		},
+		VolumeMounts: []v1.VolumeMountStatus{
+			{Name: "data", MountPath: "/data"},
+		},
+	}
+}
+
+func assertStrippedContainerStatuses(t *testing.T, statuses []v1.ContainerStatus, expectedNames ...string) {
+	t.Helper()
+	require.Len(t, statuses, len(expectedNames))
+
+	for i, status := range statuses {
+		assert.Equal(t, expectedNames[i], status.Name, "the container name is what identifies the status")
+		assert.Empty(t, status.Image)
+		assert.Empty(t, status.ImageID)
+		assert.Empty(t, status.ContainerID)
+		assert.Nil(t, status.AllocatedResources)
+		assert.Nil(t, status.Resources)
+		assert.Nil(t, status.VolumeMounts)
+
+		assert.True(t, status.Ready, "readiness is used by the health status engine")
+		assert.NotNil(t, status.Started)
+		assert.Equal(t, int32(3), status.RestartCount, "restart counts are used to detect crash loops")
+		assert.NotNil(t, status.State.Running, "the container state is used to detect crash loops")
+	}
+}
+
+func podSpecOnNode(nodeName string) v1.PodSpec {
+	spec := fullPodSpec()
+	spec.NodeName = nodeName
+	return spec
+}
+
+func TestStripPod(t *testing.T) {
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-pod", Namespace: "default",
+			Annotations: workloadAnnotations(),
+		},
+		Spec: podSpecOnNode("node-1"),
+		Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+			PodIP: "10.0.0.1",
+			// all three status lists are stripped, so each one has to be populated to notice a
+			// list that stopped being stripped.
+			ContainerStatuses:          []v1.ContainerStatus{fullContainerStatus("app"), fullContainerStatus("sidecar")},
+			InitContainerStatuses:      []v1.ContainerStatus{fullContainerStatus("init")},
+			EphemeralContainerStatuses: []v1.ContainerStatus{fullContainerStatus("debugger")},
+			Conditions: []v1.PodCondition{
+				{Type: v1.PodReady, Status: v1.ConditionTrue},
+			},
+		},
+	}
+
+	StripPod(pod)
+
+	assertAnnotationsStripped(t, pod.Annotations)
+	assertStrippedContainerStatuses(t, pod.Status.ContainerStatuses, "app", "sidecar")
+	assertStrippedContainerStatuses(t, pod.Status.InitContainerStatuses, "init")
+	assertStrippedContainerStatuses(t, pod.Status.EphemeralContainerStatuses, "debugger")
+
+	assert.Equal(t, v1.PodRunning, pod.Status.Phase, "Status must otherwise be preserved")
+	assert.Equal(t, "10.0.0.1", pod.Status.PodIP, "Status must otherwise be preserved")
+	assert.Len(t, pod.Status.Conditions, 1, "conditions are used to report workload health")
+	assert.Equal(t, podSpecOnNode("node-1"), pod.Spec, "StripPod only strips statuses and annotations")
+}
+
+func TestStripPodWithoutContainerStatuses(t *testing.T) {
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "pending-pod"},
+		Status:     v1.PodStatus{Phase: v1.PodPending},
+	}
+
+	StripPod(pod)
+
+	assert.Empty(t, pod.Status.ContainerStatuses)
+	assert.Equal(t, v1.PodPending, pod.Status.Phase)
+	assert.Empty(t, pod.Annotations, "an object with no annotations keeps having none")
 }
 
 func TestStripWorkloadSpecTemplate_Deployment(t *testing.T) {
