@@ -78,6 +78,7 @@ rules:
       - statefulsets/finalizers
       - deployments/finalizers
       - daemonsets/finalizers
+      - pods/finalizers
     verbs:
       - update
   - apiGroups:
