@@ -5,7 +5,6 @@ import (
 	"slices"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 )
 
@@ -25,14 +24,9 @@ const (
 	jvmRuntimeMetricsScopeName = "jvm-ebpf-metrics"
 )
 
-func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings, tier common.OdigosTier) (config.GenericMap, []string) {
+func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.GenericMap, []string) {
 	receivers := config.GenericMap{}
 	pipelineReceiverNames := []string{}
-	// odigosebpfreceiver only exists in the enterprise collector image - see the comment on
-	// odigosEbpfReceiverName in common.go.
-	if tier.IsEnterprise() {
-		pipelineReceiverNames = append(pipelineReceiverNames, odigosEbpfReceiverName)
-	}
 
 	if metricsConfigSettings.AgentsTelemetry != nil {
 		pipelineReceiverNames = append(pipelineReceiverNames, OTLPInReceiverName)
@@ -113,7 +107,7 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 		return append(processors, odigosTrafficMetricsProcessorName)
 	}
 
-	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings, opts.Tier)
+	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings)
 
 	pipelines := map[string]config.Pipeline{}
 	if len(pipelineReceiverNames) > 0 {
