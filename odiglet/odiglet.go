@@ -296,12 +296,12 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	// only files predating this run need fixing. Opt-in because OpenShift is the
 	// only platform known to need it.
 	if os.Getenv(k8sconsts.OpenShiftEnabledEnvVar) == "true" {
-		relabeled, err := fs.ApplyOpenShiftSELinuxSettings(k8sconsts.OdigosAgentsDirectory)
+		relabeled, rootType, err := fs.ApplyOpenShiftSELinuxSettings(k8sconsts.OdigosAgentsDirectory)
 		if err != nil {
 			logger.Error("Failed to label agent files for SELinux", "err", err)
 			os.Exit(-1)
 		}
-		logger.Info("Labeled agent files for SELinux", "dir", k8sconsts.OdigosAgentsDirectory, "relabeled", relabeled)
+		logger.Info("Labeled agent files for SELinux", "dir", k8sconsts.OdigosAgentsDirectory, "relabeled", relabeled, "rootType", rootType)
 	}
 
 	err := fs.CopyAgentsDirectoryToHost(k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory, nil)

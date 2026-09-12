@@ -28,6 +28,9 @@
 {{- if and (dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict)) (ne .Values.instrumentor.mountMethod "k8s-init-container") }}
 {{ fail "odiglet.scheduleOnlyOnInstrumentedNodes.enabled requires instrumentor.mountMethod=k8s-init-container" }}
 {{- end }}
+{{- if and .Values.openshift.enabled (not .Values.odiglet.odiglet.privileged) (not .Values.odiglet.odiglet.seLinuxOptions) }}
+{{ fail "openshift.enabled requires odiglet.odiglet.seLinuxOptions to name a domain allowed to relabel files, or odiglet.odiglet.privileged=true" }}
+{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
