@@ -36,7 +36,7 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
 		Named("odigospro-odigosgoautooffsets").
-		WithEventFilter(predicate.Or(&odigospredicates.OdigosDeploymentConfigMapPredicate, &odigospredicates.OdigosConfigMapPredicate, &odigospredicates.OdigosProSecretPredicate)).
+		WithEventFilter(predicate.Or(&odigospredicates.OdigosDeploymentConfigMapPredicate, &odigospredicates.OdigosEffectiveConfigMapPredicate, &odigospredicates.OdigosProSecretPredicate)).
 		Complete(&odigosproOffsetsController{
 			Client:        mgr.GetClient(),
 			OdigosVersion: odigosVersion,
