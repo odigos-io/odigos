@@ -1,5 +1,21 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+kubeadmConfigPatches:
+  # single control-plane node. Without a lease to renew.
+  - |
+    kind: ClusterConfiguration
+    controllerManager:
+      extraArgs:
+        leader-elect: "false"
+    scheduler:
+      extraArgs:
+        leader-elect: "false"
+  # Secret volumes are refreshed on the kubelet's periodic pod sync (default 1m), which delays
+  # webhook certs that are written to a secret after the pod started.
+  # https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod
+  - |
+    kind: KubeletConfiguration
+    syncFrequency: 10s
 nodes:
   - role: control-plane
   - role: worker
