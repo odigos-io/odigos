@@ -90,19 +90,19 @@ query_vm_scalar() {
   local file=$1
   local base_url=$2
   local promql=$3
-  local probe_ns response json value
+  local probe_ns response value
   probe_ns=$(probe_pod_namespace "$file")
+  # kubectl writes attach hints and warnings to stderr; keep them out of the JSON.
   response=$(
     kubectl run "vm-promql-$RANDOM" \
-      --rm -i --restart=Never \
+      --rm -i --quiet --restart=Never \
       -n "$probe_ns" \
       --image=curlimages/curl:8.4.0 \
       --command -- \
       curl -sS -G "${base_url}/api/v1/query" \
-      --data-urlencode "query=${promql}" 2>&1
+      --data-urlencode "query=${promql}"
   )
-  json=$(printf '%s' "$response" | sed 's/pod ".*$//')
-  value=$(echo "$json" | jq -r '
+  value=$(echo "$response" | jq -r '
     if .status != "success" then
       error("VM query failed: " + (.error // .errorType // "unknown"))
     elif (.data.result | length) == 0 then
