@@ -20,30 +20,36 @@ LINT_CMD = $(GOLANGCI_LINT) run -c ../.golangci.yml
 ifdef FIX_LINT
     LINT_CMD += --fix
 endif
-DOCKERFILE=Dockerfile
 IMG_PREFIX?=
 IMG_SUFFIX?=
-TARGET?=
 RHEL?=false
-BUILD_DIR=.
+LD_FLAGS?=
+# Platform(s) passed to docker-bake.hcl. A single platform (the default) can be
+# --load'ed into the local docker engine; more than one (e.g. for multi-arch)
+# requires --push. push-% always builds for PUSH_PLATFORMS regardless of this.
+PLATFORMS?=linux/amd64
+PUSH_PLATFORMS?=linux/amd64,linux/arm64
+BAKE_FILE=docker-bake.hcl
+
+# RHEL images are always published under the "-rhel-certified" suffix (matches
+# docker-bake.hcl's RHEL_SUFFIX). This only affects things outside of bake's
+# own control: CLI_IMAGE's default tag (cli.mk) and dev-image resolution.
+ifeq ($(RHEL),true)
+    IMG_SUFFIX=-rhel-certified
+endif
 
 include cli.mk
 
-ifeq ($(RHEL),true)
-    IMG_SUFFIX=-rhel-certified
+# docker-bake.hcl defines every OSS component image (Dockerfile/target/args/
+# tags/summary/description) for both the regular and RHEL variant of each.
+# This wraps `docker buildx bake` with the vars it reads from the environment.
+BAKE = TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) PLATFORMS=$(PLATFORMS) \
+	LD_FLAGS="$(LD_FLAGS)" SHORT_COMMIT=$(SHORT_COMMIT) DATE=$(DATE) \
+	docker buildx bake -f $(BAKE_FILE)
 
-    # If TARGET is empty, set it to rhel
-    ifeq ($(strip $(TARGET)),)
-        TARGET := rhel
-    else
-        # If TARGET is not empty, append -rhel
-        TARGET := $(TARGET)-rhel
-    endif
-endif
-
-ifneq ($(strip $(TARGET)),)
-  TARGET_FLAG := --target $(TARGET)
-endif
+# Resolves a component name to its bake target: RHEL=true builds the -rhel
+# variant (odiglet -> odiglet-rhel, agents -> agents-rhel, ...).
+bake_target = $(if $(filter true,$(RHEL)),$(1)-rhel,$(1))
 
 # When ORG is set on the CLI or environment, force that registry in deploy resolution.
 # The Makefile default (OSS_ORG) is not forced so enterprise clusters get ENTERPRISE_ORG.
@@ -121,60 +127,19 @@ $(HELM_SCHEMA_BIN):
 helm-schema-clean:
 	rm -f $(HELM_SCHEMA_BIN)
 
-# Pass DOCKER_BUILD_OPTS=--no-cache to force a clean build (e.g. when go.mod replace changes and cache is stale).
-# IMAGE= overrides the default $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) tag (used by deploy-*).
-build-image/%:
-	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
-	-t $(or $(IMAGE),$(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)) $(BUILD_DIR) -f $(DOCKERFILE) \
-	--build-arg SERVICE_NAME="$*" \
-	--build-arg ODIGOS_VERSION=$(TAG) \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)" \
-	--build-arg LD_FLAGS="$(LD_FLAGS)" \
-	--build-arg RHEL="$(RHEL)"
+# Build a single OSS component image via docker-bake.hcl (Dockerfile, target
+# stage, build args, tags, summary/description all live there).
+# Works for any bake target: autoscaler, scheduler, instrumentor, odiglet,
+# agents, collector, ui, operator, cli. RHEL=true builds that component's
+# -rhel variant instead (see docker-bake.hcl for what that changes).
+# IMAGE=registry/name:tag overrides the default tag (used by deploy-%).
+.PHONY: build-%
+build-%:
+	$(BAKE) --load $(if $(IMAGE),--set $(call bake_target,$*).tags=$(IMAGE)) $(call bake_target,$*)
 
 .PHONY: build-operator-index
 build-operator-index:
 	opm index add --bundles $(ORG)/odigos-bundle:$(TAG) --tag $(ORG)/odigos-index:$(TAG) --container-tool=docker
-
-.PHONY: build-operator
-build-operator:
-	$(MAKE) build-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-odiglet
-build-odiglet:
-	$(MAKE) build-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-agents
-build-agents:
-	$(MAKE) build-image/agents \
-		DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=$(if $(filter true,$(RHEL)),agents-rhel,agents) \
-		SUMMARY="Init container for Odigos" \
-		DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." \
-		TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-
-.PHONY: build-autoscaler
-build-autoscaler:
-	$(MAKE) build-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-instrumentor
-build-instrumentor:
-	$(MAKE) build-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-scheduler
-build-scheduler:
-	$(MAKE) build-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-collector
-build-collector:
-	$(MAKE) build-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-ui
-build-ui:
-	$(MAKE) build-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: verify-nodejs-agent
 verify-nodejs-agent:
@@ -183,64 +148,35 @@ verify-nodejs-agent:
 		exit 1; \
 	fi
 
+# Builds every OSS component in one `docker buildx bake` call (the "default"
+# group in docker-bake.hcl), letting buildx parallelize the whole graph.
 .PHONY: build-images
 build-images:
-	# prefer to build timeconsuimg images first to make better use of parallelism
-	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	$(BAKE) --load $(if $(filter true,$(RHEL)),rhel,default)
 
 .PHONY: build-images-rhel
 build-images-rhel:
 	$(MAKE) build-images RHEL=true TAG=$(TAG) ORG=$(ORG)
 
-push-image/%:
-	docker buildx build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
-	--platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
-	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
-	$(if $(filter true,$(GCP_MARKETPLACE)),--annotation="index:com.googleapis.cloudmarketplace.product.service.name=services/odigos.endpoints.odigos-public.cloud.goog",) \
-	--build-arg SERVICE_NAME="$*" \
-	--build-arg ODIGOS_VERSION=$(TAG) \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)" \
-	--build-arg LD_FLAGS="$(LD_FLAGS)" \
-	--build-arg RHEL="$(RHEL)"
-
-.PHONY: push-operator
-push-operator:
-	$(MAKE) push-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-odiglet
-push-odiglet:
-	$(MAKE) push-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-autoscaler
-push-autoscaler:
-	$(MAKE) push-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-instrumentor
-push-instrumentor:
-	$(MAKE) push-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-scheduler
-push-scheduler:
-	$(MAKE) push-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-collector
-push-collector:
-	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=. SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-ui
-push-ui:
-	$(MAKE) push-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-agents
-push-agents:
-	$(MAKE) push-image/agents DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=agents SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+# Same as build-% but pushes a (by default multi-arch) image to the registry
+# instead of loading it locally. Override PUSH_PLATFORMS to change the arches.
+# Requires PUSH_IMAGE=true (safety guard, matches push-cli-image-rhel).
+.PHONY: push-%
+push-%: guard-push-image
+	$(BAKE) --push --set $(call bake_target,$*).platform=$(PUSH_PLATFORMS) \
+	$(if $(filter true,$(GCP_MARKETPLACE)),--set $(call bake_target,$*).annotations=index:com.googleapis.cloudmarketplace.product.service.name=services/odigos.endpoints.odigos-public.cloud.goog) \
+	$(call bake_target,$*)
 
 .PHONY: push-images
-push-images:
-	make push-autoscaler push-scheduler push-odiglet push-instrumentor push-collector push-ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+push-images: guard-push-image
+	$(BAKE) --push --set *.platform=$(PUSH_PLATFORMS) $(if $(filter true,$(RHEL)),rhel,default)
+
+.PHONY: guard-push-image
+guard-push-image:
+	@if [ "$(PUSH_IMAGE)" != "true" ]; then \
+		echo "this will push image(s) to a registry; set PUSH_IMAGE=true" >&2; \
+		exit 1; \
+	fi
 
 .PHONY: push-images-rhel
 push-images-rhel:
@@ -281,7 +217,7 @@ load-to-kind-victoria-metrics:
 
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: restart-ui
 restart-ui:
@@ -315,7 +251,7 @@ restart-collector:
 deploy-%:
 	@img="$(call dev_image,$*)"; \
 	echo "Deploying $$img"; \
-	$(MAKE) build-$* IMAGE=$$img ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX); \
+	$(MAKE) build-$* IMAGE=$$img ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
 	$(MAKE) load-to-kind-$* IMAGE=$$img ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
 	if [ "$*" != "agents" ]; then \
 		$(MAKE) restart-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
@@ -527,14 +463,10 @@ push-workload-lifecycle-images:
 ecr-login:
 	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
+# Builds via bake (--load), then re-tags and pushes to a second registry
+# (IMG_PREFIX) - used to publish to a private ECR alongside the normal $(ORG) tag.
 build-tag-push-ecr-image/%:
-	docker build --platform linux/amd64 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
-	--build-arg SERVICE_NAME="$*" \
-	--build-arg ODIGOS_VERSION=$(TAG) \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)"
+	$(BAKE) --load $(call bake_target,$*)
 	docker tag $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
 	docker push $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
 
@@ -545,12 +477,7 @@ publish-to-ecr:
 		exit 1; \
 	fi
 	make ecr-login
-	make -j 3 build-tag-push-ecr-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-ecr-image/odiglet build-tag-push-ecr-image/autoscaler build-tag-push-ecr-image/instrumentor build-tag-push-ecr-image/scheduler build-tag-push-ecr-image/collector build-tag-push-ecr-image/ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"
 
 # install gatekeeper to prevent:
