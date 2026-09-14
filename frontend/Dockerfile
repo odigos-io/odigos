@@ -30,6 +30,7 @@ COPY api/go.mod api/go.sum ./api/
 COPY common/go.mod common/go.sum ./common/
 COPY config/go.mod config/go.sum ./config/
 COPY destinations/go.mod destinations/go.sum ./destinations/
+COPY distros/go.mod distros/go.sum ./distros/
 COPY actions/go.mod actions/go.sum ./actions/
 COPY instrumentationrules/go.mod instrumentationrules/go.sum ./instrumentationrules/
 COPY k8sutils/go.mod k8sutils/go.sum ./k8sutils/
@@ -46,6 +47,7 @@ COPY api ./api
 COPY common ./common
 COPY config ./config
 COPY destinations ./destinations
+COPY distros ./distros
 COPY actions ./actions
 COPY instrumentationrules ./instrumentationrules
 COPY k8sutils ./k8sutils
