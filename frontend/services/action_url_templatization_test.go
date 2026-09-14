@@ -27,7 +27,7 @@ func TestConvertUrlTemplatizationFromInputPreservesDefaultTemplatization(t *test
 		},
 	}
 
-	cfg := convertUrlTemplatizationFromInput(&model.ActionFieldsInput{
+	cfg := convertUrlTemplatizationFromInput(model.ActionTypeURLTemplatization, &model.ActionFieldsInput{
 		URLTemplatizationRulesGroups: []*model.URLTemplatizationRulesGroupInput{
 			{
 				TemplatizationRules: []*model.URLTemplatizationRuleInput{
@@ -41,4 +41,20 @@ func TestConvertUrlTemplatizationFromInputPreservesDefaultTemplatization(t *test
 	require.Len(t, cfg.Rules, 1)
 	require.Equal(t, []string{"/users/{id}"}, cfg.Rules[0].Templates)
 	require.Equal(t, existingAction.Spec.URLTemplatization.Default, cfg.Default)
+}
+
+func TestConvertUrlTemplatizationFromInputEmptyFieldsCreatesConfig(t *testing.T) {
+	cfg := convertUrlTemplatizationFromInput(model.ActionTypeURLTemplatization, &model.ActionFieldsInput{}, nil)
+
+	require.NotNil(t, cfg)
+	require.Empty(t, cfg.Rules)
+	require.Empty(t, cfg.Default)
+}
+
+func TestConvertUrlTemplatizationFromInputIgnoresNonUrlTemplatizationType(t *testing.T) {
+	cfg := convertUrlTemplatizationFromInput(model.ActionTypeRenameAttribute, &model.ActionFieldsInput{
+		URLTemplatizationDefaultGroups: []*model.URLTemplatizationDefaultGroupInput{{}},
+	}, nil)
+
+	require.Nil(t, cfg)
 }
