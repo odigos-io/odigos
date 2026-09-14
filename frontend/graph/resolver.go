@@ -2,6 +2,7 @@ package graph
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/distros"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	fecommon "github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/frontend/services/insights"
@@ -25,4 +26,7 @@ type Resolver struct {
 	ProfileStore fecommon.ProfileStoreRef
 	// InsightsClient is the client for the Odigos Insights service.
 	InsightsClient *insights.Client
+	// DistrosProvider resolves the default otel distro per language for the
+	// running tier — the same provider the instrumentor uses.
+	DistrosProvider *distros.Provider
 }

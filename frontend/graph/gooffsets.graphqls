@@ -1,0 +1,77 @@
+# =====================
+# Go Offsets
+# Content of the odigos-go-offsets ConfigMap used by odiglet for Go
+# instrumentation offset lookups. Reading is available on every tier;
+# replacing the offsets is a pro-tier feature (see updateGoOffsets).
+# =====================
+
+type GoOffsets {
+  timestamp: String!
+  mods: [GoOffsetModule!]!
+}
+
+type GoOffsetMinorVersion {
+  minorVersion: String!
+  versions: [String!]!
+}
+
+type GoOffsetModule {
+  module: String!
+  # Lowest and highest versions supported by this module (across all offsets).
+  minVersion: String!
+  maxVersion: String!
+  # Deduped union of all versions supported by this module.
+  minorVersions: [GoOffsetMinorVersion!]!
+}
+
+# Result of comparing installed offsets against a candidate offsets file.
+# An update replaces the ConfigMap wholesale, so mods is the union of the
+# installed and candidate sets: isNew marks what an update would add, isRemoved
+# marks what it would drop. The two are mutually exclusive.
+type GoOffsetVersionUpdate {
+  version: String!
+  isNew: Boolean!
+  isRemoved: Boolean!
+}
+
+type GoOffsetMinorVersionUpdate {
+  minorVersion: String!
+  isNew: Boolean!
+  isRemoved: Boolean!
+  versions: [GoOffsetVersionUpdate!]!
+}
+
+type GoOffsetModuleUpdate {
+  module: String!
+  isNew: Boolean!
+  isRemoved: Boolean!
+  minVersion: String!
+  maxVersion: String!
+  minorVersions: [GoOffsetMinorVersionUpdate!]!
+}
+
+type GoOffsetsUpdateCheck {
+  hasUpdates: Boolean!
+  # Generation time of the currently installed offsets.
+  currentTimestamp: String!
+  # Generation time of the candidate offsets being checked.
+  proposedTimestamp: String!
+  mods: [GoOffsetModuleUpdate!]!
+}
+
+extend type Query {
+  # Parsed go_offset_results.json from the odigos-go-offsets ConfigMap in the
+  # Odigos namespace.
+  goOffsets: GoOffsets!
+}
+
+extend type Mutation {
+  # Updates the odigos-go-offsets ConfigMap with offsets content fetched by the
+  # browser from the public offsets URL (UI pods may have no outbound internet).
+  # Errors on the community tier: custom offsets are a pro-tier feature.
+  updateGoOffsets(content: String!): Boolean!
+  # Compares the provided offsets file content against the installed ConfigMap
+  # without writing. Returns the union of both sets, annotated with the entries
+  # an update would add or drop.
+  checkGoOffsetsUpdates(content: String!): GoOffsetsUpdateCheck!
+}

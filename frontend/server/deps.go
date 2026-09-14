@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/common/profilecache"
 	"github.com/odigos-io/odigos/config"
 	"github.com/odigos-io/odigos/destinations"
+	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -50,6 +51,10 @@ type Deps struct {
 	ProfilingGate    *profiles.IngestGate
 	ProfilesConsumer *profiles.OdigosProfilesConsumer
 	OtlpReceiver     *otlp.Receiver
+	// DistrosProvider resolves which otel distro each language gets. Bootstrap
+	// sets the community one; out-of-tree mains replace it before BuildRouter
+	// so the UI reports the same distros their instrumentor injects.
+	DistrosProvider *distros.Provider
 }
 
 // Bootstrap performs the synchronous startup work: load embedded destination
@@ -142,6 +147,15 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		return nil, fmt.Errorf("initializing insights client: %w", err)
 	}
 
+	distrosGetter, err := distros.NewCommunityGetter()
+	if err != nil {
+		return nil, fmt.Errorf("loading distros: %w", err)
+	}
+	distrosProvider, err := distros.NewProvider(distros.NewCommunityDefaulter(), distrosGetter)
+	if err != nil {
+		return nil, fmt.Errorf("initializing distros provider: %w", err)
+	}
+
 	return &Deps{
 		Flags:                       flags,
 		Logger:                      logger,
@@ -156,6 +170,7 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		ProfilingGate:               profilingGate,
 		ProfilesConsumer:            profilesConsumer,
 		OtlpReceiver:                otlpReceiver,
+		DistrosProvider:             distrosProvider,
 	}, nil
 }
 
