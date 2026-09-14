@@ -1609,7 +1609,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AcceptInsightsGuardrailViolation    func(childComplexity int, action model.InsightsViolationActionInput) int
-		ApplyRecommendationRemediation      func(childComplexity int, recommendationType model.RecommendationType, remediationType string) int
+		ApplyRecommendationRemediation      func(childComplexity int, recommendationType string, remediationType string) int
 		BulkDeleteInsightsTransactions      func(childComplexity int, transactionIds []string) int
 		BulkPromoteInsightsTransactions     func(childComplexity int, transactionIds []string) int
 		BulkResolveInsightsAnomalies        func(childComplexity int, resolution model.InsightsBulkResolution, items []*model.InsightsAnomalyRefInput) int
@@ -1905,6 +1905,7 @@ type ComplexityRoot struct {
 	RecommendationCatalogRemediation struct {
 		ApplyExamples func(childComplexity int) int
 		ButtonText    func(childComplexity int) int
+		CanApplyViaUI func(childComplexity int) int
 		Tooltip       func(childComplexity int) int
 		Type          func(childComplexity int) int
 	}
@@ -2288,7 +2289,7 @@ type MutationResolver interface {
 	ClearSourceProfilingBuffer(ctx context.Context, namespace string, kind string, name string) (*model.ClearProfilingBufferResult, error)
 	ConfigureProfilingCache(ctx context.Context, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) (*model.ProfilingSlots, error)
 	SetRecommendationDismissed(ctx context.Context, name string, dismissed bool) (*model.Recommendation, error)
-	ApplyRecommendationRemediation(ctx context.Context, recommendationType model.RecommendationType, remediationType string) (bool, error)
+	ApplyRecommendationRemediation(ctx context.Context, recommendationType string, remediationType string) (bool, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
 	UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
@@ -9437,7 +9438,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ApplyRecommendationRemediation(childComplexity, args["recommendationType"].(model.RecommendationType), args["remediationType"].(string)), true
+		return e.complexity.Mutation.ApplyRecommendationRemediation(childComplexity, args["recommendationType"].(string), args["remediationType"].(string)), true
 
 	case "Mutation.bulkDeleteInsightsTransactions":
 		if e.complexity.Mutation.BulkDeleteInsightsTransactions == nil {
@@ -11260,6 +11261,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RecommendationCatalogRemediation.ButtonText(childComplexity), true
+
+	case "RecommendationCatalogRemediation.canApplyViaUi":
+		if e.complexity.RecommendationCatalogRemediation.CanApplyViaUI == nil {
+			break
+		}
+
+		return e.complexity.RecommendationCatalogRemediation.CanApplyViaUI(childComplexity), true
 
 	case "RecommendationCatalogRemediation.tooltip":
 		if e.complexity.RecommendationCatalogRemediation.Tooltip == nil {
@@ -13349,18 +13357,18 @@ func (ec *executionContext) field_Mutation_applyRecommendationRemediation_args(c
 func (ec *executionContext) field_Mutation_applyRecommendationRemediation_argsRecommendationType(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (model.RecommendationType, error) {
+) (string, error) {
 	if _, ok := rawArgs["recommendationType"]; !ok {
-		var zeroVal model.RecommendationType
+		var zeroVal string
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("recommendationType"))
 	if tmp, ok := rawArgs["recommendationType"]; ok {
-		return ec.unmarshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx, tmp)
+		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
-	var zeroVal model.RecommendationType
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -65174,7 +65182,7 @@ func (ec *executionContext) _Mutation_applyRecommendationRemediation(ctx context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ApplyRecommendationRemediation(rctx, fc.Args["recommendationType"].(model.RecommendationType), fc.Args["remediationType"].(string))
+		return ec.resolvers.Mutation().ApplyRecommendationRemediation(rctx, fc.Args["recommendationType"].(string), fc.Args["remediationType"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -72840,9 +72848,9 @@ func (ec *executionContext) _Recommendation_type(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.RecommendationType)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Recommendation_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -72852,7 +72860,7 @@ func (ec *executionContext) fieldContext_Recommendation_type(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type RecommendationType does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -73528,6 +73536,8 @@ func (ec *executionContext) fieldContext_Recommendation_remediations(_ context.C
 				return ec.fieldContext_RecommendationCatalogRemediation_buttonText(ctx, field)
 			case "tooltip":
 				return ec.fieldContext_RecommendationCatalogRemediation_tooltip(ctx, field)
+			case "canApplyViaUi":
+				return ec.fieldContext_RecommendationCatalogRemediation_canApplyViaUi(ctx, field)
 			case "applyExamples":
 				return ec.fieldContext_RecommendationCatalogRemediation_applyExamples(ctx, field)
 			}
@@ -73922,6 +73932,50 @@ func (ec *executionContext) fieldContext_RecommendationCatalogRemediation_toolti
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationCatalogRemediation_canApplyViaUi(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCatalogRemediation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecommendationCatalogRemediation_canApplyViaUi(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CanApplyViaUI, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecommendationCatalogRemediation_canApplyViaUi(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationCatalogRemediation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -100043,6 +100097,11 @@ func (ec *executionContext) _RecommendationCatalogRemediation(ctx context.Contex
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "canApplyViaUi":
+			out.Values[i] = ec._RecommendationCatalogRemediation_canApplyViaUi(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "applyExamples":
 			out.Values[i] = ec._RecommendationCatalogRemediation_applyExamples(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -108022,16 +108081,6 @@ func (ec *executionContext) marshalNRecommendationCatalogRemediation2ᚖgithub�
 		return graphql.Null
 	}
 	return ec._RecommendationCatalogRemediation(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx context.Context, v any) (model.RecommendationType, error) {
-	var res model.RecommendationType
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx context.Context, sel ast.SelectionSet, v model.RecommendationType) graphql.Marshaler {
-	return v
 }
 
 func (ec *executionContext) unmarshalNRemoteConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfigInput(ctx context.Context, v any) (model.RemoteConfigInput, error) {
