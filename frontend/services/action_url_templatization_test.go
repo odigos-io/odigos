@@ -58,3 +58,43 @@ func TestConvertUrlTemplatizationFromInputIgnoresNonUrlTemplatizationType(t *tes
 
 	require.Nil(t, cfg)
 }
+
+// An update that mentions no URL templatization field must not wipe the rules and default
+// groups the action already has.
+func TestConvertUrlTemplatizationFromInputEmptyFieldsKeepsTheExistingConfig(t *testing.T) {
+	existingAction := &v1alpha1.Action{
+		Spec: v1alpha1.ActionSpec{
+			URLTemplatization: &urlactions.URLTemplatizationConfig{
+				Rules: []urlactions.UrlTemplatizationRule{{Templates: []string{"/users/{id}"}}},
+			},
+		},
+	}
+
+	cfg := convertUrlTemplatizationFromInput(model.ActionTypeURLTemplatization, &model.ActionFieldsInput{}, existingAction)
+
+	require.Same(t, existingAction.Spec.URLTemplatization, cfg)
+}
+
+// An action created without a fields object at all - the shape a recommendation remediation
+// sends - still needs the empty config block, or the Action webhook rejects it.
+func TestConvertUrlTemplatizationFromInputWithoutFieldsCreatesConfig(t *testing.T) {
+	cfg := convertUrlTemplatizationFromInput(model.ActionTypeURLTemplatization, nil, nil)
+
+	require.NotNil(t, cfg)
+	require.Empty(t, cfg.Rules)
+	require.Empty(t, cfg.Default)
+}
+
+func TestConvertUrlTemplatizationFromInputWithoutFieldsKeepsTheExistingConfig(t *testing.T) {
+	existingAction := &v1alpha1.Action{
+		Spec: v1alpha1.ActionSpec{
+			URLTemplatization: &urlactions.URLTemplatizationConfig{
+				Rules: []urlactions.UrlTemplatizationRule{{Templates: []string{"/users/{id}"}}},
+			},
+		},
+	}
+
+	cfg := convertUrlTemplatizationFromInput(model.ActionTypeURLTemplatization, nil, existingAction)
+
+	require.Same(t, existingAction.Spec.URLTemplatization, cfg)
+}
