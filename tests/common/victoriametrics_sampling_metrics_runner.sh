@@ -17,7 +17,6 @@
 #
 # Env:
 #   TESTS_NAMESPACE  — namespace of InstrumentationConfigs (apps). Required when ruleId is omitted.
-#   ODIGOS_NAMESPACE — namespace for temporary curl probe pods (defaults to victoriaMetrics.namespace).
 #
 set -euo pipefail
 
@@ -74,34 +73,15 @@ vm_base_url() {
   ns=$(vm_namespace "$file")
   svc=$(yq_read "$file" "victoriaMetrics" '.service // "odigos-victoriametrics"')
   port=$(yq_read "$file" "victoriaMetrics" '.port // "8428"')
-  printf 'http://%s.%s.svc.cluster.local:%s' "$svc" "$ns" "$port"
-}
-
-probe_pod_namespace() {
-  local file=$1
-  if [[ -n "${ODIGOS_NAMESPACE:-}" ]]; then
-    printf '%s' "$ODIGOS_NAMESPACE"
-    return
-  fi
-  vm_namespace "$file"
+  printf '/api/v1/namespaces/%s/services/%s:%s/proxy' "$ns" "$svc" "$port"
 }
 
 query_vm_scalar() {
-  local file=$1
   local base_url=$2
   local promql=$3
-  local probe_ns response value
-  probe_ns=$(probe_pod_namespace "$file")
-  # kubectl writes attach hints and warnings to stderr; keep them out of the JSON.
-  response=$(
-    kubectl run "vm-promql-$RANDOM" \
-      --rm -i --quiet --restart=Never \
-      -n "$probe_ns" \
-      --image=curlimages/curl:8.4.0 \
-      --command -- \
-      curl -sS -G "${base_url}/api/v1/query" \
-      --data-urlencode "query=${promql}"
-  )
+  local response value
+  # Through the API server service proxy: output of short-lived `kubectl run -i` pods is often lost on k8s 1.37.
+  response=$(kubectl get --raw "${base_url}/api/v1/query?query=$(jq -rn --arg q "$promql" '$q|@uri')")
   value=$(echo "$response" | jq -r '
     if .status != "success" then
       error("VM query failed: " + (.error // .errorType // "unknown"))
