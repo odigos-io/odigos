@@ -112,8 +112,8 @@ lookup_cluster_image() {
 			printf '%s' "${img}"
 			;;
 		agents)
-			kubectl "${kopts[@]}" get ds odiglet -n "${ns}" \
-				-o jsonpath='{.spec.template.spec.initContainers[?(@.name=="odigos-agents-image-pull")].image}' 2>/dev/null || true
+			kubectl "${kopts[@]}" get deploy odigos-instrumentor -n "${ns}" \
+				-o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ODIGOS_INIT_CONTAINER_IMAGE")].value}' 2>/dev/null || true
 			;;
 		*)
 			printf ''
