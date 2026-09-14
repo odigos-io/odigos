@@ -12,15 +12,18 @@
 #                  for agents - tagged with the "-rhel-certified" suffix)
 #
 # Groups:
-#   default (default group) - all regular images
-#   rhel                    - all RHEL images
-#   all                     - both (regular + RHEL)
+#   images / images-rhel - the 7 components deployed to a dev/e2e cluster
+#                           (matches `make build-images` / `build-images-rhel`)
+#   default (default group), rhel - aliases for images / images-rhel
+#   oss / oss-rhel        - every OSS component, including operator and cli
+#   all                   - everything: oss + oss-rhel
 #
 # Usage:
-#   docker buildx bake                                   # all regular OSS images, linux/amd64
+#   docker buildx bake                                   # images group, linux/amd64
 #   docker buildx bake ui collector                      # a subset
-#   docker buildx bake rhel                              # all RHEL images
-#   docker buildx bake all                                # regular + RHEL
+#   docker buildx bake oss                                # every regular OSS image
+#   docker buildx bake rhel                              # images-rhel
+#   docker buildx bake all                                # everything, regular + RHEL
 #   docker buildx bake --set *.platform=linux/arm64       # arm64 only
 #   PLATFORMS=linux/amd64,linux/arm64 docker buildx bake  # multi-arch (needs --push to publish a manifest list)
 #   TAG=v1.2.3 ORG=docker.io/keyval docker buildx bake --push
@@ -73,7 +76,13 @@ variable "CHART_VERSION" {
 # custom IMG_SUFFIX).
 RHEL_SUFFIX = "-rhel-certified"
 
-group "default" {
+# The 7 components historically built by `make build-images` (ORG's daemonset/
+# deployment images loaded onto a dev/e2e cluster). Deliberately excludes
+# operator and cli: neither is deployed by `make deploy`/e2e clusters, and
+# operator's Dockerfile requires ODIGOS_VERSION to be valid SemVer (it doesn't
+# normalize a tag like "e2e-test" the way the other Dockerfiles do), which
+# breaks the e2e/dev-cluster flows (TAG=e2e-test) if it's pulled in here.
+group "images" {
   targets = [
     "autoscaler",
     "scheduler",
@@ -82,12 +91,10 @@ group "default" {
     "agents",
     "collector",
     "ui",
-    "operator",
-    "cli",
   ]
 }
 
-group "rhel" {
+group "images-rhel" {
   targets = [
     "autoscaler-rhel",
     "scheduler-rhel",
@@ -96,13 +103,31 @@ group "rhel" {
     "agents-rhel",
     "collector-rhel",
     "ui-rhel",
-    "operator-rhel",
-    "cli-rhel",
   ]
 }
 
+# Default target of a bare `docker buildx bake` - matches `make build-images`.
+group "default" {
+  targets = ["images"]
+}
+
+# Matches `make build-images-rhel` / `push-images-rhel`.
+group "rhel" {
+  targets = ["images-rhel"]
+}
+
+# Every OSS component, including operator and cli (not part of build-images).
+group "oss" {
+  targets = ["images", "operator", "cli"]
+}
+
+group "oss-rhel" {
+  targets = ["images-rhel", "operator-rhel", "cli-rhel"]
+}
+
+# Truly everything: every component, regular and RHEL.
 group "all" {
-  targets = ["default", "rhel"]
+  targets = ["oss", "oss-rhel"]
 }
 
 target "_common" {
