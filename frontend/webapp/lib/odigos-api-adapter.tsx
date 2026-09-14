@@ -41,6 +41,8 @@ import type {
   ExtendedPodInfo,
   FetchedConfig,
   GatewayInfo,
+  GoOffsets,
+  GoOffsetsUpdateCheck,
   InsightsAnomalyIssue,
   InsightsAnomalySummary,
   InsightsBaselineClass,
@@ -64,6 +66,7 @@ import type {
   InsightsSystemSettings,
   InsightsTransaction,
   InsightsTransactionStat,
+  InstrumentationAgent,
   Namespace,
   NodeCollectoInfo,
   PodInfo,
@@ -91,6 +94,10 @@ import {
   GET_METRICS,
   GET_NAMESPACES_WITH_WORKLOADS,
   GET_PEER_SOURCES,
+  GET_GO_OFFSETS,
+  CHECK_GO_OFFSETS_UPDATES,
+  UPDATE_GO_OFFSETS,
+  GET_INSTRUMENTATION_AGENTS,
   GET_POTENTIAL_DESTINATIONS,
   GET_PROFILING_SLOTS,
   GET_RECOMMENDATIONS,
@@ -399,6 +406,24 @@ const operations: OdigosApiOperations = {
   ENABLE_SOURCE_PROFILING: {
     document: ENABLE_SOURCE_PROFILING,
     transformResult: (raw: unknown) => (raw as { enableSourceProfiling?: EnableProfilingResult } | null | undefined)?.enableSourceProfiling,
+  },
+
+  // instrumentation agents — bare-shape slots; flatten the per-field envelope.
+  GET_INSTRUMENTATION_AGENTS: {
+    document: GET_INSTRUMENTATION_AGENTS,
+    transformResult: (raw: unknown) => (raw as { instrumentationAgents?: InstrumentationAgent[] } | null | undefined)?.instrumentationAgents ?? [],
+  },
+  GET_GO_OFFSETS: {
+    document: GET_GO_OFFSETS,
+    transformResult: (raw: unknown) => (raw as { goOffsets?: GoOffsets } | null | undefined)?.goOffsets,
+  },
+  CHECK_GO_OFFSETS_UPDATES: {
+    document: CHECK_GO_OFFSETS_UPDATES,
+    transformResult: (raw: unknown) => (raw as { checkGoOffsetsUpdates?: GoOffsetsUpdateCheck } | null | undefined)?.checkGoOffsetsUpdates,
+  },
+  UPDATE_GO_OFFSETS: {
+    document: UPDATE_GO_OFFSETS,
+    transformResult: (raw: unknown) => !!(raw as { updateGoOffsets?: boolean } | null | undefined)?.updateGoOffsets,
   },
 
   // pipeline collectors — bare-shape slots. The standalone backend's
