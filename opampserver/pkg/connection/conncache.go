@@ -57,16 +57,20 @@ func (c *ConnectionsCache) AddConnection(instanceUid string, conn *ConnectionInf
 	connCopy := *conn
 	c.mux.Lock()
 	defer c.mux.Unlock()
-	c.RemoveMatchingConnections(conn.Pod.Name, conn.Pid)
+	c.removeMatchingConnections(conn.Pod.Namespace, conn.Pod.Name, conn.ContainerName, conn.Pid)
 	c.liveConnections[instanceUid] = &connCopy
 }
 
-// RemoveMatchingConnections removes all connections that match the given podName and pid.
+// removeMatchingConnections removes all connections for the same instrumented process.
 // This ensures that outdated connections are cleaned up, such as when a new process
-// is spawned within the same pod (e.g., using os.execl in Python).
-func (c *ConnectionsCache) RemoveMatchingConnections(podName string, pid int64) {
+// is spawned within the same container (e.g., using os.execl in Python).
+// The process is identified by its namespace, pod, container and pid: agents report the pid from
+// their own container's pid namespace, so matching on the pid alone would also evict the connection
+// of another container in the same pod, which commonly reports the very same pid.
+// Must be called with c.mux held.
+func (c *ConnectionsCache) removeMatchingConnections(namespace string, podName string, containerName string, pid int64) {
 	for k, v := range c.liveConnections {
-		if v.Pod.Name == podName && v.Pid == pid {
+		if v.Pod.Namespace == namespace && v.Pod.Name == podName && v.ContainerName == containerName && v.Pid == pid {
 			delete(c.liveConnections, k)
 		}
 	}
