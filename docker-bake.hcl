@@ -44,11 +44,14 @@ variable "IMG_SUFFIX" {
   default = ""
 }
 
-# Comma-separated platform list, e.g. "linux/amd64,linux/arm64". A single
-# entry produces a normal image; more than one requires --push (or a
-# containerd image store) since a multi-platform result can't be `--load`ed.
+# Comma-separated platform list, e.g. "linux/amd64,linux/arm64". Empty (the
+# default) omits the target's `platforms` attribute entirely, so buildx falls
+# back to the builder's native platform - i.e. a plain `docker buildx bake` /
+# `make build-images` builds for the local host arch. More than one platform
+# requires --push (or a containerd image store) since a multi-platform result
+# can't be `--load`ed. Multi-arch is opt-in: PLATFORMS=linux/amd64,linux/arm64.
 variable "PLATFORMS" {
-  default = "linux/amd64"
+  default = ""
 }
 
 variable "LD_FLAGS" {
@@ -132,7 +135,7 @@ group "all" {
 
 target "_common" {
   context   = "."
-  platforms = split(",", PLATFORMS)
+  platforms = PLATFORMS != "" ? split(",", PLATFORMS) : null
   args = {
     VERSION  = TAG
     RELEASE  = TAG

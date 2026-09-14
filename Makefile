@@ -24,10 +24,12 @@ IMG_PREFIX?=
 IMG_SUFFIX?=
 RHEL?=false
 LD_FLAGS?=
-# Platform(s) passed to docker-bake.hcl. A single platform (the default) can be
-# --load'ed into the local docker engine; more than one (e.g. for multi-arch)
-# requires --push. push-% always builds for PUSH_PLATFORMS regardless of this.
-PLATFORMS?=linux/amd64
+# Platform(s) passed to docker-bake.hcl. Empty (the default) lets bake fall
+# back to the builder's native platform, so build-% / build-images produce a
+# loadable image for this machine's arch. Opt into multi-arch (requires
+# --push) with e.g. PLATFORMS=linux/amd64,linux/arm64 - see docker-bake.hcl.
+# push-% always builds for PUSH_PLATFORMS regardless of this.
+PLATFORMS?=
 PUSH_PLATFORMS?=linux/amd64,linux/arm64
 BAKE_FILE=docker-bake.hcl
 
