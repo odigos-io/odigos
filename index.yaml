@@ -5600,6 +5600,18 @@ entries:
     - https://github.com/keyval-dev/odigos-charts/releases/download/odigos-0.2.03/odigos-0.2.03.tgz
     version: 0.2.03
   - apiVersion: v2
+    appVersion: v0.0.0-feat.process-correlation.0
+    created: "2026-09-14T11:55:31.362683856Z"
+    description: Instant Distributed Tracing
+    digest: 749345b759f54238f2ac5c2442521f345f24567573004c0fe088c31af22bff5d
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.process-correlation.0/helm-chart-odigos-0.0.0-feat.process-correlation.0.tgz
+    version: 0.0.0-feat.process-correlation.0
+  - apiVersion: v2
     appVersion: v0.0.0-feat.network-telemetry.2
     created: "2026-09-03T19:16:50.864931863Z"
     description: Instant Distributed Tracing
@@ -9093,6 +9105,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v1.5.0/helm-chart-odigos-central-1.5.0.tgz
     version: 1.5.0
   - apiVersion: v2
+    appVersion: v0.0.0-feat.process-correlation.0
+    created: "2026-09-14T11:55:31.363783441Z"
+    description: Centralized components for Odigos (UI + Backend)
+    digest: 0e92c1b4ac9422b9636b499158d403d3e09d9e408623aa434ba8db629c9ca401
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos-central
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.process-correlation.0/helm-chart-odigos-central-0.0.0-feat.process-correlation.0.tgz
+    version: 0.0.0-feat.process-correlation.0
+  - apiVersion: v2
     appVersion: v0.0.0-feat.network-telemetry.2
     created: "2026-09-03T19:16:50.866235715Z"
     description: Centralized components for Odigos (UI + Backend)
@@ -9200,4 +9224,4 @@ entries:
     urls:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.amir-testing.4/helm-chart-odigos-central-0.0.0-feat.amir-testing.4.tgz
     version: 0.0.0-feat.amir-testing.4
-generated: "2026-09-14T09:10:20.829356449Z"
+generated: "2026-09-14T11:55:31.357557948Z"
