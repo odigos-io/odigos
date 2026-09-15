@@ -67,6 +67,9 @@ type GatewayConfigOptions struct {
 	// round_robin so traffic fans out across insights replicas.
 	InsightsOtlpEndpoint string
 
+	// Interrogation forces assembled root traces even without a trace destination.
+	Interrogation *common.InterrogationConfiguration
+
 	// Trace correlations configuration for the serviceio connector (service I/O metrics).
 	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
 }
@@ -206,9 +209,9 @@ func CalculateGatewayConfig(
 		status.Destination[dest.GetID()] = nil // mark this destination as success
 	}
 
-	// Insights taps the root traces pipeline; force traces on even with no destinations
+	// Insights/interrogation tap the root traces pipeline; force traces on even with no destinations
 	// so the gateway receives spans and ReceiverSignals advertises traces to agents.
-	if common.InsightsPipelineActive(gatewayOptions.Insights) {
+	if common.InsightsPipelineActive(gatewayOptions.Insights) || common.InterrogationActive(gatewayOptions.Interrogation) {
 		tracesEnabled = true
 	}
 
@@ -736,7 +739,7 @@ func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
 		return true
 	}
 
-	if common.InsightsPipelineActive(gatewayOptions.Insights) {
+	if common.InsightsPipelineActive(gatewayOptions.Insights) || common.InterrogationActive(gatewayOptions.Interrogation) {
 		return true
 	}
 

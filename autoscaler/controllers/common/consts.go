@@ -22,6 +22,10 @@ const (
 
 	// Cluster gateway profiles pipeline — OTLP in from nodes, export to UI (no extra processors).
 	ProfilingGatewayToUIExporter = "otlp_grpc/profiles-to-ui"
+
+	InterrogationProfilesExporter = "odigos_interrogation_profiles"
+	InterrogationTracesExporter   = "odigos_interrogation_traces"
+	InterrogationCacheExtension   = "odigos_interrogation_cache"
 )
 
 // OpenTelemetry component instance name for the side-channel exporter
