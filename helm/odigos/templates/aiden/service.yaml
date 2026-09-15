@@ -1,0 +1,22 @@
+{{- if .Values.aiden.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-aiden
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-aiden
+    odigos.io/system-object: "true"
+spec:
+  # ClusterIP only: the Odigos UI reverse-proxies /api/aiden/ws. Do not expose
+  # this Service on a NodePort/Ingress — gateway auth is a shared token, not
+  # per-user identity.
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: odigos-aiden
+  ports:
+    - name: gateway
+      port: 18789
+      targetPort: gateway
+      protocol: TCP
+{{- end }}

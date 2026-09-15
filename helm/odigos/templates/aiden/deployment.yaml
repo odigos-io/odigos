@@ -1,0 +1,248 @@
+{{- if .Values.aiden.enabled }}
+{{- $aidenImageTag := .Values.aiden.image.tag | default .Values.image.tag | default .Chart.AppVersion }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-aiden
+    odigos.io/system-object: "true"
+  name: {{ .Values.aiden.deploymentName | default "odigos-aiden" }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-aiden
+  strategy:
+    # Single replica with local ephemeral state (gateway chat session, /home/node/.openclaw);
+    # avoid two pods running the same OpenClaw gateway identity at once during a rollout.
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-aiden
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/aiden/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- if .Values.aiden.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.aiden.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: odigos-aiden
+        {{- end }}
+      {{- end }}
+      {{- if .Values.aiden.priorityClassName }}
+      priorityClassName: {{ .Values.aiden.priorityClassName }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # emptyDir is mounted at /openclaw-data, not at ~/.openclaw. OpenClaw
+        # fchmods its config dir to 0700; Kubernetes rejects chmod on a volume
+        # mount point (EPERM). ~/.openclaw is a subdirectory we create here.
+        - name: init-config
+          image: "{{ .Values.aiden.image.repository }}:{{ $aidenImageTag }}"
+          imagePullPolicy: {{ .Values.aiden.image.pullPolicy | default "IfNotPresent" }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              mkdir -p /openclaw-data/.openclaw/workspace
+              cp /config/openclaw.json /openclaw-data/.openclaw/openclaw.json
+              for f in AGENTS.md IDENTITY.md SOUL.md; do
+                if [ ! -f /openclaw-data/.openclaw/workspace/"$f" ] && [ -f /app/aiden/"$f" ]; then
+                  cp /app/aiden/"$f" /openclaw-data/.openclaw/workspace/"$f"
+                fi
+              done
+              rm -f /openclaw-data/.openclaw/workspace/BOOTSTRAP.md
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: openclaw-home
+              mountPath: /openclaw-data
+            - name: config
+              mountPath: /config
+      containers:
+      - name: aiden
+        image: "{{ .Values.aiden.image.repository }}:{{ $aidenImageTag }}"
+        imagePullPolicy: {{ .Values.aiden.image.pullPolicy | default "IfNotPresent" }}
+        # OpenClaw keeps operator.read/write on token auth only for localhost
+        # clients. The UI pod is remote, so it would connect then lose those
+        # scopes (chat.send → FORBIDDEN). Bind the gateway on loopback:18790
+        # and expose cluster traffic on :18789 via a same-pod TCP hop so
+        # OpenClaw sees 127.0.0.1. The Service and UI still use :18789.
+        command:
+          - sh
+          - -c
+          - |
+            node -e "const n=require('net');n.createServer(c=>{const u=n.connect(18790,'127.0.0.1',()=>{c.pipe(u);u.pipe(c)});u.on('error',()=>c.destroy());c.on('error',()=>u.destroy())}).listen(18789,'0.0.0.0')" &
+            exec node /app/dist/index.js gateway run
+        {{- if .Values.aiden.interrogation.enabled }}
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  (
+                    until node /app/dist/index.js gateway health >/dev/null 2>&1; do sleep 2; done
+                    node /app/dist/index.js automations add "every 1m" \
+                      "Follow the interrogation skill cron analysis workflow. Process at most five pending items, one at a time. Create proposals and ask for explicit approval in this conversation. Never call write tools in this run." \
+                      --name odigos-interrogation --agent default --session main
+                    {{- if include "odigos.aidenSlackInterrogationAnnounce" . }} \
+                      --announce --channel slack \
+                      --to {{ .Values.aiden.slack.interrogationTarget | quote }}
+                    {{- end }}
+                  ) >/tmp/interrogation-cron-init.log 2>&1 &
+        {{- end }}
+        ports:
+          - containerPort: 18789
+            name: gateway
+            protocol: TCP
+        env:
+          - name: HOME
+            value: /openclaw-data
+          - name: OPENCLAW_CONFIG_DIR
+            value: /openclaw-data/.openclaw
+          - name: NODE_ENV
+            value: production
+          - name: GEMINI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: odigos-aiden
+                key: gemini-api-key
+          - name: OPENCLAW_GATEWAY_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-aiden
+                key: gateway-token
+          {{- if include "odigos.aidenSlackEnabled" . }}
+          # Env fallback consumed by openclaw.json's channels.slack (mode: socket) for the
+          # default Slack account; see /home/node/.openclaw/openclaw.json.
+          - name: SLACK_APP_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-aiden
+                key: slack-app-token
+          - name: SLACK_BOT_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-aiden
+                key: slack-bot-token
+          {{- end }}
+          # Jaeger skill reads endpoints from Helm-rendered config (not baked into the image).
+          - name: JAEGER_SKILL_CONFIG
+            value: /config/jaeger-config.json
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.aiden.resources) }}
+        # Probes assert the JSON probe contract, not just the HTTP status code: the OpenClaw
+        # Control UI serves a catch-all 200 for unknown paths, so a status-only httpGet probe
+        # would pass forever even against a broken or mismatched gateway build.
+        startupProbe:
+          exec:
+            command:
+              - node
+              - -e
+              - "require('http').get('http://127.0.0.1:18790/readyz', r => { let b = ''; r.on('data', d => b += d); r.on('end', () => { try { process.exit(r.statusCode < 400 && JSON.parse(b).ready === true ? 0 : 1); } catch { process.exit(1); } }); }).on('error', () => process.exit(1))"
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        livenessProbe:
+          exec:
+            command:
+              - node
+              - -e
+              - "require('http').get('http://127.0.0.1:18790/healthz', r => { let b = ''; r.on('data', d => b += d); r.on('end', () => { try { process.exit(r.statusCode < 400 && JSON.parse(b).ok === true ? 0 : 1); } catch { process.exit(1); } }); }).on('error', () => process.exit(1))"
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+              - node
+              - -e
+              - "require('http').get('http://127.0.0.1:18790/readyz', r => { let b = ''; r.on('data', d => b += d); r.on('end', () => { try { process.exit(r.statusCode < 400 && JSON.parse(b).ready === true ? 0 : 1); } catch { process.exit(1); } }); }).on('error', () => process.exit(1))"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+{{ toYaml .Values.aiden.resources | indent 10 }}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+          - name: openclaw-home
+            mountPath: /openclaw-data
+          - name: config
+            mountPath: /config
+            readOnly: true
+          - name: tmp-volume
+            mountPath: /tmp
+      serviceAccountName: odigos-aiden
+      terminationGracePeriodSeconds: 10
+      volumes:
+        # No PVC: Aiden's session/credential state does not need to survive pod restarts for
+        # this initial chart integration. The init container reseeds openclaw.json from the
+        # odigos-aiden-config ConfigMap and AGENTS.md from the Aiden image on every pod start.
+        # Attach a PVC at this mount point instead if persisted OpenClaw state (channel pairing,
+        # session history) across restarts is required.
+        - name: openclaw-home
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: odigos-aiden-config
+        - name: tmp-volume
+          emptyDir: {}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.imagePullSecrets }}
+        - name: {{ . | quote }}
+      {{- end }}
+      {{- end }}
+{{- with .Values.aiden }}
+  {{- if .tolerations }}
+      tolerations: {{ toYaml .tolerations | nindent 8 }}
+  {{- end }}
+  {{- if .affinity }}
+      affinity: {{ toYaml .affinity | nindent 8 }}
+  {{- end }}
+{{- end }}
+{{- end }}

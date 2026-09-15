@@ -65,3 +65,37 @@ func TestBuildConfigResponseInsightsEnabled(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildConfigResponseAidenEnabled(t *testing.T) {
+	originalClient := kube.DefaultClient
+	t.Cleanup(func() {
+		kube.SetDefaultClient(originalClient)
+	})
+
+	effectiveConfig := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OdigosEffectiveConfigName,
+			Namespace: env.GetCurrentNamespace(),
+		},
+		Data: map[string]string{
+			consts.OdigosConfigurationFileName: "configVersion: 1\n",
+		},
+	}
+	kube.SetDefaultClient(&kube.Client{
+		Interface: fake.NewSimpleClientset(effectiveConfig),
+	})
+
+	t.Setenv("AIDEN_GATEWAY_URL", "")
+	t.Setenv("AIDEN_GATEWAY_TOKEN", "")
+	disabled := buildConfigResponse(context.Background(), map[string]string{
+		k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey: string(Finished),
+	})
+	assert.False(t, disabled.AidenEnabled)
+
+	t.Setenv("AIDEN_GATEWAY_URL", "http://odigos-aiden.odigos-system.svc:18789")
+	t.Setenv("AIDEN_GATEWAY_TOKEN", "test-token")
+	enabled := buildConfigResponse(context.Background(), map[string]string{
+		k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey: string(Finished),
+	})
+	assert.True(t, enabled.AidenEnabled)
+}

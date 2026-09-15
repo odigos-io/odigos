@@ -262,6 +262,7 @@ type Config struct {
 	ClusterName           *string             `json:"clusterName,omitempty"`
 	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
 	InsightsEnabled       bool                `json:"insightsEnabled"`
+	AidenEnabled          bool                `json:"aidenEnabled"`
 }
 
 type ConfigYaml struct {

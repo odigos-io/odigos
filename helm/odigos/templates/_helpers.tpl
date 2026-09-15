@@ -63,6 +63,59 @@ true
 {{- end -}}
 {{- end -}}
 
+{{- define "odigos.aidenSlackEnabled" -}}
+{{- if and (.Values.aiden.slack.key | default "") (.Values.aiden.slack.botToken | default "") -}}true{{- end -}}
+{{- end -}}
+
+{{/* True when interrogation should also announce the same reply to Slack. */}}
+{{- define "odigos.aidenSlackInterrogationAnnounce" -}}
+{{- if and (include "odigos.aidenSlackEnabled" .) (.Values.aiden.slack.interrogationTarget | default "") -}}true{{- end -}}
+{{- end -}}
+
+{{/*
+Gateway token for the in-UI Aiden chat proxy. Prefer an explicit values override,
+then the existing Secret so upgrades keep the same token, otherwise generate one.
+Only invoke this helper once per render (the Secret); the UI and Aiden pods read
+the token from odigos-aiden/gateway-token.
+*/}}
+{{- define "odigos.aidenGatewayToken" -}}
+{{- if .Values.aiden.gateway.token -}}
+{{- .Values.aiden.gateway.token -}}
+{{- else -}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace "odigos-aiden" -}}
+{{- if and $secret $secret.data (index $secret.data "gateway-token") -}}
+{{- index $secret.data "gateway-token" | b64dec -}}
+{{- else -}}
+{{- randAlphaNum 48 -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "odigos.validateAiden" -}}
+{{- if .Values.aiden.enabled -}}
+{{- if not (include "odigos.secretExists" .) -}}
+{{- fail "aiden.enabled is true, but Aiden requires Odigos Enterprise (a valid on-prem token) to reach the Enterprise MCP server. Set onPremToken, or ensure the odigos-pro secret exists, before enabling aiden." -}}
+{{- end -}}
+{{- if not .Values.ui.mcp.enabled -}}
+{{- fail "aiden.enabled is true, but ui.mcp.enabled is false. Aiden talks to the cluster exclusively through the Enterprise MCP server mounted on the ui Service; set ui.mcp.enabled to true (the default) to use aiden." -}}
+{{- end -}}
+{{- if not .Values.aiden.gemini.key -}}
+{{- fail "aiden.enabled is true, but aiden.gemini.key is empty. Provide a Google Gemini API key so Aiden can reach its LLM backend." -}}
+{{- end -}}
+{{- $slackKey := .Values.aiden.slack.key | default "" -}}
+{{- $slackBot := .Values.aiden.slack.botToken | default "" -}}
+{{- if and $slackKey (not $slackBot) -}}
+{{- fail "aiden.slack.key is set, but aiden.slack.botToken is empty. Provide both Slack tokens, or leave both empty to use only the in-UI Aiden chat." -}}
+{{- end -}}
+{{- if and $slackBot (not $slackKey) -}}
+{{- fail "aiden.slack.botToken is set, but aiden.slack.key is empty. Provide both Slack tokens, or leave both empty to use only the in-UI Aiden chat." -}}
+{{- end -}}
+{{- if and (.Values.aiden.slack.interrogationTarget | default "") (not (and $slackKey $slackBot)) -}}
+{{- fail "aiden.slack.interrogationTarget is set, but Slack tokens are empty. Provide aiden.slack.key and aiden.slack.botToken to mirror interrogation to Slack, or clear interrogationTarget to use only the in-UI chat." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "odigos.enterpriseRegistryDockerConfigJson" -}}
 {{- $token := include "odigos.onPremToken" . -}}
 {{- $auth := printf "odigos:%s" $token | b64enc -}}

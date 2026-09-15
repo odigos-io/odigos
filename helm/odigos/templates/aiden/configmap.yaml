@@ -1,0 +1,89 @@
+{{- if .Values.aiden.enabled }}
+{{- $mcpUrl := printf "http://ui.%s.svc:3000/mcp" .Release.Namespace }}
+{{- $uiOrigin := printf "http://ui.%s.svc:3000" .Release.Namespace }}
+{{- $jaegerConfig := dict
+      "endpoints" (.Values.aiden.jaeger.endpoints | default (dict "default" "http://localhost:16686"))
+      "active" (.Values.aiden.jaeger.active | default "default")
+-}}
+{{- $openclawConfig := dict
+      "gateway" (dict
+        "mode" "local"
+        "bind" "loopback"
+        "port" 18790
+        "auth" (dict
+          "mode" "token"
+          "token" (dict "source" "env" "provider" "default" "id" "OPENCLAW_GATEWAY_TOKEN")
+        )
+        "controlUi" (dict
+          "enabled" true
+          "allowInsecureAuth" true
+          "dangerouslyDisableDeviceAuth" true
+          "allowedOrigins" (list "http://localhost:3000" "http://127.0.0.1:3000" $uiOrigin)
+        )
+      )
+      "logging" (dict
+        "level" (.Values.aiden.logLevel | default .Values.logLevel | default "info")
+      )
+      "skills" (dict
+        "load" (dict
+          "extraDirs" (list "/app/aiden-skills")
+        )
+      )
+      "agents" (dict
+        "defaults" (dict
+          "workspace" "~/.openclaw/workspace"
+          "skipBootstrap" true
+          "model" (dict "primary" (.Values.aiden.gemini.model | default "google/gemini-3-flash-preview"))
+        )
+        "entries" (dict
+          "default" (dict
+            "name" "Odigos Aiden"
+            "workspace" "~/.openclaw/workspace"
+            "identity" (dict
+              "name" "Aiden"
+              "theme" "concise Odigos Enterprise assistant"
+            )
+          )
+        )
+      )
+      "mcp" (dict
+        "servers" (dict
+          "odigos" (dict
+            "url" $mcpUrl
+            "transport" "streamable-http"
+            "enabled" true
+          )
+        )
+      )
+      "cron" (dict "enabled" .Values.aiden.interrogation.enabled)
+-}}
+{{- if include "odigos.aidenSlackEnabled" . }}
+{{- $_ := set $openclawConfig "channels" (dict
+      "slack" (dict
+        "enabled" true
+        "mode" "socket"
+        "appToken" (dict "source" "env" "provider" "default" "id" "SLACK_APP_TOKEN")
+        "botToken" (dict "source" "env" "provider" "default" "id" "SLACK_BOT_TOKEN")
+      )
+) }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-aiden-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-aiden
+    odigos.io/system-object: "true"
+data:
+  # Built from Helm-native dicts and rendered with toPrettyJson (not hand-written JSON text)
+  # so namespace-derived values (mcp.servers.odigos.url) are always correctly JSON-escaped.
+  # No credentials live here: Gemini, Slack, and the gateway token use env-var
+  # SecretRefs (GEMINI_API_KEY, SLACK_*, OPENCLAW_GATEWAY_TOKEN) resolved from
+  # the odigos-aiden Secret at runtime. Slack is omitted unless both tokens are set.
+  # The in-UI chat is always on when Aiden is enabled (Control UI + token auth).
+  openclaw.json: |
+{{ toPrettyJson $openclawConfig | indent 4 }}
+  jaeger-config.json: |
+{{ toPrettyJson $jaegerConfig | indent 4 }}
+{{- end }}

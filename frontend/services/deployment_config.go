@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/aiden"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
@@ -67,6 +68,7 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
 	response.ClusterName = &config.ClusterName
 	response.InsightsEnabled = config.InsightsEnabled()
+	response.AidenEnabled = aiden.IsEnabled()
 	isConnected, err := isCentralProxyRunning(ctx)
 	if err != nil {
 		log.Printf("Error checking if central proxy connected: %v\n", err)

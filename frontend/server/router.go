@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/middlewares"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/frontend/services/aiden"
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/webapp"
 )
@@ -99,6 +100,9 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 
 	// SSE.
 	r.GET("/api/events", sse.HandleSSEConnections)
+
+	// In-UI Aiden chat — reverse-proxies the OpenClaw gateway WebSocket.
+	r.GET("/api/aiden/ws", aiden.HandleGatewayWS)
 
 	// Remote CLI handlers.
 	r.POST("/token/update", services.UpdateToken)

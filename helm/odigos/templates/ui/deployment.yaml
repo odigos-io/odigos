@@ -67,6 +67,17 @@ spec:
                 name: odigos-pro
                 key: odigos-onprem-token
           {{- end }}
+          {{- if .Values.aiden.enabled }}
+          # In-UI Aiden chat: the frontend reverse-proxies /api/aiden/ws to this URL
+          # and injects the gateway token so the browser never sees it.
+          - name: AIDEN_GATEWAY_URL
+            value: {{ printf "http://odigos-aiden.%s.svc:18789" .Release.Namespace | quote }}
+          - name: AIDEN_GATEWAY_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-aiden
+                key: gateway-token
+          {{- end }}
         ports:
           - containerPort: 3000
             name: ui

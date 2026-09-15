@@ -8,6 +8,7 @@ export const ROUTES = {
   SETTINGS: '/settings',
   SAMPLING: '/sampling',
   URL_TEMPLATIZATION: '/url-templatization',
+  AIDEN: '/aiden',
   TRACE_CORRELATIONS: '/trace-correlations',
 
   // legacy routes
