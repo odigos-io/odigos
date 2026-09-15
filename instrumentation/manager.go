@@ -62,7 +62,9 @@ type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup, 
 	// instrumentation path. We track the process even when this is nil (the distro failed to
 	// initialize/load) so the reporter is notified once the process exits, and so a failed distro is
 	// a retry candidate.
-	distroInst Instrumentation
+	distroInst     Instrumentation
+	statusRevision uint64
+	statusAttempt  uint64
 	// genericInsts holds the instrumentations produced by the generic factories (e.g. OBI network
 	// metrics, eBPF log capture) that apply to every process regardless of its distro. They are kept
 	// off the main path: their lifecycle is never reported and they are never retried, so only the
@@ -170,7 +172,8 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 
 	configUpdates <-chan ConfigUpdate[configGroup]
 
-	requests <-chan Request[processGroup, configGroup, processDetails]
+	requests      <-chan Request[processGroup, configGroup, processDetails]
+	statusAttempt uint64
 
 	metrics *managerMetrics
 
@@ -238,6 +241,12 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 }
 
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx context.Context) {
+	var statusTick <-chan time.Time
+	if _, ok := m.handler.Reporter.(StatusReporter[ProcessGroup, ConfigGroup, ProcessDetails]); ok {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		statusTick = ticker.C
+	}
 	// cleanup all instrumentations on shutdown
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownCleanupTimeout)
@@ -328,8 +337,43 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 					m.logger.Error("failed to apply instrumentation configuration", "err", err)
 				}
 			}
+		case <-statusTick:
+			m.reportChangedStatus(ctx)
 		}
 	}
+}
+
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) reportChangedStatus(ctx context.Context) {
+	reporter, ok := m.handler.Reporter.(StatusReporter[ProcessGroup, ConfigGroup, ProcessDetails])
+	if !ok {
+		return
+	}
+	var selected *instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]
+	var pid int
+	for candidatePID, details := range m.detailsByPid {
+		provider, ok := details.distroInst.(StatusProvider)
+		if !ok || provider.StatusRevision() == details.statusRevision {
+			continue
+		}
+		if selected == nil || details.statusAttempt < selected.statusAttempt || (details.statusAttempt == selected.statusAttempt && candidatePID < pid) {
+			selected, pid = details, candidatePID
+		}
+	}
+	if selected == nil {
+		return
+	}
+	// One coalesced report per node tick bounds API work. Choosing the least
+	// recently attempted process keeps a failing report from starving others.
+	m.statusAttempt++
+	selected.statusAttempt = m.statusAttempt
+	status, revision := selected.distroInst.(StatusProvider).Status()
+	reportCtx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	if err := reporter.OnStatus(reportCtx, pid, selected.pd, status); err != nil {
+		m.logger.Error("failed to report instrumentation status", "pid", pid, "err", err)
+		return
+	}
+	selected.statusRevision = revision
 }
 
 // instrumentFromDetails runs tryInstrument for each (pid, pd) that is not already instrumented,
