@@ -68,7 +68,7 @@ func TestConvertUrlTemplatizationFromInputAcceptsDefaultGroups(t *testing.T) {
 		},
 	}
 
-	cfg := convertUrlTemplatizationFromInput(&model.ActionFieldsInput{
+	cfg := convertUrlTemplatizationFromInput(model.ActionTypeURLTemplatization, &model.ActionFieldsInput{
 		URLTemplatizationDefaultGroups: []*model.URLTemplatizationDefaultGroupInput{
 			{
 				Scopes: &model.SourcesScopesInput{
