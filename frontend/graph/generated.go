@@ -865,6 +865,7 @@ type ComplexityRoot struct {
 		Severity           func(childComplexity int) int
 		Signature          func(childComplexity int) int
 		Status             func(childComplexity int) int
+		Summary            func(childComplexity int) int
 		Title              func(childComplexity int) int
 		TransactionID      func(childComplexity int) int
 		TriggeredClasses   func(childComplexity int) int
@@ -6251,6 +6252,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsFinding.Status(childComplexity), true
+
+	case "InsightsFinding.summary":
+		if e.complexity.InsightsFinding.Summary == nil {
+			break
+		}
+
+		return e.complexity.InsightsFinding.Summary(childComplexity), true
 
 	case "InsightsFinding.title":
 		if e.complexity.InsightsFinding.Title == nil {
@@ -33450,6 +33458,8 @@ func (ec *executionContext) fieldContext_Insights_findings(ctx context.Context, 
 				return ec.fieldContext_InsightsFinding_namespace(ctx, field)
 			case "title":
 				return ec.fieldContext_InsightsFinding_title(ctx, field)
+			case "summary":
+				return ec.fieldContext_InsightsFinding_summary(ctx, field)
 			case "operation":
 				return ec.fieldContext_InsightsFinding_operation(ctx, field)
 			case "operationName":
@@ -41131,6 +41141,50 @@ func (ec *executionContext) _InsightsFinding_title(ctx context.Context, field gr
 }
 
 func (ec *executionContext) fieldContext_InsightsFinding_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsFinding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsFinding_summary(ctx context.Context, field graphql.CollectedField, obj *model.InsightsFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsFinding_summary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Summary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsFinding_summary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InsightsFinding",
 		Field:      field,
@@ -91688,6 +91742,11 @@ func (ec *executionContext) _InsightsFinding(ctx context.Context, sel ast.Select
 			}
 		case "title":
 			out.Values[i] = ec._InsightsFinding_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "summary":
+			out.Values[i] = ec._InsightsFinding_summary(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

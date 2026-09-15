@@ -100,6 +100,7 @@ const FINDING_FIELDS = `
   service
   namespace
   title
+  summary
   operation
   operationName
   identityDimensions {

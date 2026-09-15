@@ -282,6 +282,7 @@ type Finding struct {
 	Service            string                     `json:"service"`
 	Namespace          string                     `json:"namespace"`
 	Title              string                     `json:"title"`
+	Summary            string                     `json:"summary,omitempty"`
 	Operation          *string                    `json:"operation,omitempty"`
 	OperationName      *string                    `json:"operation_name,omitempty"`
 	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions,omitempty"`
