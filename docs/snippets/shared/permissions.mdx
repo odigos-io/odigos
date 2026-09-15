@@ -31,6 +31,8 @@ Below are the ClusterRoles used by Odigos components.
 | odigos.io | sources | \* | list<br />delete |
 | \* | pods | \* | list |
 | \* | nodes | \* | list<br />patch |
+| admissionregistration.k8s.io | mutatingwebhookconfigurations<br />mutatingwebhookconfigurations/finalizers | odigos-pod-mutating-webhook-configuration<br />odigos-source-mutating-webhook-configuration | get<br />update |
+| admissionregistration.k8s.io | validatingwebhookconfigurations<br />validatingwebhookconfigurations/finalizers | odigos-source-validating-webhook-configuration | get<br />update |
 
 ### odigos-gateway
 
@@ -147,6 +149,7 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | \* | configmaps | odigos-deployment<br />odigos-configuration | get |
 | \* | configmaps | \* | list |
 | \* | configmaps | odigos-config | get<br />delete |
+| apps | deployments<br />deployments/finalizers | \* | get<br />list<br />update |
 
 ### odigos-gateway
 

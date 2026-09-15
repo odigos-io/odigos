@@ -9,6 +9,8 @@ metadata:
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
     odigos.io/system-object: "true"
+  finalizers:
+    - odigos.io/instrumentor-webhook-finalizer
 webhooks:
   - name: odigos-pod-mutating-webhook.odigos.io
     clientConfig:
@@ -40,6 +42,8 @@ metadata:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
+  finalizers:
+    - odigos.io/instrumentor-webhook-finalizer
 webhooks:
   - name: odigos-source-mutating-webhook.odigos.io
     clientConfig:
@@ -72,6 +76,8 @@ metadata:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
+  finalizers:
+    - odigos.io/instrumentor-webhook-finalizer
 webhooks:
   - name: odigos-source-validating-webhook.odigos.io
     clientConfig:

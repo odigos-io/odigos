@@ -22,3 +22,7 @@ rules:
   resources: ["configmaps"]
   resourceNames: ["odigos-config"]
   verbs: ["get","delete"]
+# remove the instrumentor Deployment finalizer so helm can delete it after cleanup
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/finalizers"]
+  verbs: ["get", "list", "update"]
