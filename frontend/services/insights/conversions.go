@@ -627,6 +627,7 @@ func FindingToModel(finding Finding) *model.InsightsFinding {
 		Service:            finding.Service,
 		Namespace:          finding.Namespace,
 		Title:              finding.Title,
+		Summary:            finding.Summary,
 		Operation:          finding.Operation,
 		OperationName:      finding.OperationName,
 		IdentityDimensions: mapSlice(finding.IdentityDimensions, TransactionIdentityValueToModel),

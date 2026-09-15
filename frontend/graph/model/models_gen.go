@@ -1023,6 +1023,10 @@ type InsightsFinding struct {
 	Namespace string              `json:"namespace"`
 	// Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
 	Title string `json:"title"`
+	// Render-ready one-line explanation so the list conveys the gist without opening
+	// investigate. Omits service and title (already on the row): anomalies name the
+	// deviated classes; violations name the rule and what broke it. Display as-is.
+	Summary string `json:"summary"`
 	// Full canonical transaction operation (anomalies only). Omitted for violations.
 	Operation *string `json:"operation,omitempty"`
 	// Entry-span operation without dimension suffixes (anomalies).
