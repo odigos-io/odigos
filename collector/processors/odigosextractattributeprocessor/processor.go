@@ -43,25 +43,24 @@ func newExtractAttributeProcessor(set processor.Settings, cfg *Config) (*extract
 	}, nil
 }
 
-// compileRegexExtractors precompiles one regex per Extraction entry at startup so the per-span path stays allocation-free.
+// compileRegexExtractors precompiles the regexes of every Extraction entry at startup so the per-span path stays allocation-free.
 func compileRegexExtractors(cfg *Config) ([]extractor, error) {
 	out := make([]extractor, 0, len(cfg.Extractions))
 	for i, extraction := range cfg.Extractions {
 		var regexes []*regexp.Regexp
-		var err error
 
 		if extraction.Regex != "" {
-			var regex *regexp.Regexp
-			regex, err = regexp.Compile(extraction.Regex)
+			regex, err := regexp.Compile(extraction.Regex)
 			if err != nil {
 				return nil, fmt.Errorf("extractions[%d]: invalid regex: %w", i, err)
 			}
 			regexes = []*regexp.Regexp{regex}
 		} else {
-			regexes, err = buildExtractionRegexes(extraction.LookupKey, extraction.DataFormat)
+			built, err := buildExtractionRegexes(extraction.LookupKey, extraction.DataFormat)
 			if err != nil {
 				return nil, fmt.Errorf("extractions[%d]: %w", i, err)
 			}
+			regexes = built
 		}
 		out = append(out, extractor{regexes: regexes, targetAttributeName: extraction.TargetAttributeName})
 	}
