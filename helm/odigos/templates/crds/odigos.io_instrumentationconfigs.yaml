@@ -347,8 +347,7 @@ spec:
                                 type: object
                                 x-kubernetes-validations:
                                 - message: expiry requires generation
-                                  rule: '!has(self.expiresAt) || (has(self.generation)
-                                    && size(self.generation) == 32)'
+                                  rule: '!has(self.expiresAt)||(has(self.generation)&&size(self.generation)==32)'
                               type: array
                             java:
                               items:
