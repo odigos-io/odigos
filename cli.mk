@@ -12,8 +12,6 @@
 #   FLAGS               - extra CLI flags appended to cli-install
 
 CLI_IMAGE ?= $(ORG)/odigos-cli$(IMG_SUFFIX):$(TAG)
-CLI_SUMMARY ?= Odigos CLI
-CLI_DESCRIPTION ?= Odigos CLI to install and manage Odigos in your Kubernetes cluster.
 SHORT_COMMIT ?= $(shell git rev-parse --short HEAD)
 DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
@@ -103,22 +101,15 @@ cli-diagnose:
 # Override explicitly when needed: make build-cli-image TAG=e2e-test CHART_VERSION=0.0.0-e2e-test
 CHART_VERSION ?= $(TAG)
 
-# Build the CLI container image with docker (cli/Dockerfile).
+# Build the CLI container image via docker-bake.hcl (cli / cli-rhel targets
+# there define the Dockerfile, build args, and summary/description).
 # Default tag: $(CLI_IMAGE) = $(ORG)/odigos-cli$(IMG_SUFFIX):$(TAG)
 # Override: make build-cli-image TAG=e2e-test
 #           make build-cli-image CLI_IMAGE=my.registry/odigos-cli:dev
-# RHEL via Dockerfile target: make build-cli-image RHEL=true
+# RHEL: make build-cli-image RHEL=true
 .PHONY: build-cli-image
 build-cli-image:
-	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) -t $(CLI_IMAGE) -f cli/Dockerfile . \
-		--build-arg VERSION=$(TAG) \
-		--build-arg CHART_VERSION=$(CHART_VERSION) \
-		--build-arg RELEASE=$(TAG) \
-		--build-arg SUMMARY="$(CLI_SUMMARY)" \
-		--build-arg DESCRIPTION="$(CLI_DESCRIPTION)" \
-		--build-arg SHORT_COMMIT=$(SHORT_COMMIT) \
-		--build-arg DATE=$(DATE) \
-		--build-arg RHEL=$(RHEL)
+	CHART_VERSION=$(CHART_VERSION) $(BAKE) --load --set $(call bake_target,cli).tags=$(CLI_IMAGE) $(call bake_target,cli)
 
 # Extract the /odigos binary from a CLI image to cli/odigos for use on the host.
 # Default image: $(CLI_IMAGE). Requires the image to be local or pullable.
