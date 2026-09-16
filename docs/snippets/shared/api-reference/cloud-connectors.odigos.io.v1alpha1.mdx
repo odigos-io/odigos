@@ -99,6 +99,68 @@ one AWS account / Azure subscription / GCP project / SaaS tenant.</p>
 </tbody>
 </table>
 
+## `CloudConnectorCollectorCapability` <a id="CloudConnectorCollectorCapability"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorSpec](#OdigosCloudConnectorSpec)
+
+<p>CloudConnectorCollectorCapability is the customer's allow-list entry for one managed-Collector type
+(e.g. &quot;aws.fargate-collector&quot;): a telemetry Collector that Odigos runs inside the customer's own
+cloud account so their workloads export to a nearby endpoint instead of over the internet.</p>
+<p>The two booleans are separate because they are separate grants. Management is the configuration
+plane and costs the customer nothing in their account. Deployment lets Odigos create and change
+infrastructure there, which is the permission a customer may reasonably withhold while still
+wanting Odigos to configure a Collector they deployed themselves from published IaC.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>type</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Type is the provider connector spec type key (e.g. &quot;aws.fargate-collector&quot;).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>management</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Management allows the connector to own this Collector's OpenTelemetry configuration and deliver it
+over OpAMP. It applies however the Collector was deployed — by Odigos, or by the customer from the
+IaC artifacts Odigos publishes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deployment</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Deployment additionally allows the connector to create and converge this Collector's
+infrastructure in the customer's cloud account, and to remove what it created.</p>
+<p>Deployment without Management is refused by the connector: Odigos would build a Collector it never
+configures, which serves an inert fallback for ever. Enable both, or leave Deployment off to own
+the Collector's infrastructure yourself.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `CloudConnectorComputePlatformCapability` <a id="CloudConnectorComputePlatformCapability"></a>
 
 
@@ -580,6 +642,22 @@ region selection.</p>
    <p>ComputePlatforms is the customer's per-type allow-list for managed environments: what the connector
 may do (discovery and/or installation) per compute-platform type (e.g. aws.ecs-cluster, aws.eks,
 aws.ec2).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectors</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#CloudConnectorCollectorCapability"><code>[]CloudConnectorCollectorCapability</code></a>
+</td>
+<td>
+   <p>Collectors is the customer's per-type allow-list for Odigos-managed telemetry Collectors running
+in the customer's own cloud account: whether Odigos may configure one, and whether it may also
+deploy and converge its infrastructure.</p>
+<p>Absent or empty means no managed Collector, and a connector image that predates this field ignores
+it — so a Collector is only ever built where the capability is present AND the connector
+understands it.</p>
 </td>
 </tr>
 <tr>
