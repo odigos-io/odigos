@@ -621,12 +621,16 @@ func (r *mutationResolver) UpsertInsightsGuardrail(ctx context.Context, guardrai
 }
 
 // DeleteInsightsGuardrail is the resolver for the deleteInsightsGuardrail field.
-func (r *mutationResolver) DeleteInsightsGuardrail(ctx context.Context, scopeKey string) (bool, error) {
+func (r *mutationResolver) DeleteInsightsGuardrail(ctx context.Context, scopeKey string, scope *model.InsightsPolicyScope) (bool, error) {
 	client, err := r.insightsClient(ctx)
 	if err != nil {
 		return false, err
 	}
-	if err := client.DeleteGuardrail(ctx, scopeKey); err != nil {
+	policyScope := insights.PolicyScope("service")
+	if scope != nil {
+		policyScope = insights.PolicyScopeFromModel(*scope)
+	}
+	if err := client.DeleteGuardrail(ctx, policyScope, scopeKey); err != nil {
 		return false, insights.GraphQLError(ctx, err)
 	}
 	return true, nil
