@@ -34,6 +34,24 @@ const GUARDRAIL_FIELDS = `
     label
     mode
     allowlist
+    correlations {
+      name
+      left {
+        service
+        span
+        attr
+        extract
+      }
+      right {
+        service
+        span
+        attr
+        extract
+      }
+      relation
+      severity
+      why
+    }
     origin
   }
 `;
@@ -178,8 +196,8 @@ export const UPSERT_INSIGHTS_GUARDRAIL = gql`
 `;
 
 export const DELETE_INSIGHTS_GUARDRAIL = gql`
-  mutation DeleteInsightsGuardrail($scopeKey: String!) {
-    deleteInsightsGuardrail(scopeKey: $scopeKey)
+  mutation DeleteInsightsGuardrail($scopeKey: String!, $scope: InsightsPolicyScope) {
+    deleteInsightsGuardrail(scopeKey: $scopeKey, scope: $scope)
   }
 `;
 

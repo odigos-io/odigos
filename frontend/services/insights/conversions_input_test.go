@@ -98,6 +98,9 @@ func TestLearningPolicyFromInputWithoutConditions(t *testing.T) {
 }
 
 func TestGuardrailFromInputMapsEveryField(t *testing.T) {
+	severity := model.InsightsSeverityCritical
+	extract := `(\d+)`
+	why := "principal must match account"
 	got := GuardrailFromInput(model.InsightsGuardrailInput{
 		Scope:    model.InsightsPolicyScope("service"),
 		ScopeKey: "prod/checkout",
@@ -114,6 +117,28 @@ func TestGuardrailFromInputMapsEveryField(t *testing.T) {
 				Key:   "allowed_callers",
 				Label: "Allowed callers",
 				Mode:  model.InsightsRuleMode("off"),
+			},
+			{
+				Key:   "attribute_correlation",
+				Label: "Attribute correlation",
+				Mode:  model.InsightsRuleMode("enforce"),
+				Correlations: []*model.InsightsCorrelationSpecInput{{
+					Name: "principal-matches-account",
+					Left: &model.InsightsCorrelationSelectorInput{
+						Service: "edge-gateway",
+						Span:    "resolvePrincipal",
+						Attr:    "return.value",
+						Extract: &extract,
+					},
+					Right: &model.InsightsCorrelationSelectorInput{
+						Service: "account-service",
+						Span:    "getAccount",
+						Attr:    "arg.0",
+					},
+					Relation: model.InsightsCorrelationRelationEquals,
+					Severity: &severity,
+					Why:      &why,
+				}},
 			},
 		},
 	})
@@ -133,6 +158,28 @@ func TestGuardrailFromInputMapsEveryField(t *testing.T) {
 				Key:   "allowed_callers",
 				Label: "Allowed callers",
 				Mode:  "off",
+			},
+			{
+				Key:   "attribute_correlation",
+				Label: "Attribute correlation",
+				Mode:  "enforce",
+				Correlations: []CorrelationSpec{{
+					Name: "principal-matches-account",
+					Left: CorrelationSelector{
+						Service: "edge-gateway",
+						Span:    "resolvePrincipal",
+						Attr:    "return.value",
+						Extract: `(\d+)`,
+					},
+					Right: CorrelationSelector{
+						Service: "account-service",
+						Span:    "getAccount",
+						Attr:    "arg.0",
+					},
+					Relation: CorrelationRelationEquals,
+					Severity: "critical",
+					Why:      "principal must match account",
+				}},
 			},
 		},
 	}, got)

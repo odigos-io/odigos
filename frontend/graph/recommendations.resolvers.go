@@ -22,7 +22,7 @@ func (r *mutationResolver) SetRecommendationDismissed(ctx context.Context, name 
 }
 
 // ApplyRecommendationRemediation is the resolver for the applyRecommendationRemediation field.
-func (r *mutationResolver) ApplyRecommendationRemediation(ctx context.Context, recommendationType model.RecommendationType, remediationType string) (bool, error) {
+func (r *mutationResolver) ApplyRecommendationRemediation(ctx context.Context, recommendationType string, remediationType string) (bool, error) {
 	err := services.ApplyRecommendationRemediation(ctx, r.K8sCacheClient, recommendationType, remediationType)
 	return err == nil, err
 }
