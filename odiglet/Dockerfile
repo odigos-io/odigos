@@ -157,7 +157,6 @@ COPY odiglet/ odiglet/
 
 ARG TARGETARCH
 ARG LD_FLAGS
-ARG RHEL=false
 WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
@@ -168,9 +167,6 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # Setting this caps as the permitted set (=p) so that the binary can be executed with a sub set of these capabilities
 # if the environment does not require all of them. A sub-set can be configured with helm values.
 RUN setcap cap_bpf,cap_perfmon,cap_sys_admin,cap_sys_ptrace,cap_dac_read_search,cap_ipc_lock,cap_sys_resource,cap_setuid,cap_setgid=p ./odiglet
-RUN if [ "$RHEL" = "true" ] ; then \
-      make licenses ; \
-    fi
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.55
@@ -200,55 +196,6 @@ COPY --from=agents-builder /instrumentations/ .
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
 USER 1000:1000
-
-######### RHEL agents final image #########
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS agents-rhel
-ARG VERSION
-ARG RELEASE
-ARG SUMMARY
-ARG DESCRIPTION
-LABEL "name"="Odigos-Init-Container"
-LABEL "vendor"="Odigos"
-LABEL "maintainer"="Odigos"
-LABEL "version"=$VERSION
-LABEL "release"=$RELEASE
-LABEL "summary"=$SUMMARY
-LABEL "description"=$DESCRIPTION
-
-WORKDIR /instrumentations/
-COPY --from=agents-builder /instrumentations/ .
-
-# make sure we run as non root user
-# this is required when this container is added to a pod that has runAsNonRoot: true
-USER 65532:65532
-
-######### RHEL Odiglet #########
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS rhel
-ARG VERSION
-ARG RELEASE
-ARG SUMMARY
-ARG DESCRIPTION
-LABEL "name"="Odiglet"
-LABEL "vendor"="Odigos"
-LABEL "maintainer"="Odigos"
-LABEL "version"=$VERSION
-LABEL "release"=$RELEASE
-LABEL "summary"=$SUMMARY
-LABEL "description"=$DESCRIPTION
-# Copy statically compiled rsync (no shared libraries needed)
-COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
-COPY --from=agents-builder /instrumentations/ /instrumentations/
-COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
-COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
-
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
-# make sure we run as non root user
-# this is required when this container is added to a pod that has runAsNonRoot: true
-USER 65532:65532
-CMD ["/root/odiglet"]
 
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base@sha256:f4a335ca209e1d2ee873102c17c389ad0142e3d5b21aee2817e9cc9c01d87d20
