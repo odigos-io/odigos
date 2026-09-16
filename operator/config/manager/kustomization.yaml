@@ -3,43 +3,49 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
+- name: agents
+  newName: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified
+  newTag: v1.35.3
 - name: autoscaler
   newName: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: cli
   newName: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: collector
   newName: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: controller
   newName: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
+- name: enterprise-agents
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified
+  newTag: v1.35.3
 - name: enterprise-collector
   newName: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: enterprise-instrumentor
   newName: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: enterprise-odiglet
   newName: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: enterprise-ui
   newName: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: frontend
   newName: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: instrumentor
   newName: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: odiglet
   newName: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 - name: scheduler
   newName: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified
-  newTag: v1.25.0
+  newTag: v1.35.3
 configMapGenerator:
 - literals:
-  - ODIGOS_VERSION=1.25.0
+  - ODIGOS_VERSION=1.35.3
   name: odigos-version
