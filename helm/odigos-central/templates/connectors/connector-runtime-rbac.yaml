@@ -30,6 +30,17 @@ rules:
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # The NetworkPolicy that admits only connector-opamp-gateway pods to a connector's OpAMP port. The
+  # port carries no authentication of its own — the gateway authenticates the Collector's credential and
+  # the identity it asserts is what the connector acts on — so this policy is what stands between that
+  # identity and anything on the pod network that could forge one.
+  #
+  # Created for a connector that manages a Collector and removed when it stops, so delete is required:
+  # a policy describing a port nothing serves is a thing to explain the next time somebody debugs the
+  # connector's networking.
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch"]
