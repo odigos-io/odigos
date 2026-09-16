@@ -1,6 +1,7 @@
 # CRC (OpenShift Local) lifecycle.
 #   make -f crc.mk            list targets
 #   make -f crc.mk doctor     check prerequisites
+#   make -f crc.mk install    latest odigos from the helm cache (VERSION=, TAG=, CHART=./helm/odigos)
 
 PULL_SECRET ?= $(HOME)/pull-secret.txt
 CTX         ?= crc-admin
@@ -12,11 +13,18 @@ OC_BIN   := $(HOME)/.crc/bin/oc/oc
 SSH_KEY  := $(HOME)/.crc/machines/crc/id_ed25519
 SSH_PORT ?= 2222
 
-CHART         ?= ./helm/odigos
+HELM_REPO     := https://odigos-io.github.io/odigos
+CHART         ?= odigos/odigos
 ODIGOS_NS     ?= odigos-system
-TAG           ?= v1.37.0-rc1
+VERSION       ?=
 ODIGLET_IMAGE ?=
 HELM_ARGS     ?=
+
+# A local chart has a placeholder appVersion, so borrow the latest published one.
+ifneq ($(wildcard $(CHART)/Chart.yaml),)
+TAG ?= $(or $(shell helm search repo -r '\vodigos/odigos\v' 2>/dev/null | awk 'NR==2 {print $$3}'), \
+  $(error odigos not in the helm cache, run 'helm repo update odigos' or set TAG=))
+endif
 
 # openshift.enabled alone pins images to registry.connect.redhat.com, which needs
 # Red Hat Connect credentials; imagePrefix redirects to one we can pull from.
@@ -36,7 +44,7 @@ endif
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"} \
 	  /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5); next } \
-	  /^[a-z0-9][a-z0-9-]*:.*##/ { printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2 }' $(THIS)
+	  /^[a-z0-9][a-z0-9-]*:.*##/ { printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2 }' $(THIS)
 	@echo ""
 
 ##@ Prerequisites
@@ -132,17 +140,26 @@ purge: delete ## DESTROY the VM and the cache. Frees it all.
 ##@ Odigos
 
 .PHONY: install
-install: require-crc ## Install odigos on OpenShift. Enterprise when ODIGOS_TOKEN is set.
+install: require-crc helm-repo ## Install odigos on OpenShift. Enterprise when ODIGOS_TOKEN is set.
 	helm --kube-context $(CTX) upgrade --install odigos $(CHART) \
+	  $(if $(VERSION),--version $(VERSION)) \
 	  -n $(ODIGOS_NS) --create-namespace \
 	  --set openshift.enabled=true \
 	  --set openshift.certifiedImageTags=false \
 	  --set imagePrefix=$(IMAGE_PREFIX) \
-	  --set image.tag=$(TAG) \
+	  $(if $(TAG),--set image.tag=$(TAG)) \
 	  $(TOKEN_FLAG) \
 	  $(if $(ODIGLET_IMAGE),--set images.$(ODIGLET_KEY)=$(ODIGLET_IMAGE)) \
 	  $(HELM_ARGS)
 	$(OC_BIN) --context $(CTX) rollout status ds/odiglet -n $(ODIGOS_NS) --timeout=300s
+
+.PHONY: helm-repo
+helm-repo:
+	@helm repo list 2>/dev/null | grep -q '^odigos\s' || helm repo add odigos $(HELM_REPO)
+
+.PHONY: install-local
+install-local: ## Install from ./helm/odigos, images from the latest published release
+	$(MAKE) -f $(THIS) install CHART=./helm/odigos
 
 .PHONY: uninstall
 uninstall: require-crc ## Remove odigos
