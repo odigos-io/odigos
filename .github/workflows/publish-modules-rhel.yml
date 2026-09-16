@@ -15,6 +15,7 @@ jobs:
           id-token: 'write'
           packages: 'write'
         strategy:
+          fail-fast: false
           matrix:
             service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
             include:
