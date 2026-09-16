@@ -73,11 +73,30 @@ rules:
       - patch
 {{- if .Values.openshift.enabled }}
   - apiGroups:
+      - ''
+    resources:
+      - pods/finalizers
+    verbs:
+      - update
+  - apiGroups:
       - apps
     resources:
       - statefulsets/finalizers
       - deployments/finalizers
       - daemonsets/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs/finalizers
+      - jobs/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - rollouts/finalizers
     verbs:
       - update
   - apiGroups:
