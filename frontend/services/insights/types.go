@@ -282,6 +282,7 @@ type Finding struct {
 	Service            string                     `json:"service"`
 	Namespace          string                     `json:"namespace"`
 	Title              string                     `json:"title"`
+	Summary            string                     `json:"summary,omitempty"`
 	Operation          *string                    `json:"operation,omitempty"`
 	OperationName      *string                    `json:"operation_name,omitempty"`
 	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions,omitempty"`
@@ -413,11 +414,40 @@ type BulkResolveResult struct {
 	Resolved   int    `json:"resolved"`
 }
 
+type CorrelationRelation string
+
+// CorrelationRelation values for CorrelationSpec.Relation.
+const (
+	CorrelationRelationEquals    CorrelationRelation = "equals"
+	CorrelationRelationNotEquals CorrelationRelation = "not_equals"
+)
+
+// CorrelationSelector locates one attribute on one span within a trace.
+type CorrelationSelector struct {
+	Service string `json:"service"`
+	Span    string `json:"span"`
+	Attr    string `json:"attr"`
+	Extract string `json:"extract,omitempty"`
+}
+
+// CorrelationSpec is one cross-span consistency assertion for the
+// attribute_correlation rule: compare Left vs Right within a single trace.
+type CorrelationSpec struct {
+	Name     string              `json:"name"`
+	Left     CorrelationSelector `json:"left"`
+	Right    CorrelationSelector `json:"right"`
+	Relation CorrelationRelation `json:"relation"`
+	Severity Severity            `json:"severity,omitempty"`
+	Why      string              `json:"why,omitempty"`
+}
+
 type GuardrailRule struct {
 	Key       string   `json:"key"`
 	Label     string   `json:"label"`
 	Mode      RuleMode `json:"mode"`
 	Allowlist []string `json:"allowlist,omitempty"`
+	// Correlations is used by attribute_correlation (transaction-scoped).
+	Correlations []CorrelationSpec `json:"correlations,omitempty"`
 	// Origin is how the rule was created (e.g. auto_transaction_guardrail).
 	Origin string `json:"origin,omitempty"`
 }

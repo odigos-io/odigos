@@ -323,9 +323,12 @@ func (c *Client) UpsertGuardrail(ctx context.Context, guardrail Guardrail) error
 	return c.do(ctx, http.MethodPut, c.apiEndpoint("guardrails"), guardrail, nil)
 }
 
-func (c *Client) DeleteGuardrail(ctx context.Context, scopeKey string) error {
+func (c *Client) DeleteGuardrail(ctx context.Context, scope PolicyScope, scopeKey string) error {
 	endpoint := c.apiEndpoint("guardrails")
 	query := endpoint.Query()
+	if scope != "" {
+		query.Set("scope", string(scope))
+	}
 	query.Set("scope_key", scopeKey)
 	endpoint.RawQuery = query.Encode()
 	return c.do(ctx, http.MethodDelete, endpoint, nil, nil)

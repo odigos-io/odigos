@@ -57,11 +57,11 @@ func (c *Client) UpsertGuardrailAndRead(ctx context.Context, guardrail Guardrail
 		return Guardrail{}, err
 	}
 	for _, candidate := range stored {
-		if candidate.ScopeKey == guardrail.ScopeKey {
+		if candidate.Scope == guardrail.Scope && candidate.ScopeKey == guardrail.ScopeKey {
 			return candidate, nil
 		}
 	}
-	return Guardrail{}, fmt.Errorf("%w: guardrail %q is missing after upsert", ErrInternal, guardrail.ScopeKey)
+	return Guardrail{}, fmt.Errorf("%w: guardrail %s/%q is missing after upsert", ErrInternal, guardrail.Scope, guardrail.ScopeKey)
 }
 
 func (c *Client) UpdateSystemSettingsAndRead(ctx context.Context, settings SystemSettings) (SystemSettings, error) {
