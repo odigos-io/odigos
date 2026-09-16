@@ -185,6 +185,25 @@ func TestGuardrailFromInputMapsEveryField(t *testing.T) {
 	}, got)
 }
 
+// correlations is a list of nullable elements in the schema, so the UI can send
+// nulls in it. They have to be dropped rather than become zero-valued specs,
+// which would ask the engine to correlate an empty attribute on an empty span.
+func TestGuardrailRuleFromInputSkipsNullCorrelationSpecs(t *testing.T) {
+	got := GuardrailRuleFromInput(model.InsightsGuardrailRuleInput{
+		Key:  "attribute_correlation",
+		Mode: model.InsightsRuleMode("enforce"),
+		Correlations: []*model.InsightsCorrelationSpecInput{
+			nil,
+			{Name: "principal-matches-account", Relation: model.InsightsCorrelationRelationNotEquals},
+			nil,
+		},
+	})
+
+	require.Len(t, got.Correlations, 1)
+	assert.Equal(t, "principal-matches-account", got.Correlations[0].Name)
+	assert.Equal(t, CorrelationRelationNotEquals, got.Correlations[0].Relation)
+}
+
 func TestViolationActionFromInputMapsEveryField(t *testing.T) {
 	got := ViolationActionFromInput(model.InsightsViolationActionInput{
 		ScopeKey:  "prod/checkout",

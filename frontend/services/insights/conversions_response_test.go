@@ -2,6 +2,7 @@ package insights
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -376,6 +377,7 @@ func TestFindingConverterMapsEveryField(t *testing.T) {
 		Service:            "checkout",
 		Namespace:          "prod",
 		Title:              "Unexpected egress",
+		Summary:            "first call to db:5432",
 		Operation:          strPtr("GET /cart[tenant=acme]"),
 		OperationName:      strPtr("GET /cart"),
 		IdentityDimensions: []TransactionIdentityValue{{Key: "tenant", Value: "acme"}},
@@ -398,6 +400,7 @@ func TestFindingConverterMapsEveryField(t *testing.T) {
 		Service:            "checkout",
 		Namespace:          "prod",
 		Title:              "Unexpected egress",
+		Summary:            "first call to db:5432",
 		Operation:          strPtr("GET /cart[tenant=acme]"),
 		OperationName:      strPtr("GET /cart"),
 		IdentityDimensions: []*model.InsightsTransactionIdentityValue{{Key: "tenant", Value: "acme"}},
@@ -414,6 +417,17 @@ func TestFindingConverterMapsEveryField(t *testing.T) {
 		ScopeKey:           strPtr("prod/checkout"),
 		RuleKey:            strPtr("allowed_egress"),
 	}}, got)
+
+	// The assertion above only proves what it was written to look at, and the
+	// findings list is the feature's landing page: a field added to both structs
+	// but forgotten in FindingToModel renders as blank. The input is fully
+	// populated, so no output field may be left at its zero value.
+	require.Len(t, got, 1)
+	finding := reflect.ValueOf(*got[0])
+	for i := 0; i < finding.NumField(); i++ {
+		assert.False(t, finding.Field(i).IsZero(),
+			"InsightsFinding.%s is not populated from Finding", finding.Type().Field(i).Name)
+	}
 }
 
 func TestAnomalyConvertersMapEveryField(t *testing.T) {
