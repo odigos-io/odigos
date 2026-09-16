@@ -63,6 +63,8 @@ ENTERPRISE_INSTRUMENTOR_IMG ?= $(ORG)/odigos-enterprise-instrumentor-rhel-certif
 ENTERPRISE_UI_IMG ?= $(ORG)/odigos-enterprise-ui-rhel-certified:v$(VERSION)
 ODIGLET_IMG ?= $(ORG)/odigos-odiglet-rhel-certified:v$(VERSION)
 ENTERPRISE_ODIGLET_IMG ?= $(ORG)/odigos-enterprise-odiglet-rhel-certified:v$(VERSION)
+AGENTS_IMG ?= $(ORG)/odigos-agents-rhel-certified:v$(VERSION)
+ENTERPRISE_AGENTS_IMG ?= $(ORG)/odigos-enterprise-agents-rhel-certified:v$(VERSION)
 SCHEDULER_IMG ?= $(ORG)/odigos-scheduler-rhel-certified:v$(VERSION)
 CLI_IMG ?= $(ORG)/odigos-cli-rhel-certified:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -295,6 +297,8 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	cd config/manager && $(KUSTOMIZE) edit set image enterprise-ui=$(ENTERPRISE_UI_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image odiglet=$(ODIGLET_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image enterprise-odiglet=$(ENTERPRISE_ODIGLET_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image agents=$(AGENTS_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image enterprise-agents=$(ENTERPRISE_AGENTS_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image scheduler=$(SCHEDULER_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image cli=$(CLI_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set configmap odigos-version --from-literal=ODIGOS_VERSION=$(VERSION)

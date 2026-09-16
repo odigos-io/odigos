@@ -3,6 +3,9 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
+- name: agents
+  newName: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified
+  newTag: v1.35.3
 - name: autoscaler
   newName: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified
   newTag: v1.35.3
@@ -14,6 +17,9 @@ images:
   newTag: v1.35.3
 - name: controller
   newName: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified
+  newTag: v1.35.3
+- name: enterprise-agents
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified
   newTag: v1.35.3
 - name: enterprise-collector
   newName: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified

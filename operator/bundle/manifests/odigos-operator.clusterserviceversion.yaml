@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified:v1.35.3
-    createdAt: "2026-09-16T19:34:05Z"
+    createdAt: "2026-09-16T19:42:53Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -605,6 +605,10 @@ spec:
                   value: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified:v1.35.3
                 - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
                   value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified:v1.35.3
+                - name: RELATED_IMAGE_AGENTS
+                  value: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified:v1.35.3
+                - name: RELATED_IMAGE_ENTERPRISE_AGENTS
+                  value: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified:v1.35.3
                 - name: RELATED_IMAGE_SCHEDULER
                   value: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified:v1.35.3
                 - name: RELATED_IMAGE_CLI
@@ -725,6 +729,10 @@ spec:
     name: odiglet
   - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified:v1.35.3
     name: enterprise-odiglet
+  - image: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified:v1.35.3
+    name: agents
+  - image: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified:v1.35.3
+    name: enterprise-agents
   - image: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified:v1.35.3
     name: scheduler
   - image: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified:v1.35.3

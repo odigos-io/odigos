@@ -95,6 +95,10 @@ spec:
           value: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified:v1.35.3
         - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
           value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified:v1.35.3
+        - name: RELATED_IMAGE_AGENTS
+          value: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified:v1.35.3
+        - name: RELATED_IMAGE_ENTERPRISE_AGENTS
+          value: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified:v1.35.3
         - name: RELATED_IMAGE_SCHEDULER
           value: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified:v1.35.3
         - name: RELATED_IMAGE_CLI
