@@ -622,11 +622,78 @@ func TestGuardrailConvertersMapEveryField(t *testing.T) {
 		}}, got)
 	})
 
+	t.Run("transaction-scoped attribute correlation", func(t *testing.T) {
+		got := GuardrailToModel(Guardrail{
+			Scope:    "transaction",
+			ScopeKey: "42",
+			Rules: []GuardrailRule{{
+				Key:   "attribute_correlation",
+				Label: "Attribute correlation",
+				Mode:  "enforce",
+				Correlations: []CorrelationSpec{{
+					Name: "principal-matches-account",
+					Left: CorrelationSelector{
+						Service: "edge-gateway",
+						Span:    "resolvePrincipal",
+						Attr:    "return.value",
+						Extract: `(\d+)`,
+					},
+					Right: CorrelationSelector{
+						Service: "account-service",
+						Span:    "getAccount",
+						Attr:    "arg.0",
+					},
+					Relation: CorrelationRelationEquals,
+					Severity: "critical",
+					Why:      "principal must match account",
+				}},
+			}},
+		})
+
+		assert.Equal(t, &model.InsightsGuardrail{
+			Scope:    model.InsightsPolicyScope("transaction"),
+			ScopeKey: "42",
+			Rules: []*model.InsightsGuardrailRule{{
+				Key:   "attribute_correlation",
+				Label: "Attribute correlation",
+				Mode:  model.InsightsRuleMode("enforce"),
+				Correlations: []*model.InsightsCorrelationSpec{{
+					Name: "principal-matches-account",
+					Left: &model.InsightsCorrelationSelector{
+						Service: "edge-gateway",
+						Span:    "resolvePrincipal",
+						Attr:    "return.value",
+						Extract: strPtr(`(\d+)`),
+					},
+					Right: &model.InsightsCorrelationSelector{
+						Service: "account-service",
+						Span:    "getAccount",
+						Attr:    "arg.0",
+					},
+					Relation: model.InsightsCorrelationRelationEquals,
+					Severity: model.InsightsSeverityCritical,
+					Why:      strPtr("principal must match account"),
+				}},
+			}},
+		}, got)
+	})
+
+	// Empty severity on the wire defaults to critical so GraphQL always has a value.
+	t.Run("correlation severity defaults to critical", func(t *testing.T) {
+		got := CorrelationSpecToModel(CorrelationSpec{
+			Name:     "check",
+			Relation: CorrelationRelationNotEquals,
+		})
+		assert.Equal(t, model.InsightsSeverityCritical, got.Severity)
+		assert.Equal(t, model.InsightsCorrelationRelationNotEquals, got.Relation)
+	})
+
 	// A manually created rule has no origin, and the UI distinguishes it from an
 	// auto-created one, so an empty origin must not surface as "".
 	t.Run("rule without an origin", func(t *testing.T) {
 		got := GuardrailRuleToModel(GuardrailRule{Key: "allowed_callers"})
 		assert.Nil(t, got.Origin)
+		assert.Nil(t, got.Correlations)
 	})
 
 	t.Run("violation", func(t *testing.T) {

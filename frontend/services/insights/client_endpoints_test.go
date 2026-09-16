@@ -448,11 +448,53 @@ func TestClientEndpointContract(t *testing.T) {
 			wantBody:   `{"scope":"service","scope_key":"prod/checkout","rules":[{"key":"allowed_egress","label":"Egress","mode":"enforce"}]}`,
 		},
 		{
+			name: "upsert a transaction-scoped attribute correlation guardrail",
+			call: func(c *Client) (any, error) {
+				return nil, c.UpsertGuardrail(ctx, Guardrail{
+					Scope:    "transaction",
+					ScopeKey: "42",
+					Rules: []GuardrailRule{{
+						Key:   "attribute_correlation",
+						Label: "Attribute correlation",
+						Mode:  "enforce",
+						Correlations: []CorrelationSpec{{
+							Name: "principal-matches-account",
+							Left: CorrelationSelector{
+								Service: "edge-gateway",
+								Span:    "resolvePrincipal",
+								Attr:    "return.value",
+								Extract: `(\d+)`,
+							},
+							Right: CorrelationSelector{
+								Service: "account-service",
+								Span:    "getAccount",
+								Attr:    "arg.0",
+							},
+							Relation: CorrelationRelationEquals,
+							Severity: "critical",
+							Why:      "principal must match account",
+						}},
+					}},
+				})
+			},
+			wantMethod: http.MethodPut,
+			wantPath:   "/api/v1/guardrails",
+			wantQuery:  url.Values{},
+			wantBody:   `{"scope":"transaction","scope_key":"42","rules":[{"key":"attribute_correlation","label":"Attribute correlation","mode":"enforce","correlations":[{"name":"principal-matches-account","left":{"service":"edge-gateway","span":"resolvePrincipal","attr":"return.value","extract":"(\\d+)"},"right":{"service":"account-service","span":"getAccount","attr":"arg.0"},"relation":"equals","severity":"critical","why":"principal must match account"}]}]}`,
+		},
+		{
 			name:       "delete a guardrail",
-			call:       func(c *Client) (any, error) { return nil, c.DeleteGuardrail(ctx, "prod/checkout") },
+			call:       func(c *Client) (any, error) { return nil, c.DeleteGuardrail(ctx, "service", "prod/checkout") },
 			wantMethod: http.MethodDelete,
 			wantPath:   "/api/v1/guardrails",
-			wantQuery:  url.Values{"scope_key": {"prod/checkout"}},
+			wantQuery:  url.Values{"scope": {"service"}, "scope_key": {"prod/checkout"}},
+		},
+		{
+			name:       "delete a transaction-scoped guardrail",
+			call:       func(c *Client) (any, error) { return nil, c.DeleteGuardrail(ctx, "transaction", "42") },
+			wantMethod: http.MethodDelete,
+			wantPath:   "/api/v1/guardrails",
+			wantQuery:  url.Values{"scope": {"transaction"}, "scope_key": {"42"}},
 		},
 		{
 			name: "seed a guardrail",
