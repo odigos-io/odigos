@@ -97,8 +97,10 @@ spec:
               # we might get an error like "failed to create patch for python-alpine: if restart has already been triggered within the past second, please wait before attempting to trigger another"
               sleep 2
               for i in 1 2 3; do
-                kubectl rollout restart deployment && break || sleep 2
-              done || exit 1 # Exit with error if all attempts fail
+                kubectl rollout restart deployment && exit 0
+                sleep 2
+              done
+              exit 1
 
     - name: 02 - Assert Environment Variables
       try:
@@ -124,7 +126,12 @@ spec:
         - script:
             timeout: 1m10s
             content: |
-              kubectl rollout restart deployment
+              sleep 2
+              for i in 1 2 3; do
+                kubectl rollout restart deployment && exit 0
+                sleep 2
+              done
+              exit 1
 
     - name: 03 - Assert Environment Variables
       try:

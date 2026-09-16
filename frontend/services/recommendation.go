@@ -6,7 +6,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -61,11 +60,6 @@ func SetRecommendationDismissed(ctx context.Context, name string, dismissed bool
 }
 
 func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommendation, error) {
-	recType, err := toGraphRecommendationType(rec.Spec.Type)
-	if err != nil {
-		return nil, err
-	}
-
 	catalog, ok := recommendations.GetByType(rec.Spec.Type)
 	if !ok {
 		catalog, ok = recommendations.GetByK8sObjectName(rec.Name)
@@ -81,7 +75,7 @@ func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommen
 
 	return &model.Recommendation{
 		Name:                    rec.Name,
-		Type:                    recType,
+		Type:                    string(rec.Spec.Type),
 		Applied:                 rec.Spec.Applied,
 		ConditionsMet:           rec.Spec.ConditionsMet,
 		Dismissed:               isRecommendationDismissed(rec),
@@ -141,9 +135,12 @@ func toCatalogRemediations(remediations []recommendations.Remediation) ([]*model
 			return nil, err
 		}
 		result = append(result, &model.RecommendationCatalogRemediation{
-			Type:          r.Type,
-			ButtonText:    r.ButtonText,
-			Tooltip:       r.Tooltip,
+			Type:       r.Type,
+			ButtonText: r.ButtonText,
+			Tooltip:    r.Tooltip,
+			// Only remediations with catalog steps can be applied by the backend;
+			// the rest are GitOps-only snippets.
+			CanApplyViaUI: len(r.Steps) > 0,
 			ApplyExamples: examples,
 		})
 	}
@@ -195,21 +192,4 @@ func nonNilStrings(s []string) []string {
 		return []string{}
 	}
 	return s
-}
-
-func toGraphRecommendationType(t common.RecommendationType) (model.RecommendationType, error) {
-	switch t {
-	case common.RecommendationTypeInferDBAttributes:
-		return model.RecommendationTypeInferDBAttributes, nil
-	case common.RecommendationTypeAutoGoOffsetUpdater:
-		return model.RecommendationTypeAutoGoOffsetUpdater, nil
-	case common.RecommendationTypeEnableOwnMetrics:
-		return model.RecommendationTypeEnableOwnMetrics, nil
-	case common.RecommendationTypeSampleHealthProbes:
-		return model.RecommendationTypeSampleHealthProbes, nil
-	case common.RecommendationTypeUrlTemplatization:
-		return model.RecommendationTypeURLTemplatization, nil
-	default:
-		return "", fmt.Errorf("unknown recommendation type %q", t)
-	}
 }
