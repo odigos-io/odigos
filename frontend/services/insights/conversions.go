@@ -627,6 +627,7 @@ func FindingToModel(finding Finding) *model.InsightsFinding {
 		Service:            finding.Service,
 		Namespace:          finding.Namespace,
 		Title:              finding.Title,
+		Summary:            finding.Summary,
 		Operation:          finding.Operation,
 		OperationName:      finding.OperationName,
 		IdentityDimensions: mapSlice(finding.IdentityDimensions, TransactionIdentityValueToModel),
@@ -804,17 +805,101 @@ func BulkResolveResultToModel(result BulkResolveResult) *model.InsightsBulkResol
 	}
 }
 
+func CorrelationRelationToModel(relation CorrelationRelation) model.InsightsCorrelationRelation {
+	return model.InsightsCorrelationRelation(relation)
+}
+
+func CorrelationRelationFromModel(relation model.InsightsCorrelationRelation) CorrelationRelation {
+	return CorrelationRelation(relation)
+}
+
+func CorrelationSelectorToModel(selector CorrelationSelector) *model.InsightsCorrelationSelector {
+	var extract *string
+	if selector.Extract != "" {
+		extract = &selector.Extract
+	}
+	return &model.InsightsCorrelationSelector{
+		Service: selector.Service,
+		Span:    selector.Span,
+		Attr:    selector.Attr,
+		Extract: extract,
+	}
+}
+
+func CorrelationSelectorFromInput(input model.InsightsCorrelationSelectorInput) CorrelationSelector {
+	extract := ""
+	if input.Extract != nil {
+		extract = *input.Extract
+	}
+	return CorrelationSelector{
+		Service: input.Service,
+		Span:    input.Span,
+		Attr:    input.Attr,
+		Extract: extract,
+	}
+}
+
+func CorrelationSpecToModel(spec CorrelationSpec) *model.InsightsCorrelationSpec {
+	severity := spec.Severity
+	if severity == "" {
+		severity = "critical"
+	}
+	var why *string
+	if spec.Why != "" {
+		why = &spec.Why
+	}
+	return &model.InsightsCorrelationSpec{
+		Name:     spec.Name,
+		Left:     CorrelationSelectorToModel(spec.Left),
+		Right:    CorrelationSelectorToModel(spec.Right),
+		Relation: CorrelationRelationToModel(spec.Relation),
+		Severity: SeverityToModel(severity),
+		Why:      why,
+	}
+}
+
+func CorrelationSpecFromInput(input model.InsightsCorrelationSpecInput) CorrelationSpec {
+	severity := Severity("critical")
+	if input.Severity != nil {
+		severity = Severity(*input.Severity)
+	}
+	why := ""
+	if input.Why != nil {
+		why = *input.Why
+	}
+	var left, right CorrelationSelector
+	if input.Left != nil {
+		left = CorrelationSelectorFromInput(*input.Left)
+	}
+	if input.Right != nil {
+		right = CorrelationSelectorFromInput(*input.Right)
+	}
+	return CorrelationSpec{
+		Name:     input.Name,
+		Left:     left,
+		Right:    right,
+		Relation: CorrelationRelationFromModel(input.Relation),
+		Severity: severity,
+		Why:      why,
+	}
+}
+
 func GuardrailRuleToModel(rule GuardrailRule) *model.InsightsGuardrailRule {
 	var origin *string
 	if rule.Origin != "" {
 		origin = &rule.Origin
 	}
+	var correlations []*model.InsightsCorrelationSpec
+	if len(rule.Correlations) > 0 {
+		correlations = mapSlice(rule.Correlations, CorrelationSpecToModel)
+	}
 	return &model.InsightsGuardrailRule{
-		Key:       rule.Key,
-		Label:     rule.Label,
-		Mode:      RuleModeToModel(rule.Mode),
-		Allowlist: rule.Allowlist,
-		Origin:    origin,
+		Key:          rule.Key,
+		Label:        rule.Label,
+		Mode:         RuleModeToModel(rule.Mode),
+		Allowlist:    rule.Allowlist,
+		Correlations: correlations,
+		Origin:       origin,
 	}
 }
 
@@ -1124,12 +1209,23 @@ func GuardrailRuleFromInput(input model.InsightsGuardrailRuleInput) GuardrailRul
 	if input.Origin != nil {
 		origin = *input.Origin
 	}
+	var correlations []CorrelationSpec
+	if len(input.Correlations) > 0 {
+		correlations = make([]CorrelationSpec, 0, len(input.Correlations))
+		for _, spec := range input.Correlations {
+			if spec == nil {
+				continue
+			}
+			correlations = append(correlations, CorrelationSpecFromInput(*spec))
+		}
+	}
 	return GuardrailRule{
-		Key:       input.Key,
-		Label:     input.Label,
-		Mode:      RuleModeFromModel(input.Mode),
-		Allowlist: input.Allowlist,
-		Origin:    origin,
+		Key:          input.Key,
+		Label:        input.Label,
+		Mode:         RuleModeFromModel(input.Mode),
+		Allowlist:    input.Allowlist,
+		Correlations: correlations,
+		Origin:       origin,
 	}
 }
 
