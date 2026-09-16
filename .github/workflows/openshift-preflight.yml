@@ -45,6 +45,10 @@ on:
         description: "Include collector"
         type: boolean
         default: false
+      enterprise-collector:
+        description: "Include enterprise-collector"
+        type: boolean
+        default: false
       odiglet:
         description: "Include odiglet"
         type: boolean
@@ -97,6 +101,7 @@ jobs:
               { service: 'instrumentor', project_id: '69fb8eeee695879ba96b0637' },
               { service: 'enterprise-instrumentor', project_id: '69fb8e801ae6d2eb7611e5c2' },
               { service: 'collector', project_id: '69fb8cf84e6153a3a3d3dac2' },
+              { service: 'enterprise-collector', project_id: '6aaaeacee124f9c42d16eaf7' },
               { service: 'odiglet', project_id: '69fb8d4ea47256655b8151e0' },
               { service: 'enterprise-odiglet', project_id: '69fb8c73eddc8ed3392e8b22' },
               { service: 'enterprise-ui', project_id: '6a16fa165c179fa2c884833a' },
