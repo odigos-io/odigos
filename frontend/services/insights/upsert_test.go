@@ -351,4 +351,33 @@ func TestUpsertAndReadMatchOnTheFullKey(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, LearningMode("d"), stored.Mode)
 	})
+
+	// Transaction and service guardrails share a key space — "42" is both a
+	// transaction id and a possible service scope key — so matching on the
+	// scope key alone would answer the upsert with a sibling guardrail's rules.
+	t.Run("guardrail matches scope and scope key", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPut {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			_, _ = w.Write([]byte(`{"count":3,"items":[
+				{"scope":"service","scope_key":"42","rules":[{"key":"allowed_egress","label":"wrong scope"}]},
+				{"scope":"transaction","scope_key":"7","rules":[{"key":"attribute_correlation","label":"wrong key"}]},
+				{"scope":"transaction","scope_key":"42","rules":[{"key":"attribute_correlation","label":"right one"}]}
+			]}`))
+		}))
+		defer server.Close()
+
+		client, err := NewClient(server.URL)
+		require.NoError(t, err)
+
+		stored, err := client.UpsertGuardrailAndRead(context.Background(), Guardrail{
+			Scope:    "transaction",
+			ScopeKey: "42",
+		})
+		require.NoError(t, err)
+		require.Len(t, stored.Rules, 1)
+		assert.Equal(t, "right one", stored.Rules[0].Label)
+	})
 }
