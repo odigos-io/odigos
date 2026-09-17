@@ -161,7 +161,7 @@ spec:
                       - packageName
                       type: object
                       x-kubernetes-validations:
-                      - message: expiry requires generation
+                      - message: generation required
                         rule: '!has(self.expiresAt)||(has(self.generation)&&size(self.generation)==32)'
                     type: array
                   java:
