@@ -22,7 +22,7 @@ const (
 	jvmRuntimeMetricsFilterName   = "filter/jvm-runtime"
 	// Must equal ebpf-java-instrumentation's jvmmetrics.ScopeName: renaming the
 	// scope there silently filters these metrics out.
-	jvmRuntimeMetricsScopeName = "jvm-ebpf-metrics"
+	jvmRuntimeMetricsScopeName = "github.com/odigos-io/ebpf-java-instrumentation/jvmmetrics"
 )
 
 func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings, tier common.OdigosTier) (config.GenericMap, []string) {

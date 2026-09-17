@@ -55,7 +55,7 @@ func TestMetricsConfig_JVMRuntimeMetricsPipeline(t *testing.T) {
 			filter, ok := cfg.Processors[jvmRuntimeMetricsFilterName].(config.GenericMap)
 			require.True(t, ok, "filter processor must be defined alongside the pipeline")
 			conditions := filter["metrics"].(config.GenericMap)["metric"].([]string)
-			assert.Equal(t, []string{`instrumentation_scope.name != "jvm-ebpf-metrics"`}, conditions)
+			assert.Equal(t, []string{`instrumentation_scope.name != "github.com/odigos-io/ebpf-java-instrumentation/jvmmetrics"`}, conditions)
 
 			// The main pipeline must not pick up otlp/in, or JVM metrics would be exported twice.
 			assert.NotContains(t, cfg.Service.Pipelines[odigosMetricsPipelineName].Receivers, OTLPInReceiverName)
