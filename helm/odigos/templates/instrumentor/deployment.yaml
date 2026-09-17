@@ -6,6 +6,8 @@ metadata:
     odigos.io/system-object: "true"
   name: {{ .Values.instrumentor.deploymentName | default "odigos-instrumentor" }}
   namespace: {{ .Release.Namespace }}
+  finalizers:
+    - odigos.io/instrumentor-finalizer
 spec:
   replicas: 2
   selector:

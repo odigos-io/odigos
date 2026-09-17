@@ -14,4 +14,16 @@ rules:
 - apiGroups: [""]
   resources: ["nodes"]
   verbs: ["list", "patch"]
+# remove the instrumentor webhook finalizers so helm can delete them after cleanup
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["mutatingwebhookconfigurations", "mutatingwebhookconfigurations/finalizers"]
+  resourceNames:
+    - odigos-pod-mutating-webhook-configuration
+    - odigos-source-mutating-webhook-configuration
+  verbs: ["get", "update"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["validatingwebhookconfigurations", "validatingwebhookconfigurations/finalizers"]
+  resourceNames:
+    - odigos-source-validating-webhook-configuration
+  verbs: ["get", "update"]
 
