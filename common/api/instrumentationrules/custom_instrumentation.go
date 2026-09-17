@@ -74,7 +74,7 @@ func (jcp *JavaCustomProbe) String() string {
 // which includes the package name, function name or receiver name and method name to be instrumented.
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
-// +kubebuilder:validation:XValidation:rule="!has(self.expiresAt)||(has(self.generation)&&size(self.generation)==32)",message="expiry requires generation"
+// +kubebuilder:validation:XValidation:rule="!has(self.expiresAt)||(has(self.generation)&&size(self.generation)==32)",message="generation required"
 type GolangCustomProbe struct {
 	// PackageName is the name of the golang package (ie net/http); Package name is always required
 	PackageName string `json:"packageName" yaml:"packageName"`
