@@ -40,6 +40,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/odigos-io/odigos/odigosauth v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/otel/trace v1.46.0 // indirect

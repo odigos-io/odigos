@@ -33,6 +33,15 @@ rules:
       - list
       - watch
       - get
+{{- if include "odigos.needsImagePullSecretCopy" . }}
+  # create cannot be scoped with resourceNames; used to copy image pull secrets into instrumented namespaces.
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - create
+{{- end }}
   - apiGroups:
       - 'batch'
     resources:
