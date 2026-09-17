@@ -32,6 +32,10 @@ type RecommendationCatalogRemediation {
   type: String!
   buttonText: String!
   tooltip: String!
+  # True when the backend can carry out this remediation itself, which is what lets the UI
+  # offer an "Apply via UI" button instead of only a copy-paste snippet. Derived from
+  # whether the catalog entry declares steps.
+  canApplyViaUi: Boolean!
   # Copy-paste snippets for applying outside the UI (Helm values, Action CR, etc.).
   applyExamples: [RecommendationCatalogApplyExample!]!
 }

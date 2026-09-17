@@ -2328,6 +2328,7 @@ type RecommendationCatalogRemediation struct {
 	Type          string                               `json:"type"`
 	ButtonText    string                               `json:"buttonText"`
 	Tooltip       string                               `json:"tooltip"`
+	CanApplyViaUI bool                                 `json:"canApplyViaUi"`
 	ApplyExamples []*RecommendationCatalogApplyExample `json:"applyExamples"`
 }
 

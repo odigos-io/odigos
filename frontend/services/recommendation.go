@@ -141,9 +141,12 @@ func toCatalogRemediations(remediations []recommendations.Remediation) ([]*model
 			return nil, err
 		}
 		result = append(result, &model.RecommendationCatalogRemediation{
-			Type:          r.Type,
-			ButtonText:    r.ButtonText,
-			Tooltip:       r.Tooltip,
+			Type:       r.Type,
+			ButtonText: r.ButtonText,
+			Tooltip:    r.Tooltip,
+			// Only remediations with catalog steps can be applied by the backend;
+			// the rest are GitOps-only snippets.
+			CanApplyViaUI: len(r.Steps) > 0,
 			ApplyExamples: examples,
 		})
 	}
