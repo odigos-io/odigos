@@ -23,6 +23,7 @@ export const SET_RECOMMENDATION_DISMISSED = gql`
         type
         buttonText
         tooltip
+        canApplyViaUi
         applyExamples { type content }
       }
     }

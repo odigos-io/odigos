@@ -1905,6 +1905,7 @@ type ComplexityRoot struct {
 	RecommendationCatalogRemediation struct {
 		ApplyExamples func(childComplexity int) int
 		ButtonText    func(childComplexity int) int
+		CanApplyViaUI func(childComplexity int) int
 		Tooltip       func(childComplexity int) int
 		Type          func(childComplexity int) int
 	}
@@ -11260,6 +11261,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RecommendationCatalogRemediation.ButtonText(childComplexity), true
+
+	case "RecommendationCatalogRemediation.canApplyViaUi":
+		if e.complexity.RecommendationCatalogRemediation.CanApplyViaUI == nil {
+			break
+		}
+
+		return e.complexity.RecommendationCatalogRemediation.CanApplyViaUI(childComplexity), true
 
 	case "RecommendationCatalogRemediation.tooltip":
 		if e.complexity.RecommendationCatalogRemediation.Tooltip == nil {
@@ -73528,6 +73536,8 @@ func (ec *executionContext) fieldContext_Recommendation_remediations(_ context.C
 				return ec.fieldContext_RecommendationCatalogRemediation_buttonText(ctx, field)
 			case "tooltip":
 				return ec.fieldContext_RecommendationCatalogRemediation_tooltip(ctx, field)
+			case "canApplyViaUi":
+				return ec.fieldContext_RecommendationCatalogRemediation_canApplyViaUi(ctx, field)
 			case "applyExamples":
 				return ec.fieldContext_RecommendationCatalogRemediation_applyExamples(ctx, field)
 			}
@@ -73922,6 +73932,50 @@ func (ec *executionContext) fieldContext_RecommendationCatalogRemediation_toolti
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationCatalogRemediation_canApplyViaUi(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCatalogRemediation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecommendationCatalogRemediation_canApplyViaUi(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CanApplyViaUI, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecommendationCatalogRemediation_canApplyViaUi(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationCatalogRemediation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -100040,6 +100094,11 @@ func (ec *executionContext) _RecommendationCatalogRemediation(ctx context.Contex
 			}
 		case "tooltip":
 			out.Values[i] = ec._RecommendationCatalogRemediation_tooltip(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "canApplyViaUi":
+			out.Values[i] = ec._RecommendationCatalogRemediation_canApplyViaUi(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
