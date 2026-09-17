@@ -315,3 +315,43 @@ func TestSystemIdentitySettingsFromInputWithoutASection(t *testing.T) {
 	got := SystemIdentitySettingsFromInput(nil)
 	assert.Equal(t, SystemIdentitySettings{TransactionIdentityDimensions: []SystemTransactionIdentityDimension{}}, got)
 }
+
+func TestRecommendationApplyItemsFromInput(t *testing.T) {
+	t.Run("an item without a spec applies the mined rule", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{{ID: "rec-1"}})
+		assert.Equal(t, []RecommendationApplyItem{{ID: "rec-1"}}, got)
+	})
+
+	t.Run("an edited spec is carried through", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{{
+			ID: "rec-1",
+			Spec: &model.InsightsCorrelationSpecInput{
+				Name:     "cart owner",
+				Left:     &model.InsightsCorrelationSelectorInput{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+				Right:    &model.InsightsCorrelationSelectorInput{Service: "cart", Span: "getCart", Attr: "arg.0"},
+				Relation: model.InsightsCorrelationRelationEquals,
+			},
+		}})
+
+		require.Len(t, got, 1)
+		require.NotNil(t, got[0].Spec)
+		assert.Equal(t, CorrelationSpec{
+			Name:     "cart owner",
+			Left:     CorrelationSelector{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+			Right:    CorrelationSelector{Service: "cart", Span: "getCart", Attr: "arg.0"},
+			Relation: CorrelationRelationEquals,
+			// The spec converter defaults severity, so an edit that only
+			// renames the rule still writes a complete rule.
+			Severity: "critical",
+		}, *got[0].Spec)
+	})
+
+	t.Run("nil entries are skipped", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{nil, {ID: "rec-2"}, nil})
+		assert.Equal(t, []RecommendationApplyItem{{ID: "rec-2"}}, got)
+	})
+
+	t.Run("no items is an empty batch, not nil", func(t *testing.T) {
+		assert.Equal(t, []RecommendationApplyItem{}, RecommendationApplyItemsFromInput(nil))
+	})
+}

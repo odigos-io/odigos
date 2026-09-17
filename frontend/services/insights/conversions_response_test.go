@@ -1062,3 +1062,175 @@ func TestListConvertersPreserveAbsentLists(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, baselines)
 }
+
+func TestRecommendationConvertersMapEveryField(t *testing.T) {
+	recommendation := Recommendation{
+		ID:              "rec-1",
+		Kind:            RecommendationKindAttributeCorrelation,
+		State:           RecommendationStateOpen,
+		Stale:           true,
+		Rank:            3,
+		Scope:           "transaction",
+		ScopeKey:        "7",
+		TransactionID:   7,
+		TransactionKind: "HTTP",
+		Service:         "checkout",
+		Namespace:       "prod",
+		Operation:       "GET /cart",
+		Title:           "resolvePrincipal return.value matches getCart arg.0",
+		Summary:         "In 50 of 50 sampled traces...",
+		WhyItMatters:    "a break means one account reading another's cart",
+		Transform:       "digits",
+		Transport:       true,
+		Spec: CorrelationSpec{
+			Name:     "cart owner",
+			Left:     CorrelationSelector{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+			Right:    CorrelationSelector{Service: "cart", Span: "getCart", Attr: "arg.0", Extract: `^(\d+)`},
+			Relation: CorrelationRelationEquals,
+			Severity: "high",
+			Why:      "ownership check",
+		},
+		Confidence: RecommendationConfidence{
+			Level:       "high",
+			HoldRatio:   0.98,
+			Observed:    50,
+			Held:        49,
+			Distinct:    12,
+			SampleCount: 60,
+			LiveHeld:    120,
+			LiveBroken:  2,
+			LiveSince:   "2026-09-10T08:00:00Z",
+			LiveLast:    "2026-09-11T08:00:00Z",
+			Reasons:     []string{"Held on 49 of 50 stored samples across 12 distinct values"},
+		},
+		Examples: []RecommendationExample{{
+			TraceID:    "trace-1",
+			LeftValue:  "u1",
+			RightValue: "u1",
+			ObservedAt: "2026-09-10T09:00:00Z",
+		}},
+		AlreadyCovered: true,
+		MinedAt:        "2026-09-10T07:00:00Z",
+		CreatedAt:      "2026-09-10T07:00:01Z",
+		UpdatedAt:      "2026-09-11T07:00:02Z",
+	}
+
+	t.Run("recommendation", func(t *testing.T) {
+		scope := model.InsightsPolicyScopeTransaction
+		scopeKey := "7"
+		liveSince := "2026-09-10T08:00:00Z"
+		liveLast := "2026-09-11T08:00:00Z"
+
+		assert.Equal(t, &model.InsightsRecommendation{
+			ID:              "rec-1",
+			Kind:            model.InsightsRecommendationKindAttributeCorrelation,
+			State:           model.InsightsRecommendationStateOpen,
+			Stale:           true,
+			Rank:            3,
+			Scope:           &scope,
+			ScopeKey:        &scopeKey,
+			TransactionID:   "7",
+			TransactionKind: model.InsightsTransactionKindHTTP,
+			Service:         "checkout",
+			Namespace:       "prod",
+			Operation:       "GET /cart",
+			Title:           "resolvePrincipal return.value matches getCart arg.0",
+			Summary:         "In 50 of 50 sampled traces...",
+			WhyItMatters:    "a break means one account reading another's cart",
+			Transform:       "digits",
+			Transport:       true,
+			Spec:            CorrelationSpecToModel(recommendation.Spec),
+			Confidence: &model.InsightsRecommendationConfidence{
+				Level:       model.InsightsRecommendationConfidenceLevelHigh,
+				HoldRatio:   0.98,
+				Observed:    50,
+				Held:        49,
+				Distinct:    12,
+				SampleCount: 60,
+				LiveHeld:    120,
+				LiveBroken:  2,
+				LiveSince:   &liveSince,
+				LiveLast:    &liveLast,
+				Reasons:     []string{"Held on 49 of 50 stored samples across 12 distinct values"},
+			},
+			Examples: []*model.InsightsRecommendationExample{{
+				TraceID:    "trace-1",
+				LeftValue:  "u1",
+				RightValue: "u1",
+				ObservedAt: "2026-09-10T09:00:00Z",
+			}},
+			AlreadyCovered: true,
+			MinedAt:        "2026-09-10T07:00:00Z",
+			CreatedAt:      "2026-09-10T07:00:01Z",
+			UpdatedAt:      "2026-09-11T07:00:02Z",
+		}, RecommendationToModel(recommendation))
+	})
+
+	// The engine documents live_since / live_last as absent until the first
+	// live trace is evaluated, but they are time.Time with omitempty, which
+	// does nothing for a struct — so an unevaluated recommendation carries
+	// Go's zero time. Rendering that as "year 1" in the UI would read as a real
+	// measurement, so it becomes null.
+	t.Run("an unevaluated recommendation reports no live window", func(t *testing.T) {
+		unevaluated := recommendation
+		unevaluated.Confidence.LiveHeld = 0
+		unevaluated.Confidence.LiveBroken = 0
+		unevaluated.Confidence.LiveSince = "0001-01-01T00:00:00Z"
+		unevaluated.Confidence.LiveLast = "0001-01-01T00:00:00Z"
+
+		got := RecommendationToModel(unevaluated)
+		assert.Nil(t, got.Confidence.LiveSince)
+		assert.Nil(t, got.Confidence.LiveLast)
+	})
+
+	t.Run("an absent scope stays null rather than an empty enum", func(t *testing.T) {
+		unscoped := recommendation
+		unscoped.Scope = ""
+		unscoped.ScopeKey = ""
+
+		got := RecommendationToModel(unscoped)
+		assert.Nil(t, got.Scope)
+		assert.Nil(t, got.ScopeKey)
+	})
+
+	t.Run("bulk result", func(t *testing.T) {
+		assert.Equal(t, &model.InsightsRecommendationBulkResult{
+			Done:   1,
+			Failed: 1,
+			Errors: []*model.InsightsRecommendationItemError{{ID: "rec-2", Error: "already applied"}},
+		}, RecommendationBulkResultToModel(RecommendationBulkResult{
+			Done:   1,
+			Failed: 1,
+			Errors: []RecommendationItemError{{ID: "rec-2", Error: "already applied"}},
+		}))
+	})
+
+	t.Run("preview", func(t *testing.T) {
+		assert.Equal(t, &model.InsightsRecommendationPreview{
+			SampleCount: 60,
+			Observed:    50,
+			Held:        48,
+			Distinct:    11,
+			HoldRatio:   0.96,
+			Examples:    []*model.InsightsRecommendationExample{},
+			CounterExamples: []*model.InsightsRecommendationExample{{
+				TraceID:    "trace-9",
+				LeftValue:  "u1",
+				RightValue: "u2",
+				ObservedAt: "2026-09-10T09:00:00Z",
+			}},
+		}, RecommendationPreviewToModel(RecommendationPreview{
+			SampleCount: 60,
+			Observed:    50,
+			Held:        48,
+			Distinct:    11,
+			HoldRatio:   0.96,
+			CounterExamples: []RecommendationExample{{
+				TraceID:    "trace-9",
+				LeftValue:  "u1",
+				RightValue: "u2",
+				ObservedAt: "2026-09-10T09:00:00Z",
+			}},
+		}))
+	})
+}
