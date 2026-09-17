@@ -310,6 +310,16 @@ spec:
                                       FunctionName is the name of the golang function to be instrumented, ie package name is "net/http" and the function
                                       name will be "ListenAndServe"; Function name is disallowed if ReceiverName and ReceiverMethodName are provided
                                     type: string
+                                  generation:
+                                    description: |-
+                                      Generation identifies one installation in emitted custom spans. Use a
+                                      fresh nonzero 128-bit ID for a new installation; empty preserves legacy behavior.
+                                    maxLength: 32
+                                    pattern: ^$|^[0-9a-f]{32}$
+                                    type: string
+                                    x-kubernetes-validations:
+                                    - message: generation must be nonzero
+                                      rule: self != '00000000000000000000000000000000'
                                   packageName:
                                     description: PackageName is the name of the golang
                                       package (ie net/http); Package name is always
