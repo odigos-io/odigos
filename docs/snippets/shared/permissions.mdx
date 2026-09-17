@@ -51,7 +51,10 @@ Below are the ClusterRoles used by Odigos components.
 | apps | daemonsets | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | deployments | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | statefulsets | \* | get<br />list<br />watch<br />update<br />patch |
+| \* | pods/finalizers | \* | update |
 | apps | statefulsets/finalizers<br />deployments/finalizers<br />daemonsets/finalizers | \* | update |
+| batch | cronjobs/finalizers<br />jobs/finalizers | \* | update |
+| argoproj.io | rollouts/finalizers | \* | update |
 | apps.openshift.io | deploymentconfigs<br />deploymentconfigs/finalizers | \* | get<br />list<br />watch<br />update<br />patch |
 | argoproj.io | rollouts | \* | get<br />list<br />watch<br />patch |
 | operator.odigos.io | odigos/finalizers | \* | update |
@@ -253,8 +256,10 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 | apps | deployments/scale | \* | get<br />patch<br />update |
 | apps.openshift.io | deploymentconfigs<br />deploymentconfigs/finalizers | \* | get<br />list<br />patch<br />update<br />watch |
 | argoproj.io | rollouts | \* | get<br />list<br />patch<br />update<br />watch |
+| argoproj.io | rollouts/finalizers | \* | update |
 | autoscaling | horizontalpodautoscalers | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | batch | cronjobs | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| batch | cronjobs/finalizers<br />jobs/finalizers | \* | update |
 | batch | jobs | \* | create<br />delete<br />get<br />list<br />watch |
 | coordination.k8s.io | leases | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | discovery.k8s.io | endpointslices | \* | get<br />list<br />watch |

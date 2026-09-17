@@ -108,6 +108,40 @@ func TestResolveDistroForContainer_prereleaseRuntimeVersionAccepted(t *testing.T
 	require.Equal(t, "golang-community", d.Name)
 }
 
+func TestResolveDistroForContainer_unsupportedRubyVersionResolvesToUnsupportedVersionDistro(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	rt := &odigosv1.RuntimeDetailsByContainer{
+		Language:       common.RubyProgrammingLanguage,
+		RuntimeVersion: "2.0.0-p648",
+	}
+	dpl := map[common.ProgrammingLanguage]string{
+		common.RubyProgrammingLanguage: "ruby-community",
+	}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
+	require.Nil(t, info, "ruby-community declares an unsupportedVersionDistro, so an out of range version should not disable the agent")
+	require.NotNil(t, d)
+	require.Equal(t, obiDistroName, d.Name)
+}
+
+func TestResolveDistroForContainer_supportedRubyVersionKeepsNativeDistro(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	rt := &odigosv1.RuntimeDetailsByContainer{
+		Language:       common.RubyProgrammingLanguage,
+		RuntimeVersion: "3.4.4",
+	}
+	dpl := map[common.ProgrammingLanguage]string{
+		common.RubyProgrammingLanguage: "ruby-community",
+	}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, "ruby-community", d.Name)
+}
+
 func TestResolveDistroForContainer_nonWildcardEnforcesRuntimeSemver(t *testing.T) {
 	g := mustNewCommunityGetter(t)
 	config := &common.OdigosConfiguration{}
