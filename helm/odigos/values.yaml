@@ -899,9 +899,13 @@ odiglet:
     # @schema
     # description: |-
     #   capabilities to add to the odiglet container when running non-privileged - this will be ignored when running as privileged.
-    #   SYS_ADMIN required when running in unprivileged mode if one of the following is true:
-    #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
-    #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
+    #   SYS_ADMIN is required when one of the following is true:
+    #    1. kernel version is older than 5.8 (in >= 5.8 BPF and PERFMON were added)
+    #    2. the odiglet image attaches uprobes only through the uprobe PMU, which requires SYS_ADMIN on
+    #       every kernel carrying the CVE-2025-38466 fix. Enterprise odiglet attaches Java uprobes through
+    #       a tracefs event or an fentry bridge instead, which need BPF, PERFMON and DAC_OVERRIDE.
+    #   On such an enterprise installation SYS_ADMIN can be removed from this list.
+    #   DAC_OVERRIDE required to register uprobes through tracefs (uprobe_events is owned by root, mode 0640)
     #   IPC_LOCK required for mmap of perf buffers
     #   KILL is added automatically on community installations, where the go instrumentation
     #   checks that the target process is alive by signalling it.
@@ -913,6 +917,7 @@ odiglet:
       - PERFMON
       - SYS_PTRACE
       - DAC_READ_SEARCH
+      - DAC_OVERRIDE
       - IPC_LOCK
       - SYS_RESOURCE
       # required for jattach - dynamically instrumenting java processes.
