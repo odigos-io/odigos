@@ -148,7 +148,7 @@ odigos cleanup --yes
 # Cleanup Odigos without waiting for pods to rollout without instrumentation
 odigos cleanup --no-wait
 
-# Recover a Source CRD stuck Terminating after incomplete uninstall (used by Helm pre-install hook)
+# Recover a Source CRD stuck Terminating (usually after cleanup Job timeout; used by Helm pre-install hook)
 odigos cleanup --recover-terminating-source-crd
 
 `,
@@ -159,7 +159,7 @@ func init() {
 	cleanupCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	cleanupCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
 	cleanupCmd.Flags().Bool("instrumentation-only", false, "only remove instrumentation from workloads, without removing the entire Odigos setup")
-	cleanupCmd.Flags().Bool("recover-terminating-source-crd", false, "strip Source finalizers and wait for a Terminating sources.odigos.io CRD to finish deleting")
+	cleanupCmd.Flags().Bool("recover-terminating-source-crd", false, "strip Source finalizers and wait for a Terminating sources.odigos.io CRD to finish deleting (usually after cleanup Job timeout)")
 	cleanupCmd.Flags().StringP("namespace", "n", "", "namespace to uninstall Odigos from (overrides auto-detection)")
 
 }

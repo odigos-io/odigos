@@ -1,11 +1,12 @@
 {{- /*
 Recover a sources.odigos.io CRD stuck Terminating after incomplete uninstall.
 
-When uninstall deletes the CRD while Source CRs still have finalizers (e.g.
-pre-delete cleanup failed or --no-hooks), the CRD stays Terminating. A later
-install would otherwise apply a new CRD, then instrumentor would clear Source
-finalizers and the old Terminating CRD would finish deleting — removing the
-freshly installed CRD.
+This mostly happens when the pre-delete cleanup Job times out (Sources with
+finalizers never finish deleting before Helm deletes the CRD). It can also
+happen when uninstall runs with --no-hooks. The CRD then stays Terminating. A
+later install would otherwise apply a new CRD, then instrumentor would clear
+Source finalizers and the old Terminating CRD would finish deleting — removing
+the freshly installed CRD.
 
 lookup reflects live cluster state. During helm template / client-only dry-runs
 it may return empty, which correctly skips this recovery path.

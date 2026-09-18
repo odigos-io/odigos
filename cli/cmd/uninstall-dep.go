@@ -413,9 +413,11 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 }
 
 // recoverTerminatingSourceCRD unblocks a Source CRD stuck in Terminating after a
-// failed/incomplete uninstall. Controllers are typically already gone, so Source
-// finalizers must be stripped before instances (and then the CRD) can finish deleting.
-// Helm waits for this to complete before applying a replacement CRD.
+// failed/incomplete uninstall. This mostly happens when the Helm pre-delete
+// cleanup Job times out before Sources finish deleting. Controllers are
+// typically already gone, so Source finalizers must be stripped before
+// instances (and then the CRD) can finish deleting. Helm waits for this to
+// complete before applying a replacement CRD.
 func recoverTerminatingSourceCRD(ctx context.Context, client *kube.Client) error {
 	crd, err := client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, k8sconsts.SourceCrdName, metav1.GetOptions{})
 	if err != nil {
