@@ -48,7 +48,7 @@ If you re-started the devcontainer or the kind cluster you might need to reconne
 ```
 
 ## Developers Setup (or: how to plug-and-play your own stuff during development)
-> Note: The cluster is using `kind` at the host level and we are using a devcontainer, which are running on the same docker VM, therefore - any changes to the cluster (like installing `odigos` or `jaeger`) need to be applied against the docker daemon at the host; Therefore - we need to make sure that the devcontainer can communicate with the the kubeconfig(`kubectl`), kind, docker daemon, etc. Overall, everything is set up to work out of the box, but if you need to make any special changes to the cluster or other magic - the bugs will probably reside at the above domains.
+> Note: The cluster is using `kind` at the host level and we are using a devcontainer, which are running on the same docker VM, therefore - any changes to the cluster (like installing `odigos` or `jaeger`) need to be applied against the docker daemon at the host; Therefore - we need to make sure that the devcontainer can communicate with the kubeconfig(`kubectl`), kind, docker daemon, etc. Overall, everything is set up to work out of the box, but if you need to make any special changes to the cluster or other magic - the bugs will probably reside at the above domains.
 
 ### Overall deployment flow
 The flow of deploying a new version of Odigos to the `kind` cluster is as follows:
