@@ -108,6 +108,7 @@ type CustomInstrumentations {
   golang: [GolangCustomProbe]
   java: [JavaCustomProbe]
   php: [PhpCustomProbe]
+  cpp: [CppCustomProbe]
 }
 
 type GolangCustomProbe {
@@ -127,10 +128,15 @@ type PhpCustomProbe {
   functionName: String
 }
 
+type CppCustomProbe {
+  signature: String
+}
+
 input CustomInstrumentationsInput {
   golang: [GolangCustomProbeInput]
   java: [JavaCustomProbeInput]
   php: [PhpCustomProbeInput]
+  cpp: [CppCustomProbeInput]
 }
 
 input GolangCustomProbeInput {
@@ -148,6 +154,10 @@ input JavaCustomProbeInput {
 input PhpCustomProbeInput {
   className: String
   functionName: String
+}
+
+input CppCustomProbeInput {
+  signature: String
 }
 #### END CUSTOM PROBES ####
 
