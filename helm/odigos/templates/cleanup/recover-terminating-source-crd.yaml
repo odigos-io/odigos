@@ -1,0 +1,90 @@
+{{- /*
+Recover a sources.odigos.io CRD stuck Terminating after incomplete uninstall.
+
+When uninstall deletes the CRD while Source CRs still have finalizers (e.g.
+pre-delete cleanup failed or --no-hooks), the CRD stays Terminating. A later
+install would otherwise apply a new CRD, then instrumentor would clear Source
+finalizers and the old Terminating CRD would finish deleting — removing the
+freshly installed CRD.
+
+lookup reflects live cluster state. During helm template / client-only dry-runs
+it may return empty, which correctly skips this recovery path.
+*/}}
+{{- $sourceCrd := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" "sources.odigos.io" }}
+{{- if and $sourceCrd $sourceCrd.metadata.deletionTimestamp }}
+{{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: recover-terminating-source-crd-sa
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: recover-terminating-source-crd-clusterrole
+  labels:
+    odigos.io/system-object: "true"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+- apiGroups: ["odigos.io"]
+  resources: ["sources"]
+  verbs: ["list", "get", "delete", "patch", "update"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  resourceNames: ["sources.odigos.io"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: recover-terminating-source-crd-clusterrolebinding
+  labels:
+    odigos.io/system-object: "true"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+subjects:
+- kind: ServiceAccount
+  name: recover-terminating-source-crd-sa
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: recover-terminating-source-crd-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: recover-terminating-source-crd
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  ttlSecondsAfterFinished: 60
+  activeDeadlineSeconds: 300
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: recover-terminating-source-crd-sa
+      restartPolicy: Never
+      containers:
+      - name: recover
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "cli" "Tag" $imageTag) }}
+        args: ["cleanup", "--recover-terminating-source-crd"]
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+{{- end }}
