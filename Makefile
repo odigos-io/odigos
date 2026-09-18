@@ -24,22 +24,9 @@ DOCKERFILE=Dockerfile
 IMG_PREFIX?=
 IMG_SUFFIX?=
 TARGET?=
-RHEL?=false
 BUILD_DIR=.
 
 include cli.mk
-
-ifeq ($(RHEL),true)
-    IMG_SUFFIX=-rhel-certified
-
-    # If TARGET is empty, set it to rhel
-    ifeq ($(strip $(TARGET)),)
-        TARGET := rhel
-    else
-        # If TARGET is not empty, append -rhel
-        TARGET := $(TARGET)-rhel
-    endif
-endif
 
 ifneq ($(strip $(TARGET)),)
   TARGET_FLAG := --target $(TARGET)
@@ -132,8 +119,7 @@ build-image/%:
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="$(SUMMARY)" \
 	--build-arg DESCRIPTION="$(DESCRIPTION)" \
-	--build-arg LD_FLAGS="$(LD_FLAGS)" \
-	--build-arg RHEL="$(RHEL)"
+	--build-arg LD_FLAGS="$(LD_FLAGS)"
 
 .PHONY: build-operator-index
 build-operator-index:
@@ -150,7 +136,7 @@ build-odiglet:
 .PHONY: build-agents
 build-agents:
 	$(MAKE) build-image/agents \
-		DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=$(if $(filter true,$(RHEL)),agents-rhel,agents) \
+		DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=agents \
 		SUMMARY="Init container for Odigos" \
 		DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." \
 		TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
@@ -188,9 +174,45 @@ build-images:
 	# prefer to build timeconsuimg images first to make better use of parallelism
 	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
+# RHEL wrap flow: package already-published images onto ubi-micro with a shared licenses image.
+# Requires non-RHEL images at $(SOURCE_ORG)/odigos-<service>:$(TAG).
+# build-licenses-image clones odigos-enterprise (needs GITHUB_TOKEN) unless ENTERPRISE_REF=skip.
+SOURCE_ORG ?= $(ORG)
+LICENSES_IMAGE ?= $(ORG)/odigos-licenses:$(TAG)
+ENTERPRISE_REF ?= main
+
+.PHONY: build-licenses-image
+build-licenses-image:
+	docker build $(DOCKER_BUILD_OPTS) \
+		-t $(LICENSES_IMAGE) \
+		-f rhel/Dockerfile.licenses \
+		--build-arg ENTERPRISE_REF=$(ENTERPRISE_REF) \
+		$(if $(GITHUB_TOKEN),--secret id=github_token,env=GITHUB_TOKEN,) \
+		.
+
+# WRAP_TARGET overrides the Dockerfile stage (wrap-app, wrap-ui, wrap-collector, ...).
+wrap-rhel-image/%:
+	docker build $(DOCKER_BUILD_OPTS) --target $(or $(WRAP_TARGET),wrap-app) \
+	-t $(ORG)/odigos-$*-rhel-certified:$(TAG) -f rhel/Dockerfile.wrap . \
+	--build-arg SOURCE_IMAGE=$(SOURCE_ORG)/odigos-$*:$(TAG) \
+	--build-arg LICENSES_IMAGE=$(LICENSES_IMAGE) \
+	--build-arg NAME="$*" \
+	--build-arg VERSION=$(TAG) \
+	--build-arg RELEASE=$(TAG) \
+	--build-arg SUMMARY="$(SUMMARY)" \
+	--build-arg DESCRIPTION="$(DESCRIPTION)"
+
 .PHONY: build-images-rhel
-build-images-rhel:
-	$(MAKE) build-images RHEL=true TAG=$(TAG) ORG=$(ORG)
+build-images-rhel: build-licenses-image
+	$(MAKE) wrap-rhel-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components."
+	$(MAKE) wrap-rhel-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos."
+	$(MAKE) wrap-rhel-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos."
+	$(MAKE) wrap-rhel-image/collector WRAP_TARGET=wrap-collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector."
+	$(MAKE) wrap-rhel-image/odiglet WRAP_TARGET=wrap-odiglet SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation."
+	$(MAKE) wrap-rhel-image/ui WRAP_TARGET=wrap-ui SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation."
+	$(MAKE) wrap-rhel-image/operator WRAP_TARGET=wrap-operator SUMMARY="Odigos Operator" DESCRIPTION="The Odigos Operator installs and manages Odigos in a cluster"
+	$(MAKE) wrap-rhel-image/agents WRAP_TARGET=wrap-agents SUMMARY="Odigos Agents" DESCRIPTION="The Odigos Agents used to copy Odigos agent relevant files into the user workloads."
+	$(MAKE) wrap-rhel-image/cli WRAP_TARGET=wrap-cli SUMMARY="Odigos CLI" DESCRIPTION="Odigos CLI to install and manage Odigos in your Kubernetes cluster."
 
 push-image/%:
 	docker buildx build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
@@ -203,8 +225,7 @@ push-image/%:
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="$(SUMMARY)" \
 	--build-arg DESCRIPTION="$(DESCRIPTION)" \
-	--build-arg LD_FLAGS="$(LD_FLAGS)" \
-	--build-arg RHEL="$(RHEL)"
+	--build-arg LD_FLAGS="$(LD_FLAGS)"
 
 .PHONY: push-operator
 push-operator:
@@ -243,8 +264,8 @@ push-images:
 	make push-autoscaler push-scheduler push-odiglet push-instrumentor push-collector push-ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: push-images-rhel
-push-images-rhel:
-	$(MAKE) push-images RHEL=true TAG=$(TAG) ORG=$(ORG)
+push-images-rhel: build-images-rhel
+	@echo "RHEL images built locally as $(ORG)/odigos-*-rhel-certified:$(TAG). Push individually with docker push."
 
 load-to-kind-%:
 	kind load docker-image $(call dev_image,$*)

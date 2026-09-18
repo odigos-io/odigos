@@ -1,0 +1,115 @@
+# Wrap an already-published Odigos component image onto ubi-micro with Red Hat
+# labels and the shared odigos-licenses image. No recompilation.
+#
+# Build args:
+#   SOURCE_IMAGE   - published non-RHEL component image (e.g. .../odigos-autoscaler:v1.35.3)
+#   LICENSES_IMAGE - odigos-licenses image for this tag
+#   NAME / VERSION / RELEASE / SUMMARY / DESCRIPTION - Red Hat image labels
+#
+# Target (one of): wrap-app, wrap-ui, wrap-collector, wrap-enterprise-collector,
+#   wrap-odiglet, wrap-agents, wrap-operator, wrap-cli, wrap-central-ui
+
+ARG SOURCE_IMAGE
+ARG LICENSES_IMAGE
+
+FROM ${SOURCE_IMAGE} AS source
+FROM ${LICENSES_IMAGE} AS licenses
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS base
+ARG NAME
+ARG VERSION
+ARG RELEASE
+ARG SUMMARY
+ARG DESCRIPTION
+LABEL "name"="${NAME}"
+LABEL "vendor"="Odigos"
+LABEL "maintainer"="Odigos"
+LABEL "version"="${VERSION}"
+LABEL "release"="${RELEASE}"
+LABEL "summary"="${SUMMARY}"
+LABEL "description"="${DESCRIPTION}"
+COPY --from=licenses /licenses /licenses
+USER 65532:65532
+
+# Generic Go services that ship the binary as /app (autoscaler, scheduler,
+# instrumentor, enterprise instrumentor/ui/insights/central-*, etc.)
+FROM base AS wrap-app
+WORKDIR /
+COPY --from=source /app /app
+ENTRYPOINT ["/app"]
+
+# OSS UI binary lives at /app/odigos-ui
+FROM base AS wrap-ui
+WORKDIR /app
+COPY --from=source /app/odigos-ui /app/odigos-ui
+ENTRYPOINT ["/app/odigos-ui", "--address", "0.0.0.0"]
+
+# OSS collector
+FROM base AS wrap-collector
+COPY --from=source /odigosotelcol /odigosotelcol
+CMD ["/odigosotelcol"]
+
+# Enterprise collector (extra supervisor + managed config; dirs must be writable
+# by the non-root user when a volume is mounted on the supervisor path)
+FROM base AS wrap-enterprise-collector
+COPY --from=source /odigosotelcol /odigosotelcol
+COPY --from=source /odigosopampsupervisor /odigosopampsupervisor
+COPY --from=source --chown=65532:65532 /etc/odigos/managed-collector/ /etc/odigos/managed-collector/
+COPY --from=source --chown=65532:65532 /var/lib/odigos/collector-supervisor/ /var/lib/odigos/collector-supervisor/
+CMD ["/odigosotelcol"]
+
+# Odiglet (OSS and enterprise share the same layout)
+FROM base AS wrap-odiglet
+COPY --from=source /usr/bin/rsync /usr/bin/rsync
+COPY --from=source /root/grpc_health_probe /root/grpc_health_probe
+COPY --from=source /root/deviceplugin /root/deviceplugin
+COPY --from=source /root/odigos-csi-driver /root/odigos-csi-driver
+COPY --from=source /root/odiglet /root/odiglet
+COPY --from=source /instrumentations/ /instrumentations/
+WORKDIR /instrumentations/
+CMD ["/root/odiglet"]
+
+# Agents init container: published image is busybox with sh/cp for
+# `sh -c 'cp …'` chaining. Copy those tools onto ubi-micro and keep uid 1000.
+FROM base AS wrap-agents
+COPY --from=source /bin/busybox /bin/busybox
+COPY --from=source /bin/sh /bin/sh
+COPY --from=source /bin/cp /bin/cp
+COPY --from=source /instrumentations/ /instrumentations/
+WORKDIR /instrumentations/
+USER 1000:1000
+
+# Operator manager binary
+FROM base AS wrap-operator
+WORKDIR /
+COPY --from=source /manager /manager
+ENTRYPOINT ["/manager"]
+
+# CLI built with ko (binary under /ko-app)
+FROM base AS wrap-cli
+WORKDIR /
+COPY --from=source /ko-app /ko-app
+# ko names the binary after the main package directory ("cli")
+ENTRYPOINT ["/ko-app/cli"]
+
+# Central UI is a Node app on node:alpine. Rebase onto the published image so
+# node/yarn stay available (they are musl-linked and cannot run on ubi-micro),
+# then overlay Red Hat labels and the shared licenses tree.
+FROM source AS wrap-central-ui
+ARG NAME
+ARG VERSION
+ARG RELEASE
+ARG SUMMARY
+ARG DESCRIPTION
+LABEL "name"="${NAME}"
+LABEL "vendor"="Odigos"
+LABEL "maintainer"="Odigos"
+LABEL "version"="${VERSION}"
+LABEL "release"="${RELEASE}"
+LABEL "summary"="${SUMMARY}"
+LABEL "description"="${DESCRIPTION}"
+COPY --from=licenses /licenses /licenses
+EXPOSE 3000
+WORKDIR /app
+USER 65532:65532
+CMD ["yarn", "start"]
