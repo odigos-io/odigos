@@ -29,17 +29,21 @@ odigos cleanup --yes
 # Cleanup Odigos without waiting for pods to rollout without instrumentation
 odigos cleanup --no-wait
 
+# Recover a Source CRD stuck Terminating after incomplete uninstall (used by Helm pre-install hook)
+odigos cleanup --recover-terminating-source-crd
+
 
 ```
 
 ### Options
 
 ```
-  -h, --help                   help for cleanup
-      --instrumentation-only   only remove instrumentation from workloads, without removing the entire Odigos setup
-  -n, --namespace string       namespace to uninstall Odigos from (overrides auto-detection)
-      --no-wait                skip waiting for pods to rollout without instrumentation
-      --yes                    skip the confirmation prompt
+  -h, --help                             help for cleanup
+      --instrumentation-only             only remove instrumentation from workloads, without removing the entire Odigos setup
+  -n, --namespace string                 namespace to uninstall Odigos from (overrides auto-detection)
+      --no-wait                          skip waiting for pods to rollout without instrumentation
+      --recover-terminating-source-crd   strip Source finalizers and wait for a Terminating sources.odigos.io CRD to finish deleting
+      --yes                              skip the confirmation prompt
 ```
 
 ### Options inherited from parent commands
