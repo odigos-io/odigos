@@ -608,6 +608,52 @@ type GetDestinationCategories struct {
 	Categories []*DestinationsCategory `json:"categories"`
 }
 
+type GoOffsetMinorVersion struct {
+	MinorVersion string   `json:"minorVersion"`
+	Versions     []string `json:"versions"`
+}
+
+type GoOffsetMinorVersionUpdate struct {
+	MinorVersion string                   `json:"minorVersion"`
+	IsNew        bool                     `json:"isNew"`
+	IsRemoved    bool                     `json:"isRemoved"`
+	Versions     []*GoOffsetVersionUpdate `json:"versions"`
+}
+
+type GoOffsetModule struct {
+	Module        string                  `json:"module"`
+	MinVersion    string                  `json:"minVersion"`
+	MaxVersion    string                  `json:"maxVersion"`
+	MinorVersions []*GoOffsetMinorVersion `json:"minorVersions"`
+}
+
+type GoOffsetModuleUpdate struct {
+	Module        string                        `json:"module"`
+	IsNew         bool                          `json:"isNew"`
+	IsRemoved     bool                          `json:"isRemoved"`
+	MinVersion    string                        `json:"minVersion"`
+	MaxVersion    string                        `json:"maxVersion"`
+	MinorVersions []*GoOffsetMinorVersionUpdate `json:"minorVersions"`
+}
+
+type GoOffsetVersionUpdate struct {
+	Version   string `json:"version"`
+	IsNew     bool   `json:"isNew"`
+	IsRemoved bool   `json:"isRemoved"`
+}
+
+type GoOffsets struct {
+	Timestamp string            `json:"timestamp"`
+	Mods      []*GoOffsetModule `json:"mods"`
+}
+
+type GoOffsetsUpdateCheck struct {
+	HasUpdates        bool                    `json:"hasUpdates"`
+	CurrentTimestamp  string                  `json:"currentTimestamp"`
+	ProposedTimestamp string                  `json:"proposedTimestamp"`
+	Mods              []*GoOffsetModuleUpdate `json:"mods"`
+}
+
 type GolangCustomProbe struct {
 	PackageName        *string `json:"packageName,omitempty"`
 	FunctionName       *string `json:"functionName,omitempty"`
@@ -1510,6 +1556,21 @@ type InsightsViolationActionInput struct {
 	ScopeKey  string `json:"scopeKey"`
 	RuleKey   string `json:"ruleKey"`
 	Offending string `json:"offending"`
+}
+
+type InstrumentationAgent struct {
+	Language                 string                   `json:"language"`
+	DistroName               string                   `json:"distroName"`
+	DistroDisplayName        string                   `json:"distroDisplayName"`
+	Description              string                   `json:"description"`
+	Tier                     InstrumentationAgentTier `json:"tier"`
+	Kind                     InstrumentationAgentKind `json:"kind"`
+	RuntimeEnvironment       string                   `json:"runtimeEnvironment"`
+	SupportedRuntimeVersions string                   `json:"supportedRuntimeVersions"`
+	FallbackDistroNames      []string                 `json:"fallbackDistroNames"`
+	InstrumentedContainers   int                      `json:"instrumentedContainers"`
+	UninstrumentedContainers int                      `json:"uninstrumentedContainers"`
+	Sources                  int                      `json:"sources"`
 }
 
 type InstrumentationInstanceAnalyze struct {
@@ -4026,6 +4087,88 @@ func (e *InstallationStatus) UnmarshalGQL(v any) error {
 }
 
 func (e InstallationStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InstrumentationAgentKind string
+
+const (
+	InstrumentationAgentKindEbpf      InstrumentationAgentKind = "ebpf"
+	InstrumentationAgentKindCodeAgent InstrumentationAgentKind = "code_agent"
+)
+
+var AllInstrumentationAgentKind = []InstrumentationAgentKind{
+	InstrumentationAgentKindEbpf,
+	InstrumentationAgentKindCodeAgent,
+}
+
+func (e InstrumentationAgentKind) IsValid() bool {
+	switch e {
+	case InstrumentationAgentKindEbpf, InstrumentationAgentKindCodeAgent:
+		return true
+	}
+	return false
+}
+
+func (e InstrumentationAgentKind) String() string {
+	return string(e)
+}
+
+func (e *InstrumentationAgentKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InstrumentationAgentKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InstrumentationAgentKind", str)
+	}
+	return nil
+}
+
+func (e InstrumentationAgentKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InstrumentationAgentTier string
+
+const (
+	InstrumentationAgentTierCommunity  InstrumentationAgentTier = "community"
+	InstrumentationAgentTierEnterprise InstrumentationAgentTier = "enterprise"
+)
+
+var AllInstrumentationAgentTier = []InstrumentationAgentTier{
+	InstrumentationAgentTierCommunity,
+	InstrumentationAgentTierEnterprise,
+}
+
+func (e InstrumentationAgentTier) IsValid() bool {
+	switch e {
+	case InstrumentationAgentTierCommunity, InstrumentationAgentTierEnterprise:
+		return true
+	}
+	return false
+}
+
+func (e InstrumentationAgentTier) String() string {
+	return string(e)
+}
+
+func (e *InstrumentationAgentTier) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InstrumentationAgentTier(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InstrumentationAgentTier", str)
+	}
+	return nil
+}
+
+func (e InstrumentationAgentTier) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
