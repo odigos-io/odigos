@@ -226,7 +226,6 @@ func NewMockSource(workloadObject client.Object, disabled bool) *odigosv1.Source
 				k8sconsts.WorkloadNamespaceLabel: namespace,
 				k8sconsts.WorkloadKindLabel:      gvk.Kind,
 			},
-			Finalizers: []string{k8sconsts.DeleteInstrumentationConfigFinalizer},
 		},
 		Spec: odigosv1.SourceSpec{
 			Workload: k8sconsts.PodWorkload{
@@ -254,7 +253,6 @@ func NewMockRegexSource(workloadObject client.Object, pattern string, disabled b
 				k8sconsts.WorkloadNamespaceLabel: namespace,
 				k8sconsts.WorkloadKindLabel:      gvk.Kind,
 			},
-			Finalizers: []string{k8sconsts.DeleteInstrumentationConfigFinalizer},
 		},
 		Spec: odigosv1.SourceSpec{
 			Workload: k8sconsts.PodWorkload{
