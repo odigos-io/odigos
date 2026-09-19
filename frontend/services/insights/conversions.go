@@ -1334,3 +1334,181 @@ func SystemIdentitySettingsFromInput(identity *model.InsightsSystemIdentitySetti
 	}
 	return SystemIdentitySettings{TransactionIdentityDimensions: dims}
 }
+
+// Guardrail recommendation converters.
+//
+// Kept together rather than split across the response/input sections above
+// because the recommendation payload is one self-contained screen's worth of
+// data, and its two quirks (zero timestamps, nullable scope) are easier to see
+// side by side.
+
+func RecommendationKindToModel(kind RecommendationKind) model.InsightsRecommendationKind {
+	return model.InsightsRecommendationKind(kind)
+}
+
+func RecommendationKindPtrFromModel(kind *model.InsightsRecommendationKind) *RecommendationKind {
+	if kind == nil {
+		return nil
+	}
+	converted := RecommendationKind(*kind)
+	return &converted
+}
+
+func RecommendationStateToModel(state RecommendationState) model.InsightsRecommendationState {
+	return model.InsightsRecommendationState(state)
+}
+
+func RecommendationStatePtrFromModel(state *model.InsightsRecommendationState) *RecommendationState {
+	if state == nil {
+		return nil
+	}
+	converted := RecommendationState(*state)
+	return &converted
+}
+
+func RecommendationConfidenceLevelToModel(level RecommendationConfidenceLevel) model.InsightsRecommendationConfidenceLevel {
+	return model.InsightsRecommendationConfidenceLevel(level)
+}
+
+// isZeroTimestamp reports whether an RFC3339 timestamp is Go's zero time. The
+// engine declares live_since / live_last as omitted until the first live trace
+// is evaluated, but they are `time.Time` with `omitempty`, which has no effect
+// on a struct — so an unevaluated recommendation carries the zero time instead
+// of no field at all. GraphQL exposes that as null.
+func isZeroTimestamp(timestamp string) bool {
+	return timestamp == "" || strings.HasPrefix(timestamp, "0001-01-01T00:00:00")
+}
+
+func optionalTimestamp(timestamp string) *string {
+	if isZeroTimestamp(timestamp) {
+		return nil
+	}
+	return &timestamp
+}
+
+func RecommendationExampleToModel(example RecommendationExample) *model.InsightsRecommendationExample {
+	return &model.InsightsRecommendationExample{
+		TraceID:    example.TraceID,
+		LeftValue:  example.LeftValue,
+		RightValue: example.RightValue,
+		ObservedAt: example.ObservedAt,
+	}
+}
+
+func RecommendationExamplesToModel(examples []RecommendationExample) []*model.InsightsRecommendationExample {
+	if len(examples) == 0 {
+		return []*model.InsightsRecommendationExample{}
+	}
+	return mapSlice(examples, RecommendationExampleToModel)
+}
+
+func RecommendationConfidenceToModel(confidence RecommendationConfidence) *model.InsightsRecommendationConfidence {
+	reasons := confidence.Reasons
+	if reasons == nil {
+		reasons = []string{}
+	}
+	return &model.InsightsRecommendationConfidence{
+		Level:       RecommendationConfidenceLevelToModel(confidence.Level),
+		HoldRatio:   confidence.HoldRatio,
+		Observed:    confidence.Observed,
+		Held:        confidence.Held,
+		Distinct:    confidence.Distinct,
+		SampleCount: confidence.SampleCount,
+		LiveHeld:    int64ToInt(confidence.LiveHeld),
+		LiveBroken:  int64ToInt(confidence.LiveBroken),
+		LiveSince:   optionalTimestamp(confidence.LiveSince),
+		LiveLast:    optionalTimestamp(confidence.LiveLast),
+		Reasons:     reasons,
+	}
+}
+
+func RecommendationToModel(recommendation Recommendation) *model.InsightsRecommendation {
+	// Scope and scopeKey are omitted by the engine for kinds that are not
+	// scoped to a guardrail, so they stay nullable here rather than rendering
+	// as an empty enum value.
+	var scope *model.InsightsPolicyScope
+	if recommendation.Scope != "" {
+		converted := PolicyScopeToModel(recommendation.Scope)
+		scope = &converted
+	}
+	var scopeKey *string
+	if recommendation.ScopeKey != "" {
+		scopeKey = &recommendation.ScopeKey
+	}
+	return &model.InsightsRecommendation{
+		ID:              recommendation.ID,
+		Kind:            RecommendationKindToModel(recommendation.Kind),
+		State:           RecommendationStateToModel(recommendation.State),
+		Stale:           recommendation.Stale,
+		Rank:            recommendation.Rank,
+		Scope:           scope,
+		ScopeKey:        scopeKey,
+		TransactionID:   FormatID(recommendation.TransactionID),
+		TransactionKind: TransactionKindToModel(recommendation.TransactionKind),
+		Service:         recommendation.Service,
+		Namespace:       recommendation.Namespace,
+		Operation:       recommendation.Operation,
+		Title:           recommendation.Title,
+		Summary:         recommendation.Summary,
+		WhyItMatters:    recommendation.WhyItMatters,
+		Transform:       recommendation.Transform,
+		Transport:       recommendation.Transport,
+		Spec:            CorrelationSpecToModel(recommendation.Spec),
+		Confidence:      RecommendationConfidenceToModel(recommendation.Confidence),
+		Examples:        RecommendationExamplesToModel(recommendation.Examples),
+		AlreadyCovered:  recommendation.AlreadyCovered,
+		MinedAt:         recommendation.MinedAt,
+		CreatedAt:       recommendation.CreatedAt,
+		UpdatedAt:       recommendation.UpdatedAt,
+	}
+}
+
+func RecommendationsToModel(recommendations []Recommendation) []*model.InsightsRecommendation {
+	return mapSlice(recommendations, RecommendationToModel)
+}
+
+func RecommendationBulkResultToModel(result RecommendationBulkResult) *model.InsightsRecommendationBulkResult {
+	errors := make([]*model.InsightsRecommendationItemError, 0, len(result.Errors))
+	for _, itemError := range result.Errors {
+		errors = append(errors, &model.InsightsRecommendationItemError{
+			ID:    itemError.ID,
+			Error: itemError.Error,
+		})
+	}
+	return &model.InsightsRecommendationBulkResult{
+		Done:   result.Done,
+		Failed: result.Failed,
+		Errors: errors,
+	}
+}
+
+func RecommendationPreviewToModel(preview RecommendationPreview) *model.InsightsRecommendationPreview {
+	return &model.InsightsRecommendationPreview{
+		SampleCount:     preview.SampleCount,
+		Observed:        preview.Observed,
+		Held:            preview.Held,
+		Distinct:        preview.Distinct,
+		HoldRatio:       preview.HoldRatio,
+		Examples:        RecommendationExamplesToModel(preview.Examples),
+		CounterExamples: RecommendationExamplesToModel(preview.CounterExamples),
+	}
+}
+
+// RecommendationApplyItemsFromInput maps the apply mutation's items. A nil
+// entry is skipped rather than rejected, matching how the other list inputs
+// here treat gqlgen's pointer elements.
+func RecommendationApplyItemsFromInput(items []*model.InsightsRecommendationApplyItemInput) []RecommendationApplyItem {
+	out := make([]RecommendationApplyItem, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		applyItem := RecommendationApplyItem{ID: item.ID}
+		if item.Spec != nil {
+			spec := CorrelationSpecFromInput(*item.Spec)
+			applyItem.Spec = &spec
+		}
+		out = append(out, applyItem)
+	}
+	return out
+}

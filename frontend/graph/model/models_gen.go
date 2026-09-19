@@ -743,9 +743,15 @@ type Insights struct {
 	GuardrailViolations []*InsightsGuardrailViolation `json:"guardrailViolations"`
 	// Violation investigate payload (summary + evidence trace). Analogous to anomaly(...).
 	GuardrailViolation *InsightsGuardrailViolationDetail `json:"guardrailViolation,omitempty"`
-	Catalog            *InsightsCatalog                  `json:"catalog"`
-	SystemSettings     *InsightsSystemSettings           `json:"systemSettings"`
-	StorageHealth      *InsightsStorageHealth            `json:"storageHealth"`
+	// Guardrail rules the engine mined from a transaction's stored relation samples
+	// and offers for quick apply, strongest first within each scope. Stale rows
+	// (the latest mining run no longer produced them) are hidden unless
+	// `includeStale` is true.
+	Recommendations []*InsightsRecommendation `json:"recommendations"`
+	Recommendation  *InsightsRecommendation   `json:"recommendation,omitempty"`
+	Catalog         *InsightsCatalog          `json:"catalog"`
+	SystemSettings  *InsightsSystemSettings   `json:"systemSettings"`
+	StorageHealth   *InsightsStorageHealth    `json:"storageHealth"`
 }
 
 type InsightsAnomalyAttrHighlight struct {
@@ -1260,6 +1266,128 @@ type InsightsPromoteResult struct {
 	TransactionID string                 `json:"transactionId"`
 	Class         InsightsDeviationClass `json:"class"`
 	Promoted      bool                   `json:"promoted"`
+}
+
+// One mined rule the operator can apply as-is, edit and apply, or dismiss. The
+// engine writes the presentation fields, so a client renders `title`, `summary`
+// and `confidence.reasons` without knowing what the numbers mean.
+type InsightsRecommendation struct {
+	ID    string                      `json:"id"`
+	Kind  InsightsRecommendationKind  `json:"kind"`
+	State InsightsRecommendationState `json:"state"`
+	// The latest mining run no longer produced this row. Hidden from the list
+	// unless `includeStale` is set.
+	Stale bool `json:"stale"`
+	// Position among the scope's recommendations, 0 = strongest.
+	Rank int `json:"rank"`
+	// The guardrail this would extend, with the same meaning as a guardrail's
+	// scope/scopeKey. `attribute_correlation` is always transaction-scoped.
+	Scope           *InsightsPolicyScope    `json:"scope,omitempty"`
+	ScopeKey        *string                 `json:"scopeKey,omitempty"`
+	TransactionID   string                  `json:"transactionId"`
+	TransactionKind InsightsTransactionKind `json:"transactionKind"`
+	Service         string                  `json:"service"`
+	Namespace       string                  `json:"namespace"`
+	Operation       string                  `json:"operation"`
+	// One-line headline, e.g. "resolvePrincipal return.value matches getAccount arg.0".
+	Title string `json:"title"`
+	// One sentence explaining the relation and its evidence in plain words.
+	Summary string `json:"summary"`
+	// The security story — what breaking this relation would mean. The engine does
+	// not populate this yet, so it is empty today.
+	WhyItMatters string `json:"whyItMatters"`
+	// How the two values relate: `exact` (identical), `core` (identical after a
+	// constant prefix/suffix), `digits` (same numeric id), `contains` (one value is
+	// embedded in the other).
+	Transform string `json:"transform"`
+	// Guaranteed by the transport rather than by business logic — the same field on
+	// both ends of one hop, such as a Kafka message key on producer and consumer. A
+	// break means tampering in flight, not a business-logic bypass, so it is mined
+	// at low severity and ranked after every business relation.
+	Transport bool `json:"transport"`
+	// The exact rule `applyInsightsRecommendations` would add to the transaction
+	// guardrail. Edit and pass it back to apply something different.
+	Spec       *InsightsCorrelationSpec          `json:"spec"`
+	Confidence *InsightsRecommendationConfidence `json:"confidence"`
+	// Up to three stored samples the relation held on.
+	Examples []*InsightsRecommendationExample `json:"examples"`
+	// The transaction's guardrail already has a rule on the same two attributes
+	// (e.g. written by hand), so applying would duplicate it.
+	AlreadyCovered bool   `json:"alreadyCovered"`
+	MinedAt        string `json:"minedAt"`
+	CreatedAt      string `json:"createdAt"`
+	UpdatedAt      string `json:"updatedAt"`
+}
+
+// One recommendation to apply, optionally with the operator's edits.
+type InsightsRecommendationApplyItemInput struct {
+	ID string `json:"id"`
+	// Optional edited rule applied instead of the mined one. Left/right service,
+	// span and attr must match the recommendation; name, severity, why, relation
+	// and extract regexes may differ.
+	Spec *InsightsCorrelationSpecInput `json:"spec,omitempty"`
+}
+
+// Outcome of a bulk action. Items are independent — one failing does not stop the
+// rest — so `done` and `errors` can both be non-empty.
+type InsightsRecommendationBulkResult struct {
+	Done   int                                `json:"done"`
+	Failed int                                `json:"failed"`
+	Errors []*InsightsRecommendationItemError `json:"errors"`
+}
+
+// Why the engine believes the relation. The sample stats come from the stored
+// relation samples the mining run read; the live counters come from shadow
+// evaluation against real traffic and keep growing until the recommendation is
+// applied or dismissed.
+type InsightsRecommendationConfidence struct {
+	Level InsightsRecommendationConfidenceLevel `json:"level"`
+	// held / observed on the stored samples (0..1).
+	HoldRatio float64 `json:"holdRatio"`
+	// Stored samples where both values were present.
+	Observed int `json:"observed"`
+	// Of those, how many satisfied the relation.
+	Held int `json:"held"`
+	// Distinct left-hand values seen agreeing. Guards against two attributes that
+	// merely share a constant.
+	Distinct int `json:"distinct"`
+	// Relation samples the mining run looked at.
+	SampleCount int `json:"sampleCount"`
+	LiveHeld    int `json:"liveHeld"`
+	LiveBroken  int `json:"liveBroken"`
+	// Null until the first live trace was evaluated.
+	LiveSince *string `json:"liveSince,omitempty"`
+	// Null until the first live trace was evaluated.
+	LiveLast *string `json:"liveLast,omitempty"`
+	// Render-ready evidence lines, e.g. "Held on 50 of 50 stored samples".
+	Reasons []string `json:"reasons"`
+}
+
+// One stored sample the relation held on, with the two values it compared.
+type InsightsRecommendationExample struct {
+	TraceID    string `json:"traceId"`
+	LeftValue  string `json:"leftValue"`
+	RightValue string `json:"rightValue"`
+	ObservedAt string `json:"observedAt"`
+}
+
+type InsightsRecommendationItemError struct {
+	ID    string `json:"id"`
+	Error string `json:"error"`
+}
+
+// How a spec fares on the transaction's stored relation samples. Backs the
+// "edit & apply" flow so the operator sees how often the rule would have held
+// before enforcing it.
+type InsightsRecommendationPreview struct {
+	SampleCount int                              `json:"sampleCount"`
+	Observed    int                              `json:"observed"`
+	Held        int                              `json:"held"`
+	Distinct    int                              `json:"distinct"`
+	HoldRatio   float64                          `json:"holdRatio"`
+	Examples    []*InsightsRecommendationExample `json:"examples"`
+	// Up to three samples where the relation did not hold.
+	CounterExamples []*InsightsRecommendationExample `json:"counterExamples"`
 }
 
 type InsightsRiskAssessment struct {
@@ -3671,6 +3799,137 @@ func (e *InsightsPolicyScope) UnmarshalGQL(v any) error {
 }
 
 func (e InsightsPolicyScope) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// How much the engine trusts the relation. `low` means live traffic has already
+// broken it, so applying would fire violations immediately.
+type InsightsRecommendationConfidenceLevel string
+
+const (
+	InsightsRecommendationConfidenceLevelHigh   InsightsRecommendationConfidenceLevel = "high"
+	InsightsRecommendationConfidenceLevelMedium InsightsRecommendationConfidenceLevel = "medium"
+	InsightsRecommendationConfidenceLevelLow    InsightsRecommendationConfidenceLevel = "low"
+)
+
+var AllInsightsRecommendationConfidenceLevel = []InsightsRecommendationConfidenceLevel{
+	InsightsRecommendationConfidenceLevelHigh,
+	InsightsRecommendationConfidenceLevelMedium,
+	InsightsRecommendationConfidenceLevelLow,
+}
+
+func (e InsightsRecommendationConfidenceLevel) IsValid() bool {
+	switch e {
+	case InsightsRecommendationConfidenceLevelHigh, InsightsRecommendationConfidenceLevelMedium, InsightsRecommendationConfidenceLevelLow:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRecommendationConfidenceLevel) String() string {
+	return string(e)
+}
+
+func (e *InsightsRecommendationConfidenceLevel) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRecommendationConfidenceLevel(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRecommendationConfidenceLevel", str)
+	}
+	return nil
+}
+
+func (e InsightsRecommendationConfidenceLevel) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The guardrail rule type a recommendation would create. Only
+// `attribute_correlation` is mined today.
+type InsightsRecommendationKind string
+
+const (
+	InsightsRecommendationKindAttributeCorrelation InsightsRecommendationKind = "attribute_correlation"
+)
+
+var AllInsightsRecommendationKind = []InsightsRecommendationKind{
+	InsightsRecommendationKindAttributeCorrelation,
+}
+
+func (e InsightsRecommendationKind) IsValid() bool {
+	switch e {
+	case InsightsRecommendationKindAttributeCorrelation:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRecommendationKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsRecommendationKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRecommendationKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRecommendationKind", str)
+	}
+	return nil
+}
+
+func (e InsightsRecommendationKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Lifecycle bucket. `open` awaits a decision, `applied` became a guardrail rule,
+// `dismissed` was rejected (sticky across re-mining).
+type InsightsRecommendationState string
+
+const (
+	InsightsRecommendationStateOpen      InsightsRecommendationState = "open"
+	InsightsRecommendationStateApplied   InsightsRecommendationState = "applied"
+	InsightsRecommendationStateDismissed InsightsRecommendationState = "dismissed"
+)
+
+var AllInsightsRecommendationState = []InsightsRecommendationState{
+	InsightsRecommendationStateOpen,
+	InsightsRecommendationStateApplied,
+	InsightsRecommendationStateDismissed,
+}
+
+func (e InsightsRecommendationState) IsValid() bool {
+	switch e {
+	case InsightsRecommendationStateOpen, InsightsRecommendationStateApplied, InsightsRecommendationStateDismissed:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRecommendationState) String() string {
+	return string(e)
+}
+
+func (e *InsightsRecommendationState) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRecommendationState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRecommendationState", str)
+	}
+	return nil
+}
+
+func (e InsightsRecommendationState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

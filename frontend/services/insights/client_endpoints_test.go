@@ -630,6 +630,215 @@ func TestClientEndpointContract(t *testing.T) {
 			response:   `{"status":"degraded","disk":{"used_percent":91.5}}`,
 			want:       &StorageHealth{Status: "degraded", Disk: StorageDisk{UsedPercent: 91.5}},
 		},
+		{
+			name: "list recommendations",
+			call: func(c *Client) (any, error) {
+				kind := RecommendationKindAttributeCorrelation
+				state := RecommendationStateOpen
+				transactionID := int64(7)
+				includeStale := true
+				return c.ListRecommendations(ctx, ListRecommendationsParams{
+					Kind:          &kind,
+					State:         &state,
+					TransactionID: &transactionID,
+					Service:       strPtr("checkout"),
+					Namespace:     strPtr("prod"),
+					IncludeStale:  &includeStale,
+				})
+			},
+			wantMethod: http.MethodGet,
+			wantPath:   "/api/v1/recommendations",
+			wantQuery: url.Values{
+				"kind":           []string{"attribute_correlation"},
+				"state":          []string{"open"},
+				"transaction_id": []string{"7"},
+				"service":        []string{"checkout"},
+				"namespace":      []string{"prod"},
+				"include_stale":  []string{"true"},
+			},
+			response: `{"count":1,"items":[{"id":"rec-1","kind":"attribute_correlation","state":"open","rank":0,"transaction_id":7}]}`,
+			want: []Recommendation{{
+				ID:            "rec-1",
+				Kind:          RecommendationKindAttributeCorrelation,
+				State:         RecommendationStateOpen,
+				Rank:          0,
+				TransactionID: 7,
+			}},
+		},
+		{
+			name:       "list recommendations without filters",
+			call:       func(c *Client) (any, error) { return c.ListRecommendations(ctx, ListRecommendationsParams{}) },
+			wantMethod: http.MethodGet,
+			wantPath:   "/api/v1/recommendations",
+			wantQuery:  url.Values{},
+			response:   `{"count":0,"items":[]}`,
+			want:       []Recommendation{},
+		},
+		{
+			name:       "get recommendation",
+			call:       func(c *Client) (any, error) { return c.GetRecommendation(ctx, "rec-1") },
+			wantMethod: http.MethodGet,
+			wantPath:   "/api/v1/recommendations/rec-1",
+			wantQuery:  url.Values{},
+			response: `{
+				"id":"rec-1","kind":"attribute_correlation","state":"open","stale":false,"rank":2,
+				"scope":"transaction","scope_key":"7","transaction_id":7,"transaction_kind":"HTTP",
+				"service":"checkout","namespace":"prod","operation":"GET /cart",
+				"title":"t","summary":"s","why_it_matters":"w","transform":"digits","transport":true,
+				"spec":{"name":"cart owner","left":{"service":"checkout","span":"resolvePrincipal","attr":"return.value"},"right":{"service":"cart","span":"getCart","attr":"arg.0"},"relation":"equals","severity":"high"},
+				"confidence":{"level":"high","hold_ratio":1,"observed":50,"held":50,"distinct":12,"sample_count":50,"live_held":9,"live_broken":0,"live_since":"2026-09-10T08:00:00Z","live_last":"2026-09-11T08:00:00Z","reasons":["Held on 50 of 50"]},
+				"examples":[{"trace_id":"abc","left_value":"u1","right_value":"u1","observed_at":"2026-09-10T09:00:00Z"}],
+				"already_covered":true,"mined_at":"2026-09-10T07:00:00Z","created_at":"2026-09-10T07:00:00Z","updated_at":"2026-09-11T07:00:00Z"
+			}`,
+			want: &Recommendation{
+				ID:              "rec-1",
+				Kind:            RecommendationKindAttributeCorrelation,
+				State:           RecommendationStateOpen,
+				Rank:            2,
+				Scope:           "transaction",
+				ScopeKey:        "7",
+				TransactionID:   7,
+				TransactionKind: "HTTP",
+				Service:         "checkout",
+				Namespace:       "prod",
+				Operation:       "GET /cart",
+				Title:           "t",
+				Summary:         "s",
+				WhyItMatters:    "w",
+				Transform:       "digits",
+				Transport:       true,
+				Spec: CorrelationSpec{
+					Name:     "cart owner",
+					Left:     CorrelationSelector{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+					Right:    CorrelationSelector{Service: "cart", Span: "getCart", Attr: "arg.0"},
+					Relation: CorrelationRelationEquals,
+					Severity: "high",
+				},
+				Confidence: RecommendationConfidence{
+					Level:       "high",
+					HoldRatio:   1,
+					Observed:    50,
+					Held:        50,
+					Distinct:    12,
+					SampleCount: 50,
+					LiveHeld:    9,
+					LiveBroken:  0,
+					LiveSince:   "2026-09-10T08:00:00Z",
+					LiveLast:    "2026-09-11T08:00:00Z",
+					Reasons:     []string{"Held on 50 of 50"},
+				},
+				Examples: []RecommendationExample{{
+					TraceID:    "abc",
+					LeftValue:  "u1",
+					RightValue: "u1",
+					ObservedAt: "2026-09-10T09:00:00Z",
+				}},
+				AlreadyCovered: true,
+				MinedAt:        "2026-09-10T07:00:00Z",
+				CreatedAt:      "2026-09-10T07:00:00Z",
+				UpdatedAt:      "2026-09-11T07:00:00Z",
+			},
+		},
+		{
+			name: "apply recommendations with an edited spec",
+			call: func(c *Client) (any, error) {
+				return c.ApplyRecommendations(ctx, []RecommendationApplyItem{
+					{ID: "rec-1"},
+					{ID: "rec-2", Spec: &CorrelationSpec{
+						Name:     "edited",
+						Left:     CorrelationSelector{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+						Right:    CorrelationSelector{Service: "cart", Span: "getCart", Attr: "arg.0"},
+						Relation: CorrelationRelationEquals,
+						Severity: "critical",
+					}},
+				})
+			},
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/apply",
+			wantQuery:  url.Values{},
+			wantBody: `{"items":[
+				{"id":"rec-1"},
+				{"id":"rec-2","spec":{"name":"edited","left":{"service":"checkout","span":"resolvePrincipal","attr":"return.value"},"right":{"service":"cart","span":"getCart","attr":"arg.0"},"relation":"equals","severity":"critical"}}
+			]}`,
+			response: `{"done":2,"failed":0,"errors":[]}`,
+			want:     &RecommendationBulkResult{Done: 2, Failed: 0, Errors: []RecommendationItemError{}},
+		},
+		{
+			name:       "dismiss recommendations",
+			call:       func(c *Client) (any, error) { return c.DismissRecommendations(ctx, []string{"rec-1"}) },
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/dismiss",
+			wantQuery:  url.Values{},
+			wantBody:   `{"ids":["rec-1"]}`,
+			response:   `{"done":1,"failed":0,"errors":[]}`,
+			want:       &RecommendationBulkResult{Done: 1, Errors: []RecommendationItemError{}},
+		},
+		{
+			name:       "restore recommendations",
+			call:       func(c *Client) (any, error) { return c.RestoreRecommendations(ctx, []string{"rec-1"}) },
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/restore",
+			wantQuery:  url.Values{},
+			wantBody:   `{"ids":["rec-1"]}`,
+			response:   `{"done":1,"failed":0,"errors":[]}`,
+			want:       &RecommendationBulkResult{Done: 1, Errors: []RecommendationItemError{}},
+		},
+		{
+			name:       "revert recommendations",
+			call:       func(c *Client) (any, error) { return c.RevertRecommendations(ctx, []string{"rec-1", "rec-2"}) },
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/revert",
+			wantQuery:  url.Values{},
+			wantBody:   `{"ids":["rec-1","rec-2"]}`,
+			response:   `{"done":2,"failed":0,"errors":[]}`,
+			want:       &RecommendationBulkResult{Done: 2, Errors: []RecommendationItemError{}},
+		},
+		{
+			name: "preview recommendation",
+			call: func(c *Client) (any, error) {
+				return c.PreviewRecommendation(ctx, 7, CorrelationSpec{
+					Name:     "cart owner",
+					Left:     CorrelationSelector{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+					Right:    CorrelationSelector{Service: "cart", Span: "getCart", Attr: "arg.0", Extract: `^(\d+)`},
+					Relation: CorrelationRelationEquals,
+				})
+			},
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/preview",
+			wantQuery:  url.Values{},
+			wantBody:   `{"transaction_id":7,"spec":{"name":"cart owner","left":{"service":"checkout","span":"resolvePrincipal","attr":"return.value"},"right":{"service":"cart","span":"getCart","attr":"arg.0","extract":"^(\\d+)"},"relation":"equals"}}`,
+			response:   `{"sample_count":50,"observed":40,"held":38,"distinct":9,"hold_ratio":0.95,"examples":[],"counter_examples":[{"trace_id":"bad","left_value":"u1","right_value":"u2","observed_at":"2026-09-10T09:00:00Z"}]}`,
+			want: &RecommendationPreview{
+				SampleCount: 50,
+				Observed:    40,
+				Held:        38,
+				Distinct:    9,
+				HoldRatio:   0.95,
+				Examples:    []RecommendationExample{},
+				CounterExamples: []RecommendationExample{{
+					TraceID:    "bad",
+					LeftValue:  "u1",
+					RightValue: "u2",
+					ObservedAt: "2026-09-10T09:00:00Z",
+				}},
+			},
+		},
+		{
+			name:       "recompute recommendations for one transaction",
+			call:       func(c *Client) (any, error) { return nil, c.RecomputeRecommendations(ctx, 7) },
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/recompute",
+			wantQuery:  url.Values{},
+			wantBody:   `{"transaction_id":7}`,
+		},
+		{
+			name:       "recompute recommendations sweeps every transaction when the id is zero",
+			call:       func(c *Client) (any, error) { return nil, c.RecomputeRecommendations(ctx, 0) },
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/recompute",
+			wantQuery:  url.Values{},
+			wantBody:   `{}`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -701,4 +910,79 @@ func TestNewClientWithHTTPClientFallsBackToTheDefaultClient(t *testing.T) {
 	client, err := NewClientWithHTTPClient("http://insights:8080", nil)
 	require.NoError(t, err)
 	assert.Same(t, http.DefaultClient, client.httpClient)
+}
+
+// newStatusClient serves one fixed status and body for every request.
+func newStatusClient(t *testing.T, statusCode int, responseBody string) *Client {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		_, _ = w.Write([]byte(responseBody))
+	}))
+	t.Cleanup(server.Close)
+
+	client, err := NewClient(server.URL)
+	require.NoError(t, err)
+	return client
+}
+
+// A bulk action never stops at the first failure: the engine answers 422 with
+// the items that did succeed plus a reason per item that did not. Surfacing
+// that as a plain request error would hide both halves, so the client decodes
+// the body instead.
+func TestRecommendationBulkActionsReturnThePartialFailureBody(t *testing.T) {
+	ctx := context.Background()
+	body := `{"done":1,"failed":1,"errors":[{"id":"rec-2","error":"recommendation not found"}]}`
+	want := &RecommendationBulkResult{
+		Done:   1,
+		Failed: 1,
+		Errors: []RecommendationItemError{{ID: "rec-2", Error: "recommendation not found"}},
+	}
+
+	actions := map[string]func(*Client) (*RecommendationBulkResult, error){
+		"apply": func(c *Client) (*RecommendationBulkResult, error) {
+			return c.ApplyRecommendations(ctx, []RecommendationApplyItem{{ID: "rec-1"}, {ID: "rec-2"}})
+		},
+		"dismiss": func(c *Client) (*RecommendationBulkResult, error) {
+			return c.DismissRecommendations(ctx, []string{"rec-1", "rec-2"})
+		},
+		"restore": func(c *Client) (*RecommendationBulkResult, error) {
+			return c.RestoreRecommendations(ctx, []string{"rec-1", "rec-2"})
+		},
+		"revert": func(c *Client) (*RecommendationBulkResult, error) {
+			return c.RevertRecommendations(ctx, []string{"rec-1", "rec-2"})
+		},
+	}
+
+	for name, action := range actions {
+		t.Run(name, func(t *testing.T) {
+			got, err := action(newStatusClient(t, http.StatusUnprocessableEntity, body))
+			require.NoError(t, err)
+			assert.Equal(t, want, got)
+		})
+	}
+}
+
+// Only 422 carries a result. Every other failure is still an error, so a
+// stopped or starting engine does not read as "nothing to do".
+func TestRecommendationBulkActionsStillFailOnOtherStatuses(t *testing.T) {
+	ctx := context.Background()
+	client := newStatusClient(t, http.StatusServiceUnavailable, `{"error":{"code":"unavailable","message":"engine starting"}}`)
+
+	got, err := client.DismissRecommendations(ctx, []string{"rec-1"})
+	require.Error(t, err)
+	assert.Nil(t, got)
+	assert.ErrorIs(t, err, ErrUnavailable)
+}
+
+func TestGetRecommendationMapsAnUnknownIDToNotFound(t *testing.T) {
+	ctx := context.Background()
+	client := newStatusClient(t, http.StatusNotFound, `{"error":{"code":"not_found","message":"recommendation not found"}}`)
+
+	got, err := client.GetRecommendation(ctx, "missing")
+	require.Error(t, err)
+	assert.Nil(t, got)
+	assert.ErrorIs(t, err, ErrNotFound)
 }

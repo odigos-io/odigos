@@ -684,3 +684,149 @@ type StorageHealth struct {
 	WritePressure StorageWritePressure `json:"write_pressure"`
 	Writeback     StorageWriteback     `json:"writeback"`
 }
+
+// Guardrail recommendations (GET/POST /api/v1/recommendations*).
+//
+// The insights engine mines promoted transactions' stored relation samples for
+// attribute pairs that always agree and offers each one as a ready-made
+// attribute_correlation rule. The payload is render-ready: the engine writes
+// the title, summary and confidence reasons, so this layer only reshapes.
+
+type RecommendationKind string
+type RecommendationState string
+type RecommendationConfidenceLevel string
+
+// RecommendationKind values. Only attribute_correlation is mined today.
+const (
+	RecommendationKindAttributeCorrelation RecommendationKind = "attribute_correlation"
+)
+
+// RecommendationState values: where the recommendation sits in its lifecycle.
+const (
+	RecommendationStateOpen      RecommendationState = "open"
+	RecommendationStateApplied   RecommendationState = "applied"
+	RecommendationStateDismissed RecommendationState = "dismissed"
+)
+
+type ListRecommendationsParams struct {
+	Kind          *RecommendationKind
+	State         *RecommendationState
+	TransactionID *int64
+	Service       *string
+	Namespace     *string
+	IncludeStale  *bool
+}
+
+// RecommendationExample is one stored sample the relation held on.
+type RecommendationExample struct {
+	TraceID    string `json:"trace_id"`
+	LeftValue  string `json:"left_value"`
+	RightValue string `json:"right_value"`
+	ObservedAt string `json:"observed_at"`
+}
+
+// RecommendationConfidence is why the engine believes the relation: stats over
+// the stored samples the miner read, plus live counters from shadow-evaluating
+// the open recommendation against real traffic.
+//
+// LiveSince/LiveLast are RFC3339 but the engine emits them as a zero time
+// rather than omitting them until the first live trace is evaluated; see
+// isZeroTimestamp.
+type RecommendationConfidence struct {
+	Level       RecommendationConfidenceLevel `json:"level"`
+	HoldRatio   float64                       `json:"hold_ratio"`
+	Observed    int                           `json:"observed"`
+	Held        int                           `json:"held"`
+	Distinct    int                           `json:"distinct"`
+	SampleCount int                           `json:"sample_count"`
+	LiveHeld    int64                         `json:"live_held"`
+	LiveBroken  int64                         `json:"live_broken"`
+	LiveSince   string                        `json:"live_since,omitempty"`
+	LiveLast    string                        `json:"live_last,omitempty"`
+	Reasons     []string                      `json:"reasons"`
+}
+
+// Recommendation is one mined rule the operator can apply, dismiss or edit.
+type Recommendation struct {
+	ID    string              `json:"id"`
+	Kind  RecommendationKind  `json:"kind"`
+	State RecommendationState `json:"state"`
+	// Stale means the latest mining run no longer produced this row.
+	Stale bool `json:"stale"`
+	// Rank orders the scope's recommendations, 0 = strongest.
+	Rank            int             `json:"rank"`
+	Scope           PolicyScope     `json:"scope,omitempty"`
+	ScopeKey        string          `json:"scope_key,omitempty"`
+	TransactionID   int64           `json:"transaction_id"`
+	TransactionKind TransactionKind `json:"transaction_kind"`
+	Service         string          `json:"service"`
+	Namespace       string          `json:"namespace"`
+	Operation       string          `json:"operation"`
+	Title           string          `json:"title"`
+	Summary         string          `json:"summary"`
+	WhyItMatters    string          `json:"why_it_matters"`
+	// Transform is how the two values relate: exact, core, digits or contains.
+	Transform string `json:"transform"`
+	// Transport marks a relation the transport guarantees (the same field on
+	// both ends of one hop) rather than business logic.
+	Transport  bool                     `json:"transport"`
+	Spec       CorrelationSpec          `json:"spec"`
+	Confidence RecommendationConfidence `json:"confidence"`
+	Examples   []RecommendationExample  `json:"examples"`
+	// AlreadyCovered means the transaction guardrail already carries a rule on
+	// the same two attributes, so applying would duplicate it.
+	AlreadyCovered bool   `json:"already_covered"`
+	MinedAt        string `json:"mined_at"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+}
+
+// RecommendationApplyItem is one recommendation to apply, optionally carrying
+// the operator's edits to the rule it creates.
+type RecommendationApplyItem struct {
+	ID   string           `json:"id"`
+	Spec *CorrelationSpec `json:"spec,omitempty"`
+}
+
+type RecommendationApplyRequest struct {
+	Items []RecommendationApplyItem `json:"items"`
+}
+
+type RecommendationIDsRequest struct {
+	IDs []string `json:"ids"`
+}
+
+type RecommendationItemError struct {
+	ID    string `json:"id"`
+	Error string `json:"error"`
+}
+
+// RecommendationBulkResult reports a bulk action. A bulk action never stops at
+// the first failure, so Done and Errors can both be non-empty — the engine
+// answers 422 in that case and the client still returns this body.
+type RecommendationBulkResult struct {
+	Done   int                       `json:"done"`
+	Failed int                       `json:"failed"`
+	Errors []RecommendationItemError `json:"errors"`
+}
+
+type RecommendationPreviewRequest struct {
+	TransactionID int64           `json:"transaction_id"`
+	Spec          CorrelationSpec `json:"spec"`
+}
+
+// RecommendationPreview is how an edited spec fares on the transaction's stored
+// relation samples, without persisting anything.
+type RecommendationPreview struct {
+	SampleCount     int                     `json:"sample_count"`
+	Observed        int                     `json:"observed"`
+	Held            int                     `json:"held"`
+	Distinct        int                     `json:"distinct"`
+	HoldRatio       float64                 `json:"hold_ratio"`
+	Examples        []RecommendationExample `json:"examples"`
+	CounterExamples []RecommendationExample `json:"counter_examples"`
+}
+
+type RecommendationRecomputeRequest struct {
+	TransactionID int64 `json:"transaction_id,omitempty"`
+}

@@ -234,6 +234,67 @@ const GUARDRAIL_VIOLATION_FIELDS = `
   status
 `;
 
+const RECOMMENDATION_FIELDS = `
+  id
+  kind
+  state
+  stale
+  rank
+  scope
+  scopeKey
+  transactionId
+  transactionKind
+  service
+  namespace
+  operation
+  title
+  summary
+  whyItMatters
+  transform
+  transport
+  spec {
+    name
+    left {
+      service
+      span
+      attr
+      extract
+    }
+    right {
+      service
+      span
+      attr
+      extract
+    }
+    relation
+    severity
+    why
+  }
+  confidence {
+    level
+    holdRatio
+    observed
+    held
+    distinct
+    sampleCount
+    liveHeld
+    liveBroken
+    liveSince
+    liveLast
+    reasons
+  }
+  examples {
+    traceId
+    leftValue
+    rightValue
+    observedAt
+  }
+  alreadyCovered
+  minedAt
+  createdAt
+  updatedAt
+`;
+
 const CATALOG_FIELDS = `
   deviationClasses {
     id
@@ -586,6 +647,22 @@ export const GET_INSIGHTS_GUARDRAIL_VIOLATION = gql`
         }
         evidenceTrace { ${OBSERVATION_FIELDS} }
       }
+    }
+  }
+`;
+
+export const GET_INSIGHTS_RECOMMENDATIONS = gql`
+  query GetInsightsRecommendations($kind: InsightsRecommendationKind, $state: InsightsRecommendationState, $transactionId: ID, $service: String, $namespace: String, $includeStale: Boolean) {
+    insights {
+      recommendations(kind: $kind, state: $state, transactionId: $transactionId, service: $service, namespace: $namespace, includeStale: $includeStale) { ${RECOMMENDATION_FIELDS} }
+    }
+  }
+`;
+
+export const GET_INSIGHTS_RECOMMENDATION = gql`
+  query GetInsightsRecommendation($id: ID!) {
+    insights {
+      recommendation(id: $id) { ${RECOMMENDATION_FIELDS} }
     }
   }
 `;
