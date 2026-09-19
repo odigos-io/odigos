@@ -50,17 +50,9 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, client.IgnoreNotFound(err)
 	}
 
-	if k8sutils.IsTerminating(source) {
-		// Migration: Remove old finalizers if present, these will be removed
-		if controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
-			controllerutil.RemoveFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
-		}
-		if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) {
-			controllerutil.RemoveFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
-		}
-		if controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
-			controllerutil.RemoveFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)
-		}
+	// SourceInstrumentationFinalizer is deprecated; strip any that remain so deletion is not blocked.
+	if controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
+		controllerutil.RemoveFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)
 		if err := r.Update(ctx, source); err != nil {
 			return k8sutils.K8SUpdateErrorHandler(err)
 		}

@@ -22,6 +22,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -272,10 +273,12 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
 	if err != nil {
-		// if err is not nil it means obj is invalid, so we must return.
-		// instrumentation config has the workload as owner, so it will be deleted automatically by k8s,
-		// thus NotFound is expected and we can return without error.
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if apierrors.IsNotFound(err) {
+			// Workload is gone; delete any InstrumentationConfig explicitly.
+			// Source owner refs can prevent k8s GC from removing it when the workload is deleted.
+			return ctrl.Result{}, deleteWorkloadInstrumentationConfig(ctx, k8sClient, pw)
+		}
+		return ctrl.Result{}, err
 	}
 
 	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
@@ -344,7 +347,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 			return ctrl.Result{}, err
 		}
 
-		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName, desiredDataStreamsLabels, rollbackRecoveryAtAnnotation)
+		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, sources, containers, hashString, desiredServiceName, desiredDataStreamsLabels, rollbackRecoveryAtAnnotation)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
@@ -358,7 +361,11 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		containerOverridesChanged := updateContainerOverride(ic, containers, hashString)
 		serviceNameChanged := updateServiceName(ic, desiredServiceName)
 		recoveredFromRollbackAtChanged := updateRecoveredFromRollbackAt(ic, rollbackRecoveryAtAnnotation)
-		if containerOverridesChanged || dataStreamsChanged || serviceNameChanged || recoveredFromRollbackAtChanged {
+		sourceOwnerRefsChanged, err := updateSourceOwnerReferences(ic, sources, scheme)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if containerOverridesChanged || dataStreamsChanged || serviceNameChanged || recoveredFromRollbackAtChanged || sourceOwnerRefsChanged {
 			err = k8sClient.Update(ctx, ic)
 			if err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
@@ -384,7 +391,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, rollbackRecoveryAtAnnotation string) (*odigosv1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, sources *odigosv1.WorkloadSources, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, rollbackRecoveryAtAnnotation string) (*odigosv1.InstrumentationConfig, error) {
 	logger := commonlogger.FromContext(ctx)
 
 	annotations := map[string]string{}
@@ -411,6 +418,11 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 
 	if err := ctrl.SetControllerReference(obj, &instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
+		return nil, err
+	}
+
+	if _, err := updateSourceOwnerReferences(&instConfig, sources, scheme); err != nil {
+		logger.Error(err, "Failed to set source owner references", "name", instConfigName, "namespace", namespace)
 		return nil, err
 	}
 
@@ -510,4 +522,47 @@ func updateRecoveredFromRollbackAt(ic *odigosv1.InstrumentationConfig, sourceRol
 		return true
 	}
 	return false
+}
+
+func activeEnablingSources(sources *odigosv1.WorkloadSources) []*odigosv1.Source {
+	result := make([]*odigosv1.Source, 0, 2)
+	if sources.Workload != nil && !odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
+		result = append(result, sources.Workload)
+	}
+	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
+		result = append(result, sources.Namespace)
+	}
+	return result
+}
+
+// updateSourceOwnerReferences syncs non-controller owner refs for Sources that enable this IC.
+// The workload remains the sole controller owner.
+func updateSourceOwnerReferences(ic *odigosv1.InstrumentationConfig, sources *odigosv1.WorkloadSources, scheme *runtime.Scheme) (bool, error) {
+	desired := activeEnablingSources(sources)
+	desiredByUID := make(map[types.UID]*odigosv1.Source, len(desired))
+	for _, s := range desired {
+		desiredByUID[s.UID] = s
+	}
+
+	updated := false
+	kept := make([]metav1.OwnerReference, 0, len(ic.OwnerReferences))
+	for _, ref := range ic.OwnerReferences {
+		if ref.Kind == "Source" {
+			if _, ok := desiredByUID[ref.UID]; !ok {
+				updated = true
+				continue
+			}
+			delete(desiredByUID, ref.UID)
+		}
+		kept = append(kept, ref)
+	}
+	ic.OwnerReferences = kept
+
+	for _, s := range desiredByUID {
+		if err := controllerutil.SetOwnerReference(s, ic, scheme); err != nil {
+			return false, err
+		}
+		updated = true
+	}
+	return updated, nil
 }
