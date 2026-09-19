@@ -87,7 +87,7 @@ permissions:
   packages: write
 
 env:
-  PREFLIGHT_VERSION: "1.17.0"
+  PREFLIGHT_VERSION: "1.21.0"
 
 jobs:
   prepare:
