@@ -122,7 +122,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		For(&v1alpha1.InstrumentationConfig{}).
 		WithEventFilter(predicate.Or(
 			&odigospredicate.ExistencePredicate{},
-			&odigospredicate.OwnerReferencesChangedPredicate{},
+			&ownerReferencesCountChangedPredicate{},
 		)).
 		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
