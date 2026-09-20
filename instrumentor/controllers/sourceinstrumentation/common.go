@@ -301,7 +301,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		// search if there is an override in the source for this container.
 		// list is expected to be short (1-5 containers, so linear search is fine)
 		var containerOverride *odigosv1.ContainerOverride
-		if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
+		if sources.Workload != nil {
 			for _, workloadContainerOverride := range sources.Workload.Spec.ContainerOverrides {
 				if workloadContainerOverride.ContainerName == container.Name {
 					containerOverride = &workloadContainerOverride
@@ -339,7 +339,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: pw.Namespace}, ic)
 
 	var rollbackRecoveryAtAnnotation string
-	if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
+	if sources.Workload != nil {
 		rollbackRecoveryAtAnnotation = sources.Workload.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
 	}
 	if err != nil {
@@ -489,13 +489,10 @@ func updateDatastreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredL
 
 func calculateDesiredServiceName(pw k8sconsts.PodWorkload, sources *odigosv1.WorkloadSources) string {
 	// if there is no override service name, default to the workload name (deployment name etc.)
-	if sources.Workload == nil ||
-		k8sutils.IsTerminating(sources.Workload) ||
-		sources.Workload.Spec.OtelServiceName == "" {
-
+	if sources.Workload == nil || sources.Workload.Spec.OtelServiceName == "" {
 		return pw.Name
 	}
-	// otherwise, use the override service name provided by the user in source CR as is
+	// otherwise, use the override service name provided by the user in Source CR as is
 	return sources.Workload.Spec.OtelServiceName
 }
 
@@ -526,10 +523,10 @@ func updateRecoveredFromRollbackAt(ic *odigosv1.InstrumentationConfig, sourceRol
 
 func activeEnablingSources(sources *odigosv1.WorkloadSources) []*odigosv1.Source {
 	result := make([]*odigosv1.Source, 0, 2)
-	if sources.Workload != nil && !odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
+	if sources.Workload != nil && !odigosv1.IsDisabledSource(sources.Workload) {
 		result = append(result, sources.Workload)
 	}
-	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
+	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) {
 		result = append(result, sources.Namespace)
 	}
 	return result
