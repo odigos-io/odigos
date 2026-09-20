@@ -416,8 +416,8 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 	instConfig.Spec.ContainersOverrides = containers
 	instConfig.Spec.ContainerOverridesHash = containersOverridesHash
 
-	if err := ctrl.SetControllerReference(obj, &instConfig, scheme); err != nil {
-		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
+	if err := controllerutil.SetOwnerReference(obj, &instConfig, scheme); err != nil {
+		logger.Error(err, "Failed to set owner reference", "name", instConfigName, "namespace", namespace)
 		return nil, err
 	}
 
@@ -536,7 +536,6 @@ func activeEnablingSources(sources *odigosv1.WorkloadSources) []*odigosv1.Source
 }
 
 // updateSourceOwnerReferences syncs non-controller owner refs for Sources that enable this IC.
-// The workload remains the sole controller owner.
 func updateSourceOwnerReferences(ic *odigosv1.InstrumentationConfig, sources *odigosv1.WorkloadSources, scheme *runtime.Scheme) (bool, error) {
 	desired := activeEnablingSources(sources)
 	desiredByUID := make(map[types.UID]*odigosv1.Source, len(desired))

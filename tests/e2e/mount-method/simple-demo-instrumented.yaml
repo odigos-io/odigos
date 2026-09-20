@@ -360,12 +360,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-coupon
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'coupon']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: coupon
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: coupon
@@ -375,12 +377,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-frontend
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'frontend']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: frontend
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: frontend
@@ -390,12 +394,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-inventory
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'inventory']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: inventory
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: inventory
@@ -405,12 +411,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-membership
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'membership']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: membership
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: membership
@@ -420,12 +428,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-pricing
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'pricing']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: pricing
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: pricing
@@ -435,12 +445,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-currency
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'currency']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: currency
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   (runtimeDetailsByContainer[?containerName=='currency']):
     - language: php
@@ -452,12 +464,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-geolocation
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'geolocation']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: geolocation
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   (runtimeDetailsByContainer[?containerName=='geolocation']):
     - language: ruby
