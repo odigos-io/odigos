@@ -1,3 +1,6 @@
+# Source owner-ref name is either the namespace Source ("default") or a
+# per-workload Source (e.g. "coupon"). This shared assert is used by both
+# styles of tests, so the filter accepts either — not both at once.
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:

@@ -75,6 +75,8 @@ var _ = Describe("deleteInstrumentationConfig InstrumentationConfig controller",
 				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
 
 				Expect(k8sClient.Delete(ctx, source)).Should(Succeed())
+				// Source delete does not reconcile; IC cleanup follows owner-ref GC.
+				testutil.SimulateSourceOwnerRefGarbageCollected(ctx, k8sClient, instrumentationConfig, source.Name)
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 				testutil.AssertInstrumentationConfigNotCreated(ctx, k8sClient, instrumentationConfig)
 			})
