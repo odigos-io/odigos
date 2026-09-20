@@ -98,9 +98,14 @@ func main() {
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
 	}
-	err := feature.Setup()
-	if err != nil {
-		logger.Error("unable to get setup feature k8s detection", "err", err)
+	// feature detection must succeed before any controller runs: without the detected
+	// kubernetes version the node collector local traffic service is silently skipped while
+	// the instrumentor still injects its DNS name, and no HPA API version can be selected.
+	// odiglet and instrumentor abort startup on the same failure, so the autoscaler does too
+	// and lets the pod restart instead of running permanently degraded.
+	if err := feature.Setup(); err != nil {
+		logger.Error("unable to setup kubernetes feature detection", "err", err)
+		os.Exit(1)
 	}
 
 	flag.Parse()
