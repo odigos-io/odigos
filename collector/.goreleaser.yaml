@@ -59,5 +59,20 @@ nfpms:
       postinstall: distribution/odigos-otelcol/postinstall.sh
       preremove: distribution/odigos-otelcol/preremove.sh
 
+    # GPG-sign both package formats. The key file path comes from the
+    # environment so this config stays key-agnostic; goreleaser fails the
+    # build if ODIGOS_PKG_SIGNING_KEY_FILE is unset, so packages can never be
+    # produced unsigned by accident. nfpm takes the key passphrase from
+    # $NFPM_PACKAGES_PASSPHRASE (NFPM_<nfpms id>_PASSPHRASE).
+    rpm:
+      signature:
+        key_file: "{{ .Env.ODIGOS_PKG_SIGNING_KEY_FILE }}"
+    deb:
+      signature:
+        # Default method (debsign) embeds an armored detached signature over
+        # debian-binary + control.tar.gz + data.tar.* as the _gpgorigin
+        # ar member.
+        key_file: "{{ .Env.ODIGOS_PKG_SIGNING_KEY_FILE }}"
+
 release:
   disable: true
