@@ -520,24 +520,20 @@ func updateRecoveredFromRollbackAt(ic *odigosv1.InstrumentationConfig, sourceRol
 	return false
 }
 
-func activeEnablingSources(sources *odigosv1.WorkloadSources) []*odigosv1.Source {
-	result := make([]*odigosv1.Source, 0, 2)
+func activeEnablingSources(sources *odigosv1.WorkloadSources) map[types.UID]*odigosv1.Source {
+	result := make(map[types.UID]*odigosv1.Source, 2)
 	if sources.Workload != nil && !odigosv1.IsDisabledSource(sources.Workload) {
-		result = append(result, sources.Workload)
+		result[sources.Workload.UID] = sources.Workload
 	}
 	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) {
-		result = append(result, sources.Namespace)
+		result[sources.Namespace.UID] = sources.Namespace
 	}
 	return result
 }
 
 // updateSourceOwnerReferences syncs non-controller owner refs for Sources that enable this IC.
 func updateSourceOwnerReferences(ic *odigosv1.InstrumentationConfig, sources *odigosv1.WorkloadSources, scheme *runtime.Scheme) (bool, error) {
-	desired := activeEnablingSources(sources)
-	desiredByUID := make(map[types.UID]*odigosv1.Source, len(desired))
-	for _, s := range desired {
-		desiredByUID[s.UID] = s
-	}
+	desiredByUID := activeEnablingSources(sources)
 
 	updated := false
 	kept := make([]metav1.OwnerReference, 0, len(ic.OwnerReferences))
