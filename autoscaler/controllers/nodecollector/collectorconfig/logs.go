@@ -31,8 +31,6 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 		// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
 		// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
 		// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
-		// Resolve the workload name from the IC object name (ICs may have multiple owner refs:
-		// the workload plus enabling Source(s)).
 		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(element.Name, element.Namespace)
 		if err != nil {
 			logger.Error(

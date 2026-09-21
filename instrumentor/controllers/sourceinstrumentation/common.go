@@ -275,7 +275,6 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Workload is gone; delete any InstrumentationConfig explicitly.
-			// Source owner refs can prevent k8s GC from removing it when the workload is deleted.
 			return ctrl.Result{}, deleteWorkloadInstrumentationConfig(ctx, k8sClient, pw)
 		}
 		return ctrl.Result{}, err
