@@ -30,10 +30,12 @@ func mergeEbpfLogCapture(existing *instrumentationrules.EbpfLogCapture, incoming
 	if existing == nil {
 		return incoming
 	}
-	// OR logic: if any rule enables it, it's enabled
+	// OR logic: if any rule enables it, it's enabled.
+	// existing points into an InstrumentationRule of the caller, which is evaluated
+	// once per container, so return a new value instead of writing into it.
 	if incoming.Enabled != nil && *incoming.Enabled {
 		enabled := true
-		existing.Enabled = &enabled
+		return &instrumentationrules.EbpfLogCapture{Enabled: &enabled}
 	}
 	return existing
 }
