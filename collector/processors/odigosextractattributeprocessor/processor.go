@@ -20,7 +20,9 @@ var RELEVANT_SPAN_ATTRIBUTES = map[string]struct{}{
 }
 
 type extractor struct {
-	regex               *regexp.Regexp
+	// regexes are tried in order and the first capture produced wins, so a preset
+	// format can prefer its quoted-value pattern over the unquoted one.
+	regexes             []*regexp.Regexp
 	targetAttributeName string
 }
 
@@ -41,25 +43,26 @@ func newExtractAttributeProcessor(set processor.Settings, cfg *Config) (*extract
 	}, nil
 }
 
-// compileRegexExtractors precompiles one regex per Extraction entry at startup so the per-span path stays allocation-free.
+// compileRegexExtractors precompiles the regexes of every Extraction entry at startup so the per-span path stays allocation-free.
 func compileRegexExtractors(cfg *Config) ([]extractor, error) {
 	out := make([]extractor, 0, len(cfg.Extractions))
 	for i, extraction := range cfg.Extractions {
-		var regex *regexp.Regexp
-		var err error
+		var regexes []*regexp.Regexp
 
 		if extraction.Regex != "" {
-			regex, err = regexp.Compile(extraction.Regex)
+			regex, err := regexp.Compile(extraction.Regex)
 			if err != nil {
 				return nil, fmt.Errorf("extractions[%d]: invalid regex: %w", i, err)
 			}
+			regexes = []*regexp.Regexp{regex}
 		} else {
-			regex, err = buildExtractionRegex(extraction.LookupKey, extraction.DataFormat)
+			built, err := buildExtractionRegexes(extraction.LookupKey, extraction.DataFormat)
 			if err != nil {
 				return nil, fmt.Errorf("extractions[%d]: %w", i, err)
 			}
+			regexes = built
 		}
-		out = append(out, extractor{regex: regex, targetAttributeName: extraction.TargetAttributeName})
+		out = append(out, extractor{regexes: regexes, targetAttributeName: extraction.TargetAttributeName})
 	}
 	return out, nil
 }
@@ -84,11 +87,11 @@ func (p *extractAttributeProcessor) processSpan(span ptrace.Span) {
 		if _, exists := span.Attributes().Get(e.targetAttributeName); exists {
 			continue
 		}
-		if value, ok := extractFromPayload(span, e.regex); ok {
+		if value, matched, ok := extractFromPayload(span, e.regexes); ok {
 			p.logger.Debug("extraction matched",
 				zap.String("target_attribute_name", e.targetAttributeName),
 				zap.String("value", value),
-				zap.String("regex", e.regex.String()),
+				zap.String("regex", matched.String()),
 				zap.Stringer("spanId", span.SpanID()),
 			)
 			span.Attributes().PutStr(e.targetAttributeName, value)
@@ -96,12 +99,14 @@ func (p *extractAttributeProcessor) processSpan(span ptrace.Span) {
 	}
 }
 
-// extractFromPayload scans the span's string-valued attributes which are payloads and returns the first capture group re produces.
-func extractFromPayload(span ptrace.Span, re *regexp.Regexp) (string, bool) {
+// extractFromPayload scans the span's string-valued attributes which are payloads and returns the first capture group
+// the regexes produce, along with the regex that produced it.
+func extractFromPayload(span ptrace.Span, regexes []*regexp.Regexp) (string, *regexp.Regexp, bool) {
 
 	var (
-		result string
-		found  bool
+		result  string
+		matched *regexp.Regexp
+		found   bool
 	)
 	span.Attributes().Range(func(key string, value pcommon.Value) bool {
 		// Check if the key is in our relevant attributes array
@@ -116,47 +121,76 @@ func extractFromPayload(span ptrace.Span, re *regexp.Regexp) (string, bool) {
 			return true
 		}
 		// Take the first regex match
-		if matches := re.FindStringSubmatch(content); len(matches) > 1 {
-			result = matches[1]
-			found = true
-			return false
+		for _, re := range regexes {
+			if matches := re.FindStringSubmatch(content); len(matches) > 1 {
+				result = matches[1]
+				matched = re
+				found = true
+				return false
+			}
 		}
 		return true
 	})
-	return result, found
+	return result, matched, found
 }
 
-// buildExtractionRegex returns the pattern that captures the value of key for the given format. The key is anchored
+// buildExtractionRegexes returns the patterns that capture the value of key for the given format. The key is anchored
 // on a JSON/SQL/URL boundary so substrings like "myfoo_bar" don't cross-match "foo_bar".
-func buildExtractionRegex(key string, format DataFormat) (*regexp.Regexp, error) {
+//
+// JSON and SQL get two patterns: a quoted one that captures the whole value up to the closing quote
+// (values may contain spaces and commas, e.g. a full name or a street address), and the unquoted one
+// for values that are not wrapped in quotes. The patterns are tried in order, so a quoted value is
+// captured in full and the unquoted pattern only applies when the value carries no quotes.
+// This mirrors buildFormatMaskingRegexes in odigospiimaskingprocessor.
+func buildExtractionRegexes(key string, format DataFormat) ([]*regexp.Regexp, error) {
 	escapedKey := regexp.QuoteMeta(key)
 	switch format {
 	case FormatJSON:
 		// Examples (key = "user_id"):
 		//   Quoted:     {"user_id": "abc123", "name": "foo"}   -> captures "abc123"
+		//   With space: {"user_id": "abc 123"}                 -> captures "abc 123"
 		//   Unquoted:   {user_id: 42, name: "foo"}             -> captures "42"
 		//   Tight:      {"user_id":"abc"}                      -> captures "abc"
 		//   Nested:     {"outer":{"user_id":"x"}}              -> captures "x"
 		// Separator is ":" (JSON). Key must be preceded by start-of-string, whitespace, "{", or ",", optionally
 		// wrapped in quotes, so substrings like "my_user_id" do NOT match.
-		return regexp.MustCompile(`(?:^|[\s,{])"?` + escapedKey + `"?\s*:\s*"?([^"\s,}\]]+)`), nil
+		return compileAll(
+			`(?:^|[\s,{])"?`+escapedKey+`"?\s*:\s*"((?:[^"\\]|\\.)+)"?`,
+			`(?:^|[\s,{])"?`+escapedKey+`"?\s*:\s*"?([^"\s,}\]]+)`,
+		)
 	case FormatSQL:
 		// Examples (key = "user_id"):
 		//   Quoted:     WHERE user_id = '42' AND status = 'ok'  -> captures "42"
+		//   With space: WHERE user_id = 'Jane Public'           -> captures "Jane Public"
 		//   Tight:      WHERE user_id='abc'                     -> captures "abc"
 		//   Unquoted:   WHERE user_id=42                        -> captures "42"
 		//   Multiline:  "...\n      WHERE user_id = '42'\n..."  -> captures "42"
 		// Separator is "=" (SQL). Key must be preceded by start-of-string, whitespace, "(", or ",", so substrings
 		// like "my_user_id" do NOT match.
-		return regexp.MustCompile(`(?:^|[\s,(])` + escapedKey + `\s*=\s*'?([^'\s,;)]+)`), nil
+		return compileAll(
+			`(?:^|[\s,(])`+escapedKey+`\s*=\s*'((?:[^'\\]|\\.)+)'?`,
+			`(?:^|[\s,(])`+escapedKey+`\s*=\s*'?([^'\s,;)]+)`,
+		)
 	case FormatResourcePath:
 		// Examples (key = "orders"):
 		//   Path:           /api/v1/orders/abc-123                     -> captures "abc-123"
 		//   Full URL:       https://example.com/orders/42?foo=bar      -> captures "42"
 		//   Relative:       orders/42/items                            -> captures "42"
 		// Stops at the next "/", whitespace, "?", "&", "#", or quote so query strings and fragments are excluded.
-		return regexp.MustCompile(`(?:^|/)` + escapedKey + `/([^/\s"?&#]+)`), nil
+		return compileAll(`(?:^|/)` + escapedKey + `/([^/\s"?&#]+)`)
 	default:
 		return nil, fmt.Errorf("unsupported data_format %q", format)
 	}
+}
+
+func compileAll(patterns ...string) ([]*regexp.Regexp, error) {
+	out := make([]*regexp.Regexp, 0, len(patterns))
+	for _, pattern := range patterns {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, re)
+	}
+	return out, nil
 }

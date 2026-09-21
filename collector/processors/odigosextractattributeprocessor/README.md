@@ -47,6 +47,10 @@ and regex entries can be mixed freely in the same list.
 - **`sql`** -- SQL key-value pairs (equals separator): `key = 'value'`, `key=value`, `WHERE key=42`.
 - **`resource_path`** -- URL path segments: `/key/<value>`.
 
+For `json` and `sql`, a quoted value is captured up to its closing quote, so values containing
+spaces, commas or semicolons (`"Jane Q Public"`, `'742 Evergreen Terrace'`) are extracted in full.
+Unquoted values still end at the first delimiter.
+
 ### Examples
 
 Mixed preset and regex entries:
