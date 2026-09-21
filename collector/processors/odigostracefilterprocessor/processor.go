@@ -17,26 +17,24 @@ func (p *traceFilterProcessor) processTraces(_ context.Context, td ptrace.Traces
 		return td, nil
 	}
 
-	for i := td.ResourceSpans().Len() - 1; i >= 0; i-- {
+	// Filter first, then prune. RemoveIf drops every matching element, so calling it
+	// while iterating the same slice by index can shrink it by more than one entry and
+	// leave the loop indexing out of range.
+	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		rs := td.ResourceSpans().At(i)
 
-		for j := rs.ScopeSpans().Len() - 1; j >= 0; j-- {
-			ss := rs.ScopeSpans().At(j)
-			p.filterSpans(ss.Spans())
-
-			if ss.Spans().Len() == 0 {
-				rs.ScopeSpans().RemoveIf(func(s ptrace.ScopeSpans) bool {
-					return s.Spans().Len() == 0
-				})
-			}
+		for j := 0; j < rs.ScopeSpans().Len(); j++ {
+			p.filterSpans(rs.ScopeSpans().At(j).Spans())
 		}
 
-		if rs.ScopeSpans().Len() == 0 {
-			td.ResourceSpans().RemoveIf(func(r ptrace.ResourceSpans) bool {
-				return r.ScopeSpans().Len() == 0
-			})
-		}
+		rs.ScopeSpans().RemoveIf(func(s ptrace.ScopeSpans) bool {
+			return s.Spans().Len() == 0
+		})
 	}
+
+	td.ResourceSpans().RemoveIf(func(r ptrace.ResourceSpans) bool {
+		return r.ScopeSpans().Len() == 0
+	})
 
 	return td, nil
 }
