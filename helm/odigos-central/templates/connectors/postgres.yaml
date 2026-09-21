@@ -53,10 +53,12 @@ spec:
               command: ["pg_isready", "-U", "{{ .Values.cloudConnectors.postgres.username }}", "-d", "{{ .Values.cloudConnectors.postgres.database }}"]
             initialDelaySeconds: 5
             periodSeconds: 10
+          {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "postgres") | nindent 10 }}
           {{- with .Values.cloudConnectors.postgres.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "postgres") | nindent 6 }}
       volumes:
         - name: data
         {{- if .Values.cloudConnectors.postgres.persistence.enabled }}

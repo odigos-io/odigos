@@ -62,6 +62,7 @@ spec:
           ports:
             - containerPort: {{ .Values.redis.port }}
               name: {{ .Values.redis.portName }}
+          {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "redis") | nindent 10 }}
           {{- if .Values.redis.livenessProbe.enabled }}
           livenessProbe:
             exec:
@@ -86,4 +87,5 @@ spec:
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
           {{- end }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "redis") | nindent 6 }}
 {{- end }}

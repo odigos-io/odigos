@@ -88,6 +88,7 @@ spec:
             periodSeconds: 10
             failureThreshold: 3
             timeoutSeconds: 3
+          {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "centralBackend") | nindent 10 }}
           resources:
             requests:
               cpu: {{ .Values.centralBackend.resources.requests.cpu }}
@@ -95,6 +96,7 @@ spec:
             limits:
               cpu: {{ .Values.centralBackend.resources.limits.cpu }}
               memory: {{ .Values.centralBackend.resources.limits.memory }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "centralBackend") | nindent 6 }}
       {{- with .Values.centralBackend.nodeSelector }}
       nodeSelector: {{ toYaml . | nindent 8 }}
       {{- end }}

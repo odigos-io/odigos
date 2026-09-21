@@ -95,10 +95,8 @@ spec:
         name: manager
         resources:
 {{ toYaml .Values.scheduler.resources | indent 10 }}
-        securityContext:
-          allowPrivilegeEscalation: false
-      securityContext:
-        runAsNonRoot: true
+        {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "scheduler") | nindent 8 }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "scheduler" "Base" (dict "runAsNonRoot" true)) | nindent 6 }}
       serviceAccountName: odigos-scheduler
       terminationGracePeriodSeconds: 10
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
