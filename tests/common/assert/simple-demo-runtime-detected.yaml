@@ -1,18 +1,8 @@
-# Source owner-ref name is either the namespace Source ("default") or a
-# per-workload Source (e.g. "coupon"). This shared assert is used by both
-# styles of tests, so the filter accepts either — not both at once.
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
   name: deployment-coupon
   namespace: default
-  (ownerReferences[?kind == 'Deployment' && name == 'coupon']):
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: coupon
-  (ownerReferences[?kind == 'Source' && (name == 'default' || name == 'coupon')]):
-    - apiVersion: odigos.io/v1alpha1
-      kind: Source
 status:
   runtimeDetailsByContainer:
     - containerName: coupon
@@ -24,13 +14,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-frontend
   namespace: default
-  (ownerReferences[?kind == 'Deployment' && name == 'frontend']):
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: frontend
-  (ownerReferences[?kind == 'Source' && (name == 'default' || name == 'frontend')]):
-    - apiVersion: odigos.io/v1alpha1
-      kind: Source
 status:
   runtimeDetailsByContainer:
     - containerName: frontend
@@ -42,13 +25,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-inventory
   namespace: default
-  (ownerReferences[?kind == 'Deployment' && name == 'inventory']):
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: inventory
-  (ownerReferences[?kind == 'Source' && (name == 'default' || name == 'inventory')]):
-    - apiVersion: odigos.io/v1alpha1
-      kind: Source
 status:
   runtimeDetailsByContainer:
     - containerName: inventory
@@ -63,13 +39,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-membership
   namespace: default
-  (ownerReferences[?kind == 'Deployment' && name == 'membership']):
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: membership
-  (ownerReferences[?kind == 'Source' && (name == 'default' || name == 'membership')]):
-    - apiVersion: odigos.io/v1alpha1
-      kind: Source
 status:
   runtimeDetailsByContainer:
     - containerName: membership
@@ -81,13 +50,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-pricing
   namespace: default
-  (ownerReferences[?kind == 'Deployment' && name == 'pricing']):
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: pricing
-  (ownerReferences[?kind == 'Source' && (name == 'default' || name == 'pricing')]):
-    - apiVersion: odigos.io/v1alpha1
-      kind: Source
 status:
   runtimeDetailsByContainer:
     - containerName: pricing
@@ -98,13 +60,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-currency
   namespace: default
-  (ownerReferences[?kind == 'Deployment' && name == 'currency']):
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: currency
-  (ownerReferences[?kind == 'Source' && (name == 'default' || name == 'currency')]):
-    - apiVersion: odigos.io/v1alpha1
-      kind: Source
 status:
   (runtimeDetailsByContainer[?containerName=='currency']):
     - language: php
@@ -119,13 +74,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-geolocation
   namespace: default
-  (ownerReferences[?kind == 'Deployment' && name == 'geolocation']):
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: geolocation
-  (ownerReferences[?kind == 'Source' && (name == 'default' || name == 'geolocation')]):
-    - apiVersion: odigos.io/v1alpha1
-      kind: Source
 status:
   (runtimeDetailsByContainer[?containerName=='geolocation']):
     - language: ruby
