@@ -484,9 +484,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentatio
 		}
 	}
 
-	// The process has exited, so delete its InstrumentationInstance. This is keyed by (pod, host
-	// pid), so it targets at most the instance the manager itself would create; a native agent's
-	// instance is keyed by the pod-internal vpid, a different name. In the rare hostPID case where
+	// The process has exited, so delete its InstrumentationInstance. This is keyed by (pod,
+	// container, host pid), so it targets at most the instance the manager itself would create; a
+	// native agent's instance is keyed by the pod-internal vpid, a different name. In the rare hostPID case where
 	// those keys coincide, the process is already gone, so cleaning up the instance is still correct.
 	if err := m.handler.Reporter.OnExit(ctx, pid, details.pd); err != nil {
 		m.logger.Error("failed to report instrumentation exit", "err", err)

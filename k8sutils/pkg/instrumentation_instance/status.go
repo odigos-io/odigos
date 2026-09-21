@@ -70,13 +70,17 @@ func updateInstrumentationInstanceStatus(status odigosv1.InstrumentationInstance
 	return status
 }
 
-func InstrumentationInstanceName(ownerName string, pid int) string {
-	return fmt.Sprintf("%s-%d", ownerName, pid)
+// InstrumentationInstanceName builds the name of the InstrumentationInstance object for a single
+// instrumented process. The container name is part of the name because agents report the pid from
+// their own container's pid namespace, so a pid is only unique within a container and not within
+// the pod - two containers of the same pod commonly both report pid 1.
+func InstrumentationInstanceName(ownerName string, containerName string, pid int) string {
+	return fmt.Sprintf("%s-%s-%d", ownerName, containerName, pid)
 }
 
 func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client,
 	instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
-	instrumentationInstanceName := InstrumentationInstanceName(owner.GetName(), pid)
+	instrumentationInstanceName := InstrumentationInstanceName(owner.GetName(), containerName, pid)
 	instance := odigosv1.InstrumentationInstance{}
 
 	err := kubeClient.Get(ctx,
