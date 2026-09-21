@@ -53,6 +53,13 @@ func CalculateAutoRollbackStatus(ic *odigosv1alpha1.InstrumentationConfig, autoR
 		return createAutoRollbackStatus(AutoRollbackReasonRollbackOccurred, "odigos detected a crash and rolled back the source to protect your application", model.DesiredStateProgressNotice)
 	}
 
+	// the odigos configuration may be unavailable, in which case the auto rollback state is unknown.
+	// this is checked after RollbackOccurred, which is a fact about the source and does not depend
+	// on the configuration.
+	if autoRollbackConfig == nil {
+		return nil
+	}
+
 	// disabled in config
 	if !autoRollbackConfig.Enabled {
 		return createAutoRollbackStatus(AutoRollbackReasonDisabled, "Auto rollback is disabled in the odigos configuration", model.DesiredStateProgressIrrelevant)
