@@ -574,6 +574,7 @@ type ComplexityRoot struct {
 	}
 
 	GoOffsets struct {
+		Installed func(childComplexity int) int
 		Mods      func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 	}
@@ -1201,7 +1202,6 @@ type ComplexityRoot struct {
 		Description              func(childComplexity int) int
 		DistroDisplayName        func(childComplexity int) int
 		DistroName               func(childComplexity int) int
-		FallbackDistroNames      func(childComplexity int) int
 		InstrumentedContainers   func(childComplexity int) int
 		Kind                     func(childComplexity int) int
 		Language                 func(childComplexity int) int
@@ -4854,6 +4854,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GoOffsetVersionUpdate.Version(childComplexity), true
 
+	case "GoOffsets.installed":
+		if e.complexity.GoOffsets.Installed == nil {
+			break
+		}
+
+		return e.complexity.GoOffsets.Installed(childComplexity), true
+
 	case "GoOffsets.mods":
 		if e.complexity.GoOffsets.Mods == nil {
 			break
@@ -7769,13 +7776,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationAgent.DistroName(childComplexity), true
-
-	case "InstrumentationAgent.fallbackDistroNames":
-		if e.complexity.InstrumentationAgent.FallbackDistroNames == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationAgent.FallbackDistroNames(childComplexity), true
 
 	case "InstrumentationAgent.instrumentedContainers":
 		if e.complexity.InstrumentationAgent.InstrumentedContainers == nil {
@@ -32634,6 +32634,50 @@ func (ec *executionContext) fieldContext_GoOffsetVersionUpdate_isRemoved(_ conte
 	return fc, nil
 }
 
+func (ec *executionContext) _GoOffsets_installed(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsets) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsets_installed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Installed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsets_installed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsets",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GoOffsets_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsets) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GoOffsets_timestamp(ctx, field)
 	if err != nil {
@@ -51584,50 +51628,6 @@ func (ec *executionContext) _InstrumentationAgent_supportedRuntimeVersions(ctx c
 }
 
 func (ec *executionContext) fieldContext_InstrumentationAgent_supportedRuntimeVersions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationAgent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InstrumentationAgent_fallbackDistroNames(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationAgent_fallbackDistroNames(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.FallbackDistroNames, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationAgent_fallbackDistroNames(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InstrumentationAgent",
 		Field:      field,
@@ -73948,6 +73948,8 @@ func (ec *executionContext) fieldContext_Query_goOffsets(_ context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "installed":
+				return ec.fieldContext_GoOffsets_installed(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_GoOffsets_timestamp(ctx, field)
 			case "mods":
@@ -74097,8 +74099,6 @@ func (ec *executionContext) fieldContext_Query_instrumentationAgents(_ context.C
 				return ec.fieldContext_InstrumentationAgent_runtimeEnvironment(ctx, field)
 			case "supportedRuntimeVersions":
 				return ec.fieldContext_InstrumentationAgent_supportedRuntimeVersions(ctx, field)
-			case "fallbackDistroNames":
-				return ec.fieldContext_InstrumentationAgent_fallbackDistroNames(ctx, field)
 			case "instrumentedContainers":
 				return ec.fieldContext_InstrumentationAgent_instrumentedContainers(ctx, field)
 			case "uninstrumentedContainers":
@@ -91665,6 +91665,11 @@ func (ec *executionContext) _GoOffsets(ctx context.Context, sel ast.SelectionSet
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("GoOffsets")
+		case "installed":
+			out.Values[i] = ec._GoOffsets_installed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "timestamp":
 			out.Values[i] = ec._GoOffsets_timestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -96505,11 +96510,6 @@ func (ec *executionContext) _InstrumentationAgent(ctx context.Context, sel ast.S
 			}
 		case "supportedRuntimeVersions":
 			out.Values[i] = ec._InstrumentationAgent_supportedRuntimeVersions(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "fallbackDistroNames":
-			out.Values[i] = ec._InstrumentationAgent_fallbackDistroNames(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

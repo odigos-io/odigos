@@ -11,7 +11,6 @@ export const GET_INSTRUMENTATION_AGENTS = gql`
       kind
       runtimeEnvironment
       supportedRuntimeVersions
-      fallbackDistroNames
       instrumentedContainers
       uninstrumentedContainers
       sources

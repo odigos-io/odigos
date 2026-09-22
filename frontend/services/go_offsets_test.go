@@ -176,3 +176,53 @@ func mustParseOffsetsFile(t *testing.T, content string) *versionedModules {
 	}
 	return parsed
 }
+
+// A deleted ConfigMap leaves CheckGoOffsetsUpdates with an empty installed set,
+// which has to read as "everything is new" so the update can put it back.
+func TestCompareGoOffsets_emptyCurrentMarksEverythingNew(t *testing.T) {
+	current := &versionedModules{Mods: []*jsonModule{}}
+	proposed := mustParseOffsetsFile(t, `{"timestamp":"2026-07-30T00:00:00Z","mods":[{"module":"example.com/mod","packages":[{"package":"example.com/mod/pkg","structs":[{"struct":"Foo","fields":[{"field":"Bar","offsets":[{"offset":8,"versions":["1.0.0","1.1.0"]}]}]}]}]}]}`)
+
+	result := compareGoOffsets(current, proposed)
+	if !result.HasUpdates {
+		t.Fatalf("expected hasUpdates")
+	}
+	if len(result.Mods) != 1 || !result.Mods[0].IsNew {
+		t.Fatalf("expected the module to be new: %+v", result.Mods)
+	}
+	if result.Mods[0].IsRemoved {
+		t.Fatalf("nothing is removed when there is no installed manifest")
+	}
+	for _, minor := range result.Mods[0].MinorVersions {
+		for _, ver := range minor.Versions {
+			if !ver.IsNew {
+				t.Fatalf("version %q should be marked new", ver.Version)
+			}
+		}
+	}
+}
+
+func TestEncodeGoOffsets(t *testing.T) {
+	// Empty input clears the key rather than writing the JSON string `""`, which
+	// is what the chart writes for a placeholder ConfigMap.
+	encoded, err := encodeGoOffsets(nil)
+	if err != nil {
+		t.Fatalf("encodeGoOffsets(nil): %v", err)
+	}
+	if encoded != "" {
+		t.Fatalf("expected empty string, got %q", encoded)
+	}
+
+	// Non-empty input is stored JSON-encoded, matching `odigos pro update-offsets`.
+	encoded, err = encodeGoOffsets([]byte(`{"timestamp":"2026-07-30T00:00:00Z"}`))
+	if err != nil {
+		t.Fatalf("encodeGoOffsets: %v", err)
+	}
+	var decoded string
+	if err := json.Unmarshal([]byte(encoded), &decoded); err != nil {
+		t.Fatalf("stored value is not a JSON string: %v", err)
+	}
+	if decoded != `{"timestamp":"2026-07-30T00:00:00Z"}` {
+		t.Fatalf("round-trip mismatch: %q", decoded)
+	}
+}

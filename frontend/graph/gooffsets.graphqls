@@ -6,6 +6,14 @@
 # =====================
 
 type GoOffsets {
+  # False when the odigos-go-offsets ConfigMap is absent from the cluster (a
+  # partial install, or a manual delete). Reads stay successful so the UI can
+  # say so. Instrumentation continues either way: odiglet falls back to the
+  # offsets compiled into the agent, and this ConfigMap only supplies a
+  # readable copy that can be listed and updated. A missing one does block any
+  # odiglet pod that restarts, since the DaemonSet mounts it. An update
+  # recreates it.
+  installed: Boolean!
   timestamp: String!
   mods: [GoOffsetModule!]!
 }

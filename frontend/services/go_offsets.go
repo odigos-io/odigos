@@ -10,11 +10,13 @@ import (
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,9 +24,15 @@ import (
 // GetGoOffsets returns parsed go_offset_results.json from the
 // odigos-go-offsets ConfigMap in the Odigos namespace.
 func GetGoOffsets(ctx context.Context) (*model.GoOffsets, error) {
-	content, err := getGoOffsetsRaw(ctx)
+	content, installed, err := getGoOffsetsRaw(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if !installed {
+		// Absence is a cluster state the UI can explain, not a read failure: the
+		// chart owns this ConfigMap, so a missing one means a partial install or a
+		// manual delete. Failing the query here would render as an empty table.
+		return &model.GoOffsets{Installed: false, Mods: []*model.GoOffsetModule{}}, nil
 	}
 
 	parsed, err := parseGoOffsetsContent(content)
@@ -32,10 +40,15 @@ func GetGoOffsets(ctx context.Context) (*model.GoOffsets, error) {
 		return nil, err
 	}
 
-	return goOffsetsToModel(parsed), nil
+	offsets := goOffsetsToModel(parsed)
+	offsets.Installed = true
+	return offsets, nil
 }
 
-func getGoOffsetsRaw(ctx context.Context) (string, error) {
+// getGoOffsetsRaw reads the ConfigMap's offsets payload. The second return
+// reports whether the ConfigMap exists: callers distinguish "not installed"
+// from a genuine read failure, which read as the same empty table otherwise.
+func getGoOffsetsRaw(ctx context.Context) (string, bool, error) {
 	ns := env.GetCurrentNamespace()
 
 	var cm corev1.ConfigMap
@@ -43,16 +56,21 @@ func getGoOffsetsRaw(ctx context.Context) (string, error) {
 		Namespace: ns,
 		Name:      k8sconsts.GoOffsetsConfigMap,
 	}, &cm)
+	if apierrors.IsNotFound(err) {
+		return "", false, nil
+	}
 	if err != nil {
-		return "", fmt.Errorf("failed to get ConfigMap %s/%s: %w", ns, k8sconsts.GoOffsetsConfigMap, err)
+		return "", false, fmt.Errorf("failed to get ConfigMap %s/%s: %w", ns, k8sconsts.GoOffsetsConfigMap, err)
 	}
 
+	// A ConfigMap without the key is malformed rather than absent, so it stays an
+	// error: recreating it would silently discard whatever else is in there.
 	content, ok := cm.Data[k8sconsts.GoOffsetsFileName]
 	if !ok {
-		return "", fmt.Errorf("key %q not found in ConfigMap %s/%s", k8sconsts.GoOffsetsFileName, ns, k8sconsts.GoOffsetsConfigMap)
+		return "", false, fmt.Errorf("key %q not found in ConfigMap %s/%s", k8sconsts.GoOffsetsFileName, ns, k8sconsts.GoOffsetsConfigMap)
 	}
 
-	return content, nil
+	return content, true, nil
 }
 
 func parseGoOffsetsContent(content string) (*versionedModules, error) {
@@ -221,13 +239,18 @@ func compareVersions(a, b string) bool {
 // against the installed ConfigMap without writing. The result is the current
 // offsets plus versions/modules that would be added by an update.
 func CheckGoOffsetsUpdates(ctx context.Context, content string) (*model.GoOffsetsUpdateCheck, error) {
-	currentRaw, err := getGoOffsetsRaw(ctx)
+	currentRaw, installed, err := getGoOffsetsRaw(ctx)
 	if err != nil {
 		return nil, err
 	}
-	current, err := parseGoOffsetsContent(currentRaw)
-	if err != nil {
-		return nil, err
+	// With no ConfigMap the installed set is empty, so every module reads as new
+	// and the update becomes the way to put the manifest back.
+	current := &versionedModules{Mods: []*jsonModule{}}
+	if installed {
+		current, err = parseGoOffsetsContent(currentRaw)
+		if err != nil {
+			return nil, err
+		}
 	}
 	proposed, err := parseGoOffsetsFile(content)
 	if err != nil {
@@ -425,10 +448,42 @@ func UpdateGoOffsets(ctx context.Context, content string) error {
 	return writeGoOffsetsConfigMap(ctx, []byte(content))
 }
 
+// Helm refuses to adopt a resource it did not create, so a ConfigMap this
+// service recreates has to carry the release's ownership metadata or the next
+// `helm upgrade` fails on it. The values are copied from a sibling object the
+// chart owns rather than guessed, since the release name is installer's choice.
+const (
+	helmManagedByLabel        = "app.kubernetes.io/managed-by"
+	helmReleaseNameAnnotation = "meta.helm.sh/release-name"
+	helmReleaseNsAnnotation   = "meta.helm.sh/release-namespace"
+)
+
+func encodeGoOffsets(data []byte) (string, error) {
+	if len(data) == 0 {
+		return "", nil
+	}
+	encoded, err := json.Marshal(string(data))
+	if err != nil {
+		return "", fmt.Errorf("failed to encode go offsets: %w", err)
+	}
+	return string(encoded), nil
+}
+
 func writeGoOffsetsConfigMap(ctx context.Context, data []byte) error {
 	ns := env.GetCurrentNamespace()
+	configMaps := kube.DefaultClient.CoreV1().ConfigMaps(ns)
 
-	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
+	encoded, err := encodeGoOffsets(data)
+	if err != nil {
+		return err
+	}
+
+	cm, err := configMaps.Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		// The chart normally owns this object; recreating it here is what makes an
+		// update a recovery path after the ConfigMap was deleted.
+		return createGoOffsetsConfigMap(ctx, ns, encoded)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to get ConfigMap %s/%s: %w", ns, k8sconsts.GoOffsetsConfigMap, err)
 	}
@@ -436,21 +491,72 @@ func writeGoOffsetsConfigMap(ctx context.Context, data []byte) error {
 	if cm.Data == nil {
 		cm.Data = make(map[string]string)
 	}
+	cm.Data[k8sconsts.GoOffsetsFileName] = encoded
 
-	if len(data) == 0 {
-		cm.Data[k8sconsts.GoOffsetsFileName] = ""
-	} else {
-		encoded, err := json.Marshal(string(data))
-		if err != nil {
-			return fmt.Errorf("failed to encode go offsets: %w", err)
-		}
-		cm.Data[k8sconsts.GoOffsetsFileName] = string(encoded)
-	}
-
-	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
+	updated, err := configMaps.Update(ctx, cm, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update ConfigMap %s/%s: %w", ns, k8sconsts.GoOffsetsConfigMap, err)
 	}
 
+	awaitGoOffsetsCache(ctx, ns, updated.ResourceVersion)
+	return nil
+}
+
+// Writes go through the live API client while reads are served from an informer
+// cache, so a write that the API server has accepted is not necessarily visible
+// to the next read. The UI refetches the moment this mutation resolves, which
+// without this wait hands it back the state it just replaced. Best effort: the
+// write already succeeded, so a cache that never catches up is not an error.
+func awaitGoOffsetsCache(ctx context.Context, ns, resourceVersion string) {
+	const (
+		timeout  = 3 * time.Second
+		interval = 25 * time.Millisecond
+	)
+
+	deadline := time.Now().Add(timeout)
+	for {
+		var cached corev1.ConfigMap
+		err := kube.CacheClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: k8sconsts.GoOffsetsConfigMap}, &cached)
+		if err == nil && cached.ResourceVersion == resourceVersion {
+			return
+		}
+		if time.Now().After(deadline) || ctx.Err() != nil {
+			return
+		}
+		time.Sleep(interval)
+	}
+}
+
+func createGoOffsetsConfigMap(ctx context.Context, ns, encoded string) error {
+	labels := map[string]string{k8sconsts.OdigosSystemLabelKey: "true"}
+	annotations := map[string]string{}
+
+	// Best effort: without the sibling the ConfigMap is still created and odiglet
+	// can mount it, but a later `helm upgrade` needs the release to adopt it.
+	if owner, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{}); err == nil {
+		if v := owner.Labels[helmManagedByLabel]; v != "" {
+			labels[helmManagedByLabel] = v
+		}
+		for _, key := range []string{helmReleaseNameAnnotation, helmReleaseNsAnnotation} {
+			if v := owner.Annotations[key]; v != "" {
+				annotations[key] = v
+			}
+		}
+	}
+
+	created, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Create(ctx, &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        k8sconsts.GoOffsetsConfigMap,
+			Namespace:   ns,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Data: map[string]string{k8sconsts.GoOffsetsFileName: encoded},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create ConfigMap %s/%s: %w", ns, k8sconsts.GoOffsetsConfigMap, err)
+	}
+
+	awaitGoOffsetsCache(ctx, ns, created.ResourceVersion)
 	return nil
 }

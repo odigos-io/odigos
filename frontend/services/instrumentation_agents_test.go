@@ -93,14 +93,12 @@ func TestGetInstrumentationAgents_communityDistroMetadata(t *testing.T) {
 	assert.Equal(t, model.InstrumentationAgentTierCommunity, goAgent.Tier)
 	assert.Equal(t, "go-runtime", goAgent.RuntimeEnvironment)
 	assert.Equal(t, ">= 1.19", goAgent.SupportedRuntimeVersions)
-	assert.Empty(t, goAgent.FallbackDistroNames)
 
-	// Node.js instruments through an SDK agent and has a version-fallback chain.
+	// Node.js instruments through an SDK agent rather than eBPF.
 	nodeAgent := agentByLanguage(agents, string(common.JavascriptProgrammingLanguage))
 	require.NotNil(t, nodeAgent)
 	assert.Equal(t, "nodejs-community", nodeAgent.DistroName)
 	assert.Equal(t, model.InstrumentationAgentKindCodeAgent, nodeAgent.Kind)
-	assert.Equal(t, []string{"nodejs-community-14"}, nodeAgent.FallbackDistroNames)
 
 	// Bounded ranges must survive verbatim — the UI needs the upper bound.
 	phpAgent := agentByLanguage(agents, string(common.PhpProgrammingLanguage))
@@ -189,4 +187,65 @@ func TestGetInstrumentationAgents_sourcesCountedOncePerLanguage(t *testing.T) {
 func TestGetInstrumentationAgents_noProvider(t *testing.T) {
 	_, err := GetInstrumentationAgents(context.Background(), newAgentsClient(), nil)
 	assert.Error(t, err)
+}
+
+// A defaulter shaped like the enterprise one: its default for a language differs
+// from the community default, which is what gives that language two rows.
+type testDefaulter struct {
+	defaults map[common.ProgrammingLanguage]string
+}
+
+func (d testDefaulter) GetDefaultDistroNames() map[common.ProgrammingLanguage]string {
+	return d.defaults
+}
+
+func (d testDefaulter) GetDefaultVmDistroNames() map[common.ProgrammingLanguage]string {
+	return d.defaults
+}
+
+func TestGetInstrumentationAgents_listsCommunityAlternative(t *testing.T) {
+	getter, err := distros.NewCommunityGetter()
+	require.NoError(t, err)
+	provider, err := distros.NewProvider(testDefaulter{defaults: map[common.ProgrammingLanguage]string{
+		common.JavascriptProgrammingLanguage: "nodejs-community-14",
+		common.GoProgrammingLanguage:         "golang-community",
+	}}, getter)
+	require.NoError(t, err)
+
+	objects := []client.Object{
+		instrumentationConfig("deployment-on-default",
+			testContainer{name: "a", language: common.JavascriptProgrammingLanguage, distro: "nodejs-community-14", agentEnabled: true},
+		),
+		instrumentationConfig("deployment-on-community",
+			testContainer{name: "b", language: common.JavascriptProgrammingLanguage, distro: "nodejs-community", agentEnabled: true},
+		),
+		instrumentationConfig("deployment-not-enabled",
+			testContainer{name: "c", language: common.JavascriptProgrammingLanguage, agentEnabled: false},
+		),
+	}
+
+	agents, err := GetInstrumentationAgents(context.Background(), newAgentsClient(objects...), provider)
+	require.NoError(t, err)
+
+	byName := make(map[string]*model.InstrumentationAgent, len(agents))
+	for _, a := range agents {
+		byName[a.DistroName] = a
+	}
+
+	// Javascript carries the tier default and the community alternative; Go's two
+	// defaulters agree, so it stays a single row.
+	require.Len(t, agents, 3)
+	require.NotNil(t, byName["nodejs-community-14"])
+	require.NotNil(t, byName["nodejs-community"])
+	require.NotNil(t, byName["golang-community"])
+
+	// Counts follow the distro each container actually runs.
+	assert.Equal(t, 1, byName["nodejs-community"].InstrumentedContainers)
+	assert.Equal(t, 1, byName["nodejs-community"].Sources)
+
+	// The container with no agent has no distro of its own, so it lands on the
+	// language's default row rather than disappearing.
+	assert.Equal(t, 1, byName["nodejs-community-14"].InstrumentedContainers)
+	assert.Equal(t, 1, byName["nodejs-community-14"].UninstrumentedContainers)
+	assert.Equal(t, 2, byName["nodejs-community-14"].Sources)
 }

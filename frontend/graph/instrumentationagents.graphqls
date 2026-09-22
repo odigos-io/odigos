@@ -30,9 +30,6 @@ type InstrumentationAgent {
   # Both are empty for distros that declare no runtime environment.
   runtimeEnvironment: String!
   supportedRuntimeVersions: String!
-  # Distros reached through the version-fallback chain when the detected
-  # runtime version is below supportedRuntimeVersions, newest to oldest.
-  fallbackDistroNames: [String!]!
   # Containers of this language in the cluster, split by whether the
   # instrumentor enabled an agent for them.
   instrumentedContainers: Int!

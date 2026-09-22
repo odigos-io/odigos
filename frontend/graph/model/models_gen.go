@@ -643,6 +643,7 @@ type GoOffsetVersionUpdate struct {
 }
 
 type GoOffsets struct {
+	Installed bool              `json:"installed"`
 	Timestamp string            `json:"timestamp"`
 	Mods      []*GoOffsetModule `json:"mods"`
 }
@@ -1515,7 +1516,6 @@ type InstrumentationAgent struct {
 	Kind                     InstrumentationAgentKind `json:"kind"`
 	RuntimeEnvironment       string                   `json:"runtimeEnvironment"`
 	SupportedRuntimeVersions string                   `json:"supportedRuntimeVersions"`
-	FallbackDistroNames      []string                 `json:"fallbackDistroNames"`
 	InstrumentedContainers   int                      `json:"instrumentedContainers"`
 	UninstrumentedContainers int                      `json:"uninstrumentedContainers"`
 	Sources                  int                      `json:"sources"`
