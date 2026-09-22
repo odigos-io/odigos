@@ -55,7 +55,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&DeploymentReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -68,7 +68,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&DaemonSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -81,7 +81,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-statefulset").
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&StatefulSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -94,7 +94,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-cronjob").
 		For(&batchv1.CronJob{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&CronJobReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -107,7 +107,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-namespace").
 		For(&v1.Namespace{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&NamespaceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
