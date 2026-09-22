@@ -45,32 +45,28 @@ func TestCommonApplicationTelemetryConfig_ReceiversAreNotSharedBetweenCalls(t *t
 	assert.False(t, leaked, "community config must not inherit the receiver from a prior enterprise-tier call")
 }
 
-func TestMetricsConfig_EbpfReceiverPipelineGatedByTier(t *testing.T) {
-	for _, tc := range []struct {
-		name      string
-		tier      common.OdigosTier
-		wantWired bool
-	}{
-		{"community omits the receiver from the metrics pipeline", common.CommunityOdigosTier, false},
-		{"onprem wires the receiver into the metrics pipeline", common.OnPremOdigosTier, true},
-		{"cloud wires the receiver into the metrics pipeline", common.CloudOdigosTier, true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
+// The eBPF receiver carries traces and logs only. JVM runtime metrics reach the node collector
+// over OTLP, so no tier wires the receiver into a metrics pipeline.
+func TestMetricsConfig_EbpfReceiverNotInMetricsPipelines(t *testing.T) {
+	for _, tier := range []common.OdigosTier{common.CommunityOdigosTier, common.OnPremOdigosTier, common.CloudOdigosTier} {
+		t.Run(string(tier), func(t *testing.T) {
 			// kubeletstats keeps the pipeline alive at every tier, so the assertion below is
 			// about the eBPF receiver only and not about the pipeline being dropped.
 			cfg := MetricsConfig(&odigosv1.CollectorsGroup{}, MetricsConfigOptions{
-				CommonSignalConfig: CommonSignalConfig{Tier: tc.tier},
+				CommonSignalConfig: CommonSignalConfig{Tier: tier},
 				MetricsConfigSettings: &odigosv1.CollectorsGroupMetricsCollectionSettings{
 					KubeletStats: &common.MetricsSourceKubeletStatsConfiguration{},
 				},
 			})
 
 			pl, ok := cfg.Service.Pipelines[odigosMetricsPipelineName]
-			require.True(t, ok, "expected a metrics pipeline for tier %q", tc.tier)
+			require.True(t, ok, "expected a metrics pipeline for tier %q", tier)
 			require.True(t, contains(pl.Receivers, kubeletstatsReceiverName),
 				"precondition: kubeletstats should be wired regardless of tier")
-			assert.Equal(t, tc.wantWired, contains(pl.Receivers, odigosEbpfReceiverName),
-				"metrics pipeline receivers %v", pl.Receivers)
+			for name, pl := range cfg.Service.Pipelines {
+				assert.False(t, contains(pl.Receivers, odigosEbpfReceiverName),
+					"pipeline %s receivers %v", name, pl.Receivers)
+			}
 		})
 	}
 }
