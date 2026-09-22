@@ -686,8 +686,14 @@ type OdigosConfiguration struct {
 	OdigosOwnTelemetryStore *OdigosOwnTelemetryConfiguration `json:"odigosOwnTelemetryStore,omitempty" yaml:"odigosOwnTelemetryStore"`
 
 	// ImagePullSecrets to use for Odigos components and the agents init container.
-	// For k8s-init-container, these secrets are copied into instrumented namespaces.
+	// The pod webhook always injects these names onto init-container pods.
+	// Secrets are copied into instrumented namespaces only when SyncOdigosPullSecrets is set.
 	ImagePullSecrets []string `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets"`
+
+	// SyncOdigosPullSecrets copies ImagePullSecrets from the Odigos namespace into
+	// instrumented namespaces. Opt-in; intended for k8s-init-container with a private
+	// registry (enterprise registry or a mirrored registry). Off by default.
+	SyncOdigosPullSecrets bool `json:"syncOdigosPullSecrets,omitempty" yaml:"syncOdigosPullSecrets"`
 
 	// global configurations for sampling.
 	Sampling *SamplingConfiguration `json:"sampling,omitempty" yaml:"sampling"`

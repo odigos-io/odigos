@@ -2,6 +2,7 @@ package pro
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +26,7 @@ func TestEnterpriseRegistryPullSecretLabels(t *testing.T) {
 	}
 }
 
-func TestCopyImagePullSecretsIfMissing(t *testing.T) {
+func TestCopyImagePullSecrets(t *testing.T) {
 	t.Parallel()
 
 	scheme := runtime.NewScheme()
@@ -49,7 +50,7 @@ func TestCopyImagePullSecretsIfMissing(t *testing.T) {
 	t.Run("no-op when sources missing", func(t *testing.T) {
 		t.Parallel()
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
-		if err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"}); err != nil {
+		if err := CopyImagePullSecrets(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -57,16 +58,16 @@ func TestCopyImagePullSecretsIfMissing(t *testing.T) {
 	t.Run("same namespace is a no-op", func(t *testing.T) {
 		t.Parallel()
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(enterprise.DeepCopy()).Build()
-		if err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "odigos-system", []string{k8sconsts.OdigosEnterpriseRegistryPullSecretName}); err != nil {
+		if err := CopyImagePullSecrets(context.Background(), c, c, "odigos-system", "odigos-system", []string{k8sconsts.OdigosEnterpriseRegistryPullSecretName}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
 
-	t.Run("copies configured secrets with system-object label", func(t *testing.T) {
+	t.Run("copies configured secrets with copied-pull-secret label", func(t *testing.T) {
 		t.Parallel()
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(enterprise.DeepCopy(), mirror.DeepCopy()).Build()
 		names := []string{"mirror-pull", k8sconsts.OdigosEnterpriseRegistryPullSecretName}
-		if err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", names); err != nil {
+		if err := CopyImagePullSecrets(context.Background(), c, c, "odigos-system", "app", names); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
@@ -75,13 +76,38 @@ func TestCopyImagePullSecretsIfMissing(t *testing.T) {
 			if err := c.Get(context.Background(), client.ObjectKey{Namespace: "app", Name: name}, &dest); err != nil {
 				t.Fatalf("expected copied secret %q: %v", name, err)
 			}
-			if dest.Labels[k8sconsts.OdigosSystemLabelKey] != k8sconsts.OdigosSystemLabelValue {
-				t.Fatalf("expected system-object label on copied secret %q", name)
+			if dest.Labels[k8sconsts.OdigosCopiedImagePullSecretLabel] != k8sconsts.OdigosSystemLabelValue {
+				t.Fatalf("expected copied-image-pull-secret label on %q", name)
 			}
 		}
 	})
 
-	t.Run("leaves existing dest secret in place", func(t *testing.T) {
+	t.Run("updates dest when it is an Odigos copy", func(t *testing.T) {
+		t.Parallel()
+		existing := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "mirror-pull",
+				Namespace: "app",
+				Labels:    CopiedImagePullSecretLabels(),
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+			Data: map[string][]byte{corev1.DockerConfigJsonKey: []byte("stale")},
+		}
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(mirror.DeepCopy(), existing).Build()
+		if err := CopyImagePullSecrets(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"}); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		var dest corev1.Secret
+		if err := c.Get(context.Background(), client.ObjectKey{Namespace: "app", Name: "mirror-pull"}, &dest); err != nil {
+			t.Fatalf("expected dest secret: %v", err)
+		}
+		if string(dest.Data[corev1.DockerConfigJsonKey]) != "mirror-auth" {
+			t.Fatalf("expected Odigos copy to be updated, got %q", dest.Data[corev1.DockerConfigJsonKey])
+		}
+	})
+
+	t.Run("fails when dest secret already exists", func(t *testing.T) {
 		t.Parallel()
 		existing := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -92,8 +118,9 @@ func TestCopyImagePullSecretsIfMissing(t *testing.T) {
 			Data: map[string][]byte{corev1.DockerConfigJsonKey: []byte("existing")},
 		}
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(mirror.DeepCopy(), existing).Build()
-		if err := CopyImagePullSecretsIfMissing(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"}); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+		err := CopyImagePullSecrets(context.Background(), c, c, "odigos-system", "app", []string{"mirror-pull"})
+		if !errors.Is(err, ErrDestAlreadyExists) {
+			t.Fatalf("expected ErrDestAlreadyExists, got %v", err)
 		}
 
 		var dest corev1.Secret
@@ -104,4 +131,19 @@ func TestCopyImagePullSecretsIfMissing(t *testing.T) {
 			t.Fatalf("existing secret was overwritten")
 		}
 	})
+}
+
+func TestIgnoreDestAlreadyExists(t *testing.T) {
+	t.Parallel()
+
+	if err := IgnoreDestAlreadyExists(nil); err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+	if err := IgnoreDestAlreadyExists(ErrDestAlreadyExists); err != nil {
+		t.Fatalf("expected already-exists to be ignored, got %v", err)
+	}
+	joined := errors.Join(ErrDestAlreadyExists, errors.New("other"))
+	if err := IgnoreDestAlreadyExists(joined); err == nil || errors.Is(err, ErrDestAlreadyExists) {
+		t.Fatalf("expected other error to remain, got %v", err)
+	}
 }

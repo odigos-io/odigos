@@ -7,3 +7,7 @@ import (
 var OdigosSystem = map[string]string{
 	k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
 }
+
+var OdigosCopiedImagePullSecret = map[string]string{
+	k8sconsts.OdigosCopiedImagePullSecretLabel: k8sconsts.OdigosSystemLabelValue,
+}
