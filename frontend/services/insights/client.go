@@ -398,7 +398,110 @@ func (c *Client) GetStorageHealth(ctx context.Context) (*StorageHealth, error) {
 	return &result, nil
 }
 
+// ListRecommendations is GET /api/v1/recommendations. Stale rows (the latest
+// mining run no longer produced them) are hidden unless IncludeStale is set.
+func (c *Client) ListRecommendations(ctx context.Context, params ListRecommendationsParams) ([]Recommendation, error) {
+	endpoint := c.apiEndpoint("recommendations")
+	query := endpoint.Query()
+	if params.Kind != nil {
+		query.Set("kind", string(*params.Kind))
+	}
+	if params.State != nil {
+		query.Set("state", string(*params.State))
+	}
+	if params.TransactionID != nil {
+		query.Set("transaction_id", strconv.FormatInt(*params.TransactionID, 10))
+	}
+	addOptionalString(query, "service", params.Service)
+	addOptionalString(query, "namespace", params.Namespace)
+	if params.IncludeStale != nil {
+		query.Set("include_stale", strconv.FormatBool(*params.IncludeStale))
+	}
+	endpoint.RawQuery = query.Encode()
+	return doList[Recommendation](ctx, c, http.MethodGet, endpoint, nil)
+}
+
+// GetRecommendation is GET /api/v1/recommendations/{id}.
+func (c *Client) GetRecommendation(ctx context.Context, id string) (*Recommendation, error) {
+	var result Recommendation
+	if err := c.do(ctx, http.MethodGet, c.apiEndpoint("recommendations", id), nil, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ApplyRecommendations turns each recommendation into an enforced rule on its
+// transaction's guardrail. An item may carry an edited spec, which is applied
+// instead of the mined one.
+func (c *Client) ApplyRecommendations(ctx context.Context, items []RecommendationApplyItem) (*RecommendationBulkResult, error) {
+	return c.recommendationBulk(ctx, "apply", RecommendationApplyRequest{Items: items})
+}
+
+// DismissRecommendations rejects without creating a rule. Sticky across
+// re-mining: the same relation found again stays dismissed.
+func (c *Client) DismissRecommendations(ctx context.Context, ids []string) (*RecommendationBulkResult, error) {
+	return c.recommendationBulk(ctx, "dismiss", RecommendationIDsRequest{IDs: ids})
+}
+
+// RestoreRecommendations moves dismissed recommendations back to open.
+func (c *Client) RestoreRecommendations(ctx context.Context, ids []string) (*RecommendationBulkResult, error) {
+	return c.recommendationBulk(ctx, "restore", RecommendationIDsRequest{IDs: ids})
+}
+
+// RevertRecommendations removes the rule an earlier apply added and moves the
+// recommendation back to open.
+func (c *Client) RevertRecommendations(ctx context.Context, ids []string) (*RecommendationBulkResult, error) {
+	return c.recommendationBulk(ctx, "revert", RecommendationIDsRequest{IDs: ids})
+}
+
+// recommendationBulk posts one bulk action. A batch where some items failed
+// answers 422 with the per-item errors in the same envelope as a success, so
+// that body is decoded rather than turned into an error.
+func (c *Client) recommendationBulk(ctx context.Context, action string, body any) (*RecommendationBulkResult, error) {
+	var result RecommendationBulkResult
+	endpoint := c.apiEndpoint("recommendations", action)
+	if err := c.doAccepting(ctx, http.MethodPost, endpoint, body, &result, isPartialFailure); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func isPartialFailure(statusCode int) bool {
+	return statusCode == http.StatusUnprocessableEntity
+}
+
+// PreviewRecommendation evaluates an edited spec against the transaction's
+// stored relation samples without persisting anything.
+func (c *Client) PreviewRecommendation(ctx context.Context, transactionID int64, spec CorrelationSpec) (*RecommendationPreview, error) {
+	var result RecommendationPreview
+	body := RecommendationPreviewRequest{TransactionID: transactionID, Spec: spec}
+	if err := c.do(ctx, http.MethodPost, c.apiEndpoint("recommendations", "preview"), body, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// RecomputeRecommendations queues a mining run: for one transaction, for one
+// service's guardrail card, or — with an empty request — for every promoted
+// transaction with unmined samples and every fully-learned service.
+//
+// The engine rejects a request that names both a transaction and a service, or
+// a namespace without its service, so the caller picks one shape. The run is
+// asynchronous: the engine answers 202 with no body and no job id, and the
+// caller polls the list.
+func (c *Client) RecomputeRecommendations(ctx context.Context, request RecommendationRecomputeRequest) error {
+	return c.do(ctx, http.MethodPost, c.apiEndpoint("recommendations", "recompute"), request, nil)
+}
+
 func (c *Client) do(ctx context.Context, method string, endpoint *url.URL, body any, result any) error {
+	return c.doAccepting(ctx, method, endpoint, body, result, nil)
+}
+
+// doAccepting is do, plus a predicate naming the non-2xx statuses whose body is
+// a result rather than an error. The recommendation bulk actions need it: a
+// partially failed batch answers 422 carrying the per-item errors, and the
+// caller wants those, not a generic request failure.
+func (c *Client) doAccepting(ctx context.Context, method string, endpoint *url.URL, body any, result any, decodeStatus func(int) bool) error {
 	var requestBody io.Reader
 	if body != nil {
 		encoded, err := json.Marshal(body)
@@ -428,7 +531,9 @@ func (c *Client) do(ctx context.Context, method string, endpoint *url.URL, body 
 		return fmt.Errorf("read insights response: %w", err)
 	}
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		return decodeAPIError(response.StatusCode, responseBody)
+		if result == nil || decodeStatus == nil || !decodeStatus(response.StatusCode) {
+			return decodeAPIError(response.StatusCode, responseBody)
+		}
 	}
 	if result == nil || response.StatusCode == http.StatusNoContent {
 		return nil

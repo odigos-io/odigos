@@ -57,6 +57,9 @@ import type {
   InsightsObservationSummary,
   InsightsPolicy,
   InsightsPromoteResult,
+  InsightsRecommendation,
+  InsightsRecommendationBulkResult,
+  InsightsRecommendationPreview,
   InsightsServiceStat,
   InsightsServiceProfile,
   InsightsBlastRadiusSubgraph,
@@ -128,6 +131,8 @@ import {
   GET_INSIGHTS_CATALOG,
   GET_INSIGHTS_SYSTEM_SETTINGS,
   GET_INSIGHTS_STORAGE_HEALTH,
+  GET_INSIGHTS_RECOMMENDATIONS,
+  GET_INSIGHTS_RECOMMENDATION,
   DESCRIBE_ODIGOS,
   DESCRIBE_SOURCE,
   DOWNLOAD_DIAGNOSE,
@@ -189,6 +194,12 @@ import {
   DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,
   REOPEN_INSIGHTS_GUARDRAIL_VIOLATION,
   UPDATE_INSIGHTS_SYSTEM_SETTINGS,
+  APPLY_INSIGHTS_RECOMMENDATIONS,
+  DISMISS_INSIGHTS_RECOMMENDATIONS,
+  RESTORE_INSIGHTS_RECOMMENDATIONS,
+  REVERT_INSIGHTS_RECOMMENDATIONS,
+  PREVIEW_INSIGHTS_RECOMMENDATION,
+  RECOMPUTE_INSIGHTS_RECOMMENDATIONS,
 } from '@/graphql';
 
 // The CREATE_DATA_STREAM op is intentionally absent: the standalone backend
@@ -642,6 +653,38 @@ const operations: OdigosApiOperations = {
   UPDATE_INSIGHTS_SYSTEM_SETTINGS: {
     document: UPDATE_INSIGHTS_SYSTEM_SETTINGS,
     transformResult: (raw: unknown) => (raw as { updateInsightsSystemSettings?: InsightsSystemSettings } | null | undefined)?.updateInsightsSystemSettings,
+  },
+  GET_INSIGHTS_RECOMMENDATIONS: {
+    document: GET_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { insights?: { recommendations?: InsightsRecommendation[] } } | null | undefined)?.insights?.recommendations,
+  },
+  GET_INSIGHTS_RECOMMENDATION: {
+    document: GET_INSIGHTS_RECOMMENDATION,
+    transformResult: (raw: unknown) => (raw as { insights?: { recommendation?: InsightsRecommendation } } | null | undefined)?.insights?.recommendation,
+  },
+  APPLY_INSIGHTS_RECOMMENDATIONS: {
+    document: APPLY_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { applyInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.applyInsightsRecommendations,
+  },
+  DISMISS_INSIGHTS_RECOMMENDATIONS: {
+    document: DISMISS_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { dismissInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.dismissInsightsRecommendations,
+  },
+  RESTORE_INSIGHTS_RECOMMENDATIONS: {
+    document: RESTORE_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { restoreInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.restoreInsightsRecommendations,
+  },
+  REVERT_INSIGHTS_RECOMMENDATIONS: {
+    document: REVERT_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { revertInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.revertInsightsRecommendations,
+  },
+  PREVIEW_INSIGHTS_RECOMMENDATION: {
+    document: PREVIEW_INSIGHTS_RECOMMENDATION,
+    transformResult: (raw: unknown) => (raw as { previewInsightsRecommendation?: InsightsRecommendationPreview } | null | undefined)?.previewInsightsRecommendation,
+  },
+  RECOMPUTE_INSIGHTS_RECOMMENDATIONS: {
+    document: RECOMPUTE_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { recomputeInsightsRecommendations?: boolean } | null | undefined)?.recomputeInsightsRecommendations,
   },
   // recommendations
   GET_RECOMMENDATIONS: { document: GET_RECOMMENDATIONS },

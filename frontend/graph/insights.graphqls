@@ -819,6 +819,345 @@ input InsightsGuardrailSeedInput {
   items: String!
 }
 
+# Guardrail recommendations (rules the engine mined and offers for quick apply)
+
+"""
+What applying the recommendation would write. `attribute_correlation` adds one
+cross-span rule to a transaction's guardrail; `service_guardrail` pre-fills a
+service's allowlist rules from the profile it was observed to follow.
+
+The two kinds share one type: the fields a kind does not carry are null, so a
+client switches on `kind` rather than on a union.
+"""
+enum InsightsRecommendationKind {
+  attribute_correlation
+  service_guardrail
+}
+
+"""
+Lifecycle bucket. `open` awaits a decision, `applied` became a guardrail rule,
+`dismissed` was rejected (sticky across re-mining).
+"""
+enum InsightsRecommendationState {
+  open
+  applied
+  dismissed
+}
+
+"""
+How much the engine trusts the relation. `low` means live traffic has already
+broken it, so applying would fire violations immediately.
+"""
+enum InsightsRecommendationConfidenceLevel {
+  high
+  medium
+  low
+}
+
+"""
+One stored sample the relation held on, with the two values it compared.
+"""
+type InsightsRecommendationExample {
+  traceId: String!
+  leftValue: String!
+  rightValue: String!
+  observedAt: String!
+}
+
+"""
+Why the engine believes the recommendation. `level` and `reasons` are
+render-ready for both kinds; everything else needs the kind for context.
+
+The stored-sample stats (`holdRatio`, `observed`, `held`, `distinct`) describe a
+mined relation and are null on a `service_guardrail`. The live counters come
+from evaluating the open recommendation silently against real traffic and keep
+growing until it is applied or dismissed.
+"""
+type InsightsRecommendationConfidence {
+  level: InsightsRecommendationConfidenceLevel!
+  """
+  `attribute_correlation` only: held / observed on the stored samples (0..1).
+  """
+  holdRatio: Float
+  """
+  `attribute_correlation` only: stored samples where both values were present.
+  """
+  observed: Int
+  """
+  `attribute_correlation` only: of those, how many satisfied the relation.
+  """
+  held: Int
+  """
+  `attribute_correlation` only: distinct left-hand values seen agreeing. Guards
+  against two attributes that merely share a constant.
+  """
+  distinct: Int
+  """
+  What the lists were learned from. `attribute_correlation`: relation samples
+  the mining run looked at. `service_guardrail`: promoted transactions of the
+  service whose learned profile seeded the rules.
+  """
+  sampleCount: Int!
+  """
+  `attribute_correlation`: live traces the relation held on.
+  `service_guardrail`: the sum over `rules` of (liveChecked - liveViolated) —
+  rule checks, not traces, so one trace can count once per rule.
+  """
+  liveHeld: Int!
+  """
+  `attribute_correlation`: live traces the relation broke on.
+  `service_guardrail`: the sum over `rules` of liveViolated, again rule checks
+  rather than traces.
+  """
+  liveBroken: Int!
+  """
+  Null until the first live trace was evaluated. On a `service_guardrail` this
+  is the earliest of the listed rules' windows.
+  """
+  liveSince: String
+  """
+  Null until the first live trace was evaluated. On a `service_guardrail` this
+  is the latest of the listed rules' windows.
+  """
+  liveLast: String
+  """
+  Render-ready evidence lines, e.g. "Held on 50 of 50 stored samples". Prose for
+  both kinds — render them, do not parse them.
+  """
+  reasons: [String!]!
+}
+
+"""
+One allowlist rule a `service_guardrail` recommendation proposes, pre-filled
+from what the service was observed doing. Rules arrive in catalog order
+(callers, callees, egress, transactions) and only cover what the service does
+not enforce yet, so applying extends a guardrail and never overrides a rule an
+operator already set.
+"""
+type InsightsRecommendationRule {
+  """
+  Rule key: `allowed_callers`, `allowed_callees`, `allowed_egress` or
+  `allowed_transactions`. A String rather than an enum on purpose — the catalog
+  can gain keys without this schema changing under a running client.
+  """
+  rule: String!
+  """
+  Catalog label, e.g. "Allowed egress".
+  """
+  label: String!
+  """
+  One line on what the rule enforces, from the catalog.
+  """
+  description: String!
+  """
+  The allowlist an apply would write, sorted. Plain service names for
+  `allowed_callers` and `allowed_callees`, `host` or `host:port` for
+  `allowed_egress`, and the transaction kind joined to the operation by a
+  literal tab (U+0009) for `allowed_transactions` — split on that tab to render
+  the kind and the operation apart, never on a space.
+
+  An empty list is meaningful and strict rather than missing data: the service
+  was never seen doing this, so enforcing forbids all of it.
+  """
+  items: [String!]!
+  """
+  This rule's own level: `low` once live traffic already went outside the list,
+  `high` after enough silent checks held, `medium` otherwise. The card's
+  `confidence.level` is the weakest rule's.
+  """
+  confidence: InsightsRecommendationConfidenceLevel!
+  """
+  Live traces of this service checked silently against the proposed list.
+  """
+  liveChecked: Int!
+  """
+  Of those, how many carried something outside the list. Non-zero means real
+  traffic already disagrees with what was learned — look before enforcing.
+  """
+  liveViolated: Int!
+  """
+  Null until the first live trace was checked against this rule.
+  """
+  liveSince: String
+  """
+  Null until the first live trace was checked against this rule.
+  """
+  liveLast: String
+}
+
+"""
+One mined recommendation the operator can apply as-is, adjust and apply, or
+dismiss. The engine writes the presentation fields, so a client renders `title`,
+`summary`, `whyItMatters` and `confidence.reasons` without knowing what the
+numbers behind them mean.
+
+Both kinds share this type. The 16 non-null fields are the ones every kind
+carries; every nullable field belongs to exactly one kind and is null on the
+other, so read them after switching on `kind` — an absent field is "not this
+kind", never "false" or "zero".
+"""
+type InsightsRecommendation {
+  id: ID!
+  kind: InsightsRecommendationKind!
+  state: InsightsRecommendationState!
+  """
+  The latest mining run no longer produced this row: the relation stopped
+  holding, its samples aged out, or the service has nothing left to enforce.
+  Hidden from the list unless `includeStale` is set, and applying a stale
+  `service_guardrail` fails — recompute it first.
+  """
+  stale: Boolean!
+  """
+  Position among the scope's recommendations, 0 = strongest.
+  """
+  rank: Int!
+  """
+  The guardrail this would extend, with the same meaning as a guardrail's
+  scope/scopeKey: `transaction` for `attribute_correlation`, `service` for
+  `service_guardrail`.
+  """
+  scope: InsightsPolicyScope!
+  """
+  The scoped guardrail's key: the decimal transaction id for
+  `attribute_correlation`, `"<namespace>/<service>"` for `service_guardrail`.
+  """
+  scopeKey: String!
+  """
+  `attribute_correlation` only: the transaction the rule belongs to. Null on a
+  `service_guardrail`, which is scoped to the service rather than to one
+  transaction — so filtering `recommendations` by `transactionId` never returns
+  a service card.
+  """
+  transactionId: ID
+  """
+  `attribute_correlation` only: that transaction's kind.
+  """
+  transactionKind: InsightsTransactionKind
+  service: String!
+  namespace: String!
+  """
+  `attribute_correlation` only: that transaction's operation.
+  """
+  operation: String
+  """
+  One-line headline, e.g. "resolvePrincipal return.value matches getCart arg.0"
+  or "Lock down account-service". It carries no counts — use `rules` for those.
+  """
+  title: String!
+  """
+  One or two sentences on what was learned and what applying does.
+  """
+  summary: String!
+  """
+  The security story — what breaking this would mean, in plain words. Populated
+  for both kinds: the mined relation's own reasoning for
+  `attribute_correlation`, and a fixed sentence about first-appearance
+  detection for `service_guardrail`.
+  """
+  whyItMatters: String!
+  """
+  `attribute_correlation` only: how the two values relate — `exact` (identical),
+  `core` (identical after a constant prefix/suffix), `digits` (same numeric id),
+  `contains` (one value is embedded in the other).
+  """
+  transform: String
+  """
+  `attribute_correlation` only: guaranteed by the transport rather than by
+  business logic — the same field on both ends of one hop, such as a Kafka
+  message key on producer and consumer. A break means tampering in flight, not a
+  business-logic bypass, so it is mined at low severity and ranked after every
+  business relation.
+  """
+  transport: Boolean
+  """
+  `attribute_correlation` only: the exact rule `applyInsightsRecommendations`
+  would add to the transaction guardrail. Edit and pass it back to apply
+  something different. Null on a `service_guardrail` — read `rules` instead.
+  """
+  spec: InsightsCorrelationSpec
+  """
+  `service_guardrail` only: the allowlist rules proposed for enforcement, in
+  catalog order. Only rules the service does not enforce yet are listed, so this
+  can be empty on a card that has already been applied.
+  """
+  rules: [InsightsRecommendationRule!]
+  """
+  `service_guardrail` only: the rule keys an apply actually turned on. Set while
+  `state` is `applied`; rules listed in `rules` but missing here were left out
+  by the operator.
+  """
+  appliedRules: [String!]
+  confidence: InsightsRecommendationConfidence!
+  """
+  `attribute_correlation` only: up to three stored samples the relation held on.
+  """
+  examples: [InsightsRecommendationExample!]
+  """
+  `attribute_correlation` only: the transaction's guardrail already has a rule
+  on the same two attributes (e.g. written by hand), so applying would replace
+  it.
+  """
+  alreadyCovered: Boolean
+  minedAt: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type InsightsRecommendationItemError {
+  id: ID!
+  error: String!
+}
+
+"""
+Outcome of a bulk action. Items are independent — one failing does not stop the
+rest — so `done` and `errors` can both be non-empty.
+"""
+type InsightsRecommendationBulkResult {
+  done: Int!
+  failed: Int!
+  errors: [InsightsRecommendationItemError!]!
+}
+
+"""
+One recommendation to apply, optionally with the operator's edits. Each field
+belongs to one kind — sending a `spec` with a `service_guardrail` id is
+rejected for the whole batch even though the spec would be ignored.
+"""
+input InsightsRecommendationApplyItemInput {
+  id: ID!
+  """
+  `attribute_correlation` only: an edited rule applied instead of the mined one.
+  Left/right service, span and attr must match the recommendation; name,
+  severity, why, relation and extract regexes may differ.
+  """
+  spec: InsightsCorrelationSpecInput
+  """
+  `service_guardrail` only: which of the recommendation's `rules` to turn on, by
+  rule key. Omitting it — or passing an empty list — turns on every rule on the
+  card, so there is no way to spell "apply nothing": just do not send the item.
+  A key that is not on the card fails that item alone.
+  """
+  rules: [String!]
+}
+
+"""
+How a spec fares on the transaction's stored relation samples. Backs the
+"edit & apply" flow so the operator sees how often the rule would have held
+before enforcing it.
+"""
+type InsightsRecommendationPreview {
+  sampleCount: Int!
+  observed: Int!
+  held: Int!
+  distinct: Int!
+  holdRatio: Float!
+  examples: [InsightsRecommendationExample!]!
+  """
+  Up to three samples where the relation did not hold.
+  """
+  counterExamples: [InsightsRecommendationExample!]!
+}
+
 # Catalog (risk-model reference data)
 
 type InsightsCatalogClass {
@@ -1136,6 +1475,26 @@ type Insights {
     ruleKey: String!
     offending: String!
   ): InsightsGuardrailViolationDetail
+  """
+  Guardrail rules the engine mined and offers for quick apply, strongest first
+  within each scope: cross-span relations learned from a transaction's stored
+  samples, and per-service allowlists learned from a service's profile. Stale
+  rows (the latest mining run no longer produced them) are hidden unless
+  `includeStale` is true.
+
+  There is no scope filter — pass `kind` to get one kind's cards. `transactionId`
+  narrows to transaction-scoped rows by construction, so combining it with
+  `kind: service_guardrail` always comes back empty.
+  """
+  recommendations(
+    kind: InsightsRecommendationKind
+    state: InsightsRecommendationState
+    transactionId: ID
+    service: String
+    namespace: String
+    includeStale: Boolean
+  ): [InsightsRecommendation!]!
+  recommendation(id: ID!): InsightsRecommendation
   catalog: InsightsCatalog!
   systemSettings: InsightsSystemSettings!
   storageHealth: InsightsStorageHealth!
@@ -1250,4 +1609,62 @@ extend type Mutation {
   updateInsightsSystemSettings(
     settings: InsightsSystemSettingsInput!
   ): InsightsSystemSettings!
+  """
+  Enforce each recommendation on the guardrail it names (created if missing),
+  reload the engine, and mark the recommendation applied. An
+  `attribute_correlation` item writes one cross-span rule on its transaction's
+  guardrail; a `service_guardrail` item turns on the allowlist rules its `rules`
+  field selects, defaulting to every rule on the card.
+
+  Items are independent: one failing does not stop the rest, so check `errors`
+  even when some succeeded. Only `open`, non-stale `service_guardrail` cards can
+  be applied, and rules an operator has meanwhile enforced or switched off are
+  skipped rather than re-applied.
+  """
+  applyInsightsRecommendations(
+    items: [InsightsRecommendationApplyItemInput!]!
+  ): InsightsRecommendationBulkResult!
+  """
+  Reject without creating a rule. Sticky across re-mining — the same relation
+  found again stays dismissed — and shadow evaluation stops.
+  """
+  dismissInsightsRecommendations(ids: [ID!]!): InsightsRecommendationBulkResult!
+  """
+  Move dismissed recommendations back to open.
+  """
+  restoreInsightsRecommendations(ids: [ID!]!): InsightsRecommendationBulkResult!
+  """
+  Remove the rule an earlier apply added from the transaction's guardrail,
+  reload the engine, and move the recommendation back to open.
+  """
+  revertInsightsRecommendations(ids: [ID!]!): InsightsRecommendationBulkResult!
+  """
+  Evaluate an edited spec against the transaction's stored relation samples
+  without persisting anything, so the operator sees how often the rule would
+  have held before enforcing it.
+
+  `attribute_correlation` only: there is no dry run for a `service_guardrail`,
+  whose forward-looking signal is the per-rule liveChecked / liveViolated
+  counters instead.
+  """
+  previewInsightsRecommendation(
+    transactionId: ID!
+    spec: InsightsCorrelationSpecInput!
+  ): InsightsRecommendationPreview!
+  """
+  Queue a mining run: for one transaction with `transactionId`, for one
+  service's guardrail card with `namespace` **and** `service`, or a sweep over
+  every promoted transaction with unmined samples and every fully-learned
+  service when all three are omitted.
+
+  Pass either `transactionId` or the namespace/service pair, never both, and
+  never a namespace without its service. Runs in the background: this returns
+  once the run is queued, then poll `recommendations` — there is no job id to
+  follow.
+  """
+  recomputeInsightsRecommendations(
+    transactionId: ID
+    namespace: String
+    service: String
+  ): Boolean!
 }
