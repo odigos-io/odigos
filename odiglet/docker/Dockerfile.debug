@@ -1,0 +1,16 @@
+# Delve debug odiglet image (fedora-minimal + headless dlv).
+# Expects named bake contexts: builder (odiglet-builder-debug), agents-builder.
+# Matches the runtime shape of odigos/odiglet/debug.Dockerfile without using that file.
+
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.20
+
+FROM ${ODIGLET_BASE_IMAGE} AS rsync-base
+
+FROM registry.fedoraproject.org/fedora-minimal:38 AS odiglet-debug
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
+COPY --from=agents-builder /instrumentations/ /instrumentations/
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/bin/dlv /root/dlv
+
+EXPOSE 2345
+ENTRYPOINT ["/root/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/root/odiglet"]
