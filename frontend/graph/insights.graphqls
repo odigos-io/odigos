@@ -27,9 +27,8 @@ enum InsightsDeviationClass {
   D3_latency
   D4_args_returns
   D5_libraries
-  D6_attr_relations
-  D7_db_access
-  D8_payload_size
+  D6_db_access
+  D7_payload_size
 }
 
 enum InsightsSampleReason {
@@ -282,7 +281,7 @@ type InsightsBaselineHistogramSeries {
 }
 
 """
-Chart-ready exponential histogram for D3_latency and D8_payload_size.
+Chart-ready exponential histogram for D3_latency and D7_payload_size.
 Plot series[].bars; do not recompute bounds from raw data.
 """
 type InsightsBaselineHistogram {
@@ -310,7 +309,7 @@ type InsightsBaselineClass {
   """
   data: String
   """
-  Chart-ready histogram for D3_latency / D8_payload_size. Omitted for other classes.
+  Chart-ready histogram for D3_latency / D7_payload_size. Omitted for other classes.
   """
   histogram: InsightsBaselineHistogram
   dataSchemaVersion: Int
