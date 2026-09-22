@@ -1202,14 +1202,10 @@ type ComplexityRoot struct {
 		Description              func(childComplexity int) int
 		DistroDisplayName        func(childComplexity int) int
 		DistroName               func(childComplexity int) int
-		InstrumentedContainers   func(childComplexity int) int
-		Kind                     func(childComplexity int) int
 		Language                 func(childComplexity int) int
 		RuntimeEnvironment       func(childComplexity int) int
 		Sources                  func(childComplexity int) int
 		SupportedRuntimeVersions func(childComplexity int) int
-		Tier                     func(childComplexity int) int
-		UninstrumentedContainers func(childComplexity int) int
 	}
 
 	InstrumentationInstanceAnalyze struct {
@@ -7777,20 +7773,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationAgent.DistroName(childComplexity), true
 
-	case "InstrumentationAgent.instrumentedContainers":
-		if e.complexity.InstrumentationAgent.InstrumentedContainers == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationAgent.InstrumentedContainers(childComplexity), true
-
-	case "InstrumentationAgent.kind":
-		if e.complexity.InstrumentationAgent.Kind == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationAgent.Kind(childComplexity), true
-
 	case "InstrumentationAgent.language":
 		if e.complexity.InstrumentationAgent.Language == nil {
 			break
@@ -7818,20 +7800,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationAgent.SupportedRuntimeVersions(childComplexity), true
-
-	case "InstrumentationAgent.tier":
-		if e.complexity.InstrumentationAgent.Tier == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationAgent.Tier(childComplexity), true
-
-	case "InstrumentationAgent.uninstrumentedContainers":
-		if e.complexity.InstrumentationAgent.UninstrumentedContainers == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationAgent.UninstrumentedContainers(childComplexity), true
 
 	case "InstrumentationInstanceAnalyze.healthy":
 		if e.complexity.InstrumentationInstanceAnalyze.Healthy == nil {
@@ -51464,94 +51432,6 @@ func (ec *executionContext) fieldContext_InstrumentationAgent_description(_ cont
 	return fc, nil
 }
 
-func (ec *executionContext) _InstrumentationAgent_tier(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationAgent_tier(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tier, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.InstrumentationAgentTier)
-	fc.Result = res
-	return ec.marshalNInstrumentationAgentTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgentTier(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationAgent_tier(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationAgent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type InstrumentationAgentTier does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InstrumentationAgent_kind(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationAgent_kind(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Kind, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.InstrumentationAgentKind)
-	fc.Result = res
-	return ec.marshalNInstrumentationAgentKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgentKind(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationAgent_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationAgent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type InstrumentationAgentKind does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _InstrumentationAgent_runtimeEnvironment(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationAgent_runtimeEnvironment(ctx, field)
 	if err != nil {
@@ -51635,94 +51515,6 @@ func (ec *executionContext) fieldContext_InstrumentationAgent_supportedRuntimeVe
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InstrumentationAgent_instrumentedContainers(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationAgent_instrumentedContainers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InstrumentedContainers, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationAgent_instrumentedContainers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationAgent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InstrumentationAgent_uninstrumentedContainers(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationAgent_uninstrumentedContainers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UninstrumentedContainers, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationAgent_uninstrumentedContainers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationAgent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -74091,18 +73883,10 @@ func (ec *executionContext) fieldContext_Query_instrumentationAgents(_ context.C
 				return ec.fieldContext_InstrumentationAgent_distroDisplayName(ctx, field)
 			case "description":
 				return ec.fieldContext_InstrumentationAgent_description(ctx, field)
-			case "tier":
-				return ec.fieldContext_InstrumentationAgent_tier(ctx, field)
-			case "kind":
-				return ec.fieldContext_InstrumentationAgent_kind(ctx, field)
 			case "runtimeEnvironment":
 				return ec.fieldContext_InstrumentationAgent_runtimeEnvironment(ctx, field)
 			case "supportedRuntimeVersions":
 				return ec.fieldContext_InstrumentationAgent_supportedRuntimeVersions(ctx, field)
-			case "instrumentedContainers":
-				return ec.fieldContext_InstrumentationAgent_instrumentedContainers(ctx, field)
-			case "uninstrumentedContainers":
-				return ec.fieldContext_InstrumentationAgent_uninstrumentedContainers(ctx, field)
 			case "sources":
 				return ec.fieldContext_InstrumentationAgent_sources(ctx, field)
 			}
@@ -96493,16 +96277,6 @@ func (ec *executionContext) _InstrumentationAgent(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "tier":
-			out.Values[i] = ec._InstrumentationAgent_tier(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "kind":
-			out.Values[i] = ec._InstrumentationAgent_kind(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "runtimeEnvironment":
 			out.Values[i] = ec._InstrumentationAgent_runtimeEnvironment(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -96510,16 +96284,6 @@ func (ec *executionContext) _InstrumentationAgent(ctx context.Context, sel ast.S
 			}
 		case "supportedRuntimeVersions":
 			out.Values[i] = ec._InstrumentationAgent_supportedRuntimeVersions(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "instrumentedContainers":
-			out.Values[i] = ec._InstrumentationAgent_instrumentedContainers(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "uninstrumentedContainers":
-			out.Values[i] = ec._InstrumentationAgent_uninstrumentedContainers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -109507,26 +109271,6 @@ func (ec *executionContext) marshalNInstrumentationAgent2ᚖgithubᚗcomᚋodigo
 		return graphql.Null
 	}
 	return ec._InstrumentationAgent(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNInstrumentationAgentKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgentKind(ctx context.Context, v any) (model.InstrumentationAgentKind, error) {
-	var res model.InstrumentationAgentKind
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInstrumentationAgentKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgentKind(ctx context.Context, sel ast.SelectionSet, v model.InstrumentationAgentKind) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalNInstrumentationAgentTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgentTier(ctx context.Context, v any) (model.InstrumentationAgentTier, error) {
-	var res model.InstrumentationAgentTier
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInstrumentationAgentTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgentTier(ctx context.Context, sel ast.SelectionSet, v model.InstrumentationAgentTier) graphql.Marshaler {
-	return v
 }
 
 func (ec *executionContext) marshalNInstrumentationInstanceAnalyze2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationInstanceAnalyzeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InstrumentationInstanceAnalyze) graphql.Marshaler {

@@ -85,20 +85,15 @@ func TestGetInstrumentationAgents_communityDistroMetadata(t *testing.T) {
 		assert.Less(t, agents[i-1].Language, agents[i].Language)
 	}
 
-	// Go is the only community distro that declares itself eBPF-based.
 	goAgent := agentByLanguage(agents, string(common.GoProgrammingLanguage))
 	require.NotNil(t, goAgent)
 	assert.Equal(t, "golang-community", goAgent.DistroName)
-	assert.Equal(t, model.InstrumentationAgentKindEbpf, goAgent.Kind)
-	assert.Equal(t, model.InstrumentationAgentTierCommunity, goAgent.Tier)
 	assert.Equal(t, "go-runtime", goAgent.RuntimeEnvironment)
 	assert.Equal(t, ">= 1.19", goAgent.SupportedRuntimeVersions)
 
-	// Node.js instruments through an SDK agent rather than eBPF.
 	nodeAgent := agentByLanguage(agents, string(common.JavascriptProgrammingLanguage))
 	require.NotNil(t, nodeAgent)
 	assert.Equal(t, "nodejs-community", nodeAgent.DistroName)
-	assert.Equal(t, model.InstrumentationAgentKindCodeAgent, nodeAgent.Kind)
 
 	// Bounded ranges must survive verbatim — the UI needs the upper bound.
 	phpAgent := agentByLanguage(agents, string(common.PhpProgrammingLanguage))
@@ -106,13 +101,13 @@ func TestGetInstrumentationAgents_communityDistroMetadata(t *testing.T) {
 	assert.Equal(t, ">=8.1,<8.5", phpAgent.SupportedRuntimeVersions)
 }
 
-func TestGetInstrumentationAgents_coverageCounts(t *testing.T) {
+func TestGetInstrumentationAgents_sourceCounts(t *testing.T) {
 	objects := []client.Object{
 		instrumentationConfig("deployment-coupon",
 			testContainer{name: "coupon", language: common.JavascriptProgrammingLanguage, distro: "nodejs-community", agentEnabled: true},
 		),
-		// A container that landed on the fallback distro still belongs to the
-		// javascript row, since rows are languages and not distro names.
+		// A container on a distro the page does not list (a version fallback)
+		// still counts against the language's default row.
 		instrumentationConfig("deployment-legacy",
 			testContainer{name: "legacy", language: common.JavascriptProgrammingLanguage, distro: "nodejs-community-14", agentEnabled: true},
 		),
@@ -132,28 +127,21 @@ func TestGetInstrumentationAgents_coverageCounts(t *testing.T) {
 
 	nodeAgent := agentByLanguage(agents, string(common.JavascriptProgrammingLanguage))
 	require.NotNil(t, nodeAgent)
-	assert.Equal(t, 2, nodeAgent.InstrumentedContainers)
-	assert.Equal(t, 0, nodeAgent.UninstrumentedContainers)
 	assert.Equal(t, 2, nodeAgent.Sources)
 
 	phpAgent := agentByLanguage(agents, string(common.PhpProgrammingLanguage))
 	require.NotNil(t, phpAgent)
-	assert.Equal(t, 1, phpAgent.InstrumentedContainers)
 	assert.Equal(t, 1, phpAgent.Sources)
 
 	// Detected but not instrumented — the row the user should look at first.
 	pythonAgent := agentByLanguage(agents, string(common.PythonProgrammingLanguage))
 	require.NotNil(t, pythonAgent)
-	assert.Equal(t, 0, pythonAgent.InstrumentedContainers)
-	assert.Equal(t, 1, pythonAgent.UninstrumentedContainers)
 	// An uninstrumented container still makes its source count.
 	assert.Equal(t, 1, pythonAgent.Sources)
 
 	// A language with nothing running stays at zero rather than disappearing.
 	rubyAgent := agentByLanguage(agents, string(common.RubyProgrammingLanguage))
 	require.NotNil(t, rubyAgent)
-	assert.Equal(t, 0, rubyAgent.InstrumentedContainers)
-	assert.Equal(t, 0, rubyAgent.UninstrumentedContainers)
 	assert.Equal(t, 0, rubyAgent.Sources)
 }
 
@@ -174,13 +162,11 @@ func TestGetInstrumentationAgents_sourcesCountedOncePerLanguage(t *testing.T) {
 
 	nodeAgent := agentByLanguage(agents, string(common.JavascriptProgrammingLanguage))
 	require.NotNil(t, nodeAgent)
-	assert.Equal(t, 1, nodeAgent.InstrumentedContainers)
-	assert.Equal(t, 1, nodeAgent.UninstrumentedContainers)
+	// Two containers of the same language in one source is still one source.
 	assert.Equal(t, 1, nodeAgent.Sources)
 
 	pythonAgent := agentByLanguage(agents, string(common.PythonProgrammingLanguage))
 	require.NotNil(t, pythonAgent)
-	assert.Equal(t, 1, pythonAgent.InstrumentedContainers)
 	assert.Equal(t, 1, pythonAgent.Sources)
 }
 
@@ -240,12 +226,10 @@ func TestGetInstrumentationAgents_listsCommunityAlternative(t *testing.T) {
 	require.NotNil(t, byName["golang-community"])
 
 	// Counts follow the distro each container actually runs.
-	assert.Equal(t, 1, byName["nodejs-community"].InstrumentedContainers)
 	assert.Equal(t, 1, byName["nodejs-community"].Sources)
 
 	// The container with no agent has no distro of its own, so it lands on the
-	// language's default row rather than disappearing.
-	assert.Equal(t, 1, byName["nodejs-community-14"].InstrumentedContainers)
-	assert.Equal(t, 1, byName["nodejs-community-14"].UninstrumentedContainers)
+	// language's default row rather than disappearing: one source of its own
+	// plus the one running the default.
 	assert.Equal(t, 2, byName["nodejs-community-14"].Sources)
 }

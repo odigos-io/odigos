@@ -7,12 +7,8 @@ export const GET_INSTRUMENTATION_AGENTS = gql`
       distroName
       distroDisplayName
       description
-      tier
-      kind
       runtimeEnvironment
       supportedRuntimeVersions
-      instrumentedContainers
-      uninstrumentedContainers
       sources
     }
   }

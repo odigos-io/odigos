@@ -1,46 +1,28 @@
 # =====================
 # Instrumentation Agents
-# The OTel distribution Odigos selects by default for each language, together
-# with this cluster's instrumentation coverage for that language.
+# The OTel distributions Odigos can instrument with on this cluster, together
+# with how much of the cluster each one covers.
 # =====================
 
-enum InstrumentationAgentTier {
-  community
-  enterprise
-}
-
-enum InstrumentationAgentKind {
-  # eBPF-only: no agent directory is mounted into the container.
-  ebpf
-  # An agent directory is mounted and loaded by the container's runtime.
-  code_agent
-}
-
 type InstrumentationAgent {
-  # Detected-language key this agent is the default for (e.g. "javascript").
+  # Detected-language key this agent instruments (e.g. "javascript").
   language: String!
-  # The distro Odigos selects for this language in the current tier.
+  # The distro's name, and the human-readable one shown in the UI.
   distroName: String!
   distroDisplayName: String!
   description: String!
-  tier: InstrumentationAgentTier!
-  kind: InstrumentationAgentKind!
   # Runtime the distro targets (e.g. "nodejs"), and the hashicorp/go-version
   # constraint of the versions it supports (e.g. '>= 18', '>=8.1,<8.5').
   # Both are empty for distros that declare no runtime environment.
   runtimeEnvironment: String!
   supportedRuntimeVersions: String!
-  # Containers of this language in the cluster, split by whether the
-  # instrumentor enabled an agent for them.
-  instrumentedContainers: Int!
-  uninstrumentedContainers: Int!
-  # Sources holding at least one container of this language. A source running
-  # more than one language is counted on each of their rows, so this does not
-  # sum to the cluster's source count.
+  # Sources holding at least one container running this distro. A source
+  # running more than one distro is counted on each of their rows, so this
+  # does not sum to the cluster's source count.
   sources: Int!
 }
 
 extend type Query {
-  # One entry per language that has a default distro in this tier.
+  # One entry per distro the running tier can instrument with.
   instrumentationAgents: [InstrumentationAgent!]!
 }

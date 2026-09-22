@@ -1508,17 +1508,13 @@ type InsightsViolationActionInput struct {
 }
 
 type InstrumentationAgent struct {
-	Language                 string                   `json:"language"`
-	DistroName               string                   `json:"distroName"`
-	DistroDisplayName        string                   `json:"distroDisplayName"`
-	Description              string                   `json:"description"`
-	Tier                     InstrumentationAgentTier `json:"tier"`
-	Kind                     InstrumentationAgentKind `json:"kind"`
-	RuntimeEnvironment       string                   `json:"runtimeEnvironment"`
-	SupportedRuntimeVersions string                   `json:"supportedRuntimeVersions"`
-	InstrumentedContainers   int                      `json:"instrumentedContainers"`
-	UninstrumentedContainers int                      `json:"uninstrumentedContainers"`
-	Sources                  int                      `json:"sources"`
+	Language                 string `json:"language"`
+	DistroName               string `json:"distroName"`
+	DistroDisplayName        string `json:"distroDisplayName"`
+	Description              string `json:"description"`
+	RuntimeEnvironment       string `json:"runtimeEnvironment"`
+	SupportedRuntimeVersions string `json:"supportedRuntimeVersions"`
+	Sources                  int    `json:"sources"`
 }
 
 type InstrumentationInstanceAnalyze struct {
@@ -3993,88 +3989,6 @@ func (e *InstallationStatus) UnmarshalGQL(v any) error {
 }
 
 func (e InstallationStatus) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type InstrumentationAgentKind string
-
-const (
-	InstrumentationAgentKindEbpf      InstrumentationAgentKind = "ebpf"
-	InstrumentationAgentKindCodeAgent InstrumentationAgentKind = "code_agent"
-)
-
-var AllInstrumentationAgentKind = []InstrumentationAgentKind{
-	InstrumentationAgentKindEbpf,
-	InstrumentationAgentKindCodeAgent,
-}
-
-func (e InstrumentationAgentKind) IsValid() bool {
-	switch e {
-	case InstrumentationAgentKindEbpf, InstrumentationAgentKindCodeAgent:
-		return true
-	}
-	return false
-}
-
-func (e InstrumentationAgentKind) String() string {
-	return string(e)
-}
-
-func (e *InstrumentationAgentKind) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = InstrumentationAgentKind(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid InstrumentationAgentKind", str)
-	}
-	return nil
-}
-
-func (e InstrumentationAgentKind) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type InstrumentationAgentTier string
-
-const (
-	InstrumentationAgentTierCommunity  InstrumentationAgentTier = "community"
-	InstrumentationAgentTierEnterprise InstrumentationAgentTier = "enterprise"
-)
-
-var AllInstrumentationAgentTier = []InstrumentationAgentTier{
-	InstrumentationAgentTierCommunity,
-	InstrumentationAgentTierEnterprise,
-}
-
-func (e InstrumentationAgentTier) IsValid() bool {
-	switch e {
-	case InstrumentationAgentTierCommunity, InstrumentationAgentTierEnterprise:
-		return true
-	}
-	return false
-}
-
-func (e InstrumentationAgentTier) String() string {
-	return string(e)
-}
-
-func (e *InstrumentationAgentTier) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = InstrumentationAgentTier(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid InstrumentationAgentTier", str)
-	}
-	return nil
-}
-
-func (e InstrumentationAgentTier) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

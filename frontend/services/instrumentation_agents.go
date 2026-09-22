@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -16,60 +15,24 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
 
-var (
-	communityDistroNamesOnce sync.Once
-	communityDistroNames     map[string]bool
-	communityDistroNamesErr  error
-)
-
-// getCommunityDistroNames returns the set of distro names shipped by the OSS
-// distros module. A provider flattens all of its getters into one map, so this
-// set is what tells apart a community distro from an enterprise one — on an
-// enterprise cluster several languages (.NET, PHP, Ruby) still resolve to a
-// community distro, and the UI surfaces that per row.
-func getCommunityDistroNames() (map[string]bool, error) {
-	communityDistroNamesOnce.Do(func() {
-		getter, err := distros.NewCommunityGetter()
-		if err != nil {
-			communityDistroNamesErr = err
-			return
-		}
-		names := make(map[string]bool)
-		for _, d := range getter.GetAllDistros() {
-			names[d.Name] = true
-		}
-		communityDistroNames = names
-	})
-	return communityDistroNames, communityDistroNamesErr
-}
-
-// containerCoverage counts, for a single language, how many containers in the
-// cluster the instrumentor did and did not enable an agent for, and how many
-// sources those containers belong to.
-type containerCoverage struct {
-	instrumented   int
-	uninstrumented int
-	sources        int
-}
-
-// distroCoverage joins each container's detected language (status) with the
-// distro the instrumentor actually picked for it (spec), keyed by distro name.
-// The page lists more than one distro per language — on enterprise a language
-// usually has both an enterprise and a community entry — so counting by
-// language would report the same containers on every row of that language.
+// distroSourceCounts joins each container's detected language (status) with the
+// distro the instrumentor actually picked for it (spec), and counts the sources
+// each distro covers. The page lists more than one distro per language — on
+// enterprise a language usually has both an enterprise and a community entry —
+// so counting by language would report the same sources on every row.
 //
 // A container the instrumentor did not enable has no distro of its own, and one
 // that landed on a distro the page does not list (a version fallback such as
 // nodejs-community-14) would otherwise vanish from the totals. Both are counted
 // against the language's default distro, which is the row that answers "what
 // would this container run".
-func distroCoverage(ctx context.Context, k8sCacheClient client.Client, defaults map[common.ProgrammingLanguage]string, listed map[string]bool) (map[string]*containerCoverage, error) {
+func distroSourceCounts(ctx context.Context, k8sCacheClient client.Client, defaults map[common.ProgrammingLanguage]string, listed map[string]bool) (map[string]int, error) {
 	var instrumentationConfigs odigosv1.InstrumentationConfigList
 	if err := k8sCacheClient.List(ctx, &instrumentationConfigs); err != nil {
 		return nil, fmt.Errorf("listing instrumentation configs: %w", err)
 	}
 
-	coverage := make(map[string]*containerCoverage)
+	sources := make(map[string]int)
 	for i := range instrumentationConfigs.Items {
 		ic := &instrumentationConfigs.Items[i]
 
@@ -96,35 +59,14 @@ func distroCoverage(ctx context.Context, k8sCacheClient client.Client, defaults 
 				continue
 			}
 
-			counts := coverage[distroName]
-			if counts == nil {
-				counts = &containerCoverage{}
-				coverage[distroName] = counts
-			}
-			if spec.AgentEnabled {
-				counts.instrumented++
-			} else {
-				counts.uninstrumented++
-			}
 			distrosInSource[distroName] = true
 		}
 
 		for distroName := range distrosInSource {
-			coverage[distroName].sources++
+			sources[distroName]++
 		}
 	}
-	return coverage, nil
-}
-
-// agentKind reports how the distro instruments the workload. Distros that
-// combine eBPF with a mounted agent directory (java-ebpf-instrumentations,
-// nodejs-enterprise) are still eBPF-based, so the distro's own declaration is
-// what the UI reports.
-func agentKind(d *distro.OtelDistro) model.InstrumentationAgentKind {
-	if d.IsEbpf {
-		return model.InstrumentationAgentKindEbpf
-	}
-	return model.InstrumentationAgentKindCodeAgent
+	return sources, nil
 }
 
 // agentDistros returns the distros the page lists, grouped by language.
@@ -167,17 +109,12 @@ func agentDistros(provider *distros.Provider) map[common.ProgrammingLanguage][]*
 }
 
 // GetInstrumentationAgents returns one entry per distro the cluster can
-// instrument with, annotated with this cluster's coverage. The provider is the
+// instrument with, annotated with how many sources it covers. The provider is the
 // same one the instrumentor resolves distros with, so the page reflects what
 // will actually be injected rather than a parallel guess.
 func GetInstrumentationAgents(ctx context.Context, k8sCacheClient client.Client, provider *distros.Provider) ([]*model.InstrumentationAgent, error) {
 	if provider == nil {
 		return nil, fmt.Errorf("no distros provider configured")
-	}
-
-	communityNames, err := getCommunityDistroNames()
-	if err != nil {
-		return nil, fmt.Errorf("loading community distros: %w", err)
 	}
 
 	defaults := provider.GetDefaultDistroNames()
@@ -190,7 +127,7 @@ func GetInstrumentationAgents(ctx context.Context, k8sCacheClient client.Client,
 		}
 	}
 
-	coverage, err := distroCoverage(ctx, k8sCacheClient, defaults, listed)
+	sourcesByDistro, err := distroSourceCounts(ctx, k8sCacheClient, defaults, listed)
 	if err != nil {
 		return nil, err
 	}
@@ -198,35 +135,24 @@ func GetInstrumentationAgents(ctx context.Context, k8sCacheClient client.Client,
 	agents := make([]*model.InstrumentationAgent, 0, len(listed))
 	for language, ds := range distrosByLanguage {
 		for _, d := range ds {
-			tier := model.InstrumentationAgentTierEnterprise
-			if communityNames[d.Name] {
-				tier = model.InstrumentationAgentTierCommunity
-			}
-
 			agent := &model.InstrumentationAgent{
 				Language:          string(language),
 				DistroName:        d.Name,
 				DistroDisplayName: d.DisplayName,
 				Description:       strings.TrimSpace(d.Description),
-				Tier:              tier,
-				Kind:              agentKind(d),
 			}
 			if len(d.RuntimeEnvironments) > 0 {
 				agent.RuntimeEnvironment = d.RuntimeEnvironments[0].Name
 				agent.SupportedRuntimeVersions = d.RuntimeEnvironments[0].SupportedVersions
 			}
-			if counts := coverage[d.Name]; counts != nil {
-				agent.InstrumentedContainers = counts.instrumented
-				agent.UninstrumentedContainers = counts.uninstrumented
-				agent.Sources = counts.sources
-			}
+			agent.Sources = sourcesByDistro[d.Name]
 
 			agents = append(agents, agent)
 		}
 	}
 
 	// Language first so a language's distros stay adjacent, then the distro
-	// workloads actually get, then enterprise ahead of community.
+	// workloads actually get, then by name.
 	isDefault := func(a *model.InstrumentationAgent) bool {
 		return defaults[common.ProgrammingLanguage(a.Language)] == a.DistroName
 	}
@@ -237,9 +163,6 @@ func GetInstrumentationAgents(ctx context.Context, k8sCacheClient client.Client,
 		}
 		if isDefault(a) != isDefault(b) {
 			return isDefault(a)
-		}
-		if a.Tier != b.Tier {
-			return a.Tier == model.InstrumentationAgentTierEnterprise
 		}
 		return a.DistroName < b.DistroName
 	})
