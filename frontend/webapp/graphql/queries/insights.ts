@@ -100,6 +100,7 @@ const FINDING_FIELDS = `
   service
   namespace
   title
+  summary
   operation
   operationName
   identityDimensions {
@@ -197,6 +198,24 @@ const GUARDRAIL_FIELDS = `
     label
     mode
     allowlist
+    correlations {
+      name
+      left {
+        service
+        span
+        attr
+        extract
+      }
+      right {
+        service
+        span
+        attr
+        extract
+      }
+      relation
+      severity
+      why
+    }
     origin
   }
 `;

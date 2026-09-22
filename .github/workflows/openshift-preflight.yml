@@ -45,12 +45,24 @@ on:
         description: "Include collector"
         type: boolean
         default: false
+      enterprise-collector:
+        description: "Include enterprise-collector"
+        type: boolean
+        default: false
       odiglet:
         description: "Include odiglet"
         type: boolean
         default: false
       enterprise-odiglet:
         description: "Include enterprise-odiglet"
+        type: boolean
+        default: false
+      agents:
+        description: "Include agents"
+        type: boolean
+        default: false
+      enterprise-agents:
+        description: "Include enterprise-agents"
         type: boolean
         default: false
       enterprise-ui:
@@ -75,7 +87,7 @@ permissions:
   packages: write
 
 env:
-  PREFLIGHT_VERSION: "1.17.0"
+  PREFLIGHT_VERSION: "1.21.0"
 
 jobs:
   prepare:
@@ -97,8 +109,11 @@ jobs:
               { service: 'instrumentor', project_id: '69fb8eeee695879ba96b0637' },
               { service: 'enterprise-instrumentor', project_id: '69fb8e801ae6d2eb7611e5c2' },
               { service: 'collector', project_id: '69fb8cf84e6153a3a3d3dac2' },
+              { service: 'enterprise-collector', project_id: '6aaaeacee124f9c42d16eaf7' },
               { service: 'odiglet', project_id: '69fb8d4ea47256655b8151e0' },
               { service: 'enterprise-odiglet', project_id: '69fb8c73eddc8ed3392e8b22' },
+              { service: 'agents', project_id: '6aaaefd02145658eee34ae73' },
+              { service: 'enterprise-agents', project_id: '6aaaf056f22dda47a6a7293e' },
               { service: 'enterprise-ui', project_id: '6a16fa165c179fa2c884833a' },
               { service: 'ui', project_id: '69fb8db4923d3eb46a14ee70' },
               { service: 'operator', project_id: '69fb896f985ff5dff75db58e' },

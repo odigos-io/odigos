@@ -1057,6 +1057,48 @@ type InsightsCatalogGuardrailRule struct {
 	Hint        *string `json:"hint,omitempty"`
 }
 
+// Locates one attribute on one span within a trace (attribute_correlation rule).
+type InsightsCorrelationSelector struct {
+	// Owning service name of the span.
+	Service string `json:"service"`
+	// Span match — the span name or captured `code.function.name`.
+	Span string `json:"span"`
+	// Attribute key to read (e.g. return.value, arg.0, url.full).
+	Attr string `json:"attr"`
+	// Optional regex applied to the attribute value. Capture group 1 is used when
+	// present, otherwise the whole match. Empty = use the value verbatim.
+	Extract *string `json:"extract,omitempty"`
+}
+
+type InsightsCorrelationSelectorInput struct {
+	Service string  `json:"service"`
+	Span    string  `json:"span"`
+	Attr    string  `json:"attr"`
+	Extract *string `json:"extract,omitempty"`
+}
+
+// One cross-span consistency assertion for the attribute_correlation rule.
+type InsightsCorrelationSpec struct {
+	Name     string                       `json:"name"`
+	Left     *InsightsCorrelationSelector `json:"left"`
+	Right    *InsightsCorrelationSelector `json:"right"`
+	Relation InsightsCorrelationRelation  `json:"relation"`
+	// Risk of a violation of this rule. Defaults to critical when omitted on write.
+	Severity InsightsSeverity `json:"severity"`
+	// Operator rationale, shown in the finding.
+	Why *string `json:"why,omitempty"`
+}
+
+type InsightsCorrelationSpecInput struct {
+	Name     string                            `json:"name"`
+	Left     *InsightsCorrelationSelectorInput `json:"left"`
+	Right    *InsightsCorrelationSelectorInput `json:"right"`
+	Relation InsightsCorrelationRelation       `json:"relation"`
+	// Defaults to critical when omitted.
+	Severity *InsightsSeverity `json:"severity,omitempty"`
+	Why      *string           `json:"why,omitempty"`
+}
+
 type InsightsEnricherList struct {
 	Key     string   `json:"key"`
 	Label   string   `json:"label"`
@@ -1070,6 +1112,10 @@ type InsightsFinding struct {
 	Namespace string              `json:"namespace"`
 	// Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
 	Title string `json:"title"`
+	// Render-ready one-line explanation so the list conveys the gist without opening
+	// investigate. Omits service and title (already on the row): anomalies name the
+	// deviated classes; violations name the rule and what broke it. Display as-is.
+	Summary string `json:"summary"`
 	// Full canonical transaction operation (anomalies only). Omitted for violations.
 	Operation *string `json:"operation,omitempty"`
 	// Entry-span operation without dimension suffixes (anomalies).
@@ -1099,7 +1145,7 @@ type InsightsFinding struct {
 
 type InsightsGuardrail struct {
 	Scope InsightsPolicyScope `json:"scope"`
-	// Format: namespace/service.
+	// `namespace/service` for service scope; numeric transaction id for transaction scope.
 	ScopeKey string                   `json:"scopeKey"`
 	Rules    []*InsightsGuardrailRule `json:"rules"`
 }
@@ -1115,6 +1161,10 @@ type InsightsGuardrailRule struct {
 	Label     string           `json:"label"`
 	Mode      InsightsRuleMode `json:"mode"`
 	Allowlist []string         `json:"allowlist,omitempty"`
+	// Cross-span correlation specs. Only used by `attribute_correlation`
+	// (transaction-scoped): each spec asserts two captured span attributes stay
+	// consistent within one trace.
+	Correlations []*InsightsCorrelationSpec `json:"correlations,omitempty"`
 	// How this rule was created. `auto_transaction_guardrail` means it was created
 	// automatically when the service's transactions promoted (not a manual edit).
 	Origin *string `json:"origin,omitempty"`
@@ -1125,6 +1175,8 @@ type InsightsGuardrailRuleInput struct {
 	Label     string           `json:"label"`
 	Mode      InsightsRuleMode `json:"mode"`
 	Allowlist []string         `json:"allowlist,omitempty"`
+	// Required for `attribute_correlation` (transaction-scoped) rules.
+	Correlations []*InsightsCorrelationSpecInput `json:"correlations,omitempty"`
 	// Preserved on save so auto-created rules keep their origin across edits.
 	Origin *string `json:"origin,omitempty"`
 }
@@ -3409,6 +3461,48 @@ func (e *InsightsBulkResolution) UnmarshalGQL(v any) error {
 }
 
 func (e InsightsBulkResolution) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Relation asserted between two correlated attribute values within one trace.
+type InsightsCorrelationRelation string
+
+const (
+	InsightsCorrelationRelationEquals    InsightsCorrelationRelation = "equals"
+	InsightsCorrelationRelationNotEquals InsightsCorrelationRelation = "not_equals"
+)
+
+var AllInsightsCorrelationRelation = []InsightsCorrelationRelation{
+	InsightsCorrelationRelationEquals,
+	InsightsCorrelationRelationNotEquals,
+}
+
+func (e InsightsCorrelationRelation) IsValid() bool {
+	switch e {
+	case InsightsCorrelationRelationEquals, InsightsCorrelationRelationNotEquals:
+		return true
+	}
+	return false
+}
+
+func (e InsightsCorrelationRelation) String() string {
+	return string(e)
+}
+
+func (e *InsightsCorrelationRelation) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsCorrelationRelation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsCorrelationRelation", str)
+	}
+	return nil
+}
+
+func (e InsightsCorrelationRelation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
