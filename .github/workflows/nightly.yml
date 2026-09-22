@@ -179,16 +179,43 @@ jobs:
     if: always()
     needs: kubernetes-tests
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        kubernetes-version: ["1.21.12", "1.37"]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
 
+      # needs.kubernetes-tests.result is aggregated over the whole matrix, so query the
+      # per-job conclusions of this run and aggregate only the jobs for this version.
+      - name: Aggregate results for Kubernetes version
+        id: result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_PREFIX: "kubernetes-tests (${{ matrix.kubernetes-version }}, "
+        run: |
+          CONCLUSIONS=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" \
+            | jq -r --arg prefix "$JOB_PREFIX" '.jobs[] | select(.name | startswith($prefix)) | .conclusion')
+
+          TOTAL=$(printf '%s\n' "$CONCLUSIONS" | grep -c . || true)
+          FAILED=$(printf '%s\n' "$CONCLUSIONS" | grep . | grep -c -v '^success$' || true)
+          echo "Jobs matching '$JOB_PREFIX': total=$TOTAL failed=$FAILED"
+
+          if [[ "$TOTAL" -gt 0 && "$FAILED" -eq 0 ]]; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=failure" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Report Test Outcome
         uses: ./.github/actions/nightly/report
         with:
-          status: ${{ needs.kubernetes-tests.result }}
+          status: ${{ steps.result.outputs.status }}
           suite_name: kubernetes-tests
-          suite_parameters: '{"kubernetes_versions": "1.21.12, 1.37"}'
+          suite_parameters: '{"kubernetes_version": "${{ matrix.kubernetes-version }}"}'
           slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
 
   chaos-tests:
