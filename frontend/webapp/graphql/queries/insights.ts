@@ -270,6 +270,18 @@ const RECOMMENDATION_FIELDS = `
     severity
     why
   }
+  rules {
+    rule
+    label
+    description
+    items
+    confidence
+    liveChecked
+    liveViolated
+    liveSince
+    liveLast
+  }
+  appliedRules
   confidence {
     level
     holdRatio

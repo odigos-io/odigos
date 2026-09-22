@@ -286,7 +286,7 @@ export const PREVIEW_INSIGHTS_RECOMMENDATION = gql`
 `;
 
 export const RECOMPUTE_INSIGHTS_RECOMMENDATIONS = gql`
-  mutation RecomputeInsightsRecommendations($transactionId: ID) {
-    recomputeInsightsRecommendations(transactionId: $transactionId)
+  mutation RecomputeInsightsRecommendations($transactionId: ID, $namespace: String, $service: String) {
+    recomputeInsightsRecommendations(transactionId: $transactionId, namespace: $namespace, service: $service)
   }
 `;

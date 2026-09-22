@@ -7,6 +7,8 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services/insights"
@@ -825,13 +827,13 @@ func (r *mutationResolver) PreviewInsightsRecommendation(ctx context.Context, tr
 }
 
 // RecomputeInsightsRecommendations is the resolver for the recomputeInsightsRecommendations field.
-func (r *mutationResolver) RecomputeInsightsRecommendations(ctx context.Context, transactionID *string) (bool, error) {
+func (r *mutationResolver) RecomputeInsightsRecommendations(ctx context.Context, transactionID *string, namespace *string, service *string) (bool, error) {
 	client, err := r.insightsClient(ctx)
 	if err != nil {
 		return false, err
 	}
-	// Omitted id means "sweep every promoted transaction with unmined samples",
-	// which the engine spells as 0.
+	// Omitted id means "sweep every promoted transaction with unmined samples
+	// and every fully-learned service", which the engine spells as 0.
 	var id int64
 	if transactionID != nil {
 		parsed, parseErr := insights.ParseID(*transactionID)
@@ -840,7 +842,26 @@ func (r *mutationResolver) RecomputeInsightsRecommendations(ctx context.Context,
 		}
 		id = parsed
 	}
-	if err := client.RecomputeRecommendations(ctx, id); err != nil {
+	request := insights.RecommendationRecomputeRequest{TransactionID: id}
+	if namespace != nil {
+		request.Namespace = strings.TrimSpace(*namespace)
+	}
+	if service != nil {
+		request.Service = strings.TrimSpace(*service)
+	}
+	// Rejected here rather than at the engine so the caller gets one clear
+	// message. A namespace without a service is a 400 upstream, and a service
+	// without its namespace is worse: the engine accepts it, then fails the
+	// background run looking for a service called "/<name>".
+	switch {
+	case request.TransactionID != 0 && (request.Namespace != "" || request.Service != ""):
+		return false, insights.GraphQLError(ctx, fmt.Errorf("%w: pass either transactionId or namespace and service, not both", insights.ErrBadRequest))
+	case request.Namespace != "" && request.Service == "":
+		return false, insights.GraphQLError(ctx, fmt.Errorf("%w: service is required with namespace", insights.ErrBadRequest))
+	case request.Service != "" && request.Namespace == "":
+		return false, insights.GraphQLError(ctx, fmt.Errorf("%w: namespace is required with service", insights.ErrBadRequest))
+	}
+	if err := client.RecomputeRecommendations(ctx, request); err != nil {
 		return false, insights.GraphQLError(ctx, err)
 	}
 	return true, nil

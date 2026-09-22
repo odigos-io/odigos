@@ -481,12 +481,16 @@ func (c *Client) PreviewRecommendation(ctx context.Context, transactionID int64,
 	return &result, nil
 }
 
-// RecomputeRecommendations queues a mining run for one transaction, or for every
-// promoted transaction with unmined samples when transactionID is 0. The run is
-// asynchronous: the engine answers 202 and the caller polls the list.
-func (c *Client) RecomputeRecommendations(ctx context.Context, transactionID int64) error {
-	body := RecommendationRecomputeRequest{TransactionID: transactionID}
-	return c.do(ctx, http.MethodPost, c.apiEndpoint("recommendations", "recompute"), body, nil)
+// RecomputeRecommendations queues a mining run: for one transaction, for one
+// service's guardrail card, or — with an empty request — for every promoted
+// transaction with unmined samples and every fully-learned service.
+//
+// The engine rejects a request that names both a transaction and a service, or
+// a namespace without its service, so the caller picks one shape. The run is
+// asynchronous: the engine answers 202 with no body and no job id, and the
+// caller polls the list.
+func (c *Client) RecomputeRecommendations(ctx context.Context, request RecommendationRecomputeRequest) error {
+	return c.do(ctx, http.MethodPost, c.apiEndpoint("recommendations", "recompute"), request, nil)
 }
 
 func (c *Client) do(ctx context.Context, method string, endpoint *url.URL, body any, result any) error {

@@ -743,10 +743,15 @@ type Insights struct {
 	GuardrailViolations []*InsightsGuardrailViolation `json:"guardrailViolations"`
 	// Violation investigate payload (summary + evidence trace). Analogous to anomaly(...).
 	GuardrailViolation *InsightsGuardrailViolationDetail `json:"guardrailViolation,omitempty"`
-	// Guardrail rules the engine mined from a transaction's stored relation samples
-	// and offers for quick apply, strongest first within each scope. Stale rows
-	// (the latest mining run no longer produced them) are hidden unless
+	// Guardrail rules the engine mined and offers for quick apply, strongest first
+	// within each scope: cross-span relations learned from a transaction's stored
+	// samples, and per-service allowlists learned from a service's profile. Stale
+	// rows (the latest mining run no longer produced them) are hidden unless
 	// `includeStale` is true.
+	//
+	// There is no scope filter — pass `kind` to get one kind's cards. `transactionId`
+	// narrows to transaction-scoped rows by construction, so combining it with
+	// `kind: service_guardrail` always comes back empty.
 	Recommendations []*InsightsRecommendation `json:"recommendations"`
 	Recommendation  *InsightsRecommendation   `json:"recommendation,omitempty"`
 	Catalog         *InsightsCatalog          `json:"catalog"`
@@ -1268,64 +1273,102 @@ type InsightsPromoteResult struct {
 	Promoted      bool                   `json:"promoted"`
 }
 
-// One mined rule the operator can apply as-is, edit and apply, or dismiss. The
-// engine writes the presentation fields, so a client renders `title`, `summary`
-// and `confidence.reasons` without knowing what the numbers mean.
+// One mined recommendation the operator can apply as-is, adjust and apply, or
+// dismiss. The engine writes the presentation fields, so a client renders `title`,
+// `summary`, `whyItMatters` and `confidence.reasons` without knowing what the
+// numbers behind them mean.
+//
+// Both kinds share this type. The 16 non-null fields are the ones every kind
+// carries; every nullable field belongs to exactly one kind and is null on the
+// other, so read them after switching on `kind` — an absent field is "not this
+// kind", never "false" or "zero".
 type InsightsRecommendation struct {
 	ID    string                      `json:"id"`
 	Kind  InsightsRecommendationKind  `json:"kind"`
 	State InsightsRecommendationState `json:"state"`
-	// The latest mining run no longer produced this row. Hidden from the list
-	// unless `includeStale` is set.
+	// The latest mining run no longer produced this row: the relation stopped
+	// holding, its samples aged out, or the service has nothing left to enforce.
+	// Hidden from the list unless `includeStale` is set, and applying a stale
+	// `service_guardrail` fails — recompute it first.
 	Stale bool `json:"stale"`
 	// Position among the scope's recommendations, 0 = strongest.
 	Rank int `json:"rank"`
 	// The guardrail this would extend, with the same meaning as a guardrail's
-	// scope/scopeKey. `attribute_correlation` is always transaction-scoped.
-	Scope           *InsightsPolicyScope    `json:"scope,omitempty"`
-	ScopeKey        *string                 `json:"scopeKey,omitempty"`
-	TransactionID   string                  `json:"transactionId"`
-	TransactionKind InsightsTransactionKind `json:"transactionKind"`
-	Service         string                  `json:"service"`
-	Namespace       string                  `json:"namespace"`
-	Operation       string                  `json:"operation"`
-	// One-line headline, e.g. "resolvePrincipal return.value matches getAccount arg.0".
+	// scope/scopeKey: `transaction` for `attribute_correlation`, `service` for
+	// `service_guardrail`.
+	Scope InsightsPolicyScope `json:"scope"`
+	// The scoped guardrail's key: the decimal transaction id for
+	// `attribute_correlation`, `"<namespace>/<service>"` for `service_guardrail`.
+	ScopeKey string `json:"scopeKey"`
+	// `attribute_correlation` only: the transaction the rule belongs to. Null on a
+	// `service_guardrail`, which is scoped to the service rather than to one
+	// transaction — so filtering `recommendations` by `transactionId` never returns
+	// a service card.
+	TransactionID *string `json:"transactionId,omitempty"`
+	// `attribute_correlation` only: that transaction's kind.
+	TransactionKind *InsightsTransactionKind `json:"transactionKind,omitempty"`
+	Service         string                   `json:"service"`
+	Namespace       string                   `json:"namespace"`
+	// `attribute_correlation` only: that transaction's operation.
+	Operation *string `json:"operation,omitempty"`
+	// One-line headline, e.g. "resolvePrincipal return.value matches getCart arg.0"
+	// or "Lock down account-service". It carries no counts — use `rules` for those.
 	Title string `json:"title"`
-	// One sentence explaining the relation and its evidence in plain words.
+	// One or two sentences on what was learned and what applying does.
 	Summary string `json:"summary"`
-	// The security story — what breaking this relation would mean. The engine does
-	// not populate this yet, so it is empty today.
+	// The security story — what breaking this would mean, in plain words. Populated
+	// for both kinds: the mined relation's own reasoning for
+	// `attribute_correlation`, and a fixed sentence about first-appearance
+	// detection for `service_guardrail`.
 	WhyItMatters string `json:"whyItMatters"`
-	// How the two values relate: `exact` (identical), `core` (identical after a
-	// constant prefix/suffix), `digits` (same numeric id), `contains` (one value is
-	// embedded in the other).
-	Transform string `json:"transform"`
-	// Guaranteed by the transport rather than by business logic — the same field on
-	// both ends of one hop, such as a Kafka message key on producer and consumer. A
-	// break means tampering in flight, not a business-logic bypass, so it is mined
-	// at low severity and ranked after every business relation.
-	Transport bool `json:"transport"`
-	// The exact rule `applyInsightsRecommendations` would add to the transaction
-	// guardrail. Edit and pass it back to apply something different.
-	Spec       *InsightsCorrelationSpec          `json:"spec"`
-	Confidence *InsightsRecommendationConfidence `json:"confidence"`
-	// Up to three stored samples the relation held on.
-	Examples []*InsightsRecommendationExample `json:"examples"`
-	// The transaction's guardrail already has a rule on the same two attributes
-	// (e.g. written by hand), so applying would duplicate it.
-	AlreadyCovered bool   `json:"alreadyCovered"`
+	// `attribute_correlation` only: how the two values relate — `exact` (identical),
+	// `core` (identical after a constant prefix/suffix), `digits` (same numeric id),
+	// `contains` (one value is embedded in the other).
+	Transform *string `json:"transform,omitempty"`
+	// `attribute_correlation` only: guaranteed by the transport rather than by
+	// business logic — the same field on both ends of one hop, such as a Kafka
+	// message key on producer and consumer. A break means tampering in flight, not a
+	// business-logic bypass, so it is mined at low severity and ranked after every
+	// business relation.
+	Transport *bool `json:"transport,omitempty"`
+	// `attribute_correlation` only: the exact rule `applyInsightsRecommendations`
+	// would add to the transaction guardrail. Edit and pass it back to apply
+	// something different. Null on a `service_guardrail` — read `rules` instead.
+	Spec *InsightsCorrelationSpec `json:"spec,omitempty"`
+	// `service_guardrail` only: the allowlist rules proposed for enforcement, in
+	// catalog order. Only rules the service does not enforce yet are listed, so this
+	// can be empty on a card that has already been applied.
+	Rules []*InsightsRecommendationRule `json:"rules,omitempty"`
+	// `service_guardrail` only: the rule keys an apply actually turned on. Set while
+	// `state` is `applied`; rules listed in `rules` but missing here were left out
+	// by the operator.
+	AppliedRules []string                          `json:"appliedRules,omitempty"`
+	Confidence   *InsightsRecommendationConfidence `json:"confidence"`
+	// `attribute_correlation` only: up to three stored samples the relation held on.
+	Examples []*InsightsRecommendationExample `json:"examples,omitempty"`
+	// `attribute_correlation` only: the transaction's guardrail already has a rule
+	// on the same two attributes (e.g. written by hand), so applying would replace
+	// it.
+	AlreadyCovered *bool  `json:"alreadyCovered,omitempty"`
 	MinedAt        string `json:"minedAt"`
 	CreatedAt      string `json:"createdAt"`
 	UpdatedAt      string `json:"updatedAt"`
 }
 
-// One recommendation to apply, optionally with the operator's edits.
+// One recommendation to apply, optionally with the operator's edits. Each field
+// belongs to one kind — sending a `spec` with a `service_guardrail` id is
+// rejected for the whole batch even though the spec would be ignored.
 type InsightsRecommendationApplyItemInput struct {
 	ID string `json:"id"`
-	// Optional edited rule applied instead of the mined one. Left/right service,
-	// span and attr must match the recommendation; name, severity, why, relation
-	// and extract regexes may differ.
+	// `attribute_correlation` only: an edited rule applied instead of the mined one.
+	// Left/right service, span and attr must match the recommendation; name,
+	// severity, why, relation and extract regexes may differ.
 	Spec *InsightsCorrelationSpecInput `json:"spec,omitempty"`
+	// `service_guardrail` only: which of the recommendation's `rules` to turn on, by
+	// rule key. Omitting it — or passing an empty list — turns on every rule on the
+	// card, so there is no way to spell "apply nothing": just do not send the item.
+	// A key that is not on the card fails that item alone.
+	Rules []string `json:"rules,omitempty"`
 }
 
 // Outcome of a bulk action. Items are independent — one failing does not stop the
@@ -1336,30 +1379,44 @@ type InsightsRecommendationBulkResult struct {
 	Errors []*InsightsRecommendationItemError `json:"errors"`
 }
 
-// Why the engine believes the relation. The sample stats come from the stored
-// relation samples the mining run read; the live counters come from shadow
-// evaluation against real traffic and keep growing until the recommendation is
-// applied or dismissed.
+// Why the engine believes the recommendation. `level` and `reasons` are
+// render-ready for both kinds; everything else needs the kind for context.
+//
+// The stored-sample stats (`holdRatio`, `observed`, `held`, `distinct`) describe a
+// mined relation and are null on a `service_guardrail`. The live counters come
+// from evaluating the open recommendation silently against real traffic and keep
+// growing until it is applied or dismissed.
 type InsightsRecommendationConfidence struct {
 	Level InsightsRecommendationConfidenceLevel `json:"level"`
-	// held / observed on the stored samples (0..1).
-	HoldRatio float64 `json:"holdRatio"`
-	// Stored samples where both values were present.
-	Observed int `json:"observed"`
-	// Of those, how many satisfied the relation.
-	Held int `json:"held"`
-	// Distinct left-hand values seen agreeing. Guards against two attributes that
-	// merely share a constant.
-	Distinct int `json:"distinct"`
-	// Relation samples the mining run looked at.
+	// `attribute_correlation` only: held / observed on the stored samples (0..1).
+	HoldRatio *float64 `json:"holdRatio,omitempty"`
+	// `attribute_correlation` only: stored samples where both values were present.
+	Observed *int `json:"observed,omitempty"`
+	// `attribute_correlation` only: of those, how many satisfied the relation.
+	Held *int `json:"held,omitempty"`
+	// `attribute_correlation` only: distinct left-hand values seen agreeing. Guards
+	// against two attributes that merely share a constant.
+	Distinct *int `json:"distinct,omitempty"`
+	// What the lists were learned from. `attribute_correlation`: relation samples
+	// the mining run looked at. `service_guardrail`: promoted transactions of the
+	// service whose learned profile seeded the rules.
 	SampleCount int `json:"sampleCount"`
-	LiveHeld    int `json:"liveHeld"`
-	LiveBroken  int `json:"liveBroken"`
-	// Null until the first live trace was evaluated.
+	// `attribute_correlation`: live traces the relation held on.
+	// `service_guardrail`: the sum over `rules` of (liveChecked - liveViolated) —
+	// rule checks, not traces, so one trace can count once per rule.
+	LiveHeld int `json:"liveHeld"`
+	// `attribute_correlation`: live traces the relation broke on.
+	// `service_guardrail`: the sum over `rules` of liveViolated, again rule checks
+	// rather than traces.
+	LiveBroken int `json:"liveBroken"`
+	// Null until the first live trace was evaluated. On a `service_guardrail` this
+	// is the earliest of the listed rules' windows.
 	LiveSince *string `json:"liveSince,omitempty"`
-	// Null until the first live trace was evaluated.
+	// Null until the first live trace was evaluated. On a `service_guardrail` this
+	// is the latest of the listed rules' windows.
 	LiveLast *string `json:"liveLast,omitempty"`
-	// Render-ready evidence lines, e.g. "Held on 50 of 50 stored samples".
+	// Render-ready evidence lines, e.g. "Held on 50 of 50 stored samples". Prose for
+	// both kinds — render them, do not parse them.
 	Reasons []string `json:"reasons"`
 }
 
@@ -1388,6 +1445,44 @@ type InsightsRecommendationPreview struct {
 	Examples    []*InsightsRecommendationExample `json:"examples"`
 	// Up to three samples where the relation did not hold.
 	CounterExamples []*InsightsRecommendationExample `json:"counterExamples"`
+}
+
+// One allowlist rule a `service_guardrail` recommendation proposes, pre-filled
+// from what the service was observed doing. Rules arrive in catalog order
+// (callers, callees, egress, transactions) and only cover what the service does
+// not enforce yet, so applying extends a guardrail and never overrides a rule an
+// operator already set.
+type InsightsRecommendationRule struct {
+	// Rule key: `allowed_callers`, `allowed_callees`, `allowed_egress` or
+	// `allowed_transactions`. A String rather than an enum on purpose — the catalog
+	// can gain keys without this schema changing under a running client.
+	Rule string `json:"rule"`
+	// Catalog label, e.g. "Allowed egress".
+	Label string `json:"label"`
+	// One line on what the rule enforces, from the catalog.
+	Description string `json:"description"`
+	// The allowlist an apply would write, sorted. Plain service names for
+	// `allowed_callers` and `allowed_callees`, `host` or `host:port` for
+	// `allowed_egress`, and the transaction kind joined to the operation by a
+	// literal tab (U+0009) for `allowed_transactions` — split on that tab to render
+	// the kind and the operation apart, never on a space.
+	//
+	// An empty list is meaningful and strict rather than missing data: the service
+	// was never seen doing this, so enforcing forbids all of it.
+	Items []string `json:"items"`
+	// This rule's own level: `low` once live traffic already went outside the list,
+	// `high` after enough silent checks held, `medium` otherwise. The card's
+	// `confidence.level` is the weakest rule's.
+	Confidence InsightsRecommendationConfidenceLevel `json:"confidence"`
+	// Live traces of this service checked silently against the proposed list.
+	LiveChecked int `json:"liveChecked"`
+	// Of those, how many carried something outside the list. Non-zero means real
+	// traffic already disagrees with what was learned — look before enforcing.
+	LiveViolated int `json:"liveViolated"`
+	// Null until the first live trace was checked against this rule.
+	LiveSince *string `json:"liveSince,omitempty"`
+	// Null until the first live trace was checked against this rule.
+	LiveLast *string `json:"liveLast,omitempty"`
 }
 
 type InsightsRiskAssessment struct {
@@ -3847,21 +3942,27 @@ func (e InsightsRecommendationConfidenceLevel) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// The guardrail rule type a recommendation would create. Only
-// `attribute_correlation` is mined today.
+// What applying the recommendation would write. `attribute_correlation` adds one
+// cross-span rule to a transaction's guardrail; `service_guardrail` pre-fills a
+// service's allowlist rules from the profile it was observed to follow.
+//
+// The two kinds share one type: the fields a kind does not carry are null, so a
+// client switches on `kind` rather than on a union.
 type InsightsRecommendationKind string
 
 const (
 	InsightsRecommendationKindAttributeCorrelation InsightsRecommendationKind = "attribute_correlation"
+	InsightsRecommendationKindServiceGuardrail     InsightsRecommendationKind = "service_guardrail"
 )
 
 var AllInsightsRecommendationKind = []InsightsRecommendationKind{
 	InsightsRecommendationKindAttributeCorrelation,
+	InsightsRecommendationKindServiceGuardrail,
 }
 
 func (e InsightsRecommendationKind) IsValid() bool {
 	switch e {
-	case InsightsRecommendationKindAttributeCorrelation:
+	case InsightsRecommendationKindAttributeCorrelation, InsightsRecommendationKindServiceGuardrail:
 		return true
 	}
 	return false

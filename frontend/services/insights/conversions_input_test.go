@@ -346,6 +346,31 @@ func TestRecommendationApplyItemsFromInput(t *testing.T) {
 		}, *got[0].Spec)
 	})
 
+	t.Run("a rule selection is carried through", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{{
+			ID:    "60dd0838cd7e5977",
+			Rules: []string{"allowed_callees", "allowed_egress"},
+		}})
+
+		assert.Equal(t, []RecommendationApplyItem{{
+			ID:    "60dd0838cd7e5977",
+			Rules: []string{"allowed_callees", "allowed_egress"},
+		}}, got)
+	})
+
+	// The engine reads an empty selection as "every rule on the card", the same
+	// as omitting it, so an empty list is not forwarded as one — there is no
+	// way to spell "apply nothing", and a caller that wants that skips the item.
+	t.Run("an empty rule selection is left off the request", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{{
+			ID:    "60dd0838cd7e5977",
+			Rules: []string{},
+		}})
+
+		require.Len(t, got, 1)
+		assert.Nil(t, got[0].Rules)
+	})
+
 	t.Run("nil entries are skipped", func(t *testing.T) {
 		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{nil, {ID: "rec-2"}, nil})
 		assert.Equal(t, []RecommendationApplyItem{{ID: "rec-2"}}, got)

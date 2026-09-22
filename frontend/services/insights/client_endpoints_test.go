@@ -707,7 +707,7 @@ func TestClientEndpointContract(t *testing.T) {
 				WhyItMatters:    "w",
 				Transform:       "digits",
 				Transport:       true,
-				Spec: CorrelationSpec{
+				Spec: &CorrelationSpec{
 					Name:     "cart owner",
 					Left:     CorrelationSelector{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
 					Right:    CorrelationSelector{Service: "cart", Span: "getCart", Attr: "arg.0"},
@@ -738,6 +738,91 @@ func TestClientEndpointContract(t *testing.T) {
 				CreatedAt:      "2026-09-10T07:00:00Z",
 				UpdatedAt:      "2026-09-11T07:00:00Z",
 			},
+		},
+		{
+			// A service card carries none of the correlation fields, so every
+			// one of them has to decode as its zero value rather than tripping
+			// the decoder. The tab in an allowed_transactions item is part of
+			// the identity and must survive verbatim.
+			name:       "get a service guardrail recommendation",
+			call:       func(c *Client) (any, error) { return c.GetRecommendation(ctx, "60dd0838cd7e5977") },
+			wantMethod: http.MethodGet,
+			wantPath:   "/api/v1/recommendations/60dd0838cd7e5977",
+			wantQuery:  url.Values{},
+			response: `{
+				"id":"60dd0838cd7e5977","kind":"service_guardrail","state":"open","stale":false,"rank":0,
+				"scope":"service","scope_key":"bank/account-service","service":"account-service","namespace":"bank",
+				"title":"Lock down account-service","summary":"Every one of account-service's 6 transactions has finished learning.","why_it_matters":"Once the guardrail is on...",
+				"confidence":{"level":"low","live_broken":4,"live_held":4520,"live_last":"2026-09-22T09:41:57.118Z","live_since":"2026-09-15T08:11:02.355Z","reasons":["Lists come from the learned profile of 6 promoted transactions"],"sample_count":6},
+				"rules":[
+					{"confidence":"low","description":"This service may only reach these external destinations; any other egress is a violation.","items":["api.stripe.com:443"],"label":"Allowed egress","live_checked":1620,"live_last":"2026-09-22T09:41:57.118Z","live_since":"2026-09-15T08:11:02.355Z","live_violated":4,"rule":"allowed_egress"},
+					{"confidence":"medium","description":"This service may only expose these transactions; any new operation/kind is a violation.","items":["CONSUMER\taccount.events","HTTP\tGET /accounts"],"label":"Allowed transactions","live_checked":0,"live_last":"0001-01-01T00:00:00Z","live_since":"0001-01-01T00:00:00Z","live_violated":0,"rule":"allowed_transactions"}
+				],
+				"mined_at":"2026-09-22T09:40:11.204Z","created_at":"2026-09-14T22:03:19.641Z","updated_at":"2026-09-22T09:40:11.204Z"
+			}`,
+			want: &Recommendation{
+				ID:           "60dd0838cd7e5977",
+				Kind:         RecommendationKindServiceGuardrail,
+				State:        RecommendationStateOpen,
+				Rank:         0,
+				Scope:        "service",
+				ScopeKey:     "bank/account-service",
+				Service:      "account-service",
+				Namespace:    "bank",
+				Title:        "Lock down account-service",
+				Summary:      "Every one of account-service's 6 transactions has finished learning.",
+				WhyItMatters: "Once the guardrail is on...",
+				Confidence: RecommendationConfidence{
+					Level:       "low",
+					SampleCount: 6,
+					LiveHeld:    4520,
+					LiveBroken:  4,
+					LiveSince:   "2026-09-15T08:11:02.355Z",
+					LiveLast:    "2026-09-22T09:41:57.118Z",
+					Reasons:     []string{"Lists come from the learned profile of 6 promoted transactions"},
+				},
+				Rules: []RecommendationRule{
+					{
+						Rule:         "allowed_egress",
+						Label:        "Allowed egress",
+						Description:  "This service may only reach these external destinations; any other egress is a violation.",
+						Items:        []string{"api.stripe.com:443"},
+						Confidence:   "low",
+						LiveChecked:  1620,
+						LiveViolated: 4,
+						LiveSince:    "2026-09-15T08:11:02.355Z",
+						LiveLast:     "2026-09-22T09:41:57.118Z",
+					},
+					{
+						Rule:        "allowed_transactions",
+						Label:       "Allowed transactions",
+						Description: "This service may only expose these transactions; any new operation/kind is a violation.",
+						Items:       []string{"CONSUMER\taccount.events", "HTTP\tGET /accounts"},
+						Confidence:  "medium",
+						// Never shadow-checked, so both timestamps arrive as
+						// Go's zero time rather than as absent fields.
+						LiveSince: "0001-01-01T00:00:00Z",
+						LiveLast:  "0001-01-01T00:00:00Z",
+					},
+				},
+				MinedAt:   "2026-09-22T09:40:11.204Z",
+				CreatedAt: "2026-09-14T22:03:19.641Z",
+				UpdatedAt: "2026-09-22T09:40:11.204Z",
+			},
+		},
+		{
+			name: "apply only some of a service guardrail's rules",
+			call: func(c *Client) (any, error) {
+				return c.ApplyRecommendations(ctx, []RecommendationApplyItem{
+					{ID: "60dd0838cd7e5977", Rules: []string{"allowed_callees", "allowed_egress"}},
+				})
+			},
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/apply",
+			wantQuery:  url.Values{},
+			wantBody:   `{"items":[{"id":"60dd0838cd7e5977","rules":["allowed_callees","allowed_egress"]}]}`,
+			response:   `{"done":1,"failed":0,"errors":[]}`,
+			want:       &RecommendationBulkResult{Done: 1, Failed: 0, Errors: []RecommendationItemError{}},
 		},
 		{
 			name: "apply recommendations with an edited spec",
@@ -824,16 +909,30 @@ func TestClientEndpointContract(t *testing.T) {
 			},
 		},
 		{
-			name:       "recompute recommendations for one transaction",
-			call:       func(c *Client) (any, error) { return nil, c.RecomputeRecommendations(ctx, 7) },
+			name: "recompute recommendations for one transaction",
+			call: func(c *Client) (any, error) {
+				return nil, c.RecomputeRecommendations(ctx, RecommendationRecomputeRequest{TransactionID: 7})
+			},
 			wantMethod: http.MethodPost,
 			wantPath:   "/api/v1/recommendations/recompute",
 			wantQuery:  url.Values{},
 			wantBody:   `{"transaction_id":7}`,
 		},
 		{
-			name:       "recompute recommendations sweeps every transaction when the id is zero",
-			call:       func(c *Client) (any, error) { return nil, c.RecomputeRecommendations(ctx, 0) },
+			name: "recompute recommendations for one service's guardrail card",
+			call: func(c *Client) (any, error) {
+				return nil, c.RecomputeRecommendations(ctx, RecommendationRecomputeRequest{Namespace: "prod", Service: "checkout"})
+			},
+			wantMethod: http.MethodPost,
+			wantPath:   "/api/v1/recommendations/recompute",
+			wantQuery:  url.Values{},
+			wantBody:   `{"namespace":"prod","service":"checkout"}`,
+		},
+		{
+			name: "recompute recommendations sweeps everything when the request is empty",
+			call: func(c *Client) (any, error) {
+				return nil, c.RecomputeRecommendations(ctx, RecommendationRecomputeRequest{})
+			},
 			wantMethod: http.MethodPost,
 			wantPath:   "/api/v1/recommendations/recompute",
 			wantQuery:  url.Values{},
