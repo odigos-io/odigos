@@ -19,8 +19,8 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified:v1.35.3
-    createdAt: "2026-09-16T19:42:53Z"
+    containerImage: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified:v1.37.1
+    createdAt: "2026-09-21T14:30:08Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -35,7 +35,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.42.3
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
-  name: odigos-operator.v1.35.3
+  name: odigos-operator.v1.37.1
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -586,34 +586,34 @@ spec:
                   valueFrom:
                     configMapKeyRef:
                       key: ODIGOS_VERSION
-                      name: odigos-operator-odigos-version-64hm2m7bfc
+                      name: odigos-operator-odigos-version-fcd8mft7hk
                 - name: RELATED_IMAGE_AUTOSCALER
-                  value: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_COLLECTOR
-                  value: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_ENTERPRISE_COLLECTOR
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_FRONTEND
-                  value: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_INSTRUMENTOR
-                  value: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_ENTERPRISE_UI
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_ODIGLET
-                  value: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_AGENTS
-                  value: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_ENTERPRISE_AGENTS
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_SCHEDULER
-                  value: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified:v1.37.1
                 - name: RELATED_IMAGE_CLI
-                  value: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified:v1.35.3
-                image: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified:v1.35.3
+                  value: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified:v1.37.1
+                image: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified:v1.37.1
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -711,30 +711,30 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
-  - image: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified:v1.37.1
     name: autoscaler
-  - image: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified:v1.37.1
     name: collector
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified:v1.37.1
     name: enterprise-collector
-  - image: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified:v1.37.1
     name: frontend
-  - image: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified:v1.37.1
     name: instrumentor
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified:v1.37.1
     name: enterprise-instrumentor
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified:v1.37.1
     name: enterprise-ui
-  - image: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified:v1.37.1
     name: odiglet
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified:v1.37.1
     name: enterprise-odiglet
-  - image: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified:v1.37.1
     name: agents
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified:v1.37.1
     name: enterprise-agents
-  - image: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified:v1.37.1
     name: scheduler
-  - image: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified:v1.35.3
+  - image: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified:v1.37.1
     name: cli
-  version: 1.35.3
+  version: 1.37.1
