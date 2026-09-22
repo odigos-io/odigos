@@ -7,6 +7,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 const (
@@ -30,17 +31,15 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 		// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
 		// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
 		// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
-		// We expect there to exactly one OwnerReference
-		if len(element.OwnerReferences) != 1 {
+		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(element.Name, element.Namespace)
+		if err != nil {
 			logger.Error(
-				fmt.Errorf("unexpected number of OwnerReferences for instrumentation config %s/%s during logs configmap compilation: %d", element.Namespace, element.Name, len(element.OwnerReferences)),
+				fmt.Errorf("failed to extract workload from instrumentation config name %s/%s: %w", element.Namespace, element.Name, err),
 				"failed to compile logs include list for configmap for instrumentation config",
 			)
 			continue
 		}
-		owner := element.OwnerReferences[0]
-		name := owner.Name
-		includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
+		includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, pw.Name))
 	}
 
 	return config.GenericMap{

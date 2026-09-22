@@ -3,11 +3,13 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-shipping
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'shipping']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
+      name: shipping
+  (ownerReferences[?kind == 'Source' && name == 'shipping']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
       name: shipping
 spec:
   agentInjectionEnabled: true

@@ -273,12 +273,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-coupon
   namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: coupon
 status:
   runtimeDetailsByContainer:
     - containerName: coupon
@@ -288,12 +282,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-frontend
   namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: frontend
 status:
   runtimeDetailsByContainer:
     - containerName: frontend
@@ -303,12 +291,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-inventory
   namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: inventory
 status:
   runtimeDetailsByContainer:
     - containerName: inventory
@@ -318,12 +300,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-membership
   namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: membership
 status:
   runtimeDetailsByContainer:
     - containerName: membership
@@ -333,12 +309,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-pricing
   namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: pricing
 status:
   runtimeDetailsByContainer:
     - containerName: pricing
@@ -348,12 +318,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-currency
   namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: currency
 status:
   (runtimeDetailsByContainer[?containerName=='currency']):
     - language: php
@@ -365,12 +329,6 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-geolocation
   namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: geolocation
 status:
   (runtimeDetailsByContainer[?containerName=='geolocation']):
     - language: ruby

@@ -10,7 +10,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
 // IsObjectInstrumentedBySource returns true if the given object has an active, non-excluding Source.
@@ -31,7 +30,7 @@ func IsObjectInstrumentedBySource(ctx context.Context, sources *odigosv1.Workloa
 	}
 
 	if sources.Workload != nil {
-		if !odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
+		if !odigosv1.IsDisabledSource(sources.Workload) {
 			message := fmt.Sprintf("workload marked for automatic instrumentation by workload source CR '%s' in namespace '%s'",
 				sources.Workload.Name, sources.Workload.Namespace)
 			condition := metav1.Condition{
@@ -42,20 +41,18 @@ func IsObjectInstrumentedBySource(ctx context.Context, sources *odigosv1.Workloa
 			}
 			return true, condition, nil
 		}
-		if odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
-			message := fmt.Sprintf("workload marked to disable instrumentation by workload source CR '%s' in namespace '%s'",
-				sources.Workload.Name, sources.Workload.Namespace)
-			condition := metav1.Condition{
-				Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
-				Status:  metav1.ConditionFalse,
-				Reason:  string(odigosv1.MarkedForInstrumentationReasonWorkloadSourceDisabled),
-				Message: message,
-			}
-			return false, condition, nil
+		message := fmt.Sprintf("workload marked to disable instrumentation by workload source CR '%s' in namespace '%s'",
+			sources.Workload.Name, sources.Workload.Namespace)
+		condition := metav1.Condition{
+			Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  string(odigosv1.MarkedForInstrumentationReasonWorkloadSourceDisabled),
+			Message: message,
 		}
+		return false, condition, nil
 	}
 
-	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
+	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) {
 		reason := odigosv1.MarkedForInstrumentationReasonNamespaceSource
 		message := fmt.Sprintf("workload marked for automatic instrumentation by namespace source CR '%s' in namespace '%s'",
 			sources.Namespace.Name, sources.Namespace.Namespace)

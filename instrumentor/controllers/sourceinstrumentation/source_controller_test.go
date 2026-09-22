@@ -44,12 +44,15 @@ var _ = Describe("Source controller", func() {
 		})
 
 		When("Sources are uninstrumented", func() {
-			It("Deletes the InstrumentationConfig for the uninstrumented workload", func() {
+			It("Deletes the InstrumentationConfig when the Source owner ref is garbage-collected", func() {
 				Expect(k8sClient.Delete(ctx, source)).Should(Succeed())
+				// Source delete does not reconcile; IC cleanup is driven by owner-ref GC.
+				testutil.SimulateSourceOwnerRefGarbageCollected(ctx, k8sClient, instrumentationConfig, source.Name)
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 			})
 
 			It("Deletes the InstrumentationConfig when a Workload Source is updated to disableInstrumentation=true", func() {
+				Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(source), source)).Should(Succeed())
 				source.Spec.DisableInstrumentation = true
 				Expect(k8sClient.Update(ctx, source)).Should(Succeed())
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
@@ -74,6 +77,7 @@ var _ = Describe("Source controller", func() {
 
 			workingInstrumentationConfig = testutil.NewMockInstrumentationConfig(workingDeployment)
 			failingInstrumentationConfig = testutil.NewMockInstrumentationConfig(failingDeployment)
+			testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, workingInstrumentationConfig)
 		})
 
 		When("Sources are instrumented", func() {
@@ -88,12 +92,14 @@ var _ = Describe("Source controller", func() {
 		})
 
 		When("Sources are uninstrumented", func() {
-			It("Deletes the InstrumentationConfig for the uninstrumented workload", func() {
+			It("Deletes the InstrumentationConfig when the Source owner ref is garbage-collected", func() {
 				Expect(k8sClient.Delete(ctx, source)).Should(Succeed())
+				testutil.SimulateSourceOwnerRefGarbageCollected(ctx, k8sClient, workingInstrumentationConfig, source.Name)
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, workingInstrumentationConfig)
 			})
 
 			It("Deletes the InstrumentationConfig when a Workload Source is updated to disableInstrumentation=true", func() {
+				Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(source), source)).Should(Succeed())
 				source.Spec.DisableInstrumentation = true
 				Expect(k8sClient.Update(ctx, source)).Should(Succeed())
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, workingInstrumentationConfig)
@@ -146,22 +152,6 @@ var _ = Describe("Source controller", func() {
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig2)
 			})
 
-			It("Creates an InstrumentationConfig when an Excluded Workload Source is deleted", func() {
-				deployment2 := testutil.NewMockTestDeployment(namespace, "test-deployment-2")
-				Expect(k8sClient.Create(ctx, deployment2)).Should(Succeed())
-				source2 := testutil.NewMockSource(deployment2, true)
-				Expect(k8sClient.Create(ctx, source2)).Should(Succeed())
-				instrumentationConfig2 := testutil.NewMockInstrumentationConfig(deployment2)
-
-				source = testutil.NewMockSource(namespace, false)
-				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
-				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
-				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig2)
-
-				Expect(k8sClient.Delete(ctx, source2)).Should(Succeed())
-				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig2)
-			})
-
 			It("Creates an InstrumentationConfig when an Excluded Workload Source is updated to disableInstrumentation=false", func() {
 				deployment2 := testutil.NewMockTestDeployment(namespace, "test-deployment-2")
 				Expect(k8sClient.Create(ctx, deployment2)).Should(Succeed())
@@ -174,6 +164,7 @@ var _ = Describe("Source controller", func() {
 				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig2)
 
+				Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(source2), source2)).Should(Succeed())
 				source2.Spec.DisableInstrumentation = false
 				Expect(k8sClient.Update(ctx, source2)).Should(Succeed())
 				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig2)
@@ -182,12 +173,13 @@ var _ = Describe("Source controller", func() {
 		})
 
 		When("Namespaces are uninstrumented", func() {
-			It("Deletes the InstrumentationConfig for each workload in the namespace", func() {
+			It("Deletes the InstrumentationConfig when the Namespace Source owner ref is garbage-collected", func() {
 				source = testutil.NewMockSource(namespace, false)
 				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
 				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
 
 				Expect(k8sClient.Delete(ctx, source)).Should(Succeed())
+				testutil.SimulateSourceOwnerRefGarbageCollected(ctx, k8sClient, instrumentationConfig, source.Name)
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 			})
 
@@ -199,6 +191,7 @@ var _ = Describe("Source controller", func() {
 				source2 := testutil.NewMockSource(namespace, false)
 				Expect(k8sClient.Create(ctx, source2)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, source2)).Should(Succeed())
+				testutil.SimulateSourceOwnerRefGarbageCollected(ctx, k8sClient, instrumentationConfig, source2.Name)
 				testutil.AssertInstrumentationConfigRetained(ctx, k8sClient, instrumentationConfig)
 			})
 

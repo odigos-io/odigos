@@ -17,12 +17,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-otel-crash-demo
   namespace: default
-  ownerReferences:
-  - apiVersion: apps/v1
-    blockOwnerDeletion: true
-    controller: true
-    kind: Deployment
-    name: otel-crash-demo
+  (ownerReferences[?kind == 'Deployment' && name == 'otel-crash-demo']):
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: otel-crash-demo
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 spec:
   agentInjectionEnabled: false
   containers:

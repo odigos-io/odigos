@@ -45,7 +45,7 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 
 	isCronJob := false
 	for _, ref := range ic.OwnerReferences {
-		if ref.Controller != nil && *ref.Controller && ref.Kind == "CronJob" {
+		if ref.Kind == "CronJob" {
 			isCronJob = true
 			break
 		}
