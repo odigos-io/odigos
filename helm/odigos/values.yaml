@@ -12,6 +12,22 @@ imagePullSecrets: []
 
 # @schema
 # description: |-
+#   Copy Odigos image pull secrets (imagePullSecrets and odigos-enterprise-registry)
+#   into instrumented application namespaces. Off by default.
+#   Enable for k8s-init-container with a private registry (enterprise registry or a
+#   mirrored registry). Kubernetes 1.35+ verifies pull credentials even for cached
+#   images (KubeletEnsureSecretPulledImages), so the agents init container needs the
+#   secret in the application namespace. The webhook always injects the secret names
+#   onto those pods; this flag only controls copying the Secret objects.
+#   Copies are labeled odigos.io/copied-image-pull-secret=true and are updated on
+#   re-sync. A same-named secret without that label is not overwritten. After
+#   rotating credentials, annotate a source secret in the Odigos namespace with
+#   odigos.io/sync-odigos-pull-secrets.
+# @schema
+syncOdigosPullSecrets: false
+
+# @schema
+# description: |-
 #   Default image registry prefix. When unset:
 #     - community installs use `docker.io/keyval`
 #     - enterprise installs (onPremToken / odigos-pro secret) use `registry.odigos.io`

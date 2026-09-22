@@ -107,8 +107,9 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	}
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
-	if conf.MountMethod != nil && *conf.MountMethod == common.K8sInitContainerMountMethod {
-		if copyErr := pro.CopyImagePullSecretsIfMissing(ctx, c, c, env.GetCurrentNamespace(), namespace, conf.ImagePullSecrets); copyErr != nil {
+	if conf.SyncOdigosPullSecrets && conf.MountMethod != nil && *conf.MountMethod == common.K8sInitContainerMountMethod {
+		copyErr := pro.CopyImagePullSecrets(ctx, c, c, env.GetCurrentNamespace(), namespace, conf.ImagePullSecrets)
+		if copyErr = pro.IgnoreDestAlreadyExists(copyErr); copyErr != nil {
 			return ctrl.Result{}, copyErr
 		}
 	}

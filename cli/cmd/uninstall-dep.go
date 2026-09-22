@@ -591,29 +591,15 @@ func cleanupNodeOdigosLabels(ctx context.Context, client *kube.Client, ns, _ str
 	return nil
 }
 
-func removeCopiedImagePullSecrets(ctx context.Context, client *kube.Client, odigosNs string) error {
+func removeCopiedImagePullSecrets(ctx context.Context, client *kube.Client, _ string) error {
 	l := log.Print("Removing copied image pull secrets...")
-	list, err := client.CoreV1().Secrets("").List(ctx, metav1.ListOptions{
+	err := client.CoreV1().Secrets("").DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
-			MatchLabels: labels.OdigosSystem,
+			MatchLabels: labels.OdigosCopiedImagePullSecret,
 		}),
 	})
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return err
-	}
-
-	var deleteErr error
-	for _, secret := range list.Items {
-		if secret.Namespace == odigosNs {
-			continue
-		}
-		err = client.CoreV1().Secrets(secret.Namespace).Delete(ctx, secret.Name, metav1.DeleteOptions{})
-		if err != nil && !apierrors.IsNotFound(err) {
-			deleteErr = errors.Join(deleteErr, err)
-		}
-	}
-	if deleteErr != nil {
-		return deleteErr
 	}
 	l.Success()
 	return nil

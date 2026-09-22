@@ -58,9 +58,18 @@ true
 {{- end -}}
 
 {{- define "odigos.needsImagePullSecretCopy" -}}
-{{- if and (eq .Values.instrumentor.mountMethod "k8s-init-container") (or (gt (len (.Values.imagePullSecrets | default list)) 0) (include "odigos.hasEnterpriseRegistryPullSecret" .)) -}}
+{{- if .Values.syncOdigosPullSecrets -}}
 true
 {{- end -}}
+{{- end -}}
+
+{{- define "odigos.imagePullSecretResourceNames" -}}
+{{- range .Values.imagePullSecrets }}
+- {{ . | quote }}
+{{- end }}
+{{- if include "odigos.hasEnterpriseRegistryPullSecret" . }}
+- {{ include "odigos.enterpriseRegistryPullSecretName" . | quote }}
+{{- end }}
 {{- end -}}
 
 {{- define "odigos.validateEnterpriseRegistryPullSecrets" -}}
