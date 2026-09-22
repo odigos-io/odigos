@@ -102,7 +102,7 @@ func TestUpsertLearningPolicyAndReadMatchesOnClassAndScope(t *testing.T) {
 	assert.Equal(t, 2, *stored.MinMatches)
 
 	_, err = client.UpsertLearningPolicyAndRead(context.Background(), LearningPolicy{
-		Class:    "D8_payload_size",
+		Class:    "D7_payload_size",
 		Mode:     "all",
 		Scope:    "global",
 		ScopeKey: "",

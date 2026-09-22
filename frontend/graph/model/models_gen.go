@@ -854,7 +854,7 @@ type InsightsBaselineClass struct {
 	ClassDescription string `json:"classDescription"`
 	// JSON-encoded baseline data; shape varies per deviation class.
 	Data *string `json:"data,omitempty"`
-	// Chart-ready histogram for D3_latency / D8_payload_size. Omitted for other classes.
+	// Chart-ready histogram for D3_latency / D7_payload_size. Omitted for other classes.
 	Histogram                    *InsightsBaselineHistogram `json:"histogram,omitempty"`
 	DataSchemaVersion            *int                       `json:"dataSchemaVersion,omitempty"`
 	ObservationCount             int                        `json:"observationCount"`
@@ -865,7 +865,7 @@ type InsightsBaselineClass struct {
 	Learning                     *InsightsBaselineLearning  `json:"learning"`
 }
 
-// Chart-ready exponential histogram for D3_latency and D8_payload_size.
+// Chart-ready exponential histogram for D3_latency and D7_payload_size.
 // Plot series[].bars; do not recompute bounds from raw data.
 type InsightsBaselineHistogram struct {
 	Unit              InsightsBaselineHistogramUnit      `json:"unit"`
@@ -3452,14 +3452,13 @@ func (e InsightsCorrelationRelation) MarshalGQL(w io.Writer) {
 type InsightsDeviationClass string
 
 const (
-	InsightsDeviationClassD1CallEdges     InsightsDeviationClass = "D1_call_edges"
-	InsightsDeviationClassD2Egress        InsightsDeviationClass = "D2_egress"
-	InsightsDeviationClassD3Latency       InsightsDeviationClass = "D3_latency"
-	InsightsDeviationClassD4ArgsReturns   InsightsDeviationClass = "D4_args_returns"
-	InsightsDeviationClassD5Libraries     InsightsDeviationClass = "D5_libraries"
-	InsightsDeviationClassD6AttrRelations InsightsDeviationClass = "D6_attr_relations"
-	InsightsDeviationClassD7DbAccess      InsightsDeviationClass = "D7_db_access"
-	InsightsDeviationClassD8PayloadSize   InsightsDeviationClass = "D8_payload_size"
+	InsightsDeviationClassD1CallEdges   InsightsDeviationClass = "D1_call_edges"
+	InsightsDeviationClassD2Egress      InsightsDeviationClass = "D2_egress"
+	InsightsDeviationClassD3Latency     InsightsDeviationClass = "D3_latency"
+	InsightsDeviationClassD4ArgsReturns InsightsDeviationClass = "D4_args_returns"
+	InsightsDeviationClassD5Libraries   InsightsDeviationClass = "D5_libraries"
+	InsightsDeviationClassD6DbAccess    InsightsDeviationClass = "D6_db_access"
+	InsightsDeviationClassD7PayloadSize InsightsDeviationClass = "D7_payload_size"
 )
 
 var AllInsightsDeviationClass = []InsightsDeviationClass{
@@ -3468,14 +3467,13 @@ var AllInsightsDeviationClass = []InsightsDeviationClass{
 	InsightsDeviationClassD3Latency,
 	InsightsDeviationClassD4ArgsReturns,
 	InsightsDeviationClassD5Libraries,
-	InsightsDeviationClassD6AttrRelations,
-	InsightsDeviationClassD7DbAccess,
-	InsightsDeviationClassD8PayloadSize,
+	InsightsDeviationClassD6DbAccess,
+	InsightsDeviationClassD7PayloadSize,
 }
 
 func (e InsightsDeviationClass) IsValid() bool {
 	switch e {
-	case InsightsDeviationClassD1CallEdges, InsightsDeviationClassD2Egress, InsightsDeviationClassD3Latency, InsightsDeviationClassD4ArgsReturns, InsightsDeviationClassD5Libraries, InsightsDeviationClassD6AttrRelations, InsightsDeviationClassD7DbAccess, InsightsDeviationClassD8PayloadSize:
+	case InsightsDeviationClassD1CallEdges, InsightsDeviationClassD2Egress, InsightsDeviationClassD3Latency, InsightsDeviationClassD4ArgsReturns, InsightsDeviationClassD5Libraries, InsightsDeviationClassD6DbAccess, InsightsDeviationClassD7PayloadSize:
 		return true
 	}
 	return false
