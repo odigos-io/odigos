@@ -28,6 +28,15 @@ All other Odigos components and system resources are deleted automatically by He
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
+		if cmd.Flag("recover-terminating-source-crd").Changed {
+			if err := recoverTerminatingSourceCRD(ctx, client); err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to recover terminating Source CRD: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Terminating Source CRD recovered\n")
+			return
+		}
+
 		nsFlag, err := cmd.Flags().GetString("namespace")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
@@ -139,6 +148,9 @@ odigos cleanup --yes
 # Cleanup Odigos without waiting for pods to rollout without instrumentation
 odigos cleanup --no-wait
 
+# Recover a Source CRD stuck Terminating (usually after cleanup Job timeout; used by Helm pre-install hook)
+odigos cleanup --recover-terminating-source-crd
+
 `,
 }
 
@@ -147,6 +159,7 @@ func init() {
 	cleanupCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	cleanupCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
 	cleanupCmd.Flags().Bool("instrumentation-only", false, "only remove instrumentation from workloads, without removing the entire Odigos setup")
+	cleanupCmd.Flags().Bool("recover-terminating-source-crd", false, "strip Source finalizers and wait for a Terminating sources.odigos.io CRD to finish deleting (usually after cleanup Job timeout)")
 	cleanupCmd.Flags().StringP("namespace", "n", "", "namespace to uninstall Odigos from (overrides auto-detection)")
 
 }

@@ -412,6 +412,75 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 	return returnErr
 }
 
+// recoverTerminatingSourceCRD unblocks a Source CRD stuck in Terminating after a
+// failed/incomplete uninstall. This mostly happens when the Helm pre-delete
+// cleanup Job times out before Sources finish deleting. Controllers are
+// typically already gone, so Source finalizers must be stripped before
+// instances (and then the CRD) can finish deleting. Helm waits for this to
+// complete before applying a replacement CRD.
+func recoverTerminatingSourceCRD(ctx context.Context, client *kube.Client) error {
+	crd, err := client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, k8sconsts.SourceCrdName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			fmt.Printf("Source CRD %s not found; nothing to recover\n", k8sconsts.SourceCrdName)
+			return nil
+		}
+		return fmt.Errorf("failed to get Source CRD %s: %w", k8sconsts.SourceCrdName, err)
+	}
+	if crd.DeletionTimestamp.IsZero() {
+		fmt.Printf("Source CRD %s is not terminating; nothing to recover\n", k8sconsts.SourceCrdName)
+		return nil
+	}
+
+	fmt.Printf("Source CRD %s is terminating; clearing Source finalizers so it can finish deleting\n", k8sconsts.SourceCrdName)
+
+	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to list Sources: %w", err)
+	}
+
+	finalizerPatch := []byte(`{"metadata":{"finalizers":null}}`)
+	var patchErr error
+	if sources != nil {
+		for _, source := range sources.Items {
+			if len(source.Finalizers) == 0 {
+				continue
+			}
+			_, e := client.OdigosClient.Sources(source.Namespace).Patch(ctx, source.Name, types.MergePatchType, finalizerPatch, metav1.PatchOptions{})
+			if e != nil && !apierrors.IsNotFound(e) {
+				patchErr = errors.Join(patchErr, fmt.Errorf("patch %s/%s: %w", source.Namespace, source.Name, e))
+			}
+		}
+	}
+	if patchErr != nil {
+		return patchErr
+	}
+
+	if err := removeAllSources(ctx, client); err != nil {
+		return err
+	}
+
+	l := log.Print(fmt.Sprintf("Waiting for Source CRD %s to be fully deleted...", k8sconsts.SourceCrdName))
+	pollErr := wait.PollUntilContextTimeout(ctx, 2*time.Second, 4*time.Minute, true, func(innerCtx context.Context) (bool, error) {
+		_, err := client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Get(innerCtx, k8sconsts.SourceCrdName, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			l.Success()
+			return true, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		return false, nil
+	})
+	if pollErr != nil {
+		if errors.Is(pollErr, context.DeadlineExceeded) {
+			return fmt.Errorf("deadline exceeded waiting for Source CRD %s to be deleted", k8sconsts.SourceCrdName)
+		}
+		return fmt.Errorf("error waiting for Source CRD %s to be deleted: %w", k8sconsts.SourceCrdName, pollErr)
+	}
+	return nil
+}
+
 func uninstallCRDs(ctx context.Context, client *kube.Client, ns string, _ string) error {
 	list, err := client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
