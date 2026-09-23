@@ -36,12 +36,6 @@ const (
 	// RollbackRecoveryAtAnnotation on the same IC, the recovery has been handled.
 	RollbackRecoveryProcessedAtAnnotation = "odigos.io/rollback-recovery-processed"
 
-	// SyncOdigosPullSecretsAnnotation on a source pull secret in the Odigos namespace
-	// retriggers a one-way copy of that secret into instrumented namespaces.
-	// Change the annotation value to run another attempt. Existing destination
-	// secrets are not overwritten.
-	SyncOdigosPullSecretsAnnotation = "odigos.io/sync-odigos-pull-secrets"
-
 	// this label is not used in the api server, it is injected only into the controller-runtime cache object,
 	// and allows efficient listing of static pods based on the label.
 	OdigosVirtualStaticPodNameLabel = "odigos.io/virtual-static-pod-name"

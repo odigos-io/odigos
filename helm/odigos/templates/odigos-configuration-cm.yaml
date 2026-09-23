@@ -323,9 +323,6 @@ data:
       - {{ include "odigos.enterpriseRegistryPullSecretName" . | quote }}
       {{- end }}
     {{- end }}
-    {{- if .Values.syncOdigosPullSecrets }}
-    syncOdigosPullSecrets: true
-    {{- end }}
     {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
     sampling:
       {{- if ne .Values.sampling.dryRun nil }}

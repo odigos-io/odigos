@@ -118,31 +118,7 @@ This applies when you use `k8s-init-container` with a private registry:
 - the enterprise registry (`registry.odigos.io` via `odigos-enterprise-registry`, including `externalOnpremPullSecret` / `externalOnpremTokenSecret`)
 - a private mirrored registry (`imagePrefix` + `imagePullSecrets`)
 
-On Kubernetes 1.35+, the pod webhook adds those secret **names** to instrumented pods. Copying the Secret objects themselves is **off by default**. Below 1.35, odiglet pre-pulls the agents image onto each node and kubelet will use that cache without per-pod credentials.
-
-**Option A — let Odigos copy the secrets**
-
-```bash
-helm upgrade --install odigos odigos/odigos \
-  --namespace odigos-system \
-  --set instrumentor.mountMethod=k8s-init-container \
-  --set syncOdigosPullSecrets=true
-```
-
-Odigos labels copies with `odigos.io/copied-image-pull-secret=true`. Those copies are updated when the source changes. A secret with the same name that Odigos did not create is left alone.
-
-After rotating credentials in the Odigos namespace, re-sync the labeled copies by annotating the source secret:
-
-```bash
-kubectl annotate secret odigos-enterprise-registry -n odigos-system \
-  odigos.io/sync-odigos-pull-secrets="$(date +%s)" --overwrite
-```
-
-Use your `imagePullSecrets` name instead of `odigos-enterprise-registry` when that is the source you rotated. You do not need to delete Odigos copies first. If a workload namespace already has an unmanaged secret with that name, delete or rename it before the copy can succeed.
-
-**Option B — sync the secrets yourself**
-
-Leave `syncOdigosPullSecrets` unset. Create the same-named dockerconfig secret in every instrumented namespace (External Secrets, Reflector, or a GitOps manifest). On Kubernetes 1.35+, the webhook still injects `imagePullSecrets` on the pod so kubelet can use your copies.
+On Kubernetes 1.35+, the pod webhook adds those secret **names** to instrumented pods. You must create the same-named dockerconfig secret in every instrumented namespace yourself (External Secrets, Reflector, or a GitOps manifest). Below 1.35, odiglet pre-pulls the agents image onto each node and kubelet will use that cache without per-pod credentials.
 
 ### 4. CSI Driver
 

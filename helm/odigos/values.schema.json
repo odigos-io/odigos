@@ -2543,12 +2543,6 @@
       "required": [],
       "title": "signals"
     },
-    "syncOdigosPullSecrets": {
-      "default": "false",
-      "description": "Copy Odigos image pull secrets (imagePullSecrets and odigos-enterprise-registry)\ninto instrumented application namespaces. Off by default.\nEnable for k8s-init-container with a private registry (enterprise registry or a\nmirrored registry). Kubernetes 1.35+ verifies pull credentials even for cached\nimages (KubeletEnsureSecretPulledImages), so the agents init container needs the\nsecret in the application namespace. On 1.35+ the webhook injects the secret\nnames onto those pods; this flag only controls copying the Secret objects.\nBelow 1.35, odiglet pre-pulls the agents image and kubelet will use the cache\nwithout per-pod credentials. Copies are labeled\nodigos.io/copied-image-pull-secret=true and are updated on re-sync. A same-named\nsecret without that label is not overwritten. After rotating credentials,\nannotate a source secret in the Odigos namespace with\nodigos.io/sync-odigos-pull-secrets.",
-      "required": [],
-      "title": "syncOdigosPullSecrets"
-    },
     "telemetry": {
       "additionalProperties": false,
       "description": "Telemetry configuration for Odigos.",

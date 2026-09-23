@@ -112,17 +112,5 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		return err
 	}
 
-	err = builder.
-		ControllerManagedBy(mgr).
-		Named("agentenabled-pullsecretsync").
-		For(&corev1.Secret{}).
-		WithEventFilter(&syncOdigosPullSecretsAnnotationPredicate{}).
-		Complete(&PullSecretSyncReconciler{
-			Client: mgr.GetClient(),
-		})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

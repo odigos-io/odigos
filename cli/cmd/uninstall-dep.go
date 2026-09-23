@@ -90,13 +90,6 @@ and rollback any metadata changes made to your objects.`,
 				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources: %s\n", err)
 				os.Exit(1)
 			}
-			if config != nil && config.SyncOdigosPullSecrets {
-				err = removeCopiedImagePullSecrets(ctx, client, ns)
-				if err != nil {
-					fmt.Printf("\033[31mERROR\033[0m Failed to remove copied image pull secrets: %s\n", err)
-					os.Exit(1)
-				}
-			}
 			if autoRolloutDisabled {
 				fmt.Println("Odigos is configured to NOT rollout workloads automatically; existing pods will remain instrumented until a manual rollout is triggered.")
 			} else if !cmd.Flag("no-wait").Changed {
@@ -590,20 +583,6 @@ func cleanupNodeOdigosLabels(ctx context.Context, client *kube.Client, ns, _ str
 		}
 	}
 
-	return nil
-}
-
-func removeCopiedImagePullSecrets(ctx context.Context, client *kube.Client, _ string) error {
-	l := log.Print("Removing copied image pull secrets...")
-	err := client.CoreV1().Secrets("").DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
-			MatchLabels: labels.OdigosCopiedImagePullSecret,
-		}),
-	})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return err
-	}
-	l.Success()
 	return nil
 }
 

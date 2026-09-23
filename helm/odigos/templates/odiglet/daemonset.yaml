@@ -142,8 +142,6 @@ spec:
       {{- if eq .Values.instrumentor.mountMethod "k8s-init-container" }}
         # This init container pre-pulls the odigos-agents image to the node
         # so it's available in the image cache when user pods need it.
-        # On Kubernetes 1.35+ kubelet still re-verifies credentials for cached
-        # images; instrumented pods then also get imagePullSecrets injected.
         - name: odigos-agents-image-pull
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-agents" "Tag" $odigletImageTag) }}
