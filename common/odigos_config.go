@@ -687,14 +687,8 @@ type OdigosConfiguration struct {
 
 	// ImagePullSecrets to use for Odigos components and the agents init container.
 	// On Kubernetes 1.35+ the pod webhook injects these names onto init-container pods.
-	// Secrets are copied into instrumented namespaces only when SyncOdigosPullSecrets is set.
+	// The Secret objects must already exist in each instrumented namespace.
 	ImagePullSecrets []string `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets"`
-
-	// SyncOdigosPullSecrets copies ImagePullSecrets from the Odigos namespace into
-	// instrumented namespaces. Opt-in; intended for k8s-init-container with a private
-	// registry (enterprise registry or a mirrored registry) on Kubernetes 1.35+.
-	// Off by default.
-	SyncOdigosPullSecrets bool `json:"syncOdigosPullSecrets,omitempty" yaml:"syncOdigosPullSecrets"`
 
 	// global configurations for sampling.
 	Sampling *SamplingConfiguration `json:"sampling,omitempty" yaml:"sampling"`
