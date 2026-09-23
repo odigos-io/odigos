@@ -229,6 +229,7 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 
 type WebhookConfig struct {
 	DistrosProvider *distros.Provider
+	K8sVersion      *version.Version
 }
 
 func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
@@ -251,6 +252,7 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 		Client:        mgr.GetClient(),
 		DistrosGetter: config.DistrosProvider.Getter,
 		Decoder:       decoder,
+		K8sVersion:    config.K8sVersion,
 	}
 
 	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.
