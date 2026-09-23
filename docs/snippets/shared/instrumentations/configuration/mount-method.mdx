@@ -118,7 +118,7 @@ This applies when you use `k8s-init-container` with a private registry:
 - the enterprise registry (`registry.odigos.io` via `odigos-enterprise-registry`, including `externalOnpremPullSecret` / `externalOnpremTokenSecret`)
 - a private mirrored registry (`imagePrefix` + `imagePullSecrets`)
 
-The pod webhook always adds those secret **names** to instrumented pods. Copying the Secret objects themselves is **off by default**.
+On Kubernetes 1.35+, the pod webhook adds those secret **names** to instrumented pods. Copying the Secret objects themselves is **off by default**. Below 1.35, odiglet pre-pulls the agents image onto each node and kubelet will use that cache without per-pod credentials.
 
 **Option A — let Odigos copy the secrets**
 
@@ -142,7 +142,7 @@ Use your `imagePullSecrets` name instead of `odigos-enterprise-registry` when th
 
 **Option B — sync the secrets yourself**
 
-Leave `syncOdigosPullSecrets` unset. Create the same-named dockerconfig secret in every instrumented namespace (External Secrets, Reflector, or a GitOps manifest). The webhook still injects `imagePullSecrets` on the pod so kubelet can use your copies.
+Leave `syncOdigosPullSecrets` unset. Create the same-named dockerconfig secret in every instrumented namespace (External Secrets, Reflector, or a GitOps manifest). On Kubernetes 1.35+, the webhook still injects `imagePullSecrets` on the pod so kubelet can use your copies.
 
 ### 4. CSI Driver
 

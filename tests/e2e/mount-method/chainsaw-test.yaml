@@ -16,15 +16,22 @@ spec:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
 
+    - name: '[1 - Setup] Create image pull secret for later sync test'
+      try:
+        - script:
+            content: kubectl create namespace odigos-test --dry-run=client -o yaml | kubectl apply -f -
+        - apply:
+            file: apply/e2e-pull-secret.yaml
+
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
             timeout: 5m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set instrumentor.mountMethod=k8s-init-container
+                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set instrumentor.mountMethod=k8s-init-container --set imagePullSecrets[0]=odigos-e2e-pull-secret
               else
-                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-init-container
+                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-init-container --set imagePullSecrets[0]=odigos-e2e-pull-secret
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
               ../../common/verify_odigos_installation.sh odigos-test
@@ -100,6 +107,47 @@ spec:
             timeout: 1m10s
             content: ../../common/wait_for_rollout.sh
 
+    - name: '[2 - Pull secret sync] Flag disabled does not copy secrets'
+      try:
+        - script:
+            content: |
+              if kubectl get secret odigos-e2e-pull-secret -n default >/dev/null 2>&1; then
+                echo "copied pull secret should not exist while syncOdigosPullSecrets is disabled"
+                exit 1
+              fi
+
+    - name: '[2 - Pull secret sync] Enable syncOdigosPullSecrets'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set instrumentor.mountMethod=k8s-init-container --set imagePullSecrets[0]=odigos-e2e-pull-secret --set syncOdigosPullSecrets=true
+              else
+                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-init-container --set imagePullSecrets[0]=odigos-e2e-pull-secret --set syncOdigosPullSecrets=true
+              fi
+
+    - name: '[2 - Pull secret sync] Secret copied into app namespace'
+      try:
+        - assert:
+            timeout: 1m10s
+            file: assert/copied-pull-secret.yaml
+
+    - name: '[2 - Pull secret sync] Inject pull secrets on Kubernetes 1.35+'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              kubectl rollout restart deployment/frontend
+              kubectl rollout status deployment/frontend --timeout=3m
+              minor=$(kubectl get nodes -o jsonpath='{.items[0].status.nodeInfo.kubeletVersion}' | sed -E 's/^v[0-9]+\.([0-9]+).*/\1/')
+              secrets=$(kubectl get pod -n default -l app=frontend -o jsonpath='{.items[0].spec.imagePullSecrets[*].name}')
+              if [ "$minor" -ge 35 ]; then
+                echo "$secrets" | grep -q 'odigos-e2e-pull-secret' || { echo "expected imagePullSecrets on 1.${minor}: got '${secrets}'"; exit 1; }
+              else
+                echo "$secrets" | grep -q 'odigos-e2e-pull-secret' && { echo "did not expect imagePullSecrets on 1.${minor}: got '${secrets}'"; exit 1; } || true
+              fi
+
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
         - apply:
@@ -136,7 +184,7 @@ spec:
             timeout: 2m
             content: |
               # Upgrade existing installation to CSI driver mount method
-              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-csi-driver --set odiglet.odiglet.privileged=true
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-csi-driver --set odiglet.odiglet.privileged=true --set imagePullSecrets[0]=odigos-e2e-pull-secret --set syncOdigosPullSecrets=true
 
     - name: '[3 - CSI Driver Test] Assert config changed successfully'
       try:

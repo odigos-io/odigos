@@ -17,6 +17,6 @@ rules:
 {{- if include "odigos.needsImagePullSecretCopy" . }}
 - apiGroups: [""]
   resources: ["secrets"]
-  verbs: ["list", "delete"]
+  verbs: ["list", "delete", "deletecollection"]
 {{- end }}
 

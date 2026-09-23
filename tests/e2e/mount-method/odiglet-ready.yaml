@@ -11,6 +11,9 @@ metadata:
       kind: DaemonSet
       name: odiglet
 spec:
+  initContainers:
+    - name: odigos-agents-image-pull
+      image: docker.io/keyval/odigos-agents:e2e-test
   containers:
     - name: odiglet
       resources: {}
@@ -80,6 +83,9 @@ metadata:
       kind: DaemonSet
       name: odiglet
 spec:
+  initContainers:
+    - name: odigos-agents-image-pull
+      image: docker.io/keyval/odigos-agents:e2e-test
   containers:
     - name: odiglet
       resources: {}

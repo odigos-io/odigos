@@ -14,6 +14,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -38,7 +39,8 @@ type PodsWebhook struct {
 	client.Client
 	DistrosGetter *distros.Getter
 	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
-	Decoder     admission.Decoder
+	Decoder    admission.Decoder
+	K8sVersion *version.Version
 }
 
 var _ admission.Handler = &PodsWebhook{}
@@ -216,8 +218,12 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		if len(dirsToCopy) > 0 {
 			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
 			createInitContainer(pod, dirsToCopy, odigosConfiguration)
-			for _, name := range odigosConfiguration.ImagePullSecrets {
-				injectImagePullSecret(pod, name)
+			// Pre-pull on odiglet is enough below 1.35. From 1.35 kubelet re-verifies
+			// credentials for cached images, so instrumented pods need the secret names.
+			if shouldInjectInitContainerPullSecrets(p.K8sVersion) {
+				for _, name := range odigosConfiguration.ImagePullSecrets {
+					injectImagePullSecret(pod, name)
+				}
 			}
 		}
 	}
@@ -547,6 +553,10 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 		}
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
+}
+
+func shouldInjectInitContainerPullSecrets(k8sVersion *version.Version) bool {
+	return k8sVersion != nil && k8sVersion.AtLeast(k8sconsts.MinK8SVersionForInitContainerPullSecrets)
 }
 
 func injectImagePullSecret(pod *corev1.Pod, secretName string) {
