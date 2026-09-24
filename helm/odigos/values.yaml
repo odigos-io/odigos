@@ -37,6 +37,35 @@ imagePrefix:
 images: {}
 
 # @schema
+# description: AWS Marketplace Enterprise activation. Requires matching Marketplace release images.
+# type: object
+# @schema
+marketplace:
+  # @schema
+  # description: Activate Enterprise through AWS Marketplace instead of an Odigos token.
+  # type: boolean
+  # @schema
+  enabled: false
+  # @schema
+  # description: Billing integration built into the selected Marketplace images. Node metering requires IRSA.
+  # type: string
+  # enum: [contract, node]
+  # @schema
+  billingModel: contract
+  # @schema
+  # description: AWS region containing the buyer's License Manager entitlement.
+  # type: string
+  # @schema
+  licenseManagerRegion: us-east-1
+  # @schema
+  # description: IAM annotations for the instrumentor, odiglet, UI and gateway collector service accounts.
+  # type: object
+  # additionalProperties:
+  #   type: string
+  # @schema
+  serviceAccountAnnotations: {}
+
+# @schema
 # description: |-
 #   Namespaces excluded from the Odigos UI so system and infrastructure namespaces
 #   (service meshes, local storage, lease holders, etc.) do not clutter the sources list.

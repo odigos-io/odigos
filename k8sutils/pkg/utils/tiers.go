@@ -33,7 +33,15 @@ func GetCurrentOdigosTier(ctx context.Context, namespaces string, client *kubern
 	if _, exists := sec.Data[odigosOnpremTokenSecretKey]; exists {
 		return common.OnPremOdigosTier, nil
 	}
+	if IsMarketplaceSecret(sec) {
+		return common.OnPremOdigosTier, nil
+	}
 	return common.CommunityOdigosTier, nil
+}
+
+// IsMarketplaceSecret identifies the activation mode, not proof of an AWS entitlement.
+func IsMarketplaceSecret(secret *corev1.Secret) bool {
+	return secret != nil && string(secret.Data[k8sconsts.OdigosMarketplaceSecretKey]) == "true"
 }
 
 func getCurrentOdigosProSecret(ctx context.Context, namespace string, client *kubernetes.Clientset) (*corev1.Secret, error) {

@@ -217,6 +217,12 @@ spec:
           resources:
 {{ include "odigos.odiglet.resolvedResources" . | indent 12 }}
           env:
+          {{- if and .Values.marketplace.enabled (eq .Values.marketplace.billingModel "node") }}
+            - name: ODIGOS_MARKETPLACE_POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+          {{- end }}
             - name: NODE_NAME
               valueFrom:
                 fieldRef:
@@ -240,11 +246,7 @@ spec:
           {{- if include "odigos.secretExists" . }}
             - name: OTEL_GO_OFFSETS_FILE
               value: /offsets/go_offset_results.json
-            - name: ODIGOS_ONPREM_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: odigos-pro
-                  key: odigos-onprem-token
+{{ include "odigos.enterpriseAuthEnv" . | indent 12 }}
           {{- end }}
             - name: GOMEMLIMIT
               value: {{ include "odigos.odiglet.gomemlimit" . }}
@@ -356,11 +358,7 @@ spec:
                   resource: limits.cpu
           {{- if include "odigos.secretExists" . }}
             # Verified at startup by the enterprise collector's odigos_enterprise_auth extension.
-            - name: ODIGOS_ONPREM_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: odigos-pro
-                  key: odigos-onprem-token
+{{ include "odigos.enterpriseAuthEnv" . | indent 12 }}
           {{- end }}
           livenessProbe:
             httpGet:

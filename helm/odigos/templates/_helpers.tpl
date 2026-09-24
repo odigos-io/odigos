@@ -46,7 +46,7 @@ true
 {{- end -}}
 
 {{- define "odigos.usesOdigosRegistry" -}}
-{{- if eq (include "utils.imagePrefix" .) "registry.odigos.io" -}}
+{{- if and (not .Values.marketplace.enabled) (eq (include "utils.imagePrefix" .) "registry.odigos.io") -}}
 true
 {{- end -}}
 {{- end -}}
@@ -75,6 +75,8 @@ true
 {{- $componentImage := get $images .Component -}}
 {{- if $componentImage -}}
   {{- $componentImage -}}
+{{- else if $.Values.marketplace.enabled -}}
+  {{- fail (printf "Marketplace requires an explicit images.%s reference from its release artifact list" .Component) -}}
 {{- else -}}
   {{- $certified := $.Values.openshift.enabled }}
   {{- if hasKey $.Values.openshift "certifiedImageTags" }}
@@ -99,13 +101,38 @@ Returns "true" if any userInstrumentationEnvs.language is enabled or has env var
 {{- end }}
 
 {{- define "odigos.secretExists" -}}
+  {{- if .Values.marketplace.enabled -}}
+true
+  {{- else -}}
   {{- $sec   := lookup "v1" "Secret" .Release.Namespace "odigos-pro" -}}
   {{- $token := default "" .Values.onPremToken -}}
   {{- $externalSecret := .Values.externalOnpremTokenSecret | default false -}}
   {{- if or $sec (ne $token "") $externalSecret -}}
 true
   {{- end -}}
+  {{- end -}}
 {{- end -}}
+
+{{- define "odigos.enterpriseAuthEnv" -}}
+{{- if .Values.marketplace.enabled }}
+- name: ODIGOS_LICENSE_PROVIDER
+  value: aws-marketplace
+- name: ODIGOS_MARKETPLACE_BILLING_MODEL
+  value: {{ .Values.marketplace.billingModel | quote }}
+{{- if eq .Values.marketplace.billingModel "contract" }}
+- name: ODIGOS_MARKETPLACE_REGION
+  value: {{ required "marketplace.licenseManagerRegion is required" .Values.marketplace.licenseManagerRegion | quote }}
+{{- else }}
+{{- $_ := required "node metering requires marketplace.serviceAccountAnnotations.eks.amazonaws.com/role-arn for IRSA" (index .Values.marketplace.serviceAccountAnnotations "eks.amazonaws.com/role-arn") }}
+{{- end }}
+{{- else }}
+- name: ODIGOS_ONPREM_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: odigos-pro
+      key: odigos-onprem-token
+{{- end }}
+{{- end }}
 
 
 {{/*

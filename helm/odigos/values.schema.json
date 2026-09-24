@@ -1175,6 +1175,46 @@
       "required": [],
       "title": "logLevel"
     },
+    "marketplace": {
+      "additionalProperties": false,
+      "description": "AWS Marketplace Enterprise activation. Requires matching Marketplace release images.",
+      "properties": {
+        "billingModel": {
+          "default": "contract",
+          "description": "Billing integration built into the selected Marketplace images. Node metering requires IRSA.",
+          "enum": [
+            "contract",
+            "node"
+          ],
+          "title": "billingModel",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "description": "Activate Enterprise through AWS Marketplace instead of an Odigos token.",
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "licenseManagerRegion": {
+          "default": "us-east-1",
+          "description": "AWS region containing the buyer's License Manager entitlement.",
+          "title": "licenseManagerRegion",
+          "type": "string"
+        },
+        "serviceAccountAnnotations": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "IAM annotations for the instrumentor, odiglet, UI and gateway collector service accounts.",
+          "required": [],
+          "title": "serviceAccountAnnotations",
+          "type": "object"
+        }
+      },
+      "required": [],
+      "title": "marketplace",
+      "type": "object"
+    },
     "metricsSources": {
       "additionalProperties": false,
       "description": "configuration for metrics sources (where odigos collects metrics from)\nonly relevant when a metrics destination is enabled",
