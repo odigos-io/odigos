@@ -13,24 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestIsInstrumentationRuleUiGenerated(t *testing.T) {
-	require.False(t, isInstrumentationRuleUiGenerated(nil))
-	require.False(t, isInstrumentationRuleUiGenerated(&v1alpha1.InstrumentationRule{}))
-	require.False(t, isInstrumentationRuleUiGenerated(&v1alpha1.InstrumentationRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{k8sconsts.OdigosProfilesManagedByLabel: "helm"},
-		},
-	}))
-	require.True(t, isInstrumentationRuleUiGenerated(&v1alpha1.InstrumentationRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				k8sconsts.OdigosProfilesManagedByLabel: k8sconsts.OdigosUIManagedByValue,
-			},
-		},
-	}))
-}
-
-func TestCreateInstrumentationRuleMarksUiGenerated(t *testing.T) {
+func TestCreateInstrumentationRuleMarksManagedByOdigosUI(t *testing.T) {
 	ctx := context.Background()
 	ruleName := "ui rule"
 	notes := ""
@@ -46,7 +29,6 @@ func TestCreateInstrumentationRuleMarksUiGenerated(t *testing.T) {
 		NetworkMetrics: &enabled,
 	})
 	require.NoError(t, err)
-	require.True(t, created.UIGenerated)
 	require.Equal(t, model.ManagedByOdigosUI, created.ManagedBy)
 
 	stored, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).Get(ctx, created.RuleID, metav1.GetOptions{})
@@ -54,7 +36,7 @@ func TestCreateInstrumentationRuleMarksUiGenerated(t *testing.T) {
 	require.Equal(t, k8sconsts.OdigosUIManagedByValue, stored.Labels[k8sconsts.OdigosProfilesManagedByLabel])
 }
 
-func TestGetInstrumentationRuleReportsUiGenerated(t *testing.T) {
+func TestGetInstrumentationRuleReportsManagedBy(t *testing.T) {
 	ctx := context.Background()
 
 	useFakeRuleClient(t,
@@ -89,17 +71,14 @@ func TestGetInstrumentationRuleReportsUiGenerated(t *testing.T) {
 
 	uiRule, err := GetInstrumentationRule(ctx, "rule-ui")
 	require.NoError(t, err)
-	require.True(t, uiRule.UIGenerated)
 	require.Equal(t, model.ManagedByOdigosUI, uiRule.ManagedBy)
 
 	yamlRule, err := GetInstrumentationRule(ctx, "rule-yaml")
 	require.NoError(t, err)
-	require.False(t, yamlRule.UIGenerated)
 	require.Equal(t, model.ManagedByUnknown, yamlRule.ManagedBy)
 
 	interrogationRule, err := GetInstrumentationRule(ctx, "rule-interrogation")
 	require.NoError(t, err)
-	require.False(t, interrogationRule.UIGenerated)
 	require.Equal(t, model.ManagedByInterrogationLoop, interrogationRule.ManagedBy)
 
 	rules, err := GetInstrumentationRules(ctx)

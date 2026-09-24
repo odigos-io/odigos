@@ -57,10 +57,6 @@ type InstrumentationRule {
   profileName: String!
   # Which Odigos surface owns this InstrumentationRule (metadata label odigos.io/managed-by).
   managedBy: ManagedBy!
-  # True when this InstrumentationRule was created from the Odigos UI
-  # (metadata label odigos.io/managed-by=odigos-ui).
-  # Prefer managedBy for new UI; kept for older clients.
-  uiGenerated: Boolean!
   sourcesScopes: [InstrumentationRuleSourcesScope!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   conditions: [Condition!]

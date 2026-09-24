@@ -88,7 +88,6 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			Mutable:                  mutable,
 			ProfileName:              profileName,
 			ManagedBy:                managedByFromLabels(r.Labels),
-			UIGenerated:              isInstrumentationRuleUiGenerated(r),
 			SourcesScopes:            convertSourcesScope(r.Spec.Scopes),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 			Conditions:               ConvertConditions(r.Status.Conditions),
@@ -125,7 +124,6 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		Mutable:                  mutable,
 		ProfileName:              profileName,
 		ManagedBy:                managedByFromLabels(r.Labels),
-		UIGenerated:              isInstrumentationRuleUiGenerated(r),
 		SourcesScopes:            convertSourcesScope(r.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
@@ -566,7 +564,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		Mutable:                  profileName == "",
 		ProfileName:              profileName,
 		ManagedBy:                managedByFromLabels(updatedRule.Labels),
-		UIGenerated:              isInstrumentationRuleUiGenerated(updatedRule),
 		SourcesScopes:            convertSourcesScope(updatedRule.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
@@ -658,7 +655,6 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		Mutable:                  true, // New rules are always mutable
 		ProfileName:              "",   // New rules are not associated with a profile
 		ManagedBy:                managedByFromLabels(createdRule.Labels),
-		UIGenerated:              isInstrumentationRuleUiGenerated(createdRule),
 		SourcesScopes:            convertSourcesScope(createdRule.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
@@ -670,13 +666,6 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	rule.Type = deriveTypeFromRule(&rule)
 
 	return &rule, nil
-}
-
-func isInstrumentationRuleUiGenerated(rule *v1alpha1.InstrumentationRule) bool {
-	if rule == nil {
-		return false
-	}
-	return managedByFromLabels(rule.Labels) == model.ManagedByOdigosUI
 }
 
 func handleNotFoundError(err error, id string, entity string) error {

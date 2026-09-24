@@ -31,7 +31,6 @@ export const GET_INSTRUMENTATION_RULES = gql`
         disabled
         mutable
         profileName
-        uiGenerated
         managedBy
         conditions {
           status

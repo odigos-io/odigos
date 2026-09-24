@@ -1549,7 +1549,6 @@ type InstrumentationRule struct {
 	Mutable                  bool                               `json:"mutable"`
 	ProfileName              string                             `json:"profileName"`
 	ManagedBy                ManagedBy                          `json:"managedBy"`
-	UIGenerated              bool                               `json:"uiGenerated"`
 	SourcesScopes            []*InstrumentationRuleSourcesScope `json:"sourcesScopes,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID  `json:"instrumentationLibraries,omitempty"`
 	Conditions               []*Condition                       `json:"conditions,omitempty"`

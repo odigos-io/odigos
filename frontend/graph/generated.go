@@ -1208,7 +1208,6 @@ type ComplexityRoot struct {
 		RuleName                 func(childComplexity int) int
 		SourcesScopes            func(childComplexity int) int
 		Type                     func(childComplexity int) int
-		UIGenerated              func(childComplexity int) int
 	}
 
 	InstrumentationRuleFieldYamlProperties struct {
@@ -7812,13 +7811,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.Type(childComplexity), true
-
-	case "InstrumentationRule.uiGenerated":
-		if e.complexity.InstrumentationRule.UIGenerated == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationRule.UIGenerated(childComplexity), true
 
 	case "InstrumentationRuleFieldYamlProperties.componentProperties":
 		if e.complexity.InstrumentationRuleFieldYamlProperties.ComponentProperties == nil {
@@ -22682,8 +22674,6 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "managedBy":
 				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
-			case "uiGenerated":
-				return ec.fieldContext_InstrumentationRule_uiGenerated(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -51316,50 +51306,6 @@ func (ec *executionContext) fieldContext_InstrumentationRule_managedBy(_ context
 	return fc, nil
 }
 
-func (ec *executionContext) _InstrumentationRule_uiGenerated(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationRule_uiGenerated(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UIGenerated, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationRule_uiGenerated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationRule",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _InstrumentationRule_sourcesScopes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 	if err != nil {
@@ -65436,8 +65382,6 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "managedBy":
 				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
-			case "uiGenerated":
-				return ec.fieldContext_InstrumentationRule_uiGenerated(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -65527,8 +65471,6 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "managedBy":
 				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
-			case "uiGenerated":
-				return ec.fieldContext_InstrumentationRule_uiGenerated(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -95033,11 +94975,6 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			}
 		case "managedBy":
 			out.Values[i] = ec._InstrumentationRule_managedBy(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "uiGenerated":
-			out.Values[i] = ec._InstrumentationRule_uiGenerated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
