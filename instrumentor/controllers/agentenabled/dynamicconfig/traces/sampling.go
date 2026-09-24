@@ -261,6 +261,12 @@ func CalculateSamplingCategoryRulesForContainer(samplingRules *[]odigosv1.Sampli
 	}
 
 	for _, samplingRule := range *samplingRules {
+		// a disabled Sampling object takes no part in any sampling decision.
+		// the scheduler applies the same rule when it decides whether tail sampling is needed.
+		if samplingRule.Spec.Disabled {
+			continue
+		}
+
 		// Filter and convert NoisyOperations, HighlyRelevantOperations, CostReductionRules.
 		// Exclude SourceScopes and Notes from the rules because we want the instrumentationConfig to be more lightweight.
 

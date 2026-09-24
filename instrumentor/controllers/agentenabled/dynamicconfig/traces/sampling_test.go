@@ -3,8 +3,11 @@ package traces
 import (
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
+	distrotypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -121,4 +124,107 @@ func TestCalculateKubeletHttpGetProbePaths_mergesSamePathAndQueryParams(t *testi
 
 	require.Len(t, pathsAndNames, 1)
 	require.Equal(t, "LivenessProbe,ReadinessProbe", pathsAndNames[0].RuleName)
+}
+
+func samplingWithAllCategories(name string, disabled bool) odigosv1.Sampling {
+	percentageAtMost := 5.0
+	percentageAtLeast := 100.0
+
+	return odigosv1.Sampling{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "odigos-system"},
+		Spec: odigosv1.SamplingSpec{
+			Name:     name,
+			Disabled: disabled,
+			NoisyOperations: []odigosv1.NoisyOperation{
+				{
+					Name:             name + "-noisy",
+					Operation:        &commonapisampling.HeadSamplingOperationMatcher{HttpServer: &commonapisampling.HeadSamplingHttpServerOperationMatcher{Route: "/" + name + "-healthz", Method: "GET"}},
+					PercentageAtMost: &percentageAtMost,
+				},
+			},
+			HighlyRelevantOperations: []odigosv1.HighlyRelevantOperation{
+				{
+					Name:              name + "-relevant",
+					Error:             true,
+					PercentageAtLeast: &percentageAtLeast,
+				},
+			},
+			CostReductionRules: []odigosv1.CostReductionRule{
+				{
+					Name:             name + "-cost",
+					PercentageAtMost: percentageAtMost,
+				},
+			},
+		},
+	}
+}
+
+func calculateSamplingCategoryRules(t *testing.T, samplings []odigosv1.Sampling) ([]commonapisampling.NoisyOperation, []commonapisampling.HighlyRelevantOperation, []commonapisampling.CostReductionRule) {
+	t.Helper()
+
+	pw := k8sconsts.PodWorkload{Name: "app", Namespace: "default", Kind: k8sconsts.WorkloadKindDeployment}
+
+	return CalculateSamplingCategoryRulesForContainer(
+		&samplings,
+		common.JavaProgrammingLanguage,
+		pw,
+		"app",
+		&distrotypes.OtelDistro{},
+		nil,
+		&common.OdigosConfiguration{},
+	)
+}
+
+// a Sampling object with spec.disabled must not contribute any rule to the workload config,
+// the same way the scheduler ignores it when deciding whether tail sampling is needed.
+func TestCalculateSamplingCategoryRulesForContainer_disabledSamplingContributesNoRules(t *testing.T) {
+	noisyOps, relevantOps, costRules := calculateSamplingCategoryRules(t, []odigosv1.Sampling{
+		samplingWithAllCategories("legacy", true),
+	})
+
+	require.Empty(t, noisyOps)
+	require.Empty(t, relevantOps)
+	require.Empty(t, costRules)
+}
+
+func TestCalculateSamplingCategoryRulesForContainer_disabledSamplingDoesNotAffectEnabledOne(t *testing.T) {
+	noisyOps, relevantOps, costRules := calculateSamplingCategoryRules(t, []odigosv1.Sampling{
+		samplingWithAllCategories("legacy", true),
+		samplingWithAllCategories("active", false),
+	})
+
+	require.Len(t, noisyOps, 1)
+	require.Equal(t, "active-noisy", noisyOps[0].Name)
+	require.Len(t, relevantOps, 1)
+	require.Equal(t, "active-relevant", relevantOps[0].Name)
+	require.Len(t, costRules, 1)
+	require.Equal(t, "active-cost", costRules[0].Name)
+}
+
+func TestCalculateSamplingCategoryRulesForContainer_enabledSamplingKeepsRules(t *testing.T) {
+	noisyOps, relevantOps, costRules := calculateSamplingCategoryRules(t, []odigosv1.Sampling{
+		samplingWithAllCategories("active", false),
+	})
+
+	require.Len(t, noisyOps, 1)
+	require.Len(t, relevantOps, 1)
+	require.Len(t, costRules, 1)
+}
+
+// per rule "disabled" keeps the rule in the config (it still participates in metrics),
+// which is a different mechanism than disabling the whole Sampling object.
+func TestCalculateSamplingCategoryRulesForContainer_perRuleDisabledIsPropagated(t *testing.T) {
+	sampling := samplingWithAllCategories("active", false)
+	sampling.Spec.NoisyOperations[0].Disabled = true
+	sampling.Spec.HighlyRelevantOperations[0].Disabled = true
+	sampling.Spec.CostReductionRules[0].Disabled = true
+
+	noisyOps, relevantOps, costRules := calculateSamplingCategoryRules(t, []odigosv1.Sampling{sampling})
+
+	require.Len(t, noisyOps, 1)
+	require.True(t, noisyOps[0].Disabled)
+	require.Len(t, relevantOps, 1)
+	require.True(t, relevantOps[0].Disabled)
+	require.Len(t, costRules, 1)
+	require.True(t, costRules[0].Disabled)
 }
