@@ -64,6 +64,7 @@ type ComplexityRoot struct {
 		Disabled    func(childComplexity int) int
 		Fields      func(childComplexity int) int
 		ID          func(childComplexity int) int
+		ManagedBy   func(childComplexity int) int
 		Name        func(childComplexity int) int
 		Notes       func(childComplexity int) int
 		Signals     func(childComplexity int) int
@@ -1197,6 +1198,7 @@ type ComplexityRoot struct {
 		Disabled                 func(childComplexity int) int
 		HeadersCollection        func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
+		ManagedBy                func(childComplexity int) int
 		Mutable                  func(childComplexity int) int
 		NetworkMetrics           func(childComplexity int) int
 		Notes                    func(childComplexity int) int
@@ -1206,6 +1208,7 @@ type ComplexityRoot struct {
 		RuleName                 func(childComplexity int) int
 		SourcesScopes            func(childComplexity int) int
 		Type                     func(childComplexity int) int
+		UIGenerated              func(childComplexity int) int
 	}
 
 	InstrumentationRuleFieldYamlProperties struct {
@@ -2419,6 +2422,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Action.ID(childComplexity), true
+
+	case "Action.managedBy":
+		if e.complexity.Action.ManagedBy == nil {
+			break
+		}
+
+		return e.complexity.Action.ManagedBy(childComplexity), true
 
 	case "Action.name":
 		if e.complexity.Action.Name == nil {
@@ -7733,6 +7743,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.InstrumentationLibraries(childComplexity), true
 
+	case "InstrumentationRule.managedBy":
+		if e.complexity.InstrumentationRule.ManagedBy == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.ManagedBy(childComplexity), true
+
 	case "InstrumentationRule.mutable":
 		if e.complexity.InstrumentationRule.Mutable == nil {
 			break
@@ -7795,6 +7812,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.Type(childComplexity), true
+
+	case "InstrumentationRule.uiGenerated":
+		if e.complexity.InstrumentationRule.UIGenerated == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.UIGenerated(childComplexity), true
 
 	case "InstrumentationRuleFieldYamlProperties.componentProperties":
 		if e.complexity.InstrumentationRuleFieldYamlProperties.ComponentProperties == nil {
@@ -17112,6 +17136,50 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Action_managedBy(ctx context.Context, field graphql.CollectedField, obj *model.Action) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Action_managedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManagedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ManagedBy)
+	fc.Result = res
+	return ec.marshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Action_managedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Action",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ManagedBy does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Action_uiGenerated(ctx context.Context, field graphql.CollectedField, obj *model.Action) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Action_uiGenerated(ctx, field)
 	if err != nil {
@@ -22432,6 +22500,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_actions(_ context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_Action_managedBy(ctx, field)
 			case "uiGenerated":
 				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
@@ -22610,6 +22680,10 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
+			case "uiGenerated":
+				return ec.fieldContext_InstrumentationRule_uiGenerated(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -51198,6 +51272,94 @@ func (ec *executionContext) fieldContext_InstrumentationRule_profileName(_ conte
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_managedBy(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManagedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ManagedBy)
+	fc.Result = res
+	return ec.marshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_managedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ManagedBy does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRule_uiGenerated(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_uiGenerated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UIGenerated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_uiGenerated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRule_sourcesScopes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 	if err != nil {
@@ -63123,6 +63285,8 @@ func (ec *executionContext) fieldContext_Mutation_createAction(ctx context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_Action_managedBy(ctx, field)
 			case "uiGenerated":
 				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
@@ -63200,6 +63364,8 @@ func (ec *executionContext) fieldContext_Mutation_updateAction(ctx context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_Action_managedBy(ctx, field)
 			case "uiGenerated":
 				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
@@ -65268,6 +65434,10 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
+			case "uiGenerated":
+				return ec.fieldContext_InstrumentationRule_uiGenerated(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -65355,6 +65525,10 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
+			case "uiGenerated":
+				return ec.fieldContext_InstrumentationRule_uiGenerated(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -86687,6 +86861,11 @@ func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "managedBy":
+			out.Values[i] = ec._Action_managedBy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "uiGenerated":
 			out.Values[i] = ec._Action_uiGenerated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -94849,6 +95028,16 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			}
 		case "profileName":
 			out.Values[i] = ec._InstrumentationRule_profileName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "managedBy":
+			out.Values[i] = ec._InstrumentationRule_managedBy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "uiGenerated":
+			out.Values[i] = ec._InstrumentationRule_uiGenerated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -108288,6 +108477,16 @@ func (ec *executionContext) marshalNK8sWorkloadTelemetryMetricsExpectingTelemetr
 func (ec *executionContext) unmarshalNLocalUiConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInput(ctx context.Context, v any) (model.LocalUIConfigInput, error) {
 	res, err := ec.unmarshalInputLocalUiConfigInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx context.Context, v any) (model.ManagedBy, error) {
+	var res model.ManagedBy
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx context.Context, sel ast.SelectionSet, v model.ManagedBy) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNMetricsSourceAgentRuntimeMetricConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceAgentRuntimeMetricConfig) graphql.Marshaler {

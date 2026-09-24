@@ -10,6 +10,8 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
       disabled
       mutable
       profileName
+      uiGenerated
+      managedBy
       sourcesScopes {
         workloadName
         workloadKind
@@ -78,6 +80,8 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
       disabled
       mutable
       profileName
+      uiGenerated
+      managedBy
       sourcesScopes {
         workloadName
         workloadKind

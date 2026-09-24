@@ -16,6 +16,7 @@ type Action struct {
 	Disabled    bool                      `json:"disabled"`
 	Signals     []SignalType              `json:"signals"`
 	Fields      *ActionFields             `json:"fields"`
+	ManagedBy   ManagedBy                 `json:"managedBy"`
 	UIGenerated bool                      `json:"uiGenerated"`
 	Conditions  []*Condition              `json:"conditions,omitempty"`
 	Statuses    []*DesiredConditionStatus `json:"statuses"`
@@ -1547,6 +1548,8 @@ type InstrumentationRule struct {
 	Disabled                 *bool                              `json:"disabled,omitempty"`
 	Mutable                  bool                               `json:"mutable"`
 	ProfileName              string                             `json:"profileName"`
+	ManagedBy                ManagedBy                          `json:"managedBy"`
+	UIGenerated              bool                               `json:"uiGenerated"`
 	SourcesScopes            []*InstrumentationRuleSourcesScope `json:"sourcesScopes,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID  `json:"instrumentationLibraries,omitempty"`
 	Conditions               []*Condition                       `json:"conditions,omitempty"`
@@ -4259,6 +4262,51 @@ func (e *K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) Unmar
 }
 
 func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ManagedBy string
+
+const (
+	ManagedByProfile           ManagedBy = "Profile"
+	ManagedByOdigosUI          ManagedBy = "OdigosUi"
+	ManagedByInterrogationLoop ManagedBy = "InterrogationLoop"
+	ManagedByUnknown           ManagedBy = "Unknown"
+)
+
+var AllManagedBy = []ManagedBy{
+	ManagedByProfile,
+	ManagedByOdigosUI,
+	ManagedByInterrogationLoop,
+	ManagedByUnknown,
+}
+
+func (e ManagedBy) IsValid() bool {
+	switch e {
+	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByUnknown:
+		return true
+	}
+	return false
+}
+
+func (e ManagedBy) String() string {
+	return string(e)
+}
+
+func (e *ManagedBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ManagedBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ManagedBy", str)
+	}
+	return nil
+}
+
+func (e ManagedBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
