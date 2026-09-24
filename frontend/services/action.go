@@ -519,6 +519,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		Disabled:    action.Spec.Disabled,
 		Signals:     signals,
 		Fields:      responseFields,
+		ManagedBy:   managedByFromLabels(action.Labels),
 		UIGenerated: isActionUiGenerated(action),
 	}
 
@@ -530,10 +531,10 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 }
 
 func isActionUiGenerated(action *v1alpha1.Action) bool {
-	if action == nil || action.Labels == nil {
+	if action == nil {
 		return false
 	}
-	return action.Labels[k8sconsts.OdigosProfilesManagedByLabel] == k8sconsts.OdigosUIManagedByValue
+	return managedByFromLabels(action.Labels) == model.ManagedByOdigosUI
 }
 
 func convertLabelsAttributesToModel(labelsAttributes []actionsv1.K8sLabelAttribute) []*model.K8sLabelAttribute {
