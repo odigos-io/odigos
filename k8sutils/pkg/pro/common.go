@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/odigosauth"
 )
 
@@ -39,6 +40,9 @@ func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespa
 			return fmt.Errorf("tokens are not available in the community version of Odigos. Please contact Odigos team to inquire about pro version")
 		}
 		return err
+	}
+	if k8sutils.IsMarketplaceSecret(secret) {
+		return fmt.Errorf("AWS Marketplace installations use AWS contract entitlements; an Odigos token cannot replace Marketplace activation")
 	}
 	secret.Data[k8sconsts.OdigosOnpremTokenSecretKey] = []byte(onPremToken)
 
