@@ -1,10 +1,12 @@
 package metrics
 
 import (
+	"go.opentelemetry.io/otel/attribute"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	mstricapi "go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	controllermetric "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -18,6 +20,7 @@ import (
 func NewMeterProviderForController(res *resource.Resource) (mstricapi.MeterProvider, error) {
 	e, err := otelprometheus.New(
 		otelprometheus.WithRegisterer(controllermetric.Registry),
+		otelprometheus.WithResourceAsConstantLabels(attribute.NewAllowKeysFilter(semconv.K8SNodeNameKey)),
 	)
 	if err != nil {
 		return nil, err
