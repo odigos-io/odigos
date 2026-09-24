@@ -2,16 +2,35 @@ package middlewares
 
 import (
 	"context"
+	"errors"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-type operationInterceptor struct{}
+type operationInterceptor struct {
+	marketplace bool
+}
 
 func OperationInterceptor() graphql.HandlerExtension {
-	return &operationInterceptor{}
+	return &operationInterceptor{marketplace: services.CurrentLicenseProvider() == services.MarketplaceLicenseProvider}
+}
+
+func (o *operationInterceptor) InterceptField(ctx context.Context, next graphql.Resolver) (interface{}, error) {
+	if o.marketplace {
+		field := graphql.GetFieldContext(ctx)
+		if field != nil {
+			if field.Object == "ComputePlatform" && field.Field.Name == "apiTokens" {
+				return []*model.APIToken{}, nil
+			}
+			if field.Object == "Mutation" && field.Field.Name == "updateApiToken" {
+				return nil, errors.New("this installation uses AWS Marketplace contract entitlements; an Odigos token cannot replace Marketplace activation")
+			}
+		}
+	}
+	return next(ctx)
 }
 
 func (o *operationInterceptor) ExtensionName() string {

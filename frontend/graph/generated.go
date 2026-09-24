@@ -263,6 +263,7 @@ type ComplexityRoot struct {
 		InstallationMethod    func(childComplexity int) int
 		InstallationStatus    func(childComplexity int) int
 		IsCentralProxyRunning func(childComplexity int) int
+		LicenseProvider       func(childComplexity int) int
 		OdigosVersion         func(childComplexity int) int
 		PlatformType          func(childComplexity int) int
 		Readonly              func(childComplexity int) int
@@ -3423,6 +3424,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Config.IsCentralProxyRunning(childComplexity), true
+
+	case "Config.licenseProvider":
+		if e.complexity.Config.LicenseProvider == nil {
+			break
+		}
+
+		return e.complexity.Config.LicenseProvider(childComplexity), true
 
 	case "Config.odigosVersion":
 		if e.complexity.Config.OdigosVersion == nil {
@@ -23414,6 +23422,50 @@ func (ec *executionContext) _Config_installationMethod(ctx context.Context, fiel
 }
 
 func (ec *executionContext) fieldContext_Config_installationMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_licenseProvider(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_licenseProvider(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LicenseProvider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_licenseProvider(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Config",
 		Field:      field,
@@ -71825,6 +71877,8 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 				return ec.fieldContext_Config_odigosVersion(ctx, field)
 			case "installationMethod":
 				return ec.fieldContext_Config_installationMethod(ctx, field)
+			case "licenseProvider":
+				return ec.fieldContext_Config_licenseProvider(ctx, field)
 			case "installationStatus":
 				return ec.fieldContext_Config_installationStatus(ctx, field)
 			case "clusterName":
@@ -88083,6 +88137,11 @@ func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "installationMethod":
 			out.Values[i] = ec._Config_installationMethod(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "licenseProvider":
+			out.Values[i] = ec._Config_licenseProvider(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

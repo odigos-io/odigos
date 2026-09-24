@@ -258,6 +258,7 @@ type Config struct {
 	Tier                  Tier                `json:"tier"`
 	OdigosVersion         string              `json:"odigosVersion"`
 	InstallationMethod    string              `json:"installationMethod"`
+	LicenseProvider       string              `json:"licenseProvider"`
 	InstallationStatus    InstallationStatus  `json:"installationStatus"`
 	ClusterName           *string             `json:"clusterName,omitempty"`
 	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
