@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentednodes"
@@ -199,7 +198,6 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 
 type WebhookConfig struct {
 	DistrosProvider *distros.Provider
-	WaspMutator     func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
 func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
@@ -222,7 +220,6 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 		Client:        mgr.GetClient(),
 		DistrosGetter: config.DistrosProvider.Getter,
 		Decoder:       decoder,
-		WaspMutator:   config.WaspMutator,
 	}
 
 	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.

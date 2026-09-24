@@ -27,9 +27,8 @@ enum InsightsDeviationClass {
   D3_latency
   D4_args_returns
   D5_libraries
-  D6_attr_relations
-  D7_db_access
-  D8_payload_size
+  D6_db_access
+  D7_payload_size
 }
 
 enum InsightsSampleReason {
@@ -282,7 +281,7 @@ type InsightsBaselineHistogramSeries {
 }
 
 """
-Chart-ready exponential histogram for D3_latency and D8_payload_size.
+Chart-ready exponential histogram for D3_latency and D7_payload_size.
 Plot series[].bars; do not recompute bounds from raw data.
 """
 type InsightsBaselineHistogram {
@@ -310,7 +309,7 @@ type InsightsBaselineClass {
   """
   data: String
   """
-  Chart-ready histogram for D3_latency / D8_payload_size. Omitted for other classes.
+  Chart-ready histogram for D3_latency / D7_payload_size. Omitted for other classes.
   """
   histogram: InsightsBaselineHistogram
   dataSchemaVersion: Int
@@ -431,6 +430,12 @@ type InsightsFinding {
   Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
   """
   title: String!
+  """
+  Render-ready one-line explanation so the list conveys the gist without opening
+  investigate. Omits service and title (already on the row): anomalies name the
+  deviated classes; violations name the rule and what broke it. Display as-is.
+  """
+  summary: String!
   """
   Full canonical transaction operation (anomalies only). Omitted for violations.
   """
@@ -639,11 +644,85 @@ type InsightsBulkDeleteResult {
 
 # Guardrails (operator-declared L7 rules, orthogonal to learned baselines)
 
+"""
+Relation asserted between two correlated attribute values within one trace.
+"""
+enum InsightsCorrelationRelation {
+  equals
+  not_equals
+}
+
+"""
+Locates one attribute on one span within a trace (attribute_correlation rule).
+"""
+type InsightsCorrelationSelector {
+  """
+  Owning service name of the span.
+  """
+  service: String!
+  """
+  Span match — the span name or captured `code.function.name`.
+  """
+  span: String!
+  """
+  Attribute key to read (e.g. return.value, arg.0, url.full).
+  """
+  attr: String!
+  """
+  Optional regex applied to the attribute value. Capture group 1 is used when
+  present, otherwise the whole match. Empty = use the value verbatim.
+  """
+  extract: String
+}
+
+input InsightsCorrelationSelectorInput {
+  service: String!
+  span: String!
+  attr: String!
+  extract: String
+}
+
+"""
+One cross-span consistency assertion for the attribute_correlation rule.
+"""
+type InsightsCorrelationSpec {
+  name: String!
+  left: InsightsCorrelationSelector!
+  right: InsightsCorrelationSelector!
+  relation: InsightsCorrelationRelation!
+  """
+  Risk of a violation of this rule. Defaults to critical when omitted on write.
+  """
+  severity: InsightsSeverity!
+  """
+  Operator rationale, shown in the finding.
+  """
+  why: String
+}
+
+input InsightsCorrelationSpecInput {
+  name: String!
+  left: InsightsCorrelationSelectorInput!
+  right: InsightsCorrelationSelectorInput!
+  relation: InsightsCorrelationRelation!
+  """
+  Defaults to critical when omitted.
+  """
+  severity: InsightsSeverity
+  why: String
+}
+
 type InsightsGuardrailRule {
   key: String!
   label: String!
   mode: InsightsRuleMode!
   allowlist: [String!]
+  """
+  Cross-span correlation specs. Only used by `attribute_correlation`
+  (transaction-scoped): each spec asserts two captured span attributes stay
+  consistent within one trace.
+  """
+  correlations: [InsightsCorrelationSpec!]
   """
   How this rule was created. `auto_transaction_guardrail` means it was created
   automatically when the service's transactions promoted (not a manual edit).
@@ -654,7 +733,7 @@ type InsightsGuardrailRule {
 type InsightsGuardrail {
   scope: InsightsPolicyScope!
   """
-  Format: namespace/service.
+  `namespace/service` for service scope; numeric transaction id for transaction scope.
   """
   scopeKey: String!
   rules: [InsightsGuardrailRule!]!
@@ -665,6 +744,10 @@ input InsightsGuardrailRuleInput {
   label: String!
   mode: InsightsRuleMode!
   allowlist: [String!]
+  """
+  Required for `attribute_correlation` (transaction-scoped) rules.
+  """
+  correlations: [InsightsCorrelationSpecInput!]
   """
   Preserved on save so auto-created rules keep their origin across edits.
   """
@@ -1145,7 +1228,15 @@ extend type Mutation {
   upsertInsightsGuardrail(
     guardrail: InsightsGuardrailInput!
   ): InsightsGuardrail!
-  deleteInsightsGuardrail(scopeKey: String!): Boolean!
+  """
+  Deletes one guardrail. `scope` must match how it was declared (`service` or
+  `transaction`). Defaults to `service` when omitted so existing callers keep
+  working.
+  """
+  deleteInsightsGuardrail(
+    scopeKey: String!
+    scope: InsightsPolicyScope
+  ): Boolean!
   seedInsightsGuardrail(seed: InsightsGuardrailSeedInput!): Boolean!
   acceptInsightsGuardrailViolation(
     action: InsightsViolationActionInput!

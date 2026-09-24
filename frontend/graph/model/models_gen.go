@@ -16,6 +16,7 @@ type Action struct {
 	Disabled    bool                      `json:"disabled"`
 	Signals     []SignalType              `json:"signals"`
 	Fields      *ActionFields             `json:"fields"`
+	ManagedBy   ManagedBy                 `json:"managedBy"`
 	UIGenerated bool                      `json:"uiGenerated"`
 	Conditions  []*Condition              `json:"conditions,omitempty"`
 	Statuses    []*DesiredConditionStatus `json:"statuses"`
@@ -608,6 +609,53 @@ type GetDestinationCategories struct {
 	Categories []*DestinationsCategory `json:"categories"`
 }
 
+type GoOffsetMinorVersion struct {
+	MinorVersion string   `json:"minorVersion"`
+	Versions     []string `json:"versions"`
+}
+
+type GoOffsetMinorVersionUpdate struct {
+	MinorVersion string                   `json:"minorVersion"`
+	IsNew        bool                     `json:"isNew"`
+	IsRemoved    bool                     `json:"isRemoved"`
+	Versions     []*GoOffsetVersionUpdate `json:"versions"`
+}
+
+type GoOffsetModule struct {
+	Module        string                  `json:"module"`
+	MinVersion    string                  `json:"minVersion"`
+	MaxVersion    string                  `json:"maxVersion"`
+	MinorVersions []*GoOffsetMinorVersion `json:"minorVersions"`
+}
+
+type GoOffsetModuleUpdate struct {
+	Module        string                        `json:"module"`
+	IsNew         bool                          `json:"isNew"`
+	IsRemoved     bool                          `json:"isRemoved"`
+	MinVersion    string                        `json:"minVersion"`
+	MaxVersion    string                        `json:"maxVersion"`
+	MinorVersions []*GoOffsetMinorVersionUpdate `json:"minorVersions"`
+}
+
+type GoOffsetVersionUpdate struct {
+	Version   string `json:"version"`
+	IsNew     bool   `json:"isNew"`
+	IsRemoved bool   `json:"isRemoved"`
+}
+
+type GoOffsets struct {
+	Installed bool              `json:"installed"`
+	Timestamp string            `json:"timestamp"`
+	Mods      []*GoOffsetModule `json:"mods"`
+}
+
+type GoOffsetsUpdateCheck struct {
+	HasUpdates        bool                    `json:"hasUpdates"`
+	CurrentTimestamp  string                  `json:"currentTimestamp"`
+	ProposedTimestamp string                  `json:"proposedTimestamp"`
+	Mods              []*GoOffsetModuleUpdate `json:"mods"`
+}
+
 type GolangCustomProbe struct {
 	PackageName        *string `json:"packageName,omitempty"`
 	FunctionName       *string `json:"functionName,omitempty"`
@@ -854,7 +902,7 @@ type InsightsBaselineClass struct {
 	ClassDescription string `json:"classDescription"`
 	// JSON-encoded baseline data; shape varies per deviation class.
 	Data *string `json:"data,omitempty"`
-	// Chart-ready histogram for D3_latency / D8_payload_size. Omitted for other classes.
+	// Chart-ready histogram for D3_latency / D7_payload_size. Omitted for other classes.
 	Histogram                    *InsightsBaselineHistogram `json:"histogram,omitempty"`
 	DataSchemaVersion            *int                       `json:"dataSchemaVersion,omitempty"`
 	ObservationCount             int                        `json:"observationCount"`
@@ -865,7 +913,7 @@ type InsightsBaselineClass struct {
 	Learning                     *InsightsBaselineLearning  `json:"learning"`
 }
 
-// Chart-ready exponential histogram for D3_latency and D8_payload_size.
+// Chart-ready exponential histogram for D3_latency and D7_payload_size.
 // Plot series[].bars; do not recompute bounds from raw data.
 type InsightsBaselineHistogram struct {
 	Unit              InsightsBaselineHistogramUnit      `json:"unit"`
@@ -1010,6 +1058,48 @@ type InsightsCatalogGuardrailRule struct {
 	Hint        *string `json:"hint,omitempty"`
 }
 
+// Locates one attribute on one span within a trace (attribute_correlation rule).
+type InsightsCorrelationSelector struct {
+	// Owning service name of the span.
+	Service string `json:"service"`
+	// Span match — the span name or captured `code.function.name`.
+	Span string `json:"span"`
+	// Attribute key to read (e.g. return.value, arg.0, url.full).
+	Attr string `json:"attr"`
+	// Optional regex applied to the attribute value. Capture group 1 is used when
+	// present, otherwise the whole match. Empty = use the value verbatim.
+	Extract *string `json:"extract,omitempty"`
+}
+
+type InsightsCorrelationSelectorInput struct {
+	Service string  `json:"service"`
+	Span    string  `json:"span"`
+	Attr    string  `json:"attr"`
+	Extract *string `json:"extract,omitempty"`
+}
+
+// One cross-span consistency assertion for the attribute_correlation rule.
+type InsightsCorrelationSpec struct {
+	Name     string                       `json:"name"`
+	Left     *InsightsCorrelationSelector `json:"left"`
+	Right    *InsightsCorrelationSelector `json:"right"`
+	Relation InsightsCorrelationRelation  `json:"relation"`
+	// Risk of a violation of this rule. Defaults to critical when omitted on write.
+	Severity InsightsSeverity `json:"severity"`
+	// Operator rationale, shown in the finding.
+	Why *string `json:"why,omitempty"`
+}
+
+type InsightsCorrelationSpecInput struct {
+	Name     string                            `json:"name"`
+	Left     *InsightsCorrelationSelectorInput `json:"left"`
+	Right    *InsightsCorrelationSelectorInput `json:"right"`
+	Relation InsightsCorrelationRelation       `json:"relation"`
+	// Defaults to critical when omitted.
+	Severity *InsightsSeverity `json:"severity,omitempty"`
+	Why      *string           `json:"why,omitempty"`
+}
+
 type InsightsEnricherList struct {
 	Key     string   `json:"key"`
 	Label   string   `json:"label"`
@@ -1023,6 +1113,10 @@ type InsightsFinding struct {
 	Namespace string              `json:"namespace"`
 	// Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
 	Title string `json:"title"`
+	// Render-ready one-line explanation so the list conveys the gist without opening
+	// investigate. Omits service and title (already on the row): anomalies name the
+	// deviated classes; violations name the rule and what broke it. Display as-is.
+	Summary string `json:"summary"`
 	// Full canonical transaction operation (anomalies only). Omitted for violations.
 	Operation *string `json:"operation,omitempty"`
 	// Entry-span operation without dimension suffixes (anomalies).
@@ -1052,7 +1146,7 @@ type InsightsFinding struct {
 
 type InsightsGuardrail struct {
 	Scope InsightsPolicyScope `json:"scope"`
-	// Format: namespace/service.
+	// `namespace/service` for service scope; numeric transaction id for transaction scope.
 	ScopeKey string                   `json:"scopeKey"`
 	Rules    []*InsightsGuardrailRule `json:"rules"`
 }
@@ -1068,6 +1162,10 @@ type InsightsGuardrailRule struct {
 	Label     string           `json:"label"`
 	Mode      InsightsRuleMode `json:"mode"`
 	Allowlist []string         `json:"allowlist,omitempty"`
+	// Cross-span correlation specs. Only used by `attribute_correlation`
+	// (transaction-scoped): each spec asserts two captured span attributes stay
+	// consistent within one trace.
+	Correlations []*InsightsCorrelationSpec `json:"correlations,omitempty"`
 	// How this rule was created. `auto_transaction_guardrail` means it was created
 	// automatically when the service's transactions promoted (not a manual edit).
 	Origin *string `json:"origin,omitempty"`
@@ -1078,6 +1176,8 @@ type InsightsGuardrailRuleInput struct {
 	Label     string           `json:"label"`
 	Mode      InsightsRuleMode `json:"mode"`
 	Allowlist []string         `json:"allowlist,omitempty"`
+	// Required for `attribute_correlation` (transaction-scoped) rules.
+	Correlations []*InsightsCorrelationSpecInput `json:"correlations,omitempty"`
 	// Preserved on save so auto-created rules keep their origin across edits.
 	Origin *string `json:"origin,omitempty"`
 }
@@ -1460,6 +1560,17 @@ type InsightsViolationActionInput struct {
 	Offending string `json:"offending"`
 }
 
+type InstrumentationAgent struct {
+	Language                 string `json:"language"`
+	DistroName               string `json:"distroName"`
+	DistroDisplayName        string `json:"distroDisplayName"`
+	Description              string `json:"description"`
+	RuntimeEnvironment       string `json:"runtimeEnvironment"`
+	SupportedRuntimeVersions string `json:"supportedRuntimeVersions"`
+	Sources                  int    `json:"sources"`
+	IsDefault                bool   `json:"isDefault"`
+}
+
 type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
@@ -1495,6 +1606,7 @@ type InstrumentationRule struct {
 	Disabled                 *bool                              `json:"disabled,omitempty"`
 	Mutable                  bool                               `json:"mutable"`
 	ProfileName              string                             `json:"profileName"`
+	ManagedBy                ManagedBy                          `json:"managedBy"`
 	SourcesScopes            []*InstrumentationRuleSourcesScope `json:"sourcesScopes,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID  `json:"instrumentationLibraries,omitempty"`
 	Conditions               []*Condition                       `json:"conditions,omitempty"`
@@ -1961,7 +2073,6 @@ type LocalUIConfigInput struct {
 	ClusterName           *string                                  `json:"clusterName,omitempty"`
 	Instrumentor          *LocalUIConfigInstrumentorInput          `json:"instrumentor,omitempty"`
 	AllowConcurrentAgents *LocalUIConfigAllowConcurrentAgentsInput `json:"allowConcurrentAgents,omitempty"`
-	Wasp                  *LocalUIConfigWaspInput                  `json:"wasp,omitempty"`
 	Rollout               *LocalUIConfigRolloutInput               `json:"rollout,omitempty"`
 	AutoRollback          *LocalUIConfigAutoRollbackInput          `json:"autoRollback,omitempty"`
 	GoAutoOffsetsCron     *string                                  `json:"goAutoOffsetsCron,omitempty"`
@@ -2004,10 +2115,6 @@ type LocalUIConfigTraceCorrelationsServiceIOInput struct {
 	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
 	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
 	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
-}
-
-type LocalUIConfigWaspInput struct {
-	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type MessagingPayloadCollection struct {
@@ -2296,7 +2403,7 @@ type Query struct {
 
 type Recommendation struct {
 	Name                    string                              `json:"name"`
-	Type                    RecommendationType                  `json:"type"`
+	Type                    string                              `json:"type"`
 	Applied                 bool                                `json:"applied"`
 	ConditionsMet           bool                                `json:"conditionsMet"`
 	Dismissed               bool                                `json:"dismissed"`
@@ -2333,6 +2440,7 @@ type RecommendationCatalogRemediation struct {
 	Type          string                               `json:"type"`
 	ButtonText    string                               `json:"buttonText"`
 	Tooltip       string                               `json:"tooltip"`
+	CanApplyViaUI bool                                 `json:"canApplyViaUi"`
 	ApplyExamples []*RecommendationCatalogApplyExample `json:"applyExamples"`
 }
 
@@ -3359,17 +3467,58 @@ func (e InsightsBulkResolution) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Relation asserted between two correlated attribute values within one trace.
+type InsightsCorrelationRelation string
+
+const (
+	InsightsCorrelationRelationEquals    InsightsCorrelationRelation = "equals"
+	InsightsCorrelationRelationNotEquals InsightsCorrelationRelation = "not_equals"
+)
+
+var AllInsightsCorrelationRelation = []InsightsCorrelationRelation{
+	InsightsCorrelationRelationEquals,
+	InsightsCorrelationRelationNotEquals,
+}
+
+func (e InsightsCorrelationRelation) IsValid() bool {
+	switch e {
+	case InsightsCorrelationRelationEquals, InsightsCorrelationRelationNotEquals:
+		return true
+	}
+	return false
+}
+
+func (e InsightsCorrelationRelation) String() string {
+	return string(e)
+}
+
+func (e *InsightsCorrelationRelation) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsCorrelationRelation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsCorrelationRelation", str)
+	}
+	return nil
+}
+
+func (e InsightsCorrelationRelation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type InsightsDeviationClass string
 
 const (
-	InsightsDeviationClassD1CallEdges     InsightsDeviationClass = "D1_call_edges"
-	InsightsDeviationClassD2Egress        InsightsDeviationClass = "D2_egress"
-	InsightsDeviationClassD3Latency       InsightsDeviationClass = "D3_latency"
-	InsightsDeviationClassD4ArgsReturns   InsightsDeviationClass = "D4_args_returns"
-	InsightsDeviationClassD5Libraries     InsightsDeviationClass = "D5_libraries"
-	InsightsDeviationClassD6AttrRelations InsightsDeviationClass = "D6_attr_relations"
-	InsightsDeviationClassD7DbAccess      InsightsDeviationClass = "D7_db_access"
-	InsightsDeviationClassD8PayloadSize   InsightsDeviationClass = "D8_payload_size"
+	InsightsDeviationClassD1CallEdges   InsightsDeviationClass = "D1_call_edges"
+	InsightsDeviationClassD2Egress      InsightsDeviationClass = "D2_egress"
+	InsightsDeviationClassD3Latency     InsightsDeviationClass = "D3_latency"
+	InsightsDeviationClassD4ArgsReturns InsightsDeviationClass = "D4_args_returns"
+	InsightsDeviationClassD5Libraries   InsightsDeviationClass = "D5_libraries"
+	InsightsDeviationClassD6DbAccess    InsightsDeviationClass = "D6_db_access"
+	InsightsDeviationClassD7PayloadSize InsightsDeviationClass = "D7_payload_size"
 )
 
 var AllInsightsDeviationClass = []InsightsDeviationClass{
@@ -3378,14 +3527,13 @@ var AllInsightsDeviationClass = []InsightsDeviationClass{
 	InsightsDeviationClassD3Latency,
 	InsightsDeviationClassD4ArgsReturns,
 	InsightsDeviationClassD5Libraries,
-	InsightsDeviationClassD6AttrRelations,
-	InsightsDeviationClassD7DbAccess,
-	InsightsDeviationClassD8PayloadSize,
+	InsightsDeviationClassD6DbAccess,
+	InsightsDeviationClassD7PayloadSize,
 }
 
 func (e InsightsDeviationClass) IsValid() bool {
 	switch e {
-	case InsightsDeviationClassD1CallEdges, InsightsDeviationClassD2Egress, InsightsDeviationClassD3Latency, InsightsDeviationClassD4ArgsReturns, InsightsDeviationClassD5Libraries, InsightsDeviationClassD6AttrRelations, InsightsDeviationClassD7DbAccess, InsightsDeviationClassD8PayloadSize:
+	case InsightsDeviationClassD1CallEdges, InsightsDeviationClassD2Egress, InsightsDeviationClassD3Latency, InsightsDeviationClassD4ArgsReturns, InsightsDeviationClassD5Libraries, InsightsDeviationClassD6DbAccess, InsightsDeviationClassD7PayloadSize:
 		return true
 	}
 	return false
@@ -4174,6 +4322,51 @@ func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) Marsha
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type ManagedBy string
+
+const (
+	ManagedByProfile           ManagedBy = "Profile"
+	ManagedByOdigosUI          ManagedBy = "OdigosUi"
+	ManagedByInterrogationLoop ManagedBy = "InterrogationLoop"
+	ManagedByUnknown           ManagedBy = "Unknown"
+)
+
+var AllManagedBy = []ManagedBy{
+	ManagedByProfile,
+	ManagedByOdigosUI,
+	ManagedByInterrogationLoop,
+	ManagedByUnknown,
+}
+
+func (e ManagedBy) IsValid() bool {
+	switch e {
+	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByUnknown:
+		return true
+	}
+	return false
+}
+
+func (e ManagedBy) String() string {
+	return string(e)
+}
+
+func (e *ManagedBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ManagedBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ManagedBy", str)
+	}
+	return nil
+}
+
+func (e ManagedBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type ManifestFormat string
 
 const (
@@ -4496,53 +4689,6 @@ func (e *ProgrammingLanguage) UnmarshalGQL(v any) error {
 }
 
 func (e ProgrammingLanguage) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type RecommendationType string
-
-const (
-	RecommendationTypeInferDBAttributes   RecommendationType = "InferDBAttributes"
-	RecommendationTypeAutoGoOffsetUpdater RecommendationType = "AutoGoOffsetUpdater"
-	RecommendationTypeEnableOwnMetrics    RecommendationType = "EnableOwnMetrics"
-	RecommendationTypeSampleHealthProbes  RecommendationType = "SampleHealthProbes"
-	RecommendationTypeURLTemplatization   RecommendationType = "UrlTemplatization"
-)
-
-var AllRecommendationType = []RecommendationType{
-	RecommendationTypeInferDBAttributes,
-	RecommendationTypeAutoGoOffsetUpdater,
-	RecommendationTypeEnableOwnMetrics,
-	RecommendationTypeSampleHealthProbes,
-	RecommendationTypeURLTemplatization,
-}
-
-func (e RecommendationType) IsValid() bool {
-	switch e {
-	case RecommendationTypeInferDBAttributes, RecommendationTypeAutoGoOffsetUpdater, RecommendationTypeEnableOwnMetrics, RecommendationTypeSampleHealthProbes, RecommendationTypeURLTemplatization:
-		return true
-	}
-	return false
-}
-
-func (e RecommendationType) String() string {
-	return string(e)
-}
-
-func (e *RecommendationType) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = RecommendationType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RecommendationType", str)
-	}
-	return nil
-}
-
-func (e RecommendationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

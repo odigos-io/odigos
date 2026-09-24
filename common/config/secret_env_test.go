@@ -1,6 +1,7 @@
 package config
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,38 @@ func TestSanitizeDestinationID(t *testing.T) {
 }
 
 func TestDestSecretEnvPrefix(t *testing.T) {
-	assert.Equal(t, "ODIGOS_DEST_odigos-io-dest-otlp-x_", DestSecretEnvPrefix("odigos.io.dest.otlp-x"))
+	assert.Equal(t, "ODIGOS_DEST_odigos_io_dest_otlp_x_", DestSecretEnvPrefix("odigos.io.dest.otlp-x"))
+}
+
+// The collector's confmap env provider fails config resolution outright for a ${VAR}
+// whose name does not match this pattern, and envFrom.prefix must be a C_IDENTIFIER on
+// clusters without KEP-4369. Destination names always carry dots and dashes, so the
+// generated names must be checked against the real pattern rather than against
+// themselves.
+var envVarNamePattern = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+func TestSecretEnvVarNameIsAValidEnvVarName(t *testing.T) {
+	destIDs := []string{
+		"odigos.io.dest.datadog-abc12",
+		"odigos.io.dest.otlphttp-aaaa",
+		"odigos.io.dest.simple-trace-db",
+		"my.dest-1",
+		"",
+	}
+	for _, destID := range destIDs {
+		prefix := DestSecretEnvPrefix(destID)
+		assert.Regexp(t, envVarNamePattern, prefix, "envFrom prefix for %q must be a C_IDENTIFIER", destID)
+		for _, field := range []string{"DATADOG_API_KEY", "OTLP_HTTP_CLIENT_KEY_PEM", "DSN"} {
+			assert.Regexp(t, envVarNamePattern, SecretEnvVarName(field, destID),
+				"env var name for field %q of destination %q must be a C_IDENTIFIER", field, destID)
+		}
+	}
+}
+
+func TestDestSecretEnvPrefixIsUniquePerDestination(t *testing.T) {
+	assert.NotEqual(t,
+		DestSecretEnvPrefix("odigos.io.dest.datadog-aaaa"),
+		DestSecretEnvPrefix("odigos.io.dest.datadog-bbbb"))
 }
 
 func TestSecretEnvPlaceholder_DistinctPerDestination(t *testing.T) {
@@ -24,8 +56,8 @@ func TestSecretEnvPlaceholder_DistinctPerDestination(t *testing.T) {
 	pa := SecretEnvPlaceholder("OTLP_HTTP_CLIENT_KEY_PEM", a)
 	pb := SecretEnvPlaceholder("OTLP_HTTP_CLIENT_KEY_PEM", b)
 
-	assert.Equal(t, "${ODIGOS_DEST_odigos-io-dest-otlphttp-aaaa_OTLP_HTTP_CLIENT_KEY_PEM}", pa)
-	assert.Equal(t, "${ODIGOS_DEST_odigos-io-dest-otlphttp-bbbb_OTLP_HTTP_CLIENT_KEY_PEM}", pb)
+	assert.Equal(t, "${ODIGOS_DEST_odigos_io_dest_otlphttp_aaaa_OTLP_HTTP_CLIENT_KEY_PEM}", pa)
+	assert.Equal(t, "${ODIGOS_DEST_odigos_io_dest_otlphttp_bbbb_OTLP_HTTP_CLIENT_KEY_PEM}", pb)
 	assert.NotEqual(t, pa, pb)
 }
 

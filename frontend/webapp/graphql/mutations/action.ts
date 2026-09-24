@@ -10,6 +10,7 @@ export const CREATE_ACTION = gql`
       disabled
       signals
       uiGenerated
+      managedBy
       fields {
         collectContainerAttributes
         collectReplicaSetAttributes
@@ -123,6 +124,7 @@ export const UPDATE_ACTION = gql`
       disabled
       signals
       uiGenerated
+      managedBy
       fields {
         collectContainerAttributes
         collectReplicaSetAttributes

@@ -234,12 +234,6 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]
 		pc.recordAs("karpenterEnabled", "karpenter.enabled")
 	}
 
-	result.Wasp = &model.WaspConfig{}
-	if config.WaspEnabled != nil {
-		result.Wasp.Enabled = config.WaspEnabled
-		pc.recordAs("waspEnabled", "wasp.enabled")
-	}
-
 	result.Instrumentor = &model.InstrumentorConfig{}
 	if config.CheckDeviceHealthBeforeInjection != nil {
 		result.Instrumentor.CheckDeviceHealthBeforeInjection = config.CheckDeviceHealthBeforeInjection

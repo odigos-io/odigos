@@ -203,7 +203,6 @@ describe('Settings CRUD', () => {
         selectDropdownOption('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
         clickToggle('allowConcurrentAgents.enabled');
         clickToggle('instrumentor.checkDeviceHealthBeforeInjection');
-        clickToggle('wasp.enabled');
 
         // ─ Rollout & Rollback ─
         clickToggle('rollout.automaticRolloutDisabled');
@@ -264,7 +263,6 @@ describe('Settings CRUD', () => {
       expect(yaml).to.contain('agentEnvVarsInjectionMethod: pod-manifest');
       expect(yaml).to.contain('allowConcurrentAgents:');
       expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
-      expect(yaml).to.contain('waspEnabled:');
 
       // ─ Rollout & Rollback (inputs + toggles) ─
       expect(yaml).to.contain('automaticRolloutDisabled:');
@@ -302,7 +300,6 @@ describe('Settings CRUD', () => {
         expect(yaml).to.contain('agentEnvVarsInjectionMethod: pod-manifest');
         expect(yaml).to.contain('allowConcurrentAgents:');
         expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
-        expect(yaml).to.contain('waspEnabled:');
 
         // ─ Rollout & Rollback ─
         expect(yaml).to.contain('automaticRolloutDisabled:');
@@ -345,7 +342,6 @@ describe('Settings CRUD', () => {
         verifyDropdown('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
         verifyToggle('allowConcurrentAgents.enabled', true);
         verifyToggle('instrumentor.checkDeviceHealthBeforeInjection', true);
-        verifyToggle('wasp.enabled', true);
 
         // ─ Rollout & Rollback ─
         verifyToggle('rollout.automaticRolloutDisabled', true);
@@ -415,7 +411,6 @@ describe('Settings CRUD', () => {
         expect(yaml).to.not.contain('cypress-test-container');
         expect(yaml).to.not.contain('maxConcurrentRollouts: 5');
         expect(yaml).to.not.contain('keepPercentage: 50');
-        expect(yaml).to.not.contain('waspEnabled:');
         expect(yaml).to.not.contain('allowConcurrentAgents:');
       });
     });

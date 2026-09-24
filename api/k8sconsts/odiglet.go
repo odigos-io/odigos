@@ -35,7 +35,6 @@ const (
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080
-	OdigletWaspServicePort         = 4040
 
 	// CSI Driver identification
 	OdigletCSIDriverName    = "odigos.csi.driver"

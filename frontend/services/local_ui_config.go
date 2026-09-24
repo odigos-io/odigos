@@ -137,11 +137,6 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 			cfg.AllowConcurrentAgents = input.AllowConcurrentAgents.Enabled
 		}
 	}
-	if input.Wasp != nil {
-		if input.Wasp.Enabled != nil {
-			cfg.WaspEnabled = input.Wasp.Enabled
-		}
-	}
 	if input.Rollout != nil {
 		if cfg.Rollout == nil {
 			cfg.Rollout = &common.RolloutConfiguration{}

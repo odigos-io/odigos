@@ -235,10 +235,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		baseConfig.AllowConcurrentAgents = addtionalConfig.AllowConcurrentAgents
 	}
 
-	if addtionalConfig.WaspEnabled != nil {
-		baseConfig.WaspEnabled = addtionalConfig.WaspEnabled
-	}
-
 	if addtionalConfig.Rollout != nil {
 		if baseConfig.Rollout == nil {
 			baseConfig.Rollout = &common.RolloutConfiguration{}

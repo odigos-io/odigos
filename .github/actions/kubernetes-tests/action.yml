@@ -197,6 +197,20 @@ runs:
         path: odigos_debug*.tar.gz
       continue-on-error: true
 
+    - name: Export kind logs
+      if: failure()
+      shell: bash
+      run: kind export logs kind-logs
+      continue-on-error: true
+
+    - name: Upload kind logs artifact
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: kind-logs-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }}
+        path: kind-logs
+      continue-on-error: true
+
     - name: Upload UI screenshots artifact
       if: failure() && inputs.test-scenario == 'ui'
       uses: actions/upload-artifact@v4

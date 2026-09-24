@@ -26,6 +26,21 @@ You will then see a screen similar to the one below:
   alt="Initial odictl TUI screen"
 />
 
+## Install a license
+
+Apply the Odigos Pro token the support team issued. `odictl` validates the JWT before writing `/var/lib/odigos-agent/config/license.jwt`, then you restart the agent:
+
+***Alternative***:
+
+Create a file called `/var/lib/odigos-agent/config/license.jwt` with the JWT token and restart the agent.
+
+```shell
+sudo odictl -odigos-license '<JWT>'
+sudo systemctl restart odigos-vmagent
+```
+
+See [Installation](/vmagent/setup/installation#apply-the-license).
+
 ## Navigation
 
 The odictl interface has five main sections: <Badge color="blue">Services</Badge>, <Badge color="blue">Logs</Badge>,

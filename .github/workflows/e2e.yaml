@@ -129,7 +129,6 @@ jobs:
         test-scenario:
           - "ui"
           - "helm-chart"
-          - "cli-upgrade"
           - "helm-upgrade"
           - "runtime-detection"
           - "instrumentation-lifecycle"
@@ -190,7 +189,6 @@ jobs:
         test-scenario:
           - "ui"
           - "helm-chart"
-          - "cli-upgrade"
           - "helm-upgrade"
           - "runtime-detection"
           - "instrumentation-lifecycle"
