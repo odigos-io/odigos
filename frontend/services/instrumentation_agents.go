@@ -146,23 +146,21 @@ func GetInstrumentationAgents(ctx context.Context, k8sCacheClient client.Client,
 				agent.SupportedRuntimeVersions = d.RuntimeEnvironments[0].SupportedVersions
 			}
 			agent.Sources = sourcesByDistro[d.Name]
+			agent.IsDefault = defaults[language] == d.Name
 
 			agents = append(agents, agent)
 		}
 	}
 
-	// Language first so a language's distros stay adjacent, then the distro
-	// workloads actually get, then by name.
-	isDefault := func(a *model.InstrumentationAgent) bool {
-		return defaults[common.ProgrammingLanguage(a.Language)] == a.DistroName
-	}
+	// Defaults first, since they are what workloads actually get, then the
+	// alternatives; each group by language, then by name.
 	sort.Slice(agents, func(i, j int) bool {
 		a, b := agents[i], agents[j]
+		if a.IsDefault != b.IsDefault {
+			return a.IsDefault
+		}
 		if a.Language != b.Language {
 			return a.Language < b.Language
-		}
-		if isDefault(a) != isDefault(b) {
-			return isDefault(a)
 		}
 		return a.DistroName < b.DistroName
 	})

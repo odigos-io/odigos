@@ -1220,6 +1220,7 @@ type ComplexityRoot struct {
 		Description              func(childComplexity int) int
 		DistroDisplayName        func(childComplexity int) int
 		DistroName               func(childComplexity int) int
+		IsDefault                func(childComplexity int) int
 		Language                 func(childComplexity int) int
 		RuntimeEnvironment       func(childComplexity int) int
 		Sources                  func(childComplexity int) int
@@ -7874,6 +7875,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationAgent.DistroName(childComplexity), true
+
+	case "InstrumentationAgent.isDefault":
+		if e.complexity.InstrumentationAgent.IsDefault == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.IsDefault(childComplexity), true
 
 	case "InstrumentationAgent.language":
 		if e.complexity.InstrumentationAgent.Language == nil {
@@ -52248,6 +52256,50 @@ func (ec *executionContext) fieldContext_InstrumentationAgent_sources(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationAgent_isDefault(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_isDefault(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsDefault, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_isDefault(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationInstanceAnalyze_healthy(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationInstanceAnalyze_healthy(ctx, field)
 	if err != nil {
@@ -74573,6 +74625,8 @@ func (ec *executionContext) fieldContext_Query_instrumentationAgents(_ context.C
 				return ec.fieldContext_InstrumentationAgent_supportedRuntimeVersions(ctx, field)
 			case "sources":
 				return ec.fieldContext_InstrumentationAgent_sources(ctx, field)
+			case "isDefault":
+				return ec.fieldContext_InstrumentationAgent_isDefault(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationAgent", field.Name)
 		},
@@ -97209,6 +97263,11 @@ func (ec *executionContext) _InstrumentationAgent(ctx context.Context, sel ast.S
 			}
 		case "sources":
 			out.Values[i] = ec._InstrumentationAgent_sources(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isDefault":
+			out.Values[i] = ec._InstrumentationAgent_isDefault(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

@@ -10,6 +10,7 @@ export const GET_INSTRUMENTATION_AGENTS = gql`
       runtimeEnvironment
       supportedRuntimeVersions
       sources
+      isDefault
     }
   }
 `;
