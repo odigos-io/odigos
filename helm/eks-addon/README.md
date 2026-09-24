@@ -1,5 +1,7 @@
 # EKS managed add-on submission candidate
 
+**Later delivery option:** the initial launch uses the existing node-metered product through Helm. This candidate currently targets the alternative License Manager contract model and Pod Identity. It must be adapted to IRSA/MeterUsage and certified before use with the selected node product; it is not a gate on the first Helm private offer.
+
 This builds a separate core Enterprise chart from `helm/odigos`. Ordinary Helm installation behavior is unchanged. The output is an **offline candidate**, not a certified add-on or evidence that its images exist. Use a release containing the paired Marketplace licensing, Helm/autoscaler and scheduler changes.
 
 ## Build

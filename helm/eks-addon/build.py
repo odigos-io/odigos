@@ -77,6 +77,7 @@ def build(output, version, images, namespace="odigos-system", kube_version="1.34
     values = yaml.load((chart / "values.yaml").read_text(), Loader=yaml.CSafeLoader)
     values["images"] = images
     values["marketplace"]["enabled"] = True
+    values["marketplace"]["billingModel"] = "contract"
     values["nodeSelector"] = {"kubernetes.io/os": "linux"}
     values["imagePrefix"] = ""
     (chart / "values.yaml").write_text(yaml.safe_dump(values, sort_keys=False))
@@ -85,7 +86,7 @@ def build(output, version, images, namespace="odigos-system", kube_version="1.34
 
     # The cleanup job is an explicit pre-delete operation, never installed by EKS.
     cleanup_values = output / "cleanup-values.json"
-    cleanup_values.write_text(json.dumps({"marketplace": {"enabled": True}, "images": images}))
+    cleanup_values.write_text(json.dumps({"marketplace": {"enabled": True, "billingModel": "contract"}, "images": images}))
     cleanup = run("helm", "template", "odigos", str(ROOT / "helm/odigos"), "--namespace", namespace,
                   "--values", str(cleanup_values), "--show-only", "templates/cleanup/cleanup-job.yaml")
     job = yaml.safe_load(cleanup)
