@@ -268,6 +268,11 @@ func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns strin
 }
 
 func uninstallDeployments(ctx context.Context, client *kube.Client, ns, _ string) error {
+	// Clear the instrumentor finalizer before deleting Deployments so uninstall is not blocked.
+	if err := removeInstrumentorDeploymentFinalizer(ctx, client, ns); err != nil {
+		return err
+	}
+
 	list, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -285,6 +290,100 @@ func uninstallDeployments(ctx context.Context, client *kube.Client, ns, _ string
 	}
 
 	return nil
+}
+
+// removeInstrumentorDeploymentFinalizer clears the instrumentor Deployment finalizer so that
+// helm uninstall / odigos uninstall can delete the Deployment after Sources are cleaned up.
+func removeInstrumentorDeploymentFinalizer(ctx context.Context, client *kube.Client, ns string) error {
+	list, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s", k8sconsts.InstrumentorAppLabelValue),
+	})
+	if err != nil {
+		return err
+	}
+	if len(list.Items) == 0 {
+		return nil
+	}
+
+	for i := range list.Items {
+		dep := &list.Items[i]
+		updated := false
+		newFinalizers := make([]string, 0, len(dep.Finalizers))
+		for _, f := range dep.Finalizers {
+			if f == k8sconsts.InstrumentorDeploymentFinalizer {
+				updated = true
+				continue
+			}
+			newFinalizers = append(newFinalizers, f)
+		}
+		if !updated {
+			continue
+		}
+		dep.Finalizers = newFinalizers
+		_, err = client.AppsV1().Deployments(ns).Update(ctx, dep, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// removeInstrumentorWebhookFinalizers clears the instrumentor webhook finalizers so that
+// helm uninstall / odigos uninstall can delete the webhook configurations after Sources are cleaned up.
+func removeInstrumentorWebhookFinalizers(ctx context.Context, client *kube.Client) error {
+	mutatingNames := []string{
+		k8sconsts.InstrumentorMutatingWebhookName,
+		k8sconsts.InstrumentorSourceMutatingWebhookName,
+	}
+	for _, name := range mutatingNames {
+		wh, err := client.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		updated := false
+		newFinalizers := make([]string, 0, len(wh.Finalizers))
+		for _, f := range wh.Finalizers {
+			if f == k8sconsts.InstrumentorWebhookFinalizer {
+				updated = true
+				continue
+			}
+			newFinalizers = append(newFinalizers, f)
+		}
+		if !updated {
+			continue
+		}
+		wh.Finalizers = newFinalizers
+		_, err = client.AdmissionregistrationV1().MutatingWebhookConfigurations().Update(ctx, wh, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	wh, err := client.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, k8sconsts.InstrumentorSourceValidatingWebhookName, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	updated := false
+	newFinalizers := make([]string, 0, len(wh.Finalizers))
+	for _, f := range wh.Finalizers {
+		if f == k8sconsts.InstrumentorWebhookFinalizer {
+			updated = true
+			continue
+		}
+		newFinalizers = append(newFinalizers, f)
+	}
+	if !updated {
+		return nil
+	}
+	wh.Finalizers = newFinalizers
+	_, err = client.AdmissionregistrationV1().ValidatingWebhookConfigurations().Update(ctx, wh, metav1.UpdateOptions{})
+	return err
 }
 
 func uninstallServices(ctx context.Context, client *kube.Client, ns, _ string) error {
@@ -433,6 +532,10 @@ func uninstallCRDs(ctx context.Context, client *kube.Client, ns string, _ string
 }
 
 func uninstallMutatingWebhookConfigs(ctx context.Context, client *kube.Client, ns, _ string) error {
+	if err := removeInstrumentorWebhookFinalizers(ctx, client); err != nil {
+		return err
+	}
+
 	list, err := client.AdmissionregistrationV1().MutatingWebhookConfigurations().List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,

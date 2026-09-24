@@ -24,6 +24,14 @@ const (
 	InstrumentorWebhookSecretName = "instrumentor-webhooks-cert"
 	InstrumentorWebhookVolumeName = "instrumentor-webhooks-cert"
 
+	// InstrumentorDeploymentFinalizer prevents deletion of the instrumentor Deployment until
+	// odigos uninstall / helm uninstall cleanup removes it (after Sources are cleaned up).
+	InstrumentorDeploymentFinalizer = "odigos.io/instrumentor-finalizer"
+
+	// InstrumentorWebhookFinalizer prevents deletion of instrumentor webhook configurations until
+	// odigos uninstall / helm uninstall cleanup removes it (after Sources are cleaned up).
+	InstrumentorWebhookFinalizer = "odigos.io/instrumentor-webhook-finalizer"
+
 	// Deprecated: only use for migration purposes.
 	DeprecatedInstrumentorWebhookSecretName = "webhook-cert"
 	DeprecatedInstrumentorWebhookVolumeName = "webhook-cert"

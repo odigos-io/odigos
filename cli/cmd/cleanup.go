@@ -94,7 +94,7 @@ All other Odigos components and system resources are deleted automatically by He
 			// This flag being used by users who want to remove instrumentation without removing the entire Odigos setup,
 			// And by cleanup jobs that runs as helm pre-uninstall hook before helm uninstall command.
 			if cmd.Flag("instrumentation-only").Changed {
-				fmt.Println("Cleaning up Odigos instrumentation resources... new approeach")
+				fmt.Println("Cleaning up Odigos instrumentation resources...")
 				// Node labels are added by the Odiglet, and since it's not managed by Helm, we need to clean them up here.
 				// In CLI logic, this is done in UninstallClusterResources after the Odiglet is deleted.
 				cmdutil.CreateKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
@@ -103,23 +103,34 @@ All other Odigos components and system resources are deleted automatically by He
 				// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
 				// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.
 				config, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
-				if err != nil && apierrors.IsNotFound(err) {
-					// If the ConfigMap does not exist, we can safely exit.
-					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
-					return
-				} else if err != nil {
+				if err != nil && !apierrors.IsNotFound(err) {
 					fmt.Printf("\033[31mERROR\033[0m Failed to get legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
 					os.Exit(1)
-				}
-				if val, ok := config.Labels[k8sconsts.AppManagedByHelmLabel]; ok && val == k8sconsts.AppManagedByHelmValue {
-					err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
-					if err != nil {
-						fmt.Printf("\033[31mERROR\033[0m Failed to delete legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
-						os.Exit(1)
-					} else {
-						fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.OdigosLegacyConfigName, ns)
+				} else if err == nil {
+					if val, ok := config.Labels[k8sconsts.AppManagedByHelmLabel]; ok && val == k8sconsts.AppManagedByHelmValue {
+						err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
+						if err != nil {
+							fmt.Printf("\033[31mERROR\033[0m Failed to delete legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
+							os.Exit(1)
+						} else {
+							fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.OdigosLegacyConfigName, ns)
+						}
 					}
 				}
+
+				// Remove the instrumentor Deployment and webhook finalizers so helm can delete them next.
+				if err := removeInstrumentorDeploymentFinalizer(ctx, client, ns); err != nil {
+					fmt.Printf("\033[31mERROR\033[0m Failed to remove instrumentor Deployment finalizer: %s\n", err)
+					os.Exit(1)
+				}
+				fmt.Println("Removed instrumentor Deployment finalizer")
+
+				if err := removeInstrumentorWebhookFinalizers(ctx, client); err != nil {
+					fmt.Printf("\033[31mERROR\033[0m Failed to remove instrumentor webhook finalizers: %s\n", err)
+					os.Exit(1)
+				}
+				fmt.Println("Removed instrumentor webhook finalizers")
+
 				fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
 				return
 			}
