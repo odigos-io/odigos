@@ -69,6 +69,22 @@ def check():
     images.update(e["value"] for e in env if e["name"].endswith("_IMAGE") and "value" in e)
     assert images == set(VALUES["images"].values()), images
 
+    node_values = copy.deepcopy(VALUES)
+    node_values["marketplace"]["billingModel"] = "node"
+    node_values["marketplace"]["licenseManagerRegion"] = ""
+    node_values["instrumentor"] = {"mountMethod": "k8s-init-container"}
+    node_documents = render(node_values)
+    node_env = all_env(node_documents)
+    assert sum(e["name"] == "ODIGOS_MARKETPLACE_BILLING_MODEL" and e.get("value") == "node" for e in node_env) == 5
+    assert not any(e["name"] == "ODIGOS_MARKETPLACE_REGION" for e in node_env)
+    agent = next(c for c in workloads(node_documents)["odiglet"]["containers"] if c["name"] == "odiglet")
+    pod_uid = next(e for e in agent["env"] if e["name"] == "ODIGOS_MARKETPLACE_POD_UID")
+    assert pod_uid["valueFrom"]["fieldRef"]["fieldPath"] == "metadata.uid"
+    role = next(d for d in node_documents if d["kind"] == "ClusterRole" and d["metadata"]["name"] == "odiglet")
+    assert any("nodes" in rule["resources"] and "update" in rule["verbs"] for rule in role["rules"])
+    node_values["marketplace"]["serviceAccountAnnotations"] = {}
+    render(node_values, "node metering requires")
+
     for key in ("onPremToken", "externalOnpremTokenSecret", "externalOnpremPullSecret"):
         values = copy.deepcopy(VALUES)
         values[key] = "render-test-token" if key == "onPremToken" else True

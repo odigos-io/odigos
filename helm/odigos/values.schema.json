@@ -1177,11 +1177,21 @@
     },
     "marketplace": {
       "additionalProperties": false,
-      "description": "AWS Marketplace Enterprise contract activation. Requires Marketplace release images.",
+      "description": "AWS Marketplace Enterprise activation. Requires matching Marketplace release images.",
       "properties": {
+        "billingModel": {
+          "default": "contract",
+          "description": "Billing integration built into the selected Marketplace images. Node metering requires IRSA.",
+          "enum": [
+            "contract",
+            "node"
+          ],
+          "title": "billingModel",
+          "type": "string"
+        },
         "enabled": {
           "default": false,
-          "description": "Activate Enterprise from an AWS Marketplace contract instead of an Odigos token.",
+          "description": "Activate Enterprise through AWS Marketplace instead of an Odigos token.",
           "title": "enabled",
           "type": "boolean"
         },
