@@ -12,6 +12,8 @@ type Config {
   tier: Tier!
   odigosVersion: String!
   installationMethod: String!
+  # Activation provider; this does not expose credentials or contract terms.
+  licenseProvider: String!
   installationStatus: InstallationStatus!
   clusterName: String
   isCentralProxyRunning: Boolean

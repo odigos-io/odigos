@@ -65,6 +65,7 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
 	response.OdigosVersion = deploymentData[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
+	response.LicenseProvider = CurrentLicenseProvider()
 	response.ClusterName = &config.ClusterName
 	response.InsightsEnabled = config.InsightsEnabled()
 	isConnected, err := isCentralProxyRunning(ctx)
