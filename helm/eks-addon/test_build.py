@@ -26,6 +26,13 @@ class AddonBuildTests(unittest.TestCase):
             command = ["helm", "template", "odigos", str(chart), "--namespace", "odigos-system", "--kube-version", "1.34.0"]
             documents = list(yaml.safe_load_all(builder.run(*command)))
             resources = {doc["metadata"]["name"]: doc for doc in documents if doc and doc["kind"] == "ConfigMap"}
+            manifest = json.loads((output / "release-manifest.json").read_text())
+            self.assertEqual(manifest["environmentOverrideParameters"], [
+                {"Key": "clusterName", "Value": "${AWS_EKS_CLUSTER_NAME}"},
+            ])
+            injected = list(yaml.safe_load_all(builder.run(*command, "--set-string", "clusterName=eks-substitution-test")))
+            config = next(doc for doc in injected if doc and doc["kind"] == "ConfigMap" and doc["metadata"]["name"] == "odigos-configuration")
+            self.assertEqual(yaml.safe_load(config["data"]["config.yaml"])["clusterName"], "eks-substitution-test")
             self.assertNotIn("data", resources["odigos-go-offsets"])
             self.assertNotIn("odigos-deployment-id", resources["odigos-deployment"]["data"])
             scheduler = next(doc for doc in documents if doc and doc["kind"] == "Deployment" and doc["metadata"]["name"] == "odigos-scheduler")
@@ -61,9 +68,9 @@ class AddonBuildTests(unittest.TestCase):
         schema = json.loads((builder.HERE / "aws_mp_configuration_schema.json").read_text())
         jsonschema.Draft7Validator.check_schema(schema)
         validator = jsonschema.Draft7Validator(schema)
-        for values in ({}, {"clusterName": "example", "logLevel": "info"}, {"marketplace": {"licenseManagerRegion": "us-east-1"}}):
+        for values in ({}, {"logLevel": "info"}, {"marketplace": {"licenseManagerRegion": "us-east-1"}}):
             validator.validate(values)
-        for values in ({"onPremToken": "secret"}, {"images": {}}, {"marketplace": {"enabled": False}}, {"insights": {"enabled": True}}):
+        for values in ({"clusterName": "buyer-override"}, {"onPremToken": "secret"}, {"images": {}}, {"marketplace": {"enabled": False}}, {"insights": {"enabled": True}}):
             self.assertFalse(validator.is_valid(values))
 
     def test_rejects_unreviewed_release_inputs(self):

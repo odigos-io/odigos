@@ -21,13 +21,15 @@ The version is a stable release number without `v`; selecting a number does not 
 
 The package removes Insights, Central and GKE templates, replaces live lookups, excludes the Helm uninstall hook and includes the AWS configuration and Pod Identity files. It retains all normal core resources, CRDs and cleanup RBAC. A static scan, repeat rendering, image inventory and Helm lint must pass before packaging succeeds. The preflight is partial; runtime-created resources still need inspection in EKS.
 
+When assembling `EksAddOnDeliveryOptionDetails` for the Catalog API submission, copy `environmentOverrideParameters` from `release-manifest.json` into `EnvironmentOverrideParameters`. EKS injects `clusterName` using `${AWS_EKS_CLUSTER_NAME}`; cluster metadata must not be a buyer-entered configuration property. The entitlement region is separate from the cluster region and must not be replaced with `${AWS_REGION}` for contract licensing.
+
 ## Runtime state
 
 The add-on declares the deployment and Go-offset ConfigMaps without owning the mutable installation ID or offsets key. The scheduler initializes only missing keys with optimistic concurrency. A new installation uses the deployment ConfigMap's Kubernetes UID as its identity; an existing ID or custom offsets are retained. The odiglet volume requires the offsets key so pods wait for initialization instead of starting with a missing file. No additional RBAC permissions are introduced.
 
 AWS uses server-side apply for add-on resources. Inspect `managedFields` after ingestion: `eks` must not own the installation ID or offsets data. Test upgrades with nonempty custom offsets and an existing ID, and verify the values survive both normal and conflict-resolving add-on updates. Unit tests prove initialization behavior, not AWS field ownership. See [EKS field management](https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-field-management.html).
 
-Initial scope is a **new installation** in a dedicated namespace on Linux EKS nodes. Do not use overwrite to take over an existing Helm/CLI installation without a tested migration. Insights, Central, automatic Go-offset updater images, own-telemetry storage and arbitrary image overrides are outside this candidate's configuration schema. Custom offsets can be updated manually through the matching CLI. The small initial schema exposes cluster name, log level and licensing region; expand supported scheduling/resource settings only with validation.
+Initial scope is a **new installation** in a dedicated namespace on Linux EKS nodes. Do not use overwrite to take over an existing Helm/CLI installation without a tested migration. Insights, Central, automatic Go-offset updater images, own-telemetry storage and arbitrary image overrides are outside this candidate's configuration schema. Custom offsets can be updated manually through the matching CLI. The small initial schema exposes log level and licensing region; expand supported scheduling/resource settings only with validation.
 
 ## Licensing and IAM
 
@@ -55,7 +57,7 @@ Only then call `aws eks delete-addon` for the installed add-on. Direct deletion 
 - Complete seller verification, contract product setup and Marketplace license integration; test the buyer entitlement and IAM identities.
 - Publish and declare every image/chart artifact; test AMD64 and ARM64, vulnerability clearance, expected cluster scale and licensing quotas.
 - Test EKS install, telemetry, dynamic collectors, custom offsets, repeated reconciliation, upgrade/rollback and cleanup/delete. Confirm the supported Kubernetes/node matrix.
-- Address the Marketplace UI licensing display (the existing token panel assumes a JWT) before a customer-facing release.
+- Include the Marketplace UI fix from public PR #5872 in the paired release.
 - Obtain AWS Limited ingestion, complete the AWS-requested tests, then request public visibility. Neither this package nor a passing local preflight performs that process.
 
 AWS references: [add-on requirements](https://docs.aws.amazon.com/marketplace/latest/userguide/container-product-policies.html), [version submission](https://docs.aws.amazon.com/marketplace/latest/userguide/container-add-version.html), [testing and public release](https://docs.aws.amazon.com/marketplace/latest/userguide/test-release-product.html).

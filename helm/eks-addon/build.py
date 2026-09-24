@@ -104,6 +104,9 @@ def build(output, version, images, namespace="odigos-system", kube_version="1.34
     (output / "release-manifest.json").write_text(json.dumps({
         "version": version, "namespace": namespace, "images": images,
         "kubernetesRenderTarget": kube_version,
+        "environmentOverrideParameters": [
+            {"Key": "clusterName", "Value": "${AWS_EKS_CLUSTER_NAME}"},
+        ],
         "status": "offline-candidate-not-runtime-verified-or-certified",
     }, indent=2) + "\n")
     return chart

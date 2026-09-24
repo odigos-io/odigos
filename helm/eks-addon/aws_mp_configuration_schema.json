@@ -3,10 +3,6 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "clusterName": {
-      "type": "string",
-      "description": "Cluster name attached to telemetry."
-    },
     "logLevel": {
       "type": "string",
       "enum": ["debug", "info", "warn", "error"],
