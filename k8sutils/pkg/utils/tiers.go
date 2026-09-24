@@ -15,6 +15,7 @@ import (
 const (
 	odigosCloudApiKeySecretKey = "odigos-cloud-api-key"
 	odigosOnpremTokenSecretKey = "odigos-onprem-token"
+	odigosMarketplaceSecretKey = "aws-marketplace"
 )
 
 func GetCurrentOdigosTier(ctx context.Context, namespaces string, client *kubernetes.Clientset) (common.OdigosTier, error) {
@@ -31,6 +32,10 @@ func GetCurrentOdigosTier(ctx context.Context, namespaces string, client *kubern
 		return common.CloudOdigosTier, nil
 	}
 	if _, exists := sec.Data[odigosOnpremTokenSecretKey]; exists {
+		return common.OnPremOdigosTier, nil
+	}
+	// This marker selects the edition only; Enterprise binaries validate the AWS entitlement.
+	if string(sec.Data[odigosMarketplaceSecretKey]) == "true" {
 		return common.OnPremOdigosTier, nil
 	}
 	return common.CommunityOdigosTier, nil

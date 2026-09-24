@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - helm/**
+      - tests/e2e/helm-chart/check-marketplace.py
 
 jobs:
   lint-charts:
@@ -15,6 +16,10 @@ jobs:
         uses: azure/setup-helm@v4
       - name: Lint Charts
         run: helm lint helm/odigos helm/odigos-central
+      - name: Install rendering test dependencies
+        run: python3 -m pip install PyYAML==6.0.3
+      - name: Verify Marketplace and existing activation modes
+        run: python3 tests/e2e/helm-chart/check-marketplace.py
 
   generate-schema:
     runs-on: ubuntu-latest
