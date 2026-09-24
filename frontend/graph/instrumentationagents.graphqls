@@ -20,6 +20,9 @@ type InstrumentationAgent {
   # running more than one distro is counted on each of their rows, so this
   # does not sum to the cluster's source count.
   sources: Int!
+  # Whether this is the distro the running tier gives its language by default,
+  # i.e. what a workload gets unless a container overrides its distro.
+  isDefault: Boolean!
 }
 
 extend type Query {

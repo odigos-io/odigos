@@ -225,6 +225,14 @@ func TestGetInstrumentationAgents_listsCommunityAlternative(t *testing.T) {
 	require.NotNil(t, byName["nodejs-community"])
 	require.NotNil(t, byName["golang-community"])
 
+	// Only the tier's default is flagged, and every default sorts above every
+	// alternative, even one whose language sorts earlier.
+	assert.True(t, byName["nodejs-community-14"].IsDefault)
+	assert.False(t, byName["nodejs-community"].IsDefault)
+	assert.True(t, byName["golang-community"].IsDefault)
+	assert.Equal(t, []string{"golang-community", "nodejs-community-14", "nodejs-community"},
+		[]string{agents[0].DistroName, agents[1].DistroName, agents[2].DistroName})
+
 	// Counts follow the distro each container actually runs.
 	assert.Equal(t, 1, byName["nodejs-community"].Sources)
 

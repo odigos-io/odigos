@@ -1567,6 +1567,7 @@ type InstrumentationAgent struct {
 	RuntimeEnvironment       string `json:"runtimeEnvironment"`
 	SupportedRuntimeVersions string `json:"supportedRuntimeVersions"`
 	Sources                  int    `json:"sources"`
+	IsDefault                bool   `json:"isDefault"`
 }
 
 type InstrumentationInstanceAnalyze struct {
