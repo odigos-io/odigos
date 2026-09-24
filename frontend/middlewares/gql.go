@@ -26,7 +26,7 @@ func (o *operationInterceptor) InterceptField(ctx context.Context, next graphql.
 				return []*model.APIToken{}, nil
 			}
 			if field.Object == "Mutation" && field.Field.Name == "updateApiToken" {
-				return nil, errors.New("this installation uses AWS Marketplace contract entitlements; an Odigos token cannot replace Marketplace activation")
+				return nil, errors.New("this installation uses AWS Marketplace billing; an Odigos token cannot replace Marketplace activation")
 			}
 		}
 	}
