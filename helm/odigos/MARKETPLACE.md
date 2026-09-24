@@ -1,8 +1,10 @@
-# AWS Marketplace Enterprise contracts
+# AWS Marketplace Enterprise activation
 
-The Marketplace activation profile selects Enterprise components using the buyer's AWS contract entitlement. It requires the matching Enterprise release with AWS License Manager support. Existing community and Odigos token installations keep their current behavior.
+The initial delivery uses Helm on EKS and the existing node-metered product. Private offers can provide negotiated annual commitments and excess-use prices. Enterprise images validate the AWS subscription. Community and existing token installations retain their behavior.
 
-The Marketplace release must provide a values file containing all of these explicit image references:
+## Node-metered deployment
+
+Use the image URIs and tags published with the Marketplace release. All eight entries must explicitly reference its Marketplace-managed ECR images; missing any fails rendering:
 
 - `images.autoscaler`
 - `images.scheduler`
@@ -13,42 +15,43 @@ The Marketplace release must provide a values file containing all of these expli
 - `images.enterprise-agents` (also injected into customer workloads)
 - `images.cli` (Helm uninstall cleanup)
 
-Use the image URIs and tags published with the selected Marketplace version. They must refer to its Marketplace-managed ECR repositories. An omitted component fails rendering instead of falling back to a community or private-registry image.
-
-The deployment values additionally contain:
-
 ```yaml
 marketplace:
   enabled: true
-  licenseManagerRegion: us-east-1
+  billingModel: node
   serviceAccountAnnotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::BUYER_ACCOUNT:role/ODIGOS_LICENSE_ROLE
+    eks.amazonaws.com/role-arn: arn:aws:iam::BUYER_ACCOUNT:role/ODIGOS_MARKETPLACE_ROLE
 ```
 
-The region must match the buyer's License Manager entitlement. This example uses IRSA. Configure the role trust policy for the selected EKS cluster's OIDC provider and these service accounts in the installation namespace:
+Configure OIDC role trust for the EKS cluster, installation namespace, `sts.amazonaws.com` audience and these service accounts:
 
 - `odigos-instrumentor`
 - `odiglet`
 - `odigos-ui`
 - `odigos-gateway`
 
-Grant `license-manager:CheckoutLicense` and `license-manager:CheckInLicense`. The paired Enterprise implementation checks a non-counted `enterprise` tier using a product SKU bound into the binaries at build time. Do not supply access keys or an Odigos on-prem token. Supported EKS Pod Identity associations can be configured separately instead of using IRSA annotations.
+Grant `aws-marketplace:MeterUsage` on `Resource: "*"`. IRSA supplies regional AWS environment and a projected identity token. **MeterUsage requires IRSA for EKS; Pod Identity, node roles and static keys are unsupported.** Node mode requires the role annotation; `licenseManagerRegion` is unused.
 
-The autoscaler propagates the Marketplace provider and region to gateway collector pods it creates. It does not itself need License Manager IAM permissions. The `odigos-pro` Secret contains only an edition marker; it is not proof of entitlement and cannot activate the Enterprise binaries without a successful AWS check.
+The paired Enterprise images must bind the selected product code. Each process performs a startup subscription dry-run; only odiglet reports positive host usage. Its pod UID comes from the Downward API. A Node billing checkpoint requires Node update permission even with `k8s-init-container` mounting.
 
-The initial profile covers core Enterprise instrumentation and exporting telemetry. Insights is explicitly rejected until its Marketplace licensing and lifecycle are supported. Do not combine Marketplace activation with Odigos token or registry-secret activation.
+The proposed billing basis is one node with an active Odigos agent per UTC hour, partial hours rounded up, irrespective of instrumented application count. Publish this definition in usage terms. Pod replacements use the checkpoint to avoid duplicate charges; uncertain hours are skipped and may be undercollected. Preserve `marketplace.odigos.io/host-*` annotations across reinstall in the same hour. Normal CLI cleanup leaves them intact. Real subscription, billing and lifecycle tests are required before release.
 
-Validation:
+The autoscaler forwards the provider and billing model to gateway collectors; it needs no Marketplace IAM permission itself. The `odigos-pro` Secret is only an edition marker and cannot authorize Enterprise binaries without AWS validation. Mixed token/registry-secret activation is rejected. Initial scope is core instrumentation/export; Insights is rejected until supported separately.
+
+## Alternative contract product
+
+For a separate License Manager contract product, use `billingModel: contract` (the default), set `licenseManagerRegion` to the entitlement region and grant `license-manager:CheckoutLicense` and `license-manager:CheckInLicense`. Matching images must bind that product's SKU and no metering code. This checks a non-counted `enterprise` entitlement. IRSA or supported Pod Identity can be used for this contract path. Do not select it for the existing custom-metered product.
+
+## Verification
 
 ```sh
 helm lint helm/odigos
 python3 tests/e2e/helm-chart/check-marketplace.py
-cd autoscaler
-go test ./controllers/clustercollector -run '^TestCollectorLicenseEnvironment$'
+go -C autoscaler test ./controllers/clustercollector -run '^TestCollectorLicenseEnvironment$'
 ```
 
-The render test needs PyYAML and Helm and uses synthetic image names; it never contacts AWS or installs workloads. Before publication, test the actual images, buyer entitlement, IAM roles, dynamic gateway collectors, upgrade and uninstall in EKS.
+The render test needs PyYAML and Helm and uses synthetic images. It checks both billing modes, identities, collector configuration, pod UID and Node permissions without AWS calls. Before publication, test actual images, buyer subscription, denied IAM, collector scaling, billing quantities and install/upgrade/uninstall on EKS.
 
-This profile supports **Helm delivery**. EKS managed add-on delivery additionally needs a package without unsupported Helm hooks/lookups, a supported configuration schema and AWS add-on certification. Do not submit the ordinary chart as an add-on unchanged.
+Managed EKS add-on delivery needs a separate package without unsupported Helm hooks/lookups, a supported schema and AWS certification. The ordinary chart cannot be submitted unchanged.
 
-See [AWS contract integration](https://docs.aws.amazon.com/marketplace/latest/userguide/container-license-manager-integration.html) and [EKS add-on requirements](https://docs.aws.amazon.com/marketplace/latest/userguide/container-product-policies.html).
+References: [MeterUsage](https://docs.aws.amazon.com/marketplace/latest/userguide/container-metering-meterusage.html), [private offers](https://docs.aws.amazon.com/marketplace/latest/userguide/private-offers-supported-product-types.html), [contract integration](https://docs.aws.amazon.com/marketplace/latest/userguide/container-license-manager-integration.html), [EKS requirements](https://docs.aws.amazon.com/marketplace/latest/userguide/container-product-policies.html).
