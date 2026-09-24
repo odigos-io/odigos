@@ -117,8 +117,14 @@ true
 {{- if .Values.marketplace.enabled }}
 - name: ODIGOS_LICENSE_PROVIDER
   value: aws-marketplace
+- name: ODIGOS_MARKETPLACE_BILLING_MODEL
+  value: {{ .Values.marketplace.billingModel | quote }}
+{{- if eq .Values.marketplace.billingModel "contract" }}
 - name: ODIGOS_MARKETPLACE_REGION
   value: {{ required "marketplace.licenseManagerRegion is required" .Values.marketplace.licenseManagerRegion | quote }}
+{{- else }}
+{{- $_ := required "node metering requires marketplace.serviceAccountAnnotations.eks.amazonaws.com/role-arn for IRSA" (index .Values.marketplace.serviceAccountAnnotations "eks.amazonaws.com/role-arn") }}
+{{- end }}
 {{- else }}
 - name: ODIGOS_ONPREM_TOKEN
   valueFrom:

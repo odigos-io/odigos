@@ -16,6 +16,7 @@ func collectorLicenseEnv(tier common.OdigosTier) []corev1.EnvVar {
 		return []corev1.EnvVar{
 			{Name: "ODIGOS_LICENSE_PROVIDER", Value: "aws-marketplace"},
 			{Name: "ODIGOS_MARKETPLACE_REGION", Value: os.Getenv("ODIGOS_MARKETPLACE_REGION")},
+			{Name: "ODIGOS_MARKETPLACE_BILLING_MODEL", Value: os.Getenv("ODIGOS_MARKETPLACE_BILLING_MODEL")},
 		}
 	}
 	return []corev1.EnvVar{{
