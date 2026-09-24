@@ -1,0 +1,9 @@
+{{- if not .Values.marketplace.enabled -}}
+{{- fail "EKS add-on requires AWS Marketplace activation" -}}
+{{- end -}}
+{{- if or .Values.insights.enabled .Values.centralProxy.centralBackendURL .Values.openshift.enabled .Values.gke.enabled .Values.gke.autopilot -}}
+{{- fail "EKS add-on supports the core Enterprise EKS profile only" -}}
+{{- end -}}
+{{- if or .Values.goAutoOffsetsCron (ne .Values.goAutoOffsetsMode "off") (not .Values.ownTelemetry.metricsStore.disabled) -}}
+{{- fail "EKS add-on does not package automatic offsets updater or own-telemetry storage" -}}
+{{- end -}}
