@@ -15,7 +15,6 @@ import (
 const (
 	odigosCloudApiKeySecretKey = "odigos-cloud-api-key"
 	odigosOnpremTokenSecretKey = "odigos-onprem-token"
-	odigosMarketplaceSecretKey = "aws-marketplace"
 )
 
 func GetCurrentOdigosTier(ctx context.Context, namespaces string, client *kubernetes.Clientset) (common.OdigosTier, error) {
@@ -42,7 +41,7 @@ func GetCurrentOdigosTier(ctx context.Context, namespaces string, client *kubern
 
 // IsMarketplaceSecret identifies the activation mode, not proof of an AWS entitlement.
 func IsMarketplaceSecret(secret *corev1.Secret) bool {
-	return secret != nil && string(secret.Data[odigosMarketplaceSecretKey]) == "true"
+	return secret != nil && string(secret.Data[k8sconsts.OdigosMarketplaceSecretKey]) == "true"
 }
 
 func getCurrentOdigosProSecret(ctx context.Context, namespace string, client *kubernetes.Clientset) (*corev1.Secret, error) {
