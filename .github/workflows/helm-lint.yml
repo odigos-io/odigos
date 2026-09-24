@@ -5,6 +5,9 @@ on:
     paths:
       - helm/**
       - tests/e2e/helm-chart/check-marketplace.py
+      - scripts/check-eks-addon-readiness.py
+      - scripts/test-eks-addon-readiness.py
+      - scheduler/clusterinfo/**
 
 jobs:
   lint-charts:
@@ -17,9 +20,25 @@ jobs:
       - name: Lint Charts
         run: helm lint helm/odigos helm/odigos-central
       - name: Install rendering test dependencies
-        run: python3 -m pip install PyYAML==6.0.3
+        run: python3 -m pip install PyYAML==6.0.3 jsonschema==4.25.1
       - name: Verify Marketplace and existing activation modes
         run: python3 tests/e2e/helm-chart/check-marketplace.py
+      - name: Verify EKS candidate packaging
+        run: |
+          python3 scripts/test-eks-addon-readiness.py
+          python3 helm/eks-addon/test_build.py
+
+  addon-state:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: scheduler/go.mod
+          cache-dependency-path: scheduler/go.sum
+      - name: Verify runtime state initialization
+        working-directory: scheduler
+        run: go test -race ./clusterinfo ./controllers/odigospro
 
   generate-schema:
     runs-on: ubuntu-latest

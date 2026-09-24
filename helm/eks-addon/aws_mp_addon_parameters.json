@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "isPodIdentityCompatible": true,
+    "permissionsList": [
+      {"serviceAccount": "odigos-instrumentor", "managedPolicies": ["arn:aws:iam::aws:policy/service-role/AWSLicenseManagerConsumptionPolicy"]},
+      {"serviceAccount": "odiglet", "managedPolicies": ["arn:aws:iam::aws:policy/service-role/AWSLicenseManagerConsumptionPolicy"]},
+      {"serviceAccount": "odigos-ui", "managedPolicies": ["arn:aws:iam::aws:policy/service-role/AWSLicenseManagerConsumptionPolicy"]},
+      {"serviceAccount": "odigos-gateway", "managedPolicies": ["arn:aws:iam::aws:policy/service-role/AWSLicenseManagerConsumptionPolicy"]}
+    ]
+  }
+}
