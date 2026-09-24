@@ -117,6 +117,8 @@ externalOnpremTokenSecret: true
 externalOnpremPullSecret: true
 ```
 
+Those flags only provide the pull secret in the Odigos namespace. With `k8s-init-container` on Kubernetes 1.35+, copy that secret into each instrumented namespace as well. See [Init container image pull secrets](/enterprise/instrumentations/configuration/mount-method#init-container-image-pull-secrets).
+
 Create the registry pull secret before syncing Odigos. The username is always `odigos` and the password is your enterprise token:
 
 ```shell

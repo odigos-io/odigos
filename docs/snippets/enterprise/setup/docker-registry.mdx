@@ -146,6 +146,7 @@ docker pull registry.odigos.io/odigos-victoria-metrics:$VERSION
 
 If you are using the [k8s-init-container](/enterprise/instrumentations/configuration/mount-method#3-InitContainer) mount method
 make sure the odigos-agents image is also pulled, as it's required by the injected InitContainer.
+On Kubernetes 1.35+, that init container also needs the registry pull secret in each instrumented namespace. See [Init container image pull secrets](/enterprise/instrumentations/configuration/mount-method#init-container-image-pull-secrets).
 **This is not the default configuration**, if you're unsure what this means, you can safely ignore this step and continue with the standard setup.
 
 ```bash
@@ -200,6 +201,8 @@ docker push $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
 ### Step 6: Configure Access for Private Registries
 
 If your Docker registry is private, configure your Kubernetes cluster to pull images from it. Refer to the official Kubernetes documentation for guidance: [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+
+Pass the secret name as `imagePullSecrets` at install time so Odigos components can pull mirrored images. For `k8s-init-container` on Kubernetes 1.35+, also copy that secret into each instrumented namespace. See [Init container image pull secrets](/enterprise/instrumentations/configuration/mount-method#init-container-image-pull-secrets).
 
 > **Note: To ensure your Odigos deployments and daemonsets can pull images from a private registry, patch them to add the image pull secret.**
 >
