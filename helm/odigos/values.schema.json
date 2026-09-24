@@ -1847,6 +1847,19 @@
               "required": [],
               "title": "privileged"
             },
+            "appArmorProfile": {
+              "additionalProperties": false,
+              "description": "AppArmor profile for data-collection when gke.enabled and the profiling pipeline is on (profiling.enabled or interrogation.enabled). GKE's default profile denies mkdir /sys/fs/bpf/otel. Ignored when privileged.",
+              "properties": {
+                "type": {
+                  "default": "Unconfined",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "appArmorProfile"
+            },
             "seLinuxOptions": {
               "additionalProperties": false,
               "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThis is an advanced option and should only be changed if you know what you are doing.",

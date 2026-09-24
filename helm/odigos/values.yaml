@@ -1109,6 +1109,17 @@ odiglet:
 
     # @schema
     # description: |-
+    #   AppArmor profile for data-collection when gke.enabled and the profiling
+    #   pipeline is on (profiling.enabled or interrogation.enabled).
+    #   GKE's default profile denies mkdir /sys/fs/bpf/otel, which the eBPF
+    #   profiler needs to pin traces_ctx_v1 for profile↔span links.
+    #   Ignored when privileged, or when gke.enabled is false.
+    # @schema
+    appArmorProfile:
+      type: "Unconfined"
+
+    # @schema
+    # description: |-
     #   seLinuxOptions for the data-collection container when running non-privileged.
     #   "spc_t" is the SELinux domain the container already gets when running privileged.
     #   This is an advanced option and should only be changed if you know what you are doing.
