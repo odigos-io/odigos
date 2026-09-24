@@ -4,6 +4,7 @@ description: Root server spans for GET /http-match/tprefix/.../items/:itemId (te
 query: |
   length([?
     span.serviceName == 'head-sampling-http-server' &&
+    span.spanAttributes."user_agent.original" == 'odigos-e2e-head-sampling' &&
     !parent &&
     span.kind == 'server' &&
     contains(span.spanAttributes."http.route", '/items/') &&

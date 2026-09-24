@@ -9,6 +9,8 @@ spec:
     on gateway tail sampling (dry-run) to stamp odigos.sampling.* attributes.
     Uses the prebuilt java-head-sampling image from Artifact Registry.
     GraphQL kubelet probe coverage is omitted (Java app has no /graphql endpoint).
+    Server assertions select the tagged curl traffic so periodic client requests
+    emitted before client instrumentation cannot inflate the expected root count.
     HTTP client outbound asserts are omitted until tail-sampling can match url.full
     (Java client spans lack url.template / url.path).
   skipDelete: true

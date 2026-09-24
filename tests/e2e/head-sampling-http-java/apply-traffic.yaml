@@ -29,7 +29,7 @@ spec:
                 echo "GET ${BASE_URL}${path} x${count}"
                 i=1
                 while [ $i -le $count ]; do
-                  curl -sS -f -o /dev/null "${BASE_URL}${path}"
+                  curl -sS -f -A odigos-e2e-head-sampling -o /dev/null "${BASE_URL}${path}"
                   i=$((i + 1))
                 done
               }
