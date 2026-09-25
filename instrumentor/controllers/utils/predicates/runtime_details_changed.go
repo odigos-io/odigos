@@ -13,10 +13,9 @@ import (
 // RuntimeDetailsChangedPredicate is a predicate that checks if the runtime details of an InstrumentationConfig have changed.
 //
 // For Create events, it returns true if the InstrumentationConfig has any runtime details.
-// For Update events, it returns true if the runtime details have changed (currently only checks the length of the runtime details).
+// For Update events, it returns true if the runtime details have changed. Containers are matched
+// by name (not position) so that reordering, adding, or removing containers is detected correctly.
 // For Delete events, it returns false.
-//
-// TODO: once we support updating the runtime details more than once, we should improve this predicate to check the actual changes.
 type RuntimeDetailsChangedPredicate struct{}
 
 var _ predicate.Predicate = &RuntimeDetailsChangedPredicate{}
@@ -48,15 +47,26 @@ func (i RuntimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
-	// currently, we only check the lengths of the runtime details
-	// we should improve this once we support updating the runtime details more than once
-	if len(oldIc.Status.RuntimeDetailsByContainer) != len(newIc.Status.RuntimeDetailsByContainer) {
+	oldDetailsByContainer := oldIc.Status.RuntimeDetailsByContainer
+	newDetailsByContainer := newIc.Status.RuntimeDetailsByContainer
+
+	if len(oldDetailsByContainer) != len(newDetailsByContainer) {
 		return true
 	}
 
-	for i, oldDetails := range oldIc.Status.RuntimeDetailsByContainer {
-		// we already checked the lengths, so we can assume the new details are present.
-		newDetails := newIc.Status.RuntimeDetailsByContainer[i]
+	oldDetailsByName := make(map[string]*odigosv1.RuntimeDetailsByContainer, len(oldDetailsByContainer))
+	for i := range oldDetailsByContainer {
+		oldDetailsByName[oldDetailsByContainer[i].ContainerName] = &oldDetailsByContainer[i]
+	}
+
+	for i := range newDetailsByContainer {
+		newDetails := &newDetailsByContainer[i]
+
+		oldDetails, ok := oldDetailsByName[newDetails.ContainerName]
+		if !ok {
+			// this container did not have runtime details before, so the set of containers changed.
+			return true
+		}
 
 		if oldDetails.Language != newDetails.Language ||
 			oldDetails.RuntimeVersion != newDetails.RuntimeVersion ||
