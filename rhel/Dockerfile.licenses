@@ -1,0 +1,53 @@
+# syntax=docker/dockerfile:1.7
+#
+# Self-contained odigos-licenses image build.
+# Context: odigos repository root (checked out at the release tag).
+#
+#   docker build -f rhel/Dockerfile.licenses \
+#     --secret id=github_token,env=GITHUB_TOKEN \
+#     --build-arg ENTERPRISE_REF=main \
+#     -t odigos-licenses:v1.35.3 .
+#
+# Set ENTERPRISE_REF=skip to generate OSS-only licenses (no GitHub token needed).
+
+FROM --platform=$BUILDPLATFORM golang:1.26.6 AS generator
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates git make \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG ENTERPRISE_REPO=https://github.com/odigos-io/odigos-enterprise.git
+ARG ENTERPRISE_REF=main
+
+WORKDIR /src
+COPY . /src/odigos
+
+# Clone enterprise at the requested ref (default: main). Skipped when ENTERPRISE_REF=skip.
+RUN --mount=type=secret,id=github_token,required=false \
+    set -euo pipefail; \
+    if [ "${ENTERPRISE_REF}" = "skip" ]; then \
+      echo "Skipping enterprise clone (ENTERPRISE_REF=skip)"; \
+      mkdir -p /src/enterprise; \
+    else \
+      TOKEN="$(cat /run/secrets/github_token)"; \
+      test -n "${TOKEN}" || { echo "github_token secret required unless ENTERPRISE_REF=skip" >&2; exit 1; }; \
+      git clone --depth 1 --branch "${ENTERPRISE_REF}" \
+        "https://x-access-token:${TOKEN}@github.com/odigos-io/odigos-enterprise.git" \
+        /src/enterprise; \
+    fi
+
+# Generate the merged license tree (script lives in the OSS repo).
+RUN --mount=type=secret,id=github_token,required=false \
+    set -euo pipefail; \
+    if [ -f /run/secrets/github_token ]; then \
+      export GITHUB_TOKEN="$(cat /run/secrets/github_token)"; \
+    fi; \
+    chmod +x /src/odigos/scripts/generate-rhel-licenses.sh; \
+    if [ "${ENTERPRISE_REF}" = "skip" ]; then \
+      /src/odigos/scripts/generate-rhel-licenses.sh /licenses-out; \
+    else \
+      /src/odigos/scripts/generate-rhel-licenses.sh /licenses-out /src/enterprise; \
+    fi
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+COPY --from=generator /licenses-out /licenses
