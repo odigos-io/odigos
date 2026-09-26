@@ -22,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: The API Endpoint for for your qryn instance
+        tooltip: The API Endpoint for your qryn instance
         placeholder: http://qryn.local:3100
     - name: QRYN_OSS_PASSWORD
       displayName: Basic auth password

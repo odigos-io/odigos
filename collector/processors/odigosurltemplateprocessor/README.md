@@ -148,7 +148,7 @@ The default rule will match various common ids as described above. Systems can a
 
 For example, if your system uses `id`s in format `id-1234`, you can set the regexp `^id-\d+$` to match this format, so that `/user/id-1234` will be templatized to `/user/{id}`.
 
-Few more examples for ids that will not be catched by default but can be configured with custom regexp:
+Few more examples for ids that will not be caught by default but can be configured with custom regexp:
 
 - `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA\_" then 4 digits then "\_" then 2 "word characters" ([a-zA-Z0-9_]))
 - `prod-api-001` - `^(dev|staging|prod)-[a-z]+-\d{3}$` (limit the first part to dev/staging/prod)

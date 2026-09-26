@@ -27,7 +27,7 @@ To develop the UI, you'll need to maintain the UI kit repo: [ui-kit](https://git
     ```
     You should now be able to visit the UI on [localhost:8085](http://localhost:8085).
 
-5. Note: if you want to get real-time code updates, you'll have to run the client seperately:
+5. Note: if you want to get real-time code updates, you'll have to run the client separately:
     ```bash
     yarn dev
     ```
