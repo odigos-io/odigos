@@ -65,6 +65,15 @@ enum FieldType {
   time
 }
 
+# Which Odigos surface owns a resource, from metadata label odigos.io/managed-by.
+# Unknown covers missing labels and unrecognized values (e.g. YAML-applied resources).
+enum ManagedBy {
+  Profile
+  OdigosUi
+  InterrogationLoop
+  Unknown
+}
+
 type Condition {
   status: ConditionStatus!
   type: String!

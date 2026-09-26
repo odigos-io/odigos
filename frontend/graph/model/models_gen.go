@@ -16,6 +16,7 @@ type Action struct {
 	Disabled    bool                      `json:"disabled"`
 	Signals     []SignalType              `json:"signals"`
 	Fields      *ActionFields             `json:"fields"`
+	ManagedBy   ManagedBy                 `json:"managedBy"`
 	UIGenerated bool                      `json:"uiGenerated"`
 	Conditions  []*Condition              `json:"conditions,omitempty"`
 	Statuses    []*DesiredConditionStatus `json:"statuses"`
@@ -606,6 +607,53 @@ type GatewayDeploymentInfo struct {
 
 type GetDestinationCategories struct {
 	Categories []*DestinationsCategory `json:"categories"`
+}
+
+type GoOffsetMinorVersion struct {
+	MinorVersion string   `json:"minorVersion"`
+	Versions     []string `json:"versions"`
+}
+
+type GoOffsetMinorVersionUpdate struct {
+	MinorVersion string                   `json:"minorVersion"`
+	IsNew        bool                     `json:"isNew"`
+	IsRemoved    bool                     `json:"isRemoved"`
+	Versions     []*GoOffsetVersionUpdate `json:"versions"`
+}
+
+type GoOffsetModule struct {
+	Module        string                  `json:"module"`
+	MinVersion    string                  `json:"minVersion"`
+	MaxVersion    string                  `json:"maxVersion"`
+	MinorVersions []*GoOffsetMinorVersion `json:"minorVersions"`
+}
+
+type GoOffsetModuleUpdate struct {
+	Module        string                        `json:"module"`
+	IsNew         bool                          `json:"isNew"`
+	IsRemoved     bool                          `json:"isRemoved"`
+	MinVersion    string                        `json:"minVersion"`
+	MaxVersion    string                        `json:"maxVersion"`
+	MinorVersions []*GoOffsetMinorVersionUpdate `json:"minorVersions"`
+}
+
+type GoOffsetVersionUpdate struct {
+	Version   string `json:"version"`
+	IsNew     bool   `json:"isNew"`
+	IsRemoved bool   `json:"isRemoved"`
+}
+
+type GoOffsets struct {
+	Installed bool              `json:"installed"`
+	Timestamp string            `json:"timestamp"`
+	Mods      []*GoOffsetModule `json:"mods"`
+}
+
+type GoOffsetsUpdateCheck struct {
+	HasUpdates        bool                    `json:"hasUpdates"`
+	CurrentTimestamp  string                  `json:"currentTimestamp"`
+	ProposedTimestamp string                  `json:"proposedTimestamp"`
+	Mods              []*GoOffsetModuleUpdate `json:"mods"`
 }
 
 type GolangCustomProbe struct {
@@ -1512,6 +1560,17 @@ type InsightsViolationActionInput struct {
 	Offending string `json:"offending"`
 }
 
+type InstrumentationAgent struct {
+	Language                 string `json:"language"`
+	DistroName               string `json:"distroName"`
+	DistroDisplayName        string `json:"distroDisplayName"`
+	Description              string `json:"description"`
+	RuntimeEnvironment       string `json:"runtimeEnvironment"`
+	SupportedRuntimeVersions string `json:"supportedRuntimeVersions"`
+	Sources                  int    `json:"sources"`
+	IsDefault                bool   `json:"isDefault"`
+}
+
 type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
@@ -1547,6 +1606,7 @@ type InstrumentationRule struct {
 	Disabled                 *bool                              `json:"disabled,omitempty"`
 	Mutable                  bool                               `json:"mutable"`
 	ProfileName              string                             `json:"profileName"`
+	ManagedBy                ManagedBy                          `json:"managedBy"`
 	SourcesScopes            []*InstrumentationRuleSourcesScope `json:"sourcesScopes,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID  `json:"instrumentationLibraries,omitempty"`
 	Conditions               []*Condition                       `json:"conditions,omitempty"`
@@ -4259,6 +4319,51 @@ func (e *K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) Unmar
 }
 
 func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ManagedBy string
+
+const (
+	ManagedByProfile           ManagedBy = "Profile"
+	ManagedByOdigosUI          ManagedBy = "OdigosUi"
+	ManagedByInterrogationLoop ManagedBy = "InterrogationLoop"
+	ManagedByUnknown           ManagedBy = "Unknown"
+)
+
+var AllManagedBy = []ManagedBy{
+	ManagedByProfile,
+	ManagedByOdigosUI,
+	ManagedByInterrogationLoop,
+	ManagedByUnknown,
+}
+
+func (e ManagedBy) IsValid() bool {
+	switch e {
+	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByUnknown:
+		return true
+	}
+	return false
+}
+
+func (e ManagedBy) String() string {
+	return string(e)
+}
+
+func (e *ManagedBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ManagedBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ManagedBy", str)
+	}
+	return nil
+}
+
+func (e ManagedBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

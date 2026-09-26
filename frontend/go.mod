@@ -219,9 +219,9 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.etcd.io/bbolt v1.4.3 // indirect
-	go.etcd.io/etcd/api/v3 v3.6.8 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.6.8 // indirect
-	go.etcd.io/etcd/client/v3 v3.6.8 // indirect
+	go.etcd.io/etcd/api/v3 v3.6.15 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.6.15 // indirect
+	go.etcd.io/etcd/client/v3 v3.6.15 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 	go.opentelemetry.io/collector/config/configmiddleware v1.65.0 // indirect
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.159.0 // indirect
@@ -279,7 +279,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/hashicorp/go-version v1.9.0 // indirect
+	github.com/hashicorp/go-version v1.9.0
 	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/knadh/koanf/maps v0.1.3 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.1 // indirect
@@ -309,7 +309,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
-	google.golang.org/grpc v1.83.1
+	google.golang.org/grpc v1.83.2
 )
 
 require (
@@ -343,6 +343,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/odigos-io/odigos/distros v0.0.0
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pierrec/lz4/v4 v4.1.28 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -370,7 +371,7 @@ require (
 	go.opentelemetry.io/collector/receiver/xreceiver v0.159.0
 	go.opentelemetry.io/otel/trace v1.46.0
 	golang.org/x/arch v0.22.0 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sys v0.47.0 // indirect
@@ -397,6 +398,7 @@ replace (
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/config => ../config
 	github.com/odigos-io/odigos/destinations => ../destinations
+	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/instrumentationrules => ../instrumentationrules
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
