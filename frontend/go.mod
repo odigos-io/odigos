@@ -26,7 +26,7 @@ require (
 	github.com/odigos-io/odigos/status v0.0.0-00010101000000-000000000000
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/client_golang v1.24.1
-	github.com/prometheus/common v0.70.1
+	github.com/prometheus/common v0.71.0
 	github.com/stretchr/testify v1.12.1
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.65.0
