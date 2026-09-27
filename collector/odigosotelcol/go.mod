@@ -112,7 +112,7 @@ require (
 	go.opentelemetry.io/collector/extension v1.65.0
 	go.opentelemetry.io/collector/extension/memorylimiterextension v0.159.0
 	go.opentelemetry.io/collector/extension/zpagesextension v0.159.0
-	go.opentelemetry.io/collector/featuregate v1.65.0
+	go.opentelemetry.io/collector/featuregate v1.67.0
 	go.opentelemetry.io/collector/otelcol v0.159.0
 	go.opentelemetry.io/collector/processor v1.65.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.159.0
@@ -653,7 +653,7 @@ require (
 	go.opentelemetry.io/collector/internal/memorylimiter v0.159.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.159.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.159.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.65.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.67.0 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.159.0 // indirect
 	go.opentelemetry.io/collector/pdata/testdata v0.159.0 // indirect
 	go.opentelemetry.io/collector/pdata/xpdata v0.159.0 // indirect
@@ -735,7 +735,7 @@ require (
 	google.golang.org/genproto v0.0.0-20260519071638-aa98bba5eb94 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
-	google.golang.org/grpc v1.83.1 // indirect
+	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
