@@ -70,6 +70,9 @@ spec:
               configMapKeyRef:
                 key: ODIGOS_VERSION
                 name: odigos-deployment
+          {{- if .Values.marketplace.enabled }}
+{{ include "odigos.enterpriseAuthEnv" . | indent 10 }}
+          {{- end }}
           - name: ODIGOS_COLLECTOR_IMAGE
             {{- if include "odigos.secretExists" . }}
             value: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-collector" "Tag" $imageTag) }}'

@@ -40,6 +40,9 @@ func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespa
 		}
 		return err
 	}
+	if string(secret.Data[k8sconsts.OdigosMarketplaceSecretKey]) == "true" {
+		return fmt.Errorf("AWS Marketplace installations use AWS contract entitlements; an Odigos token cannot replace Marketplace activation")
+	}
 	secret.Data[k8sconsts.OdigosOnpremTokenSecretKey] = []byte(onPremToken)
 
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})

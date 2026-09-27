@@ -151,22 +151,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
 	}
 
-	extraEnvVars := []corev1.EnvVar{}
-	// The odigos_enterprise_auth extension verifies this token at startup and refuses to run
-	// without it. Community tier has neither the extension nor the odigos-pro secret.
-	if tier.IsEnterprise() {
-		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
-			Name: k8sconsts.OdigosOnpremTokenEnvName,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: k8sconsts.OdigosProSecretName,
-					},
-					Key: k8sconsts.OdigosOnpremTokenSecretKey,
-				},
-			},
-		})
-	}
+	extraEnvVars := collectorLicenseEnv(tier)
 	if gateway.Spec.HttpsProxyAddress != nil {
 		odigosNs := env.GetCurrentNamespace()
 		extraEnvVars = append(extraEnvVars, corev1.EnvVar{

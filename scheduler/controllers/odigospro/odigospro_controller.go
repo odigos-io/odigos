@@ -68,6 +68,10 @@ func deleteProInfoFromConfigMap(odigosDeploymentConfig *corev1.ConfigMap) bool {
 }
 
 func updateProInfoInConfigMap(odigosDeploymentConfig *corev1.ConfigMap, proSecret *corev1.Secret) error {
+	if k8sutils.IsMarketplaceSecret(proSecret) {
+		deleteProInfoFromConfigMap(odigosDeploymentConfig)
+		return nil
+	}
 	tokenString := proSecret.Data[k8sconsts.OdigosProSecretTokenKeyName]
 	if tokenString == nil {
 		return fmt.Errorf("error: token not found in secret")

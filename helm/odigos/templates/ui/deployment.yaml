@@ -61,11 +61,7 @@ spec:
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.ui.resources) }}
           {{- if $isEnterprise }}
           # Consumed by the enterprise UI at startup; ignored by the community image.
-          - name: ODIGOS_ONPREM_TOKEN
-            valueFrom:
-              secretKeyRef:
-                name: odigos-pro
-                key: odigos-onprem-token
+{{ include "odigos.enterpriseAuthEnv" . | indent 10 }}
           {{- end }}
         ports:
           - containerPort: 3000

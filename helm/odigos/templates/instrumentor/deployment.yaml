@@ -96,11 +96,7 @@ spec:
                 key: ODIGOS_VERSION
                 name: odigos-deployment
           {{- if include "odigos.secretExists" . }}
-          - name: ODIGOS_ONPREM_TOKEN
-            valueFrom:
-              secretKeyRef:
-                name: odigos-pro
-                key: odigos-onprem-token
+{{ include "odigos.enterpriseAuthEnv" . | indent 10 }}
           {{- end }}
           - name: ODIGOS_INIT_CONTAINER_IMAGE
             {{- if include "odigos.secretExists" . }}
