@@ -9,6 +9,7 @@ export const ROUTES = {
   SAMPLING: '/sampling',
   URL_TEMPLATIZATION: '/url-templatization',
   TRACE_CORRELATIONS: '/trace-correlations',
+  INSTRUMENTATION_AGENTS: '/instrumentation-agents',
 
   // legacy routes
   CHOOSE_STREAM: '/choose-stream',
