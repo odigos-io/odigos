@@ -8,6 +8,7 @@ export const GET_CONFIG = gql`
       tier
       odigosVersion
       installationMethod
+      licenseProvider
       installationStatus
       clusterName
       isCentralProxyRunning
