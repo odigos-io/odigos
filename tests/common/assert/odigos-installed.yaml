@@ -15,7 +15,6 @@ status:
   containerStatuses:
     - name: manager
       ready: true
-      restartCount: 0
       started: true
   phase: Running
 ---
@@ -29,7 +28,6 @@ status:
   containerStatuses:
     - name: manager
       ready: true
-      restartCount: 0
       started: true
   phase: Running
 ---
@@ -43,7 +41,6 @@ status:
   containerStatuses:
     - name: manager
       ready: true
-      restartCount: 0
       started: true
   phase: Running
 ---
@@ -57,7 +54,6 @@ status:
   containerStatuses:
     - name: ui
       ready: true
-      restartCount: 0
       started: true
   phase: Running
 ---
