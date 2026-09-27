@@ -6,6 +6,18 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
+  {{- if .Values.marketplace.enabled }}
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+  {{- end }}
   - apiGroups:
       - ''
     resourceNames:

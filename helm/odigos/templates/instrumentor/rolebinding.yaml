@@ -11,5 +11,5 @@ roleRef:
   name: odigos-instrumentor
 subjects:
 - kind: ServiceAccount
-  name: odigos-instrumentor
+  name: {{ include "odigos.instrumentorServiceAccountName" . | quote }}
   namespace: {{ .Release.Namespace }}

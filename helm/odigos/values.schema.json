@@ -1175,6 +1175,36 @@
       "required": [],
       "title": "logLevel"
     },
+    "marketplace": {
+      "additionalProperties": false,
+      "description": "AWS Marketplace node billing. Requires Marketplace images and an existing Enterprise license token.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "description": "Configure IRSA and image validation for a Marketplace-bound instrumentor image.",
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "serviceAccountAnnotations": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "IRSA annotations for the instrumentor service account only.",
+          "required": [],
+          "title": "serviceAccountAnnotations",
+          "type": "object"
+        },
+        "serviceAccountName": {
+          "default": "",
+          "description": "Existing instrumentor IRSA service account supplied by AWS Marketplace. Leave empty to create odigos-instrumentor using serviceAccountAnnotations.",
+          "title": "serviceAccountName",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "title": "marketplace",
+      "type": "object"
+    },
     "metricsSources": {
       "additionalProperties": false,
       "description": "configuration for metrics sources (where odigos collects metrics from)\nonly relevant when a metrics destination is enabled",

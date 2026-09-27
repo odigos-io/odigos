@@ -83,6 +83,14 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          {{- if .Values.marketplace.enabled }}
+          - name: ODIGOS_MARKETPLACE_POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+          - name: ODIGOS_MARKETPLACE_DAEMONSET
+            value: {{ .Values.odiglet.daemonsetName | default "odiglet" | quote }}
+          {{- end }}
           - name: ODIGOS_LOG_LEVEL
             value: {{ .Values.instrumentor.logLevel | default .Values.logLevel | default "info" | quote }}
           - name: ODIGOS_TIER
@@ -142,7 +150,7 @@ spec:
           allowPrivilegeEscalation: false
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: odigos-instrumentor
+      serviceAccountName: {{ include "odigos.instrumentorServiceAccountName" . | quote }}
       volumes:
         - name: instrumentor-webhooks-cert
           secret:
