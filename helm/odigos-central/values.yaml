@@ -275,6 +275,39 @@ cloudConnectors:
     # into its workload definition, so it is redeployed to pick up a new one.
     externalEndpoint: ''
 
+    # connector-opamp-gateway is the component that SERVES the endpoint above: one gateway for the whole
+    # fleet across every provider, authenticating each Collector's credential and proxying the session to
+    # the connector that owns its cloud account.
+    #
+    # -- Deploy it. Gated separately from externalEndpoint because the two fail differently: without the
+    # gateway nothing serves the address, and without the address no Collector is told to dial it.
+    enabled: false
+    # -- Override the gateway image (empty = built-in odigos-enterprise-connector-opamp-gateway).
+    image: ''
+    # -- Replica count. Sessions are long-lived WebSockets holding no shared state, so any replica can
+    # serve any Collector — and a rolling restart costs a fleet-wide reconnect.
+    replicas: 2
+    # -- Port the gateway listens on, serving both the OpAMP path and its probes. One listener, so a
+    # probe cannot pass on a port while the one that matters is refusing connections.
+    port: 8080
+    portName: opamp
+    # -- Path the edge forwards. OpAMP's default and what the gateway serves; change it only alongside
+    # externalEndpoint, or the two describe different URLs.
+    path: /v1/opamp
+    # -- How long a revoked credential may keep an already-open session (empty = the build's default).
+    revalidateInterval: ''
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations: []
+    affinity: {}
+
   # Provider connector runtime images the controller stamps onto per-account connector Deployments.
   aws:
     # -- Override the AWS connector image (empty = built-in odigos-enterprise-connector-aws).
