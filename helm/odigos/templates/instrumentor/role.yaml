@@ -154,6 +154,7 @@ rules:
       - get
       - list
       - watch
+{{- if ne .Values.goAutoOffsetsMode "off" }}
   - apiGroups:
       - 'batch'
     resources:
@@ -174,3 +175,4 @@ rules:
       - 'jobs'
     verbs:
       - 'create'
+{{- end }}
