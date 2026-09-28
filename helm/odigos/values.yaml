@@ -564,7 +564,9 @@ autoscaler:
   # deploymentName: 'odigos-autoscaler'
 
 # @schema
-# description: Configuration for the scheduler component.
+# description: |-
+#   Deprecated. The scheduler controllers run inside the instrumentor and the odigos-scheduler
+#   deployment is kept scaled to zero. Only deploymentName is still used; the rest is ignored.
 # @schema
 scheduler:
   # @schema

@@ -166,7 +166,7 @@ build-instrumentor:
 
 .PHONY: build-scheduler
 build-scheduler:
-	$(MAKE) build-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) build-image/scheduler DOCKERFILE=scheduler/Dockerfile SUMMARY="Scheduler for Odigos" DESCRIPTION="Compatibility image. Scheduler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: build-collector
 build-collector:
@@ -186,7 +186,7 @@ verify-nodejs-agent:
 .PHONY: build-images
 build-images:
 	# prefer to build timeconsuimg images first to make better use of parallelism
-	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: build-images-rhel
 build-images-rhel:
@@ -224,7 +224,7 @@ push-instrumentor:
 
 .PHONY: push-scheduler
 push-scheduler:
-	$(MAKE) push-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/scheduler DOCKERFILE=scheduler/Dockerfile SUMMARY="Scheduler for Odigos" DESCRIPTION="Compatibility image. Scheduler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-collector
 push-collector:
@@ -240,7 +240,7 @@ push-agents:
 
 .PHONY: push-images
 push-images:
-	make push-autoscaler push-scheduler push-odiglet push-instrumentor push-collector push-ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make push-autoscaler push-odiglet push-instrumentor push-collector push-ui push-scheduler TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: push-images-rhel
 push-images-rhel:
@@ -281,7 +281,7 @@ load-to-kind-victoria-metrics:
 
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:
@@ -298,10 +298,6 @@ restart-autoscaler:
 .PHONY: restart-instrumentor
 restart-instrumentor:
 	-kubectl rollout restart deployment odigos-instrumentor -n $(ODIGOS_NS)
-
-.PHONY: restart-scheduler
-restart-scheduler:
-	-kubectl rollout restart deployment odigos-scheduler -n $(ODIGOS_NS)
 
 .PHONY: restart-collector
 restart-collector:
@@ -323,7 +319,7 @@ deploy-%:
 
 .PHONY: deploy
 deploy:
-	make deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-scheduler deploy-ui
+	make deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-ui
 
 .PHONY: debug-odiglet
 debug-odiglet:
@@ -548,7 +544,7 @@ publish-to-ecr:
 	make -j 3 build-tag-push-ecr-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-ecr-image/scheduler DOCKERFILE=scheduler/Dockerfile SUMMARY="Scheduler for Odigos" DESCRIPTION="Compatibility image. Scheduler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"

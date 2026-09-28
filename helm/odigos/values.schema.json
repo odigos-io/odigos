@@ -2421,7 +2421,7 @@
     },
     "scheduler": {
       "additionalProperties": false,
-      "description": "Configuration for the scheduler component.",
+      "description": "Deprecated. The scheduler controllers run inside the instrumentor and the odigos-scheduler\ndeployment is kept scaled to zero. Only deploymentName is still used; the rest is ignored.",
       "properties": {
         "affinity": {
           "additionalProperties": true,

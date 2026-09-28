@@ -10,9 +10,9 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"github.com/odigos-io/odigos/scheduler/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -166,7 +166,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 		*serviceGraph, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress,
 		nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes,
 		getTraceCorrelationsSettings(&odigosConfiguration))
-	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)
+	err = utils.SetOwnerControllerToInstrumentorDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
 		return err
 	}

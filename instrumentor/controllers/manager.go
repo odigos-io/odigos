@@ -10,20 +10,24 @@ import (
 
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
+	"github.com/odigos-io/odigos/instrumentor/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentednodes"
+	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollectorsgroup"
+	"github.com/odigos-io/odigos/instrumentor/controllers/odigosconfiguration"
+	"github.com/odigos-io/odigos/instrumentor/controllers/odigospro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/podsmanifestinjectionstatus"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common"
 	cacheutils "github.com/odigos-io/odigos/k8sutils/pkg/cache"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/version"
+	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -62,15 +66,13 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
-	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
 
 	cacheByObjectConfig := map[client.Object]cache.ByObject{
 		&corev1.Pod{}: {
 			Transform: podTransformFunc,
 		},
 		&corev1.ConfigMap{}: {
-			Field: odigosEffectiveConfigSelector,
+			Field: nsSelector,
 		},
 		&appsv1.Deployment{}: {
 			Transform: workloadTransformFunc,
@@ -85,6 +87,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			Field: nsSelector,
 		},
 		&odigosv1.Destination{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.Processor{}: {
 			Field: nsSelector,
 		},
 		&odigosv1.InstrumentationRule{}: {
@@ -170,8 +175,34 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version, scheduleOdigletOnlyOnInstrumentedNodes bool, instrumentedPodsNodeLabelRetention time.Duration) error {
-	err := agentenabled.SetupWithManager(mgr, dp)
+type OdigosConfigurationOptions struct {
+	Tier          common.OdigosTier
+	OdigosVersion string
+	DynamicClient *dynamic.DynamicClient
+}
+
+func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version, scheduleOdigletOnlyOnInstrumentedNodes bool, instrumentedPodsNodeLabelRetention time.Duration, configOpts OdigosConfigurationOptions) error {
+	err := odigosconfiguration.SetupWithManager(mgr, configOpts.Tier, configOpts.OdigosVersion, configOpts.DynamicClient)
+	if err != nil {
+		return fmt.Errorf("failed to create controllers for odigos configuration: %w", err)
+	}
+
+	err = odigospro.SetupWithManager(mgr, configOpts.OdigosVersion)
+	if err != nil {
+		return fmt.Errorf("failed to create controllers for odigos pro: %w", err)
+	}
+
+	err = clustercollectorsgroup.SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("failed to create controllers for cluster collectors group: %w", err)
+	}
+
+	err = nodecollectorsgroup.SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("failed to create controllers for node collectors group: %w", err)
+	}
+
+	err = agentenabled.SetupWithManager(mgr, dp)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
 	}

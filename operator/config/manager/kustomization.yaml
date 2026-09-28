@@ -42,9 +42,6 @@ images:
 - name: odiglet
   newName: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified
   newTag: v1.35.3
-- name: scheduler
-  newName: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified
-  newTag: v1.35.3
 configMapGenerator:
 - literals:
   - ODIGOS_VERSION=1.35.3
