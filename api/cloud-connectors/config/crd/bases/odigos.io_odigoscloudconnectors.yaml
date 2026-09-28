@@ -70,6 +70,49 @@ spec:
                 required:
                 - id
                 type: object
+              collectors:
+                description: |-
+                  Collectors is the customer's per-type allow-list for Odigos-managed telemetry Collectors running
+                  in the customer's own cloud account: whether Odigos may configure one, and whether it may also
+                  deploy and converge its infrastructure.
+
+                  Absent or empty means no managed Collector, and a connector image that predates this field ignores
+                  it — so a Collector is only ever built where the capability is present AND the connector
+                  understands it.
+                items:
+                  description: |-
+                    CloudConnectorCollectorCapability is the customer's allow-list entry for one managed-Collector type
+                    (e.g. "aws.fargate-collector"): a telemetry Collector that Odigos runs inside the customer's own
+                    cloud account so their workloads export to a nearby endpoint instead of over the internet.
+
+                    The two booleans are separate because they are separate grants. Management is the configuration
+                    plane and costs the customer nothing in their account. Deployment lets Odigos create and change
+                    infrastructure there, which is the permission a customer may reasonably withhold while still
+                    wanting Odigos to configure a Collector they deployed themselves from published IaC.
+                  properties:
+                    deployment:
+                      description: |-
+                        Deployment additionally allows the connector to create and converge this Collector's
+                        infrastructure in the customer's cloud account, and to remove what it created.
+
+                        Deployment without Management is refused by the connector: Odigos would build a Collector it never
+                        configures, which serves an inert fallback for ever. Enable both, or leave Deployment off to own
+                        the Collector's infrastructure yourself.
+                      type: boolean
+                    management:
+                      description: |-
+                        Management allows the connector to own this Collector's OpenTelemetry configuration and deliver it
+                        over OpAMP. It applies however the Collector was deployed — by Odigos, or by the customer from the
+                        IaC artifacts Odigos publishes.
+                      type: boolean
+                    type:
+                      description: Type is the provider connector spec type key (e.g.
+                        "aws.fargate-collector").
+                      type: string
+                  required:
+                  - type
+                  type: object
+                type: array
               computePlatforms:
                 description: |-
                   ComputePlatforms is the customer's per-type allow-list for managed environments: what the connector
