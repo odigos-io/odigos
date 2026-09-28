@@ -58,8 +58,6 @@ spec:
                   key: odigos-onprem-token
             - name: GOMEMLIMIT
               value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.interrogation.resources) }}
-            # Same bundled ClickHouse as insights; interrogation uses the
-            # "interrogation" database (exporters write there too).
             - name: CLICKHOUSE_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -67,6 +65,13 @@ spec:
                   key: password
             - name: CLICKHOUSE_DSN
               value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/interrogation"
+            - name: INTERROGATION_LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-litellm
+                  key: master-key
+            - name: INTERROGATION_AUTO_APPLY
+              value: {{ .Values.interrogation.model.autoApply | default false | quote }}
           livenessProbe:
             httpGet:
               path: /healthz

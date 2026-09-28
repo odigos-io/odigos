@@ -116,6 +116,24 @@ true
 {{- end -}}
 {{- end -}}
 
+{{/*
+  Bundled LiteLLM ships with interrogation (in-cluster only; worker URL is fixed).
+*/}}
+{{- define "odigos.litellmEnabled" -}}
+{{- if .Values.interrogation.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+  LiteLLM upstream model id: provider/name (e.g. openai/gpt-4o-mini).
+*/}}
+{{- define "odigos.interrogationUpstreamModel" -}}
+{{- $provider := .Values.interrogation.model.provider | default "openai" -}}
+{{- $name := .Values.interrogation.model.name | default "gpt-4o-mini" -}}
+{{- printf "%s/%s" $provider $name -}}
+{{- end -}}
+
 
 {{/*
   Return cleaned Kubernetes version, keeping leading 'v', removing vendor suffix like -eks-...

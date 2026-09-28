@@ -1158,7 +1158,7 @@
     },
     "interrogation": {
       "additionalProperties": false,
-      "description": "Interrogation loop (off by default): correlates traces and profiles in ClickHouse\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.\nWhen enabled, also deploys bundled ClickHouse (odigos-insights-clickhouse; shared with\ninsights) in the Odigos namespace if not already present, and deploys the\nodigos-interrogation control-loop service (enterprise; requires on-prem token).",
+      "description": "Interrogation loop (off by default): correlates traces and profiles in ClickHouse\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.\nWhen enabled, also deploys bundled ClickHouse, odigos-interrogation, and odigos-litellm.\nSet interrogation.model provider, name, and apiKey for the upstream LLM.",
       "properties": {
         "affinity": {
           "additionalProperties": true,
@@ -1167,7 +1167,7 @@
         },
         "enabled": {
           "default": "false",
-          "description": "When true, enables the interrogation loop (trace–profile correlation) on the collector, deploys bundled ClickHouse when needed, and deploys the interrogation service.",
+          "description": "When true, enables the interrogation loop, bundled ClickHouse when needed, odigos-interrogation, and odigos-litellm.",
           "required": [],
           "title": "enabled"
         },
@@ -1176,6 +1176,137 @@
           "description": "Log level for the interrogation service (falls back to global logLevel).",
           "required": [],
           "title": "logLevel"
+        },
+        "model": {
+          "additionalProperties": false,
+          "description": "Upstream LLM for interrogation analysis (routed via in-cluster odigos-litellm).",
+          "properties": {
+            "apiKey": {
+              "default": "",
+              "description": "Provider API key (OpenAI, Gemini, etc.). Stored in Secret odigos-litellm.",
+              "required": [],
+              "title": "apiKey",
+              "type": "string"
+            },
+            "autoApply": {
+              "default": false,
+              "description": "When true, apply parsed probes as InstrumentationRules.",
+              "required": [],
+              "title": "autoApply",
+              "type": "boolean"
+            },
+            "name": {
+              "default": "gpt-4o-mini",
+              "description": "Model name at the provider (combined with provider for LiteLLM).",
+              "required": [],
+              "title": "name",
+              "type": "string"
+            },
+            "provider": {
+              "default": "openai",
+              "description": "LiteLLM provider prefix (openai, gemini, anthropic, ...).",
+              "required": [],
+              "title": "provider",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "model",
+          "type": "object"
+        },
+        "litellm": {
+          "additionalProperties": false,
+          "description": "Internal odigos-litellm deployment (image and resources).",
+          "properties": {
+            "affinity": {
+              "additionalProperties": true,
+              "required": [],
+              "title": "affinity"
+            },
+            "image": {
+              "additionalProperties": false,
+              "properties": {
+                "pullPolicy": {
+                  "default": "IfNotPresent",
+                  "title": "pullPolicy",
+                  "type": "string"
+                },
+                "repository": {
+                  "default": "ghcr.io/berriai/litellm",
+                  "title": "repository",
+                  "type": "string"
+                },
+                "tag": {
+                  "default": "v1.101.0",
+                  "title": "tag",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "image",
+              "type": "object"
+            },
+            "nodeSelector": {
+              "default": "",
+              "required": [],
+              "title": "nodeSelector"
+            },
+            "priorityClassName": {
+              "default": "",
+              "required": [],
+              "title": "priorityClassName"
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "500m",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "512Mi",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "50m",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "256Mi",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            },
+            "tolerations": {
+              "items": {
+                "type": "object"
+              },
+              "required": [],
+              "title": "tolerations"
+            }
+          },
+          "required": [],
+          "title": "litellm",
+          "type": "object"
         },
         "nodeSelector": {
           "default": "",

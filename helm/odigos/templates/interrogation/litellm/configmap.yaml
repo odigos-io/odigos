@@ -1,0 +1,21 @@
+{{- if and (include "odigos.litellmEnabled" .) (include "odigos.secretExists" .) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-litellm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-litellm
+    odigos.io/system-object: "true"
+data:
+  config.yaml: |
+    model_list:
+      - model_name: interrogation
+        litellm_params:
+          model: {{ include "odigos.interrogationUpstreamModel" . | quote }}
+          api_key: os.environ/LITELLM_UPSTREAM_API_KEY
+    litellm_settings:
+      drop_params: true
+    general_settings:
+      master_key: os.environ/LITELLM_MASTER_KEY
+{{- end }}
