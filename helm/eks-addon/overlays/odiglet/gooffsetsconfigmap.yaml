@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-go-offsets
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    odigos.io/system-object: "true"

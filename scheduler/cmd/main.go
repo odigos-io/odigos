@@ -192,6 +192,15 @@ func main() {
 		logger.Error("unable to create kubernetes client", "err", err)
 		os.Exit(1)
 	}
+	if os.Getenv("ODIGOS_INSTALLATION_METHOD") == "eks-addon" {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		err = clusterinfo.InitializeAddonState(ctx, clientset, odigosNs)
+		cancel()
+		if err != nil {
+			logger.Error("unable to initialize EKS add-on state", "err", err)
+			os.Exit(1)
+		}
+	}
 	err = clusterinfo.RecordClusterInfo(context.Background(), clientset, odigosNs)
 	if err != nil {
 		logger.Error("unable to record cluster info, skipping", "err", err)

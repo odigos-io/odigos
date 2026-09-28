@@ -381,7 +381,8 @@
                           "enterprise/setup/installation-options",
                           "enterprise/setup/docker-registry",
                           "enterprise/setup/odigos-with-argocd",
-                          "enterprise/setup/odigos-with-karpenter"
+                          "enterprise/setup/odigos-with-karpenter",
+                          "enterprise/setup/eks-addon"
                         ]
                       },
                       "enterprise/setup/verifying-images",

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-deployment
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    odigos.io/system-object: "true"
+data:
+  ODIGOS_VERSION: {{ .Chart.AppVersion | quote }}
+  ODIGOS_TIER: onprem
+  installation-method: eks-addon

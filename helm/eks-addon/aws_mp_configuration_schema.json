@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "logLevel": {
+      "type": "string",
+      "enum": [
+        "debug",
+        "info",
+        "warn",
+        "error"
+      ],
+      "description": "Default log level for Odigos components."
+    },
+    "resourceSizePreset": {
+      "type": "string",
+      "enum": [
+        "size_s",
+        "size_m",
+        "size_l"
+      ],
+      "default": "size_s",
+      "description": "Resource sizing for Odigos collectors and node agents; small is the default."
+    },
+    "nodeSelector": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "properties": {
+        "kubernetes.io/os": {
+          "type": "string",
+          "enum": [
+            "linux"
+          ]
+        }
+      },
+      "description": "Node labels required for Odigos workloads. Only Linux nodes are supported."
+    }
+  }
+}

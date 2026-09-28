@@ -1,0 +1,85 @@
+# Odigos Enterprise EKS add-on
+
+This delivery installs core Odigos Enterprise into `odigos-system` on Linux EKS nodes. Use a new installation; do not overwrite an existing Helm/CLI deployment. The node agent requires privileged host access. Subscribe to Odigos Enterprise in the AWS account that owns the cluster. Images are pulled from AWS Marketplace ECR. Outbound HTTPS access to AWS APIs and the Odigos license issuer is required.
+
+## Before installation
+
+Set `AWS_PROFILE`, `AWS_REGION` and `CLUSTER_NAME` for the purchasing/deployment account. Use `aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$AWS_REGION"` and verify the selected cluster before running kubectl. Python 3 with boto3, AWS CLI, kubectl and Helm 3 are required.
+
+Download the release's chart to obtain its helper and instructions. The download identity needs `ecr:GetAuthorizationToken` and ECR pull permissions on the Marketplace repository. Use the chart version shown by Marketplace (the initial candidate is 1.0.0):
+
+```sh
+CHART_VERSION=1.0.0
+aws ecr get-login-password --region us-east-1 | helm registry login \
+  709825985650.dkr.ecr.us-east-1.amazonaws.com --username AWS --password-stdin
+helm pull oci://709825985650.dkr.ecr.us-east-1.amazonaws.com/odigos/chart \
+  --version "$CHART_VERSION" --untar
+```
+
+Do not install this chart using Helm; EKS manages its deployment.
+
+1. Retrieve the license using the `fetch-marketplace-token.py` supplied in this chart. The calling identity needs `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` on `arn:aws:lambda:us-east-1:061717858829:function:odigos-marketplace-issuer-pr3797-Issuer-avwccmrw5rLo`. For InvokeFunctionUrl require `lambda:FunctionUrlAuthType=AWS_IAM`; for InvokeFunction require `lambda:InvokedViaFunctionUrl=true`. The issuer verifies the active Marketplace purchase. No separate Enterprise license purchase or manual approval is needed.
+
+```sh
+python3 chart/fetch-marketplace-token.py \
+  https://dmaoivlk72vrl5zct27s3h4xjq0cesyl.lambda-url.us-east-1.on.aws/token \
+  --profile "$AWS_PROFILE" --output odigos-marketplace-token
+kubectl create namespace odigos-system --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n odigos-system create secret generic odigos-pro \
+  --from-file=odigos-onprem-token=odigos-marketplace-token \
+  --dry-run=client -o yaml | kubectl apply --server-side -f -
+```
+
+The helper creates a mode-0600 file and does not print the token. Remove the local token file after the Secret is installed. Never put token contents in add-on configuration, source control or shell arguments.
+
+2. Create an IRSA role granting `aws-marketplace:MeterUsage` on `Resource: "*"`. Trust only the cluster's OIDC provider, audience `sts.amazonaws.com` and subject `system:serviceaccount:odigos-system:odigos-instrumentor`. Set `ODIGOS_IRSA_ROLE_ARN` to this role's ARN. The add-on creates the service account. Only instrumentor needs AWS permissions. PAYG metering does not support EKS Pod Identity or node-role credentials.
+
+## Install and update
+
+Look up the catalog-assigned name/version for this product; Limited candidates are visible only to allowlisted accounts/regions:
+
+```sh
+aws eks describe-addon-versions --region "$AWS_REGION" \
+  --query "addons[?marketplaceInformation.productId=='prod-l73cv3hlh2mri'].[addonName,addonVersions[].addonVersion]"
+```
+
+Set `ADDON_NAME` and `ADDON_VERSION` to the returned compatible values, then install:
+
+```sh
+aws eks create-addon --cluster-name "$CLUSTER_NAME" --region "$AWS_REGION" \
+  --addon-name "$ADDON_NAME" --addon-version "$ADDON_VERSION" \
+  --service-account-role-arn "$ODIGOS_IRSA_ROLE_ARN" \
+  --configuration-values '{"resourceSizePreset":"size_s"}'
+aws eks wait addon-active --cluster-name "$CLUSTER_NAME" --region "$AWS_REGION" --addon-name "$ADDON_NAME"
+kubectl -n odigos-system get pods
+kubectl -n odigos-system port-forward service/ui 3000:3000
+```
+
+Open localhost:3000, select sources and configure your telemetry destination. Default sizing is small; medium and large presets are available. For updates, use `aws eks update-addon` with the target compatible version, the complete desired configuration and `--resolve-conflicts PRESERVE`, then wait for `addon-active` and verify telemetry. Do not use Helm to update an EKS-managed installation. Cluster name is injected by EKS. Insights, Central and automatic Go-offset downloads are excluded from this delivery.
+
+## Renew the license
+
+Tokens last at most 30 days, capped at agreement expiry. Before the expiry printed by the helper, fetch a new token into a new file and update the same Secret. Recreate token-consuming pods one at a time, waiting for replacement readiness: instrumentor, UI, odiglet (including its collector sidecar), and gateway collectors. The autoscaler may undo gateway Deployment restart annotations; recreate those pods individually. Secret updates do not refresh existing environment variables. Renewal rechecks the purchase. Automatic token renewal is not included.
+
+## Remove safely
+
+EKS does not execute Helm uninstall hooks. Keep the subscription and add-on active while removing instrumentation. Use the chart from the exact installed release and render its cleanup job before running it:
+
+```sh
+helm template odigos chart --namespace odigos-system \
+  --show-only templates/cleanup/cleanup-job.yaml --set eksAddonCleanup=true > cleanup-job.yaml
+kubectl apply -f cleanup-job.yaml
+kubectl wait -n odigos-system --for=condition=complete job/cleanup-job --timeout=300s
+kubectl logs -n odigos-system job/cleanup-job
+```
+
+A failed cleanup must be resolved before deletion. If automatic application rollouts were disabled, roll the previously instrumented workloads manually. Verify replacement application pods no longer contain Odigos instrumentation and are healthy, then remove the add-on:
+
+```sh
+aws eks delete-addon --cluster-name "$CLUSTER_NAME" --region "$AWS_REGION" --addon-name "$ADDON_NAME"
+aws eks wait addon-deleted --cluster-name "$CLUSTER_NAME" --region "$AWS_REGION" --addon-name "$ADDON_NAME"
+```
+
+Direct removal through the EKS console/API skips cleanup; run it first. `--preserve` stops EKS management but leaves the software installed and metering active. Uninstalling software does not cancel the Marketplace subscription or annual commitment.
+
+Deletion of the namespace also removes billing checkpoints. Wait two full UTC hours before reinstalling into a recreated namespace, or retain the namespace and `odigos-mp-*` ConfigMaps when managing removal yourself. Removal before the next hourly report can leave the final hour unbilled.
