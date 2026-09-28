@@ -55,6 +55,8 @@ type InstrumentationRule {
   disabled: Boolean
   mutable: Boolean!
   profileName: String!
+  # Which Odigos surface owns this InstrumentationRule (metadata label odigos.io/managed-by).
+  managedBy: ManagedBy!
   sourcesScopes: [InstrumentationRuleSourcesScope!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   conditions: [Condition!]

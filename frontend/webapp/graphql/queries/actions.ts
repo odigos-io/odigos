@@ -33,6 +33,7 @@ export const GET_ACTIONS = gql`
         disabled
         signals
         uiGenerated
+        managedBy
         fields {
           collectContainerAttributes
           collectReplicaSetAttributes

@@ -12,9 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build Autoscaler Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/amd64
           push: false
@@ -61,9 +61,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build Agents Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/amd64
           push: false
@@ -107,12 +107,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - uses: actions/setup-go@v7
         with:
           go-version: "1.26.6"
       - name: Build Instrumentor Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/amd64
           push: false
@@ -159,9 +159,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: build Odigos Collector Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/amd64
           push: false
@@ -207,11 +207,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Build Odiglet Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/amd64
           file: odiglet/Dockerfile
@@ -262,7 +262,7 @@ jobs:
       - uses: actions/checkout@v5
       # webapp is scanned separately because it runs with yarn, while the rest of the frontend runs with golang.
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
       - name: Install webapp dependencies
@@ -295,9 +295,9 @@ jobs:
           retention-days: 30
       # build the frontend image and scan the golang code.
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build Frontend Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/amd64
           file: frontend/Dockerfile
@@ -347,9 +347,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build Operator Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/amd64
           file: operator/Dockerfile

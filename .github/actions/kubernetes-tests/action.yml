@@ -81,7 +81,7 @@ runs:
       uses: kyverno/action-install-chainsaw@v0.2.13
 
     - name: Create kind cluster
-      uses: helm/kind-action@v1.12.0
+      uses: helm/kind-action@v1.14.0
       with:
         node_image: ${{ fromJSON(inputs.supported-versions)[inputs.kubernetes-version].nodeImage }}
         version: "v0.33.0"

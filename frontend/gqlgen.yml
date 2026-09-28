@@ -200,6 +200,10 @@ models:
         resolver: true
       guardrailViolation:
         resolver: true
+      recommendations:
+        resolver: true
+      recommendation:
+        resolver: true
       catalog:
         resolver: true
       systemSettings:
