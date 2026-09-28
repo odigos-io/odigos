@@ -135,7 +135,6 @@ Start by pulling the required images from the enterprise registry (`registry.odi
 
 ```bash
 docker pull registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
-docker pull registry.odigos.io/odigos-scheduler:$VERSION
 docker pull registry.odigos.io/odigos-ui:$VERSION
 docker pull registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull registry.odigos.io/odigos-enterprise-odiglet:$VERSION
@@ -158,7 +157,6 @@ Odigos component images are published in multi-arch for ARM64 and AMD64 architec
 
 ```bash
 docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
-docker pull --platform $PLATFORM registry.odigos.io/odigos-scheduler:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-odiglet:$VERSION
@@ -171,7 +169,6 @@ Next, Tag each image with your custom Docker registry prefix:
 
 ```bash
 docker tag registry.odigos.io/odigos-enterprise-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
-docker tag registry.odigos.io/odigos-scheduler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
 docker tag registry.odigos.io/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker tag registry.odigos.io/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker tag registry.odigos.io/odigos-enterprise-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
@@ -188,7 +185,6 @@ docker tag registry.odigos.io/odigos-victoria-metrics:$VERSION $CUSTOM_DOCKER_RE
 Now, push the tagged images to your custom Docker registry:
 ```bash
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
-docker push $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION

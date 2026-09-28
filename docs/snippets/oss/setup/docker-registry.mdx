@@ -18,7 +18,6 @@ Start by pulling the required images from the default community registry (`docke
 
 ```bash
 docker pull docker.io/keyval/odigos-instrumentor:$VERSION
-docker pull docker.io/keyval/odigos-scheduler:$VERSION
 docker pull docker.io/keyval/odigos-ui:$VERSION
 docker pull docker.io/keyval/odigos-autoscaler:$VERSION
 docker pull docker.io/keyval/odigos-odiglet:$VERSION
@@ -48,7 +47,6 @@ Odigos component images are published in multi-arch for ARM64 and AMD64 architec
 
 ```bash
 docker pull --platform $PLATFORM docker.io/keyval/odigos-instrumentor:$VERSION
-docker pull --platform $PLATFORM docker.io/keyval/odigos-scheduler:$VERSION
 docker pull --platform $PLATFORM docker.io/keyval/odigos-ui:$VERSION
 docker pull --platform $PLATFORM docker.io/keyval/odigos-autoscaler:$VERSION
 docker pull --platform $PLATFORM docker.io/keyval/odigos-odiglet:$VERSION
@@ -61,7 +59,6 @@ Next, Tag each image with your custom Docker registry prefix:
 
 ```bash
 docker tag docker.io/keyval/odigos-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-instrumentor:$VERSION
-docker tag docker.io/keyval/odigos-scheduler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
 docker tag docker.io/keyval/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker tag docker.io/keyval/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker tag docker.io/keyval/odigos-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION
@@ -76,7 +73,6 @@ docker tag docker.io/keyval/odigos-victoria-metrics:$VERSION $CUSTOM_DOCKER_REGI
 Now, push the tagged images to your custom Docker registry:
 ```bash
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-instrumentor:$VERSION
-docker push $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION

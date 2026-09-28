@@ -1,10 +1,12 @@
 # Compatibility image for odigos-scheduler.
 #
-# Scheduler controllers now run inside the instrumentor. This image is still
-# published under the odigos-scheduler tags so existing pull/mirror scripts
-# keep working. It is a pause container and does not run any Odigos logic.
-# The helm chart keeps a replicas: 0 Deployment that references this image so
-# Kubernetes GC does not delete CollectorsGroups still owned by that Deployment.
+# Scheduler controllers now run inside the instrumentor. This is a pause
+# container with no Odigos logic. It is still published so that if someone
+# scales the odigos-scheduler Deployment above zero, the pod starts and does
+# nothing instead of competing with the instrumentor.
+# The helm chart keeps that Deployment at replicas: 0 so Kubernetes GC does
+# not delete CollectorsGroups still owned by it. Users should not pull or
+# mirror this image.
 #
 # Default target is pause. The rhel stage is only used when publishing
 # odigos-scheduler-rhel-certified.

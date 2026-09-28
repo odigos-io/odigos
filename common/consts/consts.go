@@ -17,7 +17,6 @@ const (
 	OdigosEffectiveConfigName           = "effective-config"
 	OdigosRemoteConfigName              = "odigos-remote-config"   // backend/GraphQL overlay (e.g. rollout)
 	OdigosLocalUiConfigName             = "odigos-local-ui-config" // UI overlay (log level, sampling)
-	OdigosLegacyConfigName              = "odigos-config"          // Deprecated: only used for migrations
 	OdigosConfigurationFileName         = "config.yaml"
 	OTLPPort                            = 4317
 	OTLPHttpPort                        = 4318

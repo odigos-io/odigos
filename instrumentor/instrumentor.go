@@ -20,7 +20,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/internal/clusterinfo"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
-	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -63,12 +62,6 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
 		Namespace: odigosNs,
 		Name:      k8sconsts.DeprecatedInstrumentorWebhookSecretName,
-	}})
-
-	// remove the legacy configmap if it exists
-	mgr.Add(&configmaps.ConfigMapDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, ConfigMap: types.NamespacedName{
-		Namespace: odigosNs,
-		Name:      consts.OdigosLegacyConfigName,
 	}})
 
 	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
