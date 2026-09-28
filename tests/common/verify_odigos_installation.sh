@@ -22,9 +22,6 @@ check_command "Odigos Instrumentor deployment created"
 kubectl wait --for=create deployment/odigos-autoscaler -n $NAMESPACE --timeout=$TIMEOUT
 check_command "Odigos Autoscaler deployment created"
 
-kubectl wait --for=create deployment/odigos-scheduler -n $NAMESPACE --timeout=$TIMEOUT
-check_command "Odigos Scheduler deployment created"
-
 kubectl wait --for=create deployment/odigos-ui -n $NAMESPACE --timeout=$TIMEOUT
 check_command "Odigos UI deployment created"
 

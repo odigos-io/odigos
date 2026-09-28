@@ -29,10 +29,6 @@ on:
         description: "Include autoscaler"
         type: boolean
         default: false
-      scheduler:
-        description: "Include scheduler"
-        type: boolean
-        default: false
       instrumentor:
         description: "Include instrumentor"
         type: boolean
@@ -105,7 +101,6 @@ jobs:
           script: |
             const all = [
               { service: 'autoscaler', project_id: '69fb8e0d6b0d72f5e155effa' },
-              { service: 'scheduler', project_id: '69fb8fb7eddc8ed3392e96cc' },
               { service: 'instrumentor', project_id: '69fb8eeee695879ba96b0637' },
               { service: 'enterprise-instrumentor', project_id: '69fb8e801ae6d2eb7611e5c2' },
               { service: 'collector', project_id: '69fb8cf84e6153a3a3d3dac2' },

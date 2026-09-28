@@ -17,7 +17,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/cli/pkg/log"
-	"github.com/odigos-io/odigos/common/consts"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
@@ -108,27 +107,6 @@ and rollback any metadata changes made to your objects.`,
 				// In CLI logic, this is done in UninstallClusterResources after the Odiglet is deleted.
 				cmdutil.CreateKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
 					client, ns, k8sconsts.OdigosSystemLabelKey, cleanupNodeOdigosLabels)
-				// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
-				// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
-				// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.
-				config, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
-				if err != nil && apierrors.IsNotFound(err) {
-					// If the ConfigMap does not exist, we can safely exit.
-					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
-					return
-				} else if err != nil {
-					fmt.Printf("\033[31mERROR\033[0m Failed to get legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
-					os.Exit(1)
-				}
-				if val, ok := config.Labels[k8sconsts.AppManagedByHelmLabel]; ok && val == k8sconsts.AppManagedByHelmValue {
-					err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
-					if err != nil {
-						fmt.Printf("\033[31mERROR\033[0m Failed to delete legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
-						os.Exit(1)
-					} else {
-						fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.OdigosLegacyConfigName, ns)
-					}
-				}
 				fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
 				return
 			}

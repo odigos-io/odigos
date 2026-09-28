@@ -55,51 +55,6 @@ jobs:
         run: |
           make test
 
-  build-scheduler:
-    name: build-scheduler
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Build Scheduler Image
-        uses: docker/build-push-action@v7
-        with:
-          platforms: linux/amd64
-          push: false
-          tags: scheduler:pr-${{ github.event.number || github.run_number }}
-          provenance: false
-          build-args: SERVICE_NAME=scheduler
-          file: Dockerfile
-          outputs: type=docker,dest=/tmp/scheduler.tar
-      - name: Load Docker image for scanning
-        run: docker load -i /tmp/scheduler.tar
-      - name: Scan image for vulnerabilities
-        id: scan-scheduler
-        uses: odigos-io/ci-core/vulnerabilities-scanner@main
-        with:
-          image: scheduler:pr-${{ github.event.number || github.run_number }}
-          severity-cutoff: "CRITICAL"
-        continue-on-error: true
-      - name: Save scheduler scan JSON
-        if: always()
-        env:
-          RESULTS_FILE: ${{ steps.scan-scheduler.outputs.results-file }}
-        run: |
-          mkdir -p /tmp/scan-results
-          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
-            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
-            exit 1
-          fi
-          jq --arg img "odigos-scheduler" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-scheduler.json
-      - name: Upload scheduler scan results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vuln-scan-result-scheduler-${{ github.sha }}.json
-          path: /tmp/scan-results/odigos-scheduler.json
-          retention-days: 30
-
   build-agents:
     name: build-agents
     runs-on: depot-ubuntu-latest
@@ -437,7 +392,6 @@ jobs:
     name: Generate Vulnerability Report
     needs:
       - build-and-test-autoscaler
-      - build-scheduler
       - build-agents
       - build-and-test-instrumentor
       - build-and-test-odigos-collector

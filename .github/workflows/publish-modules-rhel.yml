@@ -17,20 +17,20 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
+            service: ['autoscaler', 'instrumentor', 'scheduler', 'collector', 'odiglet', 'ui', 'operator', 'agents']
             include:
               - service: autoscaler
                 runner: depot-ubuntu-latest
                 summary: 'Autoscaler for Odigos'
                 description: 'Autoscaler manages the installation of Odigos components.'
-              - service: scheduler
-                runner: depot-ubuntu-latest
-                summary: 'Scheduler for Odigos'
-                description: 'Scheduler manages the installation of OpenTelemetry Collectors with Odigos.'
               - service: instrumentor
                 runner: depot-ubuntu-latest
                 summary: 'Instrumentor for Odigos'
                 description: 'Instrumentor manages auto-instrumentation for workloads with Odigos.'
+              - service: scheduler
+                runner: depot-ubuntu-latest
+                summary: 'Scheduler for Odigos'
+                description: 'Compatibility image. Scheduler controllers now run in the instrumentor.'
               - service: collector
                 runner: depot-ubuntu-24.04-16
                 summary: 'Odigos Collector'
@@ -144,6 +144,7 @@ jobs:
                     matrix.service == 'ui' && 'frontend/Dockerfile' ||
                     matrix.service == 'operator' && 'operator/Dockerfile' ||
                     matrix.service == 'agents' && 'odiglet/Dockerfile' ||
+                    matrix.service == 'scheduler' && 'scheduler/Dockerfile' ||
                     'Dockerfile' }}
               target: >-
                 ${{ matrix.service == 'agents' && 'agents-rhel' || 'rhel' }}

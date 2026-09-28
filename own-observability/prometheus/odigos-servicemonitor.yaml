@@ -39,25 +39,6 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: odigos-scheduler-monitor
-  namespace: odigos-system
-  labels:
-    release: prometheus
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: odigos-scheduler
-  namespaceSelector:
-    matchNames:
-      - odigos-system
-  endpoints:
-    - port: metrics
-      path: /metrics
-      interval: 15s
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
   name: odigos-node-collector-monitor
   namespace: odigos-system
   labels:
