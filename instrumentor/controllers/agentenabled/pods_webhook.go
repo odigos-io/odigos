@@ -339,7 +339,8 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
 		tracesEnabled := containerConfig.Traces != nil
 		metricsEnabled := containerConfig.Metrics != nil
-		logsEnabled := containerConfig.Logs != nil
+		// eBPF log capture reads stdout/stderr, so it must not turn on SDK log export.
+		logsEnabled := containerConfig.Logs != nil && containerConfig.Logs.EbpfLogCapture == nil
 		existingEnvNames = podswebhook.InjectSignalsAsStaticOtelEnvVars(existingEnvNames, podContainerSpec, tracesEnabled, metricsEnabled, logsEnabled)
 	}
 	if distroMetadata.OwnDiagnostics != nil {
