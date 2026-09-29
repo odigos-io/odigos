@@ -17,7 +17,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"golang.org/x/sys/unix"
 )
 
@@ -43,7 +42,6 @@ type EBPFMetricsCollector struct {
 	eBPFMapsMetricsMap map[uint32]eBPFMapMetrics
 	eBPFTotalProgCnt   int64
 	mu                 sync.RWMutex
-	nodeName           string
 	logger             *commonlogger.OdigosLogger
 }
 
@@ -67,14 +65,13 @@ func isMemlockMap(mapType ebpf.MapType) bool {
 // NewEBPFMetricsCollector creates an eBPF metrics collector. Pass a logger from the caller (e.g. odiglet main)
 // so the same logger and level are used; use commonlogger.LoggerCompat().With("subsystem", "ebpfmetrics").
 // If logger is nil, a new subsystem logger is used.
-func NewEBPFMetricsCollector(nodeName string, logger *commonlogger.OdigosLogger) *EBPFMetricsCollector {
+func NewEBPFMetricsCollector(logger *commonlogger.OdigosLogger) *EBPFMetricsCollector {
 	if logger == nil {
 		logger = commonlogger.LoggerCompat().With("subsystem", "ebpfmetrics")
 	}
 	return &EBPFMetricsCollector{
 		eBPFMapsMetricsMap: make(map[uint32]eBPFMapMetrics),
 		eBPFTotalProgCnt:   0,
-		nodeName:           nodeName,
 		logger:             logger,
 	}
 }
@@ -330,7 +327,6 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 						attribute.String("name", eBPFMapMetrics.name),
 						attribute.Int("map_id", int(mapId)),
 						attribute.String("map_type", eBPFMapMetrics.mapType),
-						semconv.K8SNodeName(mc.nodeName),
 					),
 				)
 				observer.ObserveInt64(refCountGauge, int64(eBPFMapMetrics.refCnt),
@@ -340,12 +336,9 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 				)
 			}
 
-			nodeAttrs := metric.WithAttributes(
-				semconv.K8SNodeName(mc.nodeName),
-			)
-			observer.ObserveInt64(totalMapsMemGauge, totalMapsMemory, nodeAttrs)
-			observer.ObserveInt64(mapCountGauge, int64(mapCount), nodeAttrs)
-			observer.ObserveInt64(programCountGauge, mc.eBPFTotalProgCnt, nodeAttrs)
+			observer.ObserveInt64(totalMapsMemGauge, totalMapsMemory)
+			observer.ObserveInt64(mapCountGauge, int64(mapCount))
+			observer.ObserveInt64(programCountGauge, mc.eBPFTotalProgCnt)
 
 			return nil
 		},

@@ -1,0 +1,31 @@
+# =====================
+# Instrumentation Agents
+# The OTel distributions Odigos can instrument with on this cluster, together
+# with how much of the cluster each one covers.
+# =====================
+
+type InstrumentationAgent {
+  # Detected-language key this agent instruments (e.g. "javascript").
+  language: String!
+  # The distro's name, and the human-readable one shown in the UI.
+  distroName: String!
+  distroDisplayName: String!
+  description: String!
+  # Runtime the distro targets (e.g. "nodejs"), and the hashicorp/go-version
+  # constraint of the versions it supports (e.g. '>= 18', '>=8.1,<8.5').
+  # Both are empty for distros that declare no runtime environment.
+  runtimeEnvironment: String!
+  supportedRuntimeVersions: String!
+  # Sources holding at least one container running this distro. A source
+  # running more than one distro is counted on each of their rows, so this
+  # does not sum to the cluster's source count.
+  sources: Int!
+  # Whether this is the distro the running tier gives its language by default,
+  # i.e. what a workload gets unless a container overrides its distro.
+  isDefault: Boolean!
+}
+
+extend type Query {
+  # One entry per distro the running tier can instrument with.
+  instrumentationAgents: [InstrumentationAgent!]!
+}

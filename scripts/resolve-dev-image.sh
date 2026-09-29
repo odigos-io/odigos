@@ -85,10 +85,6 @@ lookup_cluster_image() {
 			kubectl "${kopts[@]}" get deploy odigos-autoscaler -n "${ns}" \
 				-o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true
 			;;
-		scheduler)
-			kubectl "${kopts[@]}" get deploy odigos-scheduler -n "${ns}" \
-				-o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true
-			;;
 		instrumentor)
 			kubectl "${kopts[@]}" get deploy odigos-instrumentor -n "${ns}" \
 				-o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true
@@ -132,7 +128,7 @@ if [ -n "${cluster_img}" ]; then
 	# That preserves custom imagePrefix/mirrors while recovering from a prior
 	# deploy that tagged the wrong OSS name into an enterprise cluster.
 	if [ "${cluster_base}" = "${expected}" ]; then
-		# Shared components (autoscaler/scheduler) keep the same image name on
+		# Shared components (autoscaler) keep the same image name on
 		# enterprise, so a prior OSS `make deploy` may have left docker.io/keyval
 		# in the cluster — treat that as stale and use the enterprise registry.
 		if is_enterprise; then

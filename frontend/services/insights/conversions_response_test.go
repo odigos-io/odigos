@@ -1062,3 +1062,304 @@ func TestListConvertersPreserveAbsentLists(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, baselines)
 }
+
+func TestRecommendationConvertersMapEveryField(t *testing.T) {
+	recommendation := Recommendation{
+		ID:              "rec-1",
+		Kind:            RecommendationKindAttributeCorrelation,
+		State:           RecommendationStateOpen,
+		Stale:           true,
+		Rank:            3,
+		Scope:           "transaction",
+		ScopeKey:        "7",
+		TransactionID:   7,
+		TransactionKind: "HTTP",
+		Service:         "checkout",
+		Namespace:       "prod",
+		Operation:       "GET /cart",
+		Title:           "resolvePrincipal return.value matches getCart arg.0",
+		Summary:         "In 50 of 50 sampled traces...",
+		WhyItMatters:    "a break means one account reading another's cart",
+		Transform:       "digits",
+		Transport:       true,
+		Spec: &CorrelationSpec{
+			Name:     "cart owner",
+			Left:     CorrelationSelector{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+			Right:    CorrelationSelector{Service: "cart", Span: "getCart", Attr: "arg.0", Extract: `^(\d+)`},
+			Relation: CorrelationRelationEquals,
+			Severity: "high",
+			Why:      "ownership check",
+		},
+		Confidence: RecommendationConfidence{
+			Level:       "high",
+			HoldRatio:   0.98,
+			Observed:    50,
+			Held:        49,
+			Distinct:    12,
+			SampleCount: 60,
+			LiveHeld:    120,
+			LiveBroken:  2,
+			LiveSince:   "2026-09-10T08:00:00Z",
+			LiveLast:    "2026-09-11T08:00:00Z",
+			Reasons:     []string{"Held on 49 of 50 stored samples across 12 distinct values"},
+		},
+		Examples: []RecommendationExample{{
+			TraceID:    "trace-1",
+			LeftValue:  "u1",
+			RightValue: "u1",
+			ObservedAt: "2026-09-10T09:00:00Z",
+		}},
+		AlreadyCovered: true,
+		MinedAt:        "2026-09-10T07:00:00Z",
+		CreatedAt:      "2026-09-10T07:00:01Z",
+		UpdatedAt:      "2026-09-11T07:00:02Z",
+	}
+
+	t.Run("recommendation", func(t *testing.T) {
+		transactionID := "7"
+		transactionKind := model.InsightsTransactionKindHTTP
+		operation := "GET /cart"
+		transform := "digits"
+		transport := true
+		alreadyCovered := true
+		holdRatio := 0.98
+		observed := 50
+		held := 49
+		distinct := 12
+		liveSince := "2026-09-10T08:00:00Z"
+		liveLast := "2026-09-11T08:00:00Z"
+
+		assert.Equal(t, &model.InsightsRecommendation{
+			ID:              "rec-1",
+			Kind:            model.InsightsRecommendationKindAttributeCorrelation,
+			State:           model.InsightsRecommendationStateOpen,
+			Stale:           true,
+			Rank:            3,
+			Scope:           model.InsightsPolicyScopeTransaction,
+			ScopeKey:        "7",
+			TransactionID:   &transactionID,
+			TransactionKind: &transactionKind,
+			Service:         "checkout",
+			Namespace:       "prod",
+			Operation:       &operation,
+			Title:           "resolvePrincipal return.value matches getCart arg.0",
+			Summary:         "In 50 of 50 sampled traces...",
+			WhyItMatters:    "a break means one account reading another's cart",
+			Transform:       &transform,
+			Transport:       &transport,
+			Spec:            CorrelationSpecPtrToModel(recommendation.Spec),
+			Confidence: &model.InsightsRecommendationConfidence{
+				Level:       model.InsightsRecommendationConfidenceLevelHigh,
+				HoldRatio:   &holdRatio,
+				Observed:    &observed,
+				Held:        &held,
+				Distinct:    &distinct,
+				SampleCount: 60,
+				LiveHeld:    120,
+				LiveBroken:  2,
+				LiveSince:   &liveSince,
+				LiveLast:    &liveLast,
+				Reasons:     []string{"Held on 49 of 50 stored samples across 12 distinct values"},
+			},
+			Examples: []*model.InsightsRecommendationExample{{
+				TraceID:    "trace-1",
+				LeftValue:  "u1",
+				RightValue: "u1",
+				ObservedAt: "2026-09-10T09:00:00Z",
+			}},
+			AlreadyCovered: &alreadyCovered,
+			MinedAt:        "2026-09-10T07:00:00Z",
+			CreatedAt:      "2026-09-10T07:00:01Z",
+			UpdatedAt:      "2026-09-11T07:00:02Z",
+		}, RecommendationToModel(recommendation))
+	})
+
+	// The engine documents live_since / live_last as absent until the first
+	// live trace is evaluated, but they are time.Time with omitempty, which
+	// does nothing for a struct — so an unevaluated recommendation carries
+	// Go's zero time. Rendering that as "year 1" in the UI would read as a real
+	// measurement, so it becomes null.
+	t.Run("an unevaluated recommendation reports no live window", func(t *testing.T) {
+		unevaluated := recommendation
+		unevaluated.Confidence.LiveHeld = 0
+		unevaluated.Confidence.LiveBroken = 0
+		unevaluated.Confidence.LiveSince = "0001-01-01T00:00:00Z"
+		unevaluated.Confidence.LiveLast = "0001-01-01T00:00:00Z"
+
+		got := RecommendationToModel(unevaluated)
+		assert.Nil(t, got.Confidence.LiveSince)
+		assert.Nil(t, got.Confidence.LiveLast)
+	})
+
+	// Every kind names the guardrail an apply would extend, so a correlation
+	// keeps its zero-valued correlation fields (a transform of "" is still a
+	// correlation's transform) while a service card must not borrow them.
+	t.Run("a service guardrail carries none of the correlation fields", func(t *testing.T) {
+		card := Recommendation{
+			ID:           "60dd0838cd7e5977",
+			Kind:         RecommendationKindServiceGuardrail,
+			State:        RecommendationStateOpen,
+			Rank:         0,
+			Scope:        "service",
+			ScopeKey:     "bank/account-service",
+			Service:      "account-service",
+			Namespace:    "bank",
+			Title:        "Lock down account-service",
+			Summary:      "Every one of account-service's 6 transactions has finished learning.",
+			WhyItMatters: "Once the guardrail is on...",
+			Confidence: RecommendationConfidence{
+				Level:       "low",
+				SampleCount: 6,
+				LiveHeld:    4520,
+				LiveBroken:  4,
+				LiveSince:   "2026-09-15T08:11:02.355Z",
+				LiveLast:    "2026-09-22T09:41:57.118Z",
+				Reasons:     []string{"Lists come from the learned profile of 6 promoted transactions"},
+			},
+			Rules: []RecommendationRule{{
+				Rule:         "allowed_egress",
+				Label:        "Allowed egress",
+				Description:  "This service may only reach these external destinations; any other egress is a violation.",
+				Items:        []string{"api.stripe.com:443"},
+				Confidence:   "low",
+				LiveChecked:  1620,
+				LiveViolated: 4,
+				LiveSince:    "2026-09-15T08:11:02.355Z",
+				LiveLast:     "2026-09-22T09:41:57.118Z",
+			}},
+			MinedAt:   "2026-09-22T09:40:11.204Z",
+			CreatedAt: "2026-09-14T22:03:19.641Z",
+			UpdatedAt: "2026-09-22T09:40:11.204Z",
+		}
+
+		got := RecommendationToModel(card)
+
+		assert.Equal(t, model.InsightsPolicyScopeService, got.Scope)
+		assert.Equal(t, "bank/account-service", got.ScopeKey)
+		assert.Nil(t, got.TransactionID)
+		assert.Nil(t, got.TransactionKind)
+		assert.Nil(t, got.Operation)
+		assert.Nil(t, got.Transform)
+		assert.Nil(t, got.Transport)
+		assert.Nil(t, got.Spec)
+		assert.Nil(t, got.Examples)
+		assert.Nil(t, got.AlreadyCovered)
+		assert.Nil(t, got.AppliedRules)
+		// The stored-sample stats describe a mined relation; a zero here would
+		// read as "held on 0 of 0 samples".
+		assert.Nil(t, got.Confidence.HoldRatio)
+		assert.Nil(t, got.Confidence.Observed)
+		assert.Nil(t, got.Confidence.Held)
+		assert.Nil(t, got.Confidence.Distinct)
+		// The shared counters keep their keys, and on this kind they count
+		// promoted transactions and rule checks.
+		assert.Equal(t, 6, got.Confidence.SampleCount)
+		assert.Equal(t, 4520, got.Confidence.LiveHeld)
+		assert.Equal(t, 4, got.Confidence.LiveBroken)
+
+		require.Len(t, got.Rules, 1)
+		assert.Equal(t, &model.InsightsRecommendationRule{
+			Rule:         "allowed_egress",
+			Label:        "Allowed egress",
+			Description:  "This service may only reach these external destinations; any other egress is a violation.",
+			Items:        []string{"api.stripe.com:443"},
+			Confidence:   model.InsightsRecommendationConfidenceLevelLow,
+			LiveChecked:  1620,
+			LiveViolated: 4,
+			LiveSince:    strPtr("2026-09-15T08:11:02.355Z"),
+			LiveLast:     strPtr("2026-09-22T09:41:57.118Z"),
+		}, got.Rules[0])
+	})
+
+	// The same zero-time bug the confidence block has now exists per rule, so
+	// an unchecked rule must not render a live window of "year 1" either.
+	t.Run("an unchecked rule reports no live window", func(t *testing.T) {
+		got := RecommendationRuleToModel(RecommendationRule{
+			Rule:       "allowed_transactions",
+			Label:      "Allowed transactions",
+			Confidence: "medium",
+			LiveSince:  "0001-01-01T00:00:00Z",
+			LiveLast:   "0001-01-01T00:00:00Z",
+		})
+
+		assert.Nil(t, got.LiveSince)
+		assert.Nil(t, got.LiveLast)
+		// An empty allowlist is a strict rule, not missing data, so it stays a
+		// list rather than becoming null.
+		assert.Equal(t, []string{}, got.Items)
+	})
+
+	// 7.1.0 declared scope/scope_key with omitempty, so an engine mid-upgrade
+	// can omit them. They are non-null in GraphQL now, and an empty enum is not
+	// a value any client can read, so they are rebuilt from the kind.
+	t.Run("a scope the engine omitted is rebuilt from the kind", func(t *testing.T) {
+		correlation := recommendation
+		correlation.Scope = ""
+		correlation.ScopeKey = ""
+
+		got := RecommendationToModel(correlation)
+		assert.Equal(t, model.InsightsPolicyScopeTransaction, got.Scope)
+		assert.Equal(t, "7", got.ScopeKey)
+
+		card := Recommendation{
+			Kind:      RecommendationKindServiceGuardrail,
+			Namespace: "bank",
+			Service:   "account-service",
+		}
+
+		got = RecommendationToModel(card)
+		assert.Equal(t, model.InsightsPolicyScopeService, got.Scope)
+		assert.Equal(t, "bank/account-service", got.ScopeKey)
+	})
+
+	t.Run("an applied service guardrail reports which rules were turned on", func(t *testing.T) {
+		got := RecommendationToModel(Recommendation{
+			Kind:         RecommendationKindServiceGuardrail,
+			State:        RecommendationStateApplied,
+			AppliedRules: []string{"allowed_callees", "allowed_egress"},
+		})
+
+		assert.Equal(t, []string{"allowed_callees", "allowed_egress"}, got.AppliedRules)
+	})
+
+	t.Run("bulk result", func(t *testing.T) {
+		assert.Equal(t, &model.InsightsRecommendationBulkResult{
+			Done:   1,
+			Failed: 1,
+			Errors: []*model.InsightsRecommendationItemError{{ID: "rec-2", Error: "already applied"}},
+		}, RecommendationBulkResultToModel(RecommendationBulkResult{
+			Done:   1,
+			Failed: 1,
+			Errors: []RecommendationItemError{{ID: "rec-2", Error: "already applied"}},
+		}))
+	})
+
+	t.Run("preview", func(t *testing.T) {
+		assert.Equal(t, &model.InsightsRecommendationPreview{
+			SampleCount: 60,
+			Observed:    50,
+			Held:        48,
+			Distinct:    11,
+			HoldRatio:   0.96,
+			Examples:    []*model.InsightsRecommendationExample{},
+			CounterExamples: []*model.InsightsRecommendationExample{{
+				TraceID:    "trace-9",
+				LeftValue:  "u1",
+				RightValue: "u2",
+				ObservedAt: "2026-09-10T09:00:00Z",
+			}},
+		}, RecommendationPreviewToModel(RecommendationPreview{
+			SampleCount: 60,
+			Observed:    50,
+			Held:        48,
+			Distinct:    11,
+			HoldRatio:   0.96,
+			CounterExamples: []RecommendationExample{{
+				TraceID:    "trace-9",
+				LeftValue:  "u1",
+				RightValue: "u2",
+				ObservedAt: "2026-09-10T09:00:00Z",
+			}},
+		}))
+	})
+}

@@ -8,8 +8,6 @@ metadata:
 rules:
   - apiGroups:
       - ''
-    resourceNames:
-      - effective-config
     resources:
       - configmaps
     verbs:
@@ -17,13 +15,29 @@ rules:
       - list
       - watch
   - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    resourceNames:
+      - effective-config
+      - odigos-deployment
+      - odigos-go-offsets
+    verbs:
+      - patch
+      - create
+      - update
+  - apiGroups:
       - odigos.io
     resources:
       - collectorsgroups
     verbs:
       - get
       - list
+      - create
+      - patch
+      - update
       - watch
+      - delete
   - apiGroups:
       - odigos.io
     resources:
@@ -44,10 +58,14 @@ rules:
       - odigos.io
     resources:
       - instrumentationrules
+      - processors
     verbs:
       - get
       - list
       - watch
+      - patch
+      - delete
+      - create
   - apiGroups:
       - odigos.io
     resources:
@@ -60,6 +78,16 @@ rules:
       - odigos.io
     resources:
       - actions
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - delete
+      - create
+  - apiGroups:
+      - odigos.io
+    resources:
       - samplings
     verbs:
       - get
@@ -117,3 +145,25 @@ rules:
       - get
       - list
       - watch
+{{- if ne .Values.goAutoOffsetsMode "off" }}
+  - apiGroups:
+      - 'batch'
+    resources:
+      - cronjobs
+    resourceNames:
+      - 'odigos-go-offsets-updater'
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - 'batch'
+    resources:
+      - 'jobs'
+    verbs:
+      - 'create'
+{{- end }}

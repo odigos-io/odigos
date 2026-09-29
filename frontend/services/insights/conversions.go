@@ -858,6 +858,16 @@ func CorrelationSpecToModel(spec CorrelationSpec) *model.InsightsCorrelationSpec
 	}
 }
 
+// CorrelationSpecPtrToModel maps an optional spec. The engine made spec a
+// pointer in 8.0.0 because a service_guardrail carries none, so nil must stay
+// nil rather than becoming an empty rule with a "critical" severity.
+func CorrelationSpecPtrToModel(spec *CorrelationSpec) *model.InsightsCorrelationSpec {
+	if spec == nil {
+		return nil
+	}
+	return CorrelationSpecToModel(*spec)
+}
+
 func CorrelationSpecFromInput(input model.InsightsCorrelationSpecInput) CorrelationSpec {
 	severity := Severity("critical")
 	if input.Severity != nil {
@@ -1333,4 +1343,273 @@ func SystemIdentitySettingsFromInput(identity *model.InsightsSystemIdentitySetti
 		})
 	}
 	return SystemIdentitySettings{TransactionIdentityDimensions: dims}
+}
+
+// Guardrail recommendation converters.
+//
+// Kept together rather than split across the response/input sections above
+// because the recommendation payload is one self-contained screen's worth of
+// data, and its quirks are easier to see side by side.
+//
+// The engine ships both kinds on one wire type and simply omits the fields the
+// kind does not carry, so "absent" and "zero" are indistinguishable after
+// decoding. These converters therefore key off Kind rather than off the decoded
+// value: an attribute_correlation keeps its zero-valued fields (a hold ratio of
+// 0 is a real measurement), while a service_guardrail nulls them out. Getting
+// this backwards would render a service card as a relation that never held.
+
+func RecommendationKindToModel(kind RecommendationKind) model.InsightsRecommendationKind {
+	return model.InsightsRecommendationKind(kind)
+}
+
+func RecommendationKindPtrFromModel(kind *model.InsightsRecommendationKind) *RecommendationKind {
+	if kind == nil {
+		return nil
+	}
+	converted := RecommendationKind(*kind)
+	return &converted
+}
+
+func RecommendationStateToModel(state RecommendationState) model.InsightsRecommendationState {
+	return model.InsightsRecommendationState(state)
+}
+
+func RecommendationStatePtrFromModel(state *model.InsightsRecommendationState) *RecommendationState {
+	if state == nil {
+		return nil
+	}
+	converted := RecommendationState(*state)
+	return &converted
+}
+
+func RecommendationConfidenceLevelToModel(level RecommendationConfidenceLevel) model.InsightsRecommendationConfidenceLevel {
+	return model.InsightsRecommendationConfidenceLevel(level)
+}
+
+// isZeroTimestamp reports whether an RFC3339 timestamp is Go's zero time. The
+// engine declares live_since / live_last as omitted until the first live trace
+// is evaluated, but they are `time.Time` with `omitempty`, which has no effect
+// on a struct — so an unevaluated recommendation carries the zero time instead
+// of no field at all. GraphQL exposes that as null.
+//
+// Since 8.0.0 this applies to four fields, not two: every RecommendationRule
+// carries its own live_since / live_last with the same bug, and a rule that was
+// never checked lands on the zero time.
+func isZeroTimestamp(timestamp string) bool {
+	return timestamp == "" || strings.HasPrefix(timestamp, "0001-01-01T00:00:00")
+}
+
+func optionalTimestamp(timestamp string) *string {
+	if isZeroTimestamp(timestamp) {
+		return nil
+	}
+	return &timestamp
+}
+
+func RecommendationExampleToModel(example RecommendationExample) *model.InsightsRecommendationExample {
+	return &model.InsightsRecommendationExample{
+		TraceID:    example.TraceID,
+		LeftValue:  example.LeftValue,
+		RightValue: example.RightValue,
+		ObservedAt: example.ObservedAt,
+	}
+}
+
+func RecommendationExamplesToModel(examples []RecommendationExample) []*model.InsightsRecommendationExample {
+	if len(examples) == 0 {
+		return []*model.InsightsRecommendationExample{}
+	}
+	return mapSlice(examples, RecommendationExampleToModel)
+}
+
+func RecommendationRuleToModel(rule RecommendationRule) *model.InsightsRecommendationRule {
+	items := rule.Items
+	if items == nil {
+		// An empty allowlist is a real, strict rule ("this service does none of
+		// this"), so it must arrive as [] rather than null.
+		items = []string{}
+	}
+	return &model.InsightsRecommendationRule{
+		Rule:         rule.Rule,
+		Label:        rule.Label,
+		Description:  rule.Description,
+		Items:        items,
+		Confidence:   RecommendationConfidenceLevelToModel(rule.Confidence),
+		LiveChecked:  int64ToInt(rule.LiveChecked),
+		LiveViolated: int64ToInt(rule.LiveViolated),
+		LiveSince:    optionalTimestamp(rule.LiveSince),
+		LiveLast:     optionalTimestamp(rule.LiveLast),
+	}
+}
+
+// RecommendationRulesToModel keeps nil as nil: the rules list is the
+// service_guardrail half of the union, and a correlation has none at all rather
+// than an empty one.
+func RecommendationRulesToModel(rules []RecommendationRule) []*model.InsightsRecommendationRule {
+	return mapSlice(rules, RecommendationRuleToModel)
+}
+
+// RecommendationConfidenceToModel needs the recommendation's kind because the
+// stored-sample stats are attribute_correlation-only: the engine omits them on
+// a service_guardrail, where a decoded 0 means "not this kind" rather than a
+// measurement of zero.
+func RecommendationConfidenceToModel(confidence RecommendationConfidence, kind RecommendationKind) *model.InsightsRecommendationConfidence {
+	reasons := confidence.Reasons
+	if reasons == nil {
+		reasons = []string{}
+	}
+	converted := &model.InsightsRecommendationConfidence{
+		Level: RecommendationConfidenceLevelToModel(confidence.Level),
+		// SampleCount, LiveHeld and LiveBroken are carried by both kinds, but
+		// on a service_guardrail they count promoted transactions and per-rule
+		// checks summed over the card's rules — never traces.
+		SampleCount: confidence.SampleCount,
+		LiveHeld:    int64ToInt(confidence.LiveHeld),
+		LiveBroken:  int64ToInt(confidence.LiveBroken),
+		LiveSince:   optionalTimestamp(confidence.LiveSince),
+		LiveLast:    optionalTimestamp(confidence.LiveLast),
+		Reasons:     reasons,
+	}
+	if kind == RecommendationKindAttributeCorrelation {
+		converted.HoldRatio = &confidence.HoldRatio
+		converted.Observed = &confidence.Observed
+		converted.Held = &confidence.Held
+		converted.Distinct = &confidence.Distinct
+	}
+	return converted
+}
+
+// recommendationScope names the guardrail an apply would extend. The engine
+// sets it on every kind since 8.0.0; the fallback covers an engine still on
+// 7.1.0, where scope carried omitempty and could be missing. It mirrors what
+// the engine itself writes, so a rolling upgrade reads the same either way.
+func recommendationScope(recommendation Recommendation) model.InsightsPolicyScope {
+	if recommendation.Scope != "" {
+		return PolicyScopeToModel(recommendation.Scope)
+	}
+	if recommendation.Kind == RecommendationKindServiceGuardrail {
+		return model.InsightsPolicyScopeService
+	}
+	return model.InsightsPolicyScopeTransaction
+}
+
+// recommendationScopeKey is the same fallback for scope_key: the decimal
+// transaction id for a correlation, "<namespace>/<service>" for a service card.
+func recommendationScopeKey(recommendation Recommendation) string {
+	if recommendation.ScopeKey != "" {
+		return recommendation.ScopeKey
+	}
+	if recommendation.Kind == RecommendationKindServiceGuardrail {
+		return recommendation.Namespace + "/" + recommendation.Service
+	}
+	return FormatID(recommendation.TransactionID)
+}
+
+func RecommendationToModel(recommendation Recommendation) *model.InsightsRecommendation {
+	converted := &model.InsightsRecommendation{
+		ID:    recommendation.ID,
+		Kind:  RecommendationKindToModel(recommendation.Kind),
+		State: RecommendationStateToModel(recommendation.State),
+		Stale: recommendation.Stale,
+		Rank:  recommendation.Rank,
+		// Scope and scopeKey became required in 8.0.0 — every kind names the
+		// guardrail an apply would extend — so they are non-null here. An
+		// engine still on 7.1.0 omits them, which would marshal as an empty
+		// enum; recommendationScope rebuilds them from the kind instead.
+		Scope:        recommendationScope(recommendation),
+		ScopeKey:     recommendationScopeKey(recommendation),
+		Service:      recommendation.Service,
+		Namespace:    recommendation.Namespace,
+		Title:        recommendation.Title,
+		Summary:      recommendation.Summary,
+		WhyItMatters: recommendation.WhyItMatters,
+		Confidence:   RecommendationConfidenceToModel(recommendation.Confidence, recommendation.Kind),
+		MinedAt:      recommendation.MinedAt,
+		CreatedAt:    recommendation.CreatedAt,
+		UpdatedAt:    recommendation.UpdatedAt,
+	}
+
+	switch recommendation.Kind {
+	case RecommendationKindAttributeCorrelation:
+		// The transaction fields stay on the correlation half of the union: a
+		// service card has no transaction, and formatting its zero id as "0"
+		// would look like a real transaction to a client.
+		transactionID := FormatID(recommendation.TransactionID)
+		transactionKind := TransactionKindToModel(recommendation.TransactionKind)
+		converted.TransactionID = &transactionID
+		converted.TransactionKind = &transactionKind
+		converted.Operation = &recommendation.Operation
+		converted.Transform = &recommendation.Transform
+		converted.Transport = &recommendation.Transport
+		converted.AlreadyCovered = &recommendation.AlreadyCovered
+		converted.Spec = CorrelationSpecPtrToModel(recommendation.Spec)
+		converted.Examples = RecommendationExamplesToModel(recommendation.Examples)
+	case RecommendationKindServiceGuardrail:
+		converted.Rules = RecommendationRulesToModel(recommendation.Rules)
+		converted.AppliedRules = recommendation.AppliedRules
+	default:
+		// An unknown kind is still worth rendering: the shared fields above
+		// describe it, and anything kind-specific stays null rather than
+		// guessing which half of the union it belongs to. Spec is the one
+		// exception — it is unambiguous when present.
+		converted.Spec = CorrelationSpecPtrToModel(recommendation.Spec)
+	}
+	return converted
+}
+
+func RecommendationsToModel(recommendations []Recommendation) []*model.InsightsRecommendation {
+	return mapSlice(recommendations, RecommendationToModel)
+}
+
+func RecommendationBulkResultToModel(result RecommendationBulkResult) *model.InsightsRecommendationBulkResult {
+	errors := make([]*model.InsightsRecommendationItemError, 0, len(result.Errors))
+	for _, itemError := range result.Errors {
+		errors = append(errors, &model.InsightsRecommendationItemError{
+			ID:    itemError.ID,
+			Error: itemError.Error,
+		})
+	}
+	return &model.InsightsRecommendationBulkResult{
+		Done:   result.Done,
+		Failed: result.Failed,
+		Errors: errors,
+	}
+}
+
+func RecommendationPreviewToModel(preview RecommendationPreview) *model.InsightsRecommendationPreview {
+	return &model.InsightsRecommendationPreview{
+		SampleCount:     preview.SampleCount,
+		Observed:        preview.Observed,
+		Held:            preview.Held,
+		Distinct:        preview.Distinct,
+		HoldRatio:       preview.HoldRatio,
+		Examples:        RecommendationExamplesToModel(preview.Examples),
+		CounterExamples: RecommendationExamplesToModel(preview.CounterExamples),
+	}
+}
+
+// RecommendationApplyItemsFromInput maps the apply mutation's items. A nil
+// entry is skipped rather than rejected, matching how the other list inputs
+// here treat gqlgen's pointer elements.
+func RecommendationApplyItemsFromInput(items []*model.InsightsRecommendationApplyItemInput) []RecommendationApplyItem {
+	out := make([]RecommendationApplyItem, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		applyItem := RecommendationApplyItem{ID: item.ID}
+		if item.Spec != nil {
+			spec := CorrelationSpecFromInput(*item.Spec)
+			applyItem.Spec = &spec
+		}
+		// Rules selects which of a service_guardrail's rules to turn on. An
+		// empty selection is passed through as "omitted" rather than as [],
+		// which the engine reads the same way (every rule on the card) — but
+		// leaving the key out keeps the request honest about what was asked.
+		if len(item.Rules) > 0 {
+			applyItem.Rules = item.Rules
+		}
+		out = append(out, applyItem)
+	}
+	return out
 }

@@ -124,7 +124,7 @@ func TestPolicyRoundTripEncodesMapsAsJSONStrings(t *testing.T) {
 		Enabled:     true,
 		FireAtScore: 60,
 		SignalWeights: map[string]int{
-			"D7_db_access": 30,
+			"D6_db_access": 30,
 		},
 		EnricherLists: map[string][]string{
 			"sensitive_tables": {"users", "secrets"},
@@ -138,7 +138,7 @@ func TestPolicyRoundTripEncodesMapsAsJSONStrings(t *testing.T) {
 	assert.Equal(t, "7", gql.ID)
 	require.NotNil(t, gql.SignalWeights)
 	require.NotNil(t, gql.EnricherLists)
-	assert.JSONEq(t, `{"D7_db_access":30}`, *gql.SignalWeights)
+	assert.JSONEq(t, `{"D6_db_access":30}`, *gql.SignalWeights)
 	assert.JSONEq(t, `{"sensitive_tables":["users","secrets"]}`, *gql.EnricherLists)
 
 	back, err := PolicyFromInput(model.InsightsPolicyInput{

@@ -43,12 +43,12 @@ The SBOM attestation is attached to the **multi-arch index digest** — always p
 the digest from `imagetools inspect` as above, not a per-platform child digest
 (children carry signatures but no attestation).
 
-<Accordion title="Full worked example: verifying odigos-scheduler v1.35.0">
+<Accordion title="Full worked example: verifying odigos-instrumentor v1.35.0">
 
 Run as-is — no placeholders to fill in:
 
 ```bash
-IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler
+IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-instrumentor
 TAG=v1.35.0
 DIGEST=$(docker buildx imagetools inspect "${IMG}:${TAG}" --format '{{.Manifest.Digest}}')
 IDENTITY='^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$'
@@ -67,12 +67,12 @@ cosign verify-attestation --type cyclonedx \
 Expected output (trimmed):
 
 ```text
-Verification for us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler@sha256:f46fa614… --
+Verification for us-central1-docker.pkg.dev/odigos-cloud/components/odigos-instrumentor@sha256:f46fa614… --
 The following checks were performed on each of these signatures:
   - The cosign claims were validated
   - Existence of the claims in the transparency log was verified offline
   - The code-signing certificate was verified using trusted certificate authority certificates
-[{"critical":{"identity":{"docker-reference":"…/odigos-scheduler"},
+[{"critical":{"identity":{"docker-reference":"…/odigos-instrumentor"},
   "image":{"docker-manifest-digest":"sha256:f46fa614…"},"type":"cosign container image signature"}, …}]
 
 1022
@@ -120,7 +120,7 @@ Two more certificate details are expected and legitimate:
 Every image below is signed and carries a CycloneDX SBOM attestation, from the
 version listed in [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/SIGNING.md):
 
-- **Odigos platform**: `odigos-autoscaler`, `odigos-scheduler`, `odigos-instrumentor`,
+- **Odigos platform**: `odigos-autoscaler`, `odigos-instrumentor`,
   `odigos-collector`, `odigos-odiglet`, `odigos-ui`, `odigos-operator`, `odigos-agents`,
   `odigos-cli`, `odigos-victoria-metrics`
 - **Odigos Enterprise**: `odigos-enterprise-odiglet`, `odigos-enterprise-instrumentor`,
