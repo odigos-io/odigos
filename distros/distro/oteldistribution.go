@@ -214,16 +214,6 @@ type TraceVerbosity struct {
 	DisablingAnyScopeSupported bool `yaml:"disablingAnyScopeSupported,omitempty"`
 }
 
-type EbpfLogCapture struct {
-	// if true, the distro supports eBPF-based log capture.
-	Supported bool `yaml:"supported,omitempty"`
-}
-
-type Logs struct {
-	// if set, the distro supports eBPF-based log capture instead of filelog.
-	EbpfLogCapture *EbpfLogCapture `yaml:"ebpfLogCapture,omitempty"`
-}
-
 // document support by this distro for agent own diagnostics features
 // for example - logs that the agent or the components it brings with it produce.
 type OwnDiagnostics struct {
@@ -325,9 +315,6 @@ type OtelDistro struct {
 
 	// document support by this distro for trace features
 	Traces *Traces `yaml:"traces,omitempty"`
-
-	// document support by this distro for logs features
-	Logs *Logs `yaml:"logs,omitempty"`
 
 	// document support by this distro for agent own logging features
 	OwnDiagnostics *OwnDiagnostics `yaml:"ownDiagnostics,omitempty"`

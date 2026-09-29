@@ -247,7 +247,7 @@ func CalculateDynamicContainerConfig(
 	// because logs won't be present in the data collection (node) collector group.
 	logsEnabled := clusterCollectorsGroup != nil && slices.Contains(clusterCollectorsGroup.Status.ReceiverSignals, common.LogsObservabilitySignal)
 	var logsConfig *agentsignalconfig.AgentLogsConfig
-	ebpfLogCaptureConfig := logs.CalculateEbpfLogCaptureConfig(d, irls)
+	ebpfLogCaptureConfig := logs.CalculateEbpfLogCaptureConfig(irls)
 
 	if logsEnabled && ebpfLogCaptureConfig != nil {
 		logsConfig = &agentsignalconfig.AgentLogsConfig{}
