@@ -10,9 +10,9 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"github.com/odigos-io/odigos/scheduler/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -166,7 +166,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 		*serviceGraph, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress,
 		nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes,
 		getTraceCorrelationsSettings(&odigosConfiguration))
-	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)
+	err = utils.SetOwnerControllerToInstrumentorDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 }
 
 // isTailSamplingEnabled returns true if tail sampling is not globally disabled
-// and at least one non-disabled Sampling CR exists.
+// and at least one Sampling CR exists.
 func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *common.OdigosConfiguration) bool {
 	logger := commonlogger.FromContext(ctx)
 
@@ -197,17 +197,7 @@ func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *c
 		return false
 	}
 
-	if len(samplingList.Items) == 0 {
-		return false
-	}
-
-	for _, s := range samplingList.Items {
-		if !s.Spec.Disabled {
-			return true
-		}
-	}
-
-	return false
+	return len(samplingList.Items) > 0
 }
 
 // resolveTailSamplingConfig returns a fully resolved TailSamplingConfiguration,

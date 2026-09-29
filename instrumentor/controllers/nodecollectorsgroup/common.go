@@ -9,9 +9,9 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"github.com/odigos-io/odigos/scheduler/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -359,7 +359,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	}
 
 	nodeCollectorGroup := newNodeCollectorGroup(odigosConfiguration, allDestinations)
-	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, nodeCollectorGroup, scheme)
+	err = utils.SetOwnerControllerToInstrumentorDeployment(ctx, c, nodeCollectorGroup, scheme)
 	if err != nil {
 		return err
 	}

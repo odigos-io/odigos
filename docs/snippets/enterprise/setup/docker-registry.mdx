@@ -78,7 +78,6 @@ cp odigos-dockerconfig.json ~/.config/containers/auth.json
 Or pass the file per command:
 
 ```bash
-podman pull --authfile odigos-dockerconfig.json registry.odigos.io/odigos-scheduler:$VERSION
 ```
   </Tab>
   <Tab title="Kubernetes pull secret">
@@ -135,7 +134,6 @@ stringData:
 Start by pulling the required images from the enterprise registry (`registry.odigos.io`) onto your local machine or CI environment:
 
 ```bash
-docker pull registry.odigos.io/odigos-scheduler:$VERSION
 docker pull registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
 docker pull registry.odigos.io/odigos-ui:$VERSION
 docker pull registry.odigos.io/odigos-autoscaler:$VERSION
@@ -158,7 +156,6 @@ Odigos component images are published in multi-arch for ARM64 and AMD64 architec
 </Warning>
 
 ```bash
-docker pull --platform $PLATFORM registry.odigos.io/odigos-scheduler:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
@@ -171,7 +168,6 @@ docker pull --platform $PLATFORM registry.odigos.io/odigos-victoria-metrics:$VER
 Next, Tag each image with your custom Docker registry prefix:
 
 ```bash
-docker tag registry.odigos.io/odigos-scheduler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
 docker tag registry.odigos.io/odigos-enterprise-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
 docker tag registry.odigos.io/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker tag registry.odigos.io/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
@@ -188,7 +184,6 @@ docker tag registry.odigos.io/odigos-victoria-metrics:$VERSION $CUSTOM_DOCKER_RE
 ### Step 5: Push the Images
 Now, push the tagged images to your custom Docker registry:
 ```bash
-docker push $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
@@ -208,8 +203,6 @@ If your Docker registry is private, configure your Kubernetes cluster to pull im
 > export ODIGOS_NAMESPACE=<NAMESPACE-WHERE-ODIGOS-IS-INSTALLED>
 > export IMAGE_PULL_SECRET=<NAME-OF-IMAGE-PULL-SECRET>
 > kubectl patch deployment odigos-ui -n $ODIGOS_NAMESPACE \
-> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
-> kubectl patch deployment odigos-scheduler -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > kubectl patch deployment odigos-instrumentor -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'

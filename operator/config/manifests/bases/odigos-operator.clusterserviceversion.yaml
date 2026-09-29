@@ -114,7 +114,6 @@ spec:
     - Instrumentor
     - Odiglet
     - Autoscaler
-    - Scheduler
     - Frontend UI
 
     With Odigos installed, follow the Odigos docs at docs.odigos.io for instructions on instrumenting applications and configuring destinations.
