@@ -19,14 +19,6 @@ status:
       started: true
   phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: odigos-scheduler
-  namespace: odigos-test
-spec:
-  replicas: 0
----
 apiVersion: v1
 kind: Pod
 metadata:
