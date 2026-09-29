@@ -181,12 +181,14 @@ transactionIdentity:
 #   Interrogation loop (off by default): correlates traces and profiles in ClickHouse
 #   so uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.
 #   When enabled, also deploys bundled ClickHouse (odigos-insights-clickhouse; shared with
-#   insights) in the Odigos namespace if not already present, and deploys the
-#   odigos-interrogation control-loop service (enterprise; requires on-prem token).
+#   insights) in the Odigos namespace if not already present, deploys the
+#   odigos-interrogation control-loop service (enterprise; requires on-prem token),
+#   and deploys bundled LiteLLM (odigos-litellm). Configure provider, model
+#   name, and API key under interrogation.model.
 # @schema
 interrogation:
   # @schema
-  # description: When true, enables the interrogation loop (trace–profile correlation) on the collector, deploys bundled ClickHouse when needed, and deploys the interrogation service.
+  # description: When true, enables the interrogation loop (trace–profile correlation) on the collector, deploys bundled ClickHouse when needed, deploys the interrogation service and odigos-litellm.
   # @schema
   enabled: false
 
@@ -225,6 +227,48 @@ interrogation:
   # description: Log level for the interrogation service (falls back to global logLevel).
   # @schema
   # logLevel: info
+
+  # User-facing LLM config: provider credentials and upstream model id for LiteLLM.
+  # The worker always calls in-cluster odigos-litellm with the fixed alias
+  # "interrogation" (see enterprise interrogation model client).
+  # @schema
+  model:
+    # @schema
+    # description: LiteLLM provider prefix (openai, gemini, anthropic, etc.).
+    # @schema
+    provider: openai
+    # @schema
+    # description: Model name at that provider (e.g. gpt-4o-mini). Routed as provider/name.
+    # @schema
+    name: gpt-4o-mini
+    # @schema
+    # description: Provider API key. Stored in Secret odigos-litellm (upstream-api-key).
+    # @schema
+    apiKey: ""
+    # @schema
+    # description: When true, apply parsed probes as InstrumentationRules. Default is dry-run.
+    # @schema
+    autoApply: false
+
+  # Internal LiteLLM deployment (image/resources/scheduling). Not user-facing except mirrors.
+  # @schema
+  litellm:
+    # @schema
+    # description: LiteLLM proxy image (third-party).
+    # @schema
+    image:
+      repository: ghcr.io/berriai/litellm
+      tag: "v1.101.0"
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    tolerations: []
+    affinity: {}
 
 # @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
@@ -1062,6 +1106,17 @@ odiglet:
     #   Run the data-collection container as a privileged container.
     # @schema
     privileged: false
+
+    # @schema
+    # description: |-
+    #   AppArmor profile for data-collection when gke.enabled and the profiling
+    #   pipeline is on (profiling.enabled or interrogation.enabled).
+    #   GKE's default profile denies mkdir /sys/fs/bpf/otel, which the eBPF
+    #   profiler needs to pin traces_ctx_v1 for profile↔span links.
+    #   Ignored when privileged, or when gke.enabled is false.
+    # @schema
+    appArmorProfile:
+      type: "Unconfined"
 
     # @schema
     # description: |-

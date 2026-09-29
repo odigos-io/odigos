@@ -1,0 +1,92 @@
+{{- if and (include "odigos.litellmEnabled" .) (include "odigos.secretExists" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-litellm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-litellm
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-litellm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-litellm
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/interrogation/litellm/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- if .Values.interrogation.litellm.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.interrogation.litellm.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.interrogation.litellm.priorityClassName }}
+      priorityClassName: {{ .Values.interrogation.litellm.priorityClassName }}
+      {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      containers:
+        - name: litellm
+          image: "{{ .Values.interrogation.litellm.image.repository }}:{{ .Values.interrogation.litellm.image.tag }}"
+          imagePullPolicy: {{ .Values.interrogation.litellm.image.pullPolicy }}
+          args:
+            - --config
+            - /app/config.yaml
+            - --port
+            - "4000"
+          ports:
+            - name: http
+              containerPort: 4000
+          env:
+            - name: LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-litellm
+                  key: master-key
+            - name: LITELLM_UPSTREAM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-litellm
+                  key: upstream-api-key
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health/liveliness
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: {{ .Values.interrogation.litellm.resources.requests.cpu }}
+              memory: {{ .Values.interrogation.litellm.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.interrogation.litellm.resources.limits.cpu }}
+              memory: {{ .Values.interrogation.litellm.resources.limits.memory }}
+      {{- with .Values.interrogation.litellm.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.interrogation.litellm.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: odigos-litellm
+{{- end }}

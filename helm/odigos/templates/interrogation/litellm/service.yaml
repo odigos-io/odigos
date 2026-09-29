@@ -1,0 +1,18 @@
+{{- if and (include "odigos.litellmEnabled" .) (include "odigos.secretExists" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-litellm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-litellm
+    odigos.io/system-object: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: odigos-litellm
+  ports:
+    - name: http
+      port: 4000
+      targetPort: http
+{{- end }}
