@@ -74,7 +74,8 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 	}
 
 	var gqlRules []*model.InstrumentationRule
-	for _, r := range instrumentationRules.Items {
+	for i := range instrumentationRules.Items {
+		r := &instrumentationRules.Items[i]
 		annotations := r.GetAnnotations()
 		profileName := annotations[k8sconsts.OdigosProfileAnnotation]
 		mutable := profileName == ""
@@ -86,6 +87,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			Disabled:                 &r.Spec.Disabled,
 			Mutable:                  mutable,
 			ProfileName:              profileName,
+			ManagedBy:                managedByFromLabels(r.Labels),
 			SourcesScopes:            convertSourcesScope(r.Spec.Scopes),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 			Conditions:               ConvertConditions(r.Status.Conditions),
@@ -121,6 +123,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		Disabled:                 &r.Spec.Disabled,
 		Mutable:                  mutable,
 		ProfileName:              profileName,
+		ManagedBy:                managedByFromLabels(r.Labels),
 		SourcesScopes:            convertSourcesScope(r.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
@@ -560,6 +563,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		Disabled:                 &updatedRule.Spec.Disabled,
 		Mutable:                  profileName == "",
 		ProfileName:              profileName,
+		ManagedBy:                managedByFromLabels(updatedRule.Labels),
 		SourcesScopes:            convertSourcesScope(updatedRule.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
@@ -617,6 +621,9 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	newRule := &v1alpha1.InstrumentationRule{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "ui-instrumentation-rule-",
+			Labels: map[string]string{
+				k8sconsts.OdigosProfilesManagedByLabel: k8sconsts.OdigosUIManagedByValue,
+			},
 		},
 		Spec: v1alpha1.InstrumentationRuleSpec{
 			RuleName:                 ruleName,
@@ -647,6 +654,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		Disabled:                 &createdRule.Spec.Disabled,
 		Mutable:                  true, // New rules are always mutable
 		ProfileName:              "",   // New rules are not associated with a profile
+		ManagedBy:                managedByFromLabels(createdRule.Labels),
 		SourcesScopes:            convertSourcesScope(createdRule.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),

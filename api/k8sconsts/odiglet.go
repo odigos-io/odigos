@@ -32,6 +32,8 @@ const (
 	OffsetFileMountPath  = "/offsets"
 	OffsetCronJobName    = "odigos-go-offsets-updater"
 	OffsetInitialJobName = "odigos-go-offsets-updater-initial"
+	// ServiceAccount used by the offsets updater CronJob and initial Job pods
+	OffsetUpdaterServiceAccountName = "odigos-go-offsets-updater"
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080

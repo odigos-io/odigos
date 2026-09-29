@@ -83,6 +83,7 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 			InsightsClient:              deps.InsightsClient,
 			InterrogationClient:         deps.InterrogationClient,
 			ProfileStore:                deps.ProfileStore,
+			DistrosProvider:             deps.DistrosProvider,
 		},
 	})
 	gqlExecutor := executor.New(gqlSchema)

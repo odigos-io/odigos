@@ -18,9 +18,6 @@ data:
       {{- if .Values.autoscaler.logLevel }}
       autoscaler: {{ .Values.autoscaler.logLevel }}
       {{- end }}
-      {{- if .Values.scheduler.logLevel }}
-      scheduler: {{ .Values.scheduler.logLevel }}
-      {{- end }}
       {{- if .Values.instrumentor.logLevel }}
       instrumentor: {{ .Values.instrumentor.logLevel }}
       {{- end }}

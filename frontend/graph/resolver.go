@@ -2,6 +2,7 @@ package graph
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/distros"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	fecommon "github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/frontend/services/insights"
@@ -28,4 +29,7 @@ type Resolver struct {
 	InsightsClient *insights.Client
 	// InterrogationClient reads transaction call tries from interrogation ClickHouse.
 	InterrogationClient *interrogation.Client
+	// DistrosProvider resolves the default otel distro per language for the
+	// running tier — the same provider the instrumentor uses.
+	DistrosProvider *distros.Provider
 }
