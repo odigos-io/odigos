@@ -96,12 +96,14 @@ enum InsightsLearningMode {
 """
 Coarse learning state for one baseline class. `promoted` means the baseline is
 frozen. `empty` means it has never grown. `learning` means it has grown and is
-still in the learning phase.
+still in the learning phase. `saturated` means the set crossed
+maxBaselineSetMembers; the class is frozen, will not promote and is not enforced.
 """
 enum InsightsBaselineLearningPhase {
   promoted
   empty
   learning
+  saturated
 }
 
 enum InsightsLearningConditionType {
@@ -132,6 +134,16 @@ type InsightsServiceStat {
   transactionCount: Int!
   volume: Int!
   lastSeen: String!
+  """
+  The maxTransactionsPerService setting in effect, so a client can explain
+  transactionLimitReached without a second request.
+  """
+  transactionLimit: Int!
+  """
+  True once the service holds transactionLimit transactions. Operations of this
+  service not seen before are dropped and not learned.
+  """
+  transactionLimitReached: Boolean!
 }
 
 type InsightsServiceProfile {
@@ -206,7 +218,17 @@ type InsightsTransactionStat {
   volume: Int!
   lastSeen: String!
   hasBaseline: Boolean
+  """
+  True when every learned baseline class has finished learning: promoted, or
+  saturated (see saturatedClasses).
+  """
   promoted: Boolean
+  """
+  Baseline classes whose learned set crossed maxBaselineSetMembers. They are
+  frozen, never promoted and never scored; the other classes keep working.
+  Empty when no class saturated.
+  """
+  saturatedClasses: [InsightsDeviationClass!]!
 }
 
 type InsightsTransaction {
@@ -315,6 +337,12 @@ type InsightsBaselineClass {
   dataSchemaVersion: Int
   observationCount: Int!
   promoted: Boolean!
+  """
+  True when this class's set crossed maxBaselineSetMembers. The class is frozen
+  at a truncated set, will never promote and is never scored.
+  learning.phase is saturated.
+  """
+  saturated: Boolean!
   learningStartedAt: String
   lastChangedAt: String
   observationCountAtLastChange: Int
@@ -1245,6 +1273,12 @@ type InsightsSystemRetentionSettings {
 type InsightsSystemCapacitySettings {
   maxResidentTransactions: Int!
   maxBaselineSetMembers: Int!
+  """
+  Max distinct transactions one service may add to the inventory. Once reached,
+  operations not seen before are dropped, so span names carrying ids cannot grow
+  the inventory without bound.
+  """
+  maxTransactionsPerService: Int!
 }
 
 type InsightsSystemWritebackSettings {
@@ -1298,6 +1332,11 @@ input InsightsSystemRetentionSettingsInput {
 input InsightsSystemCapacitySettingsInput {
   maxResidentTransactions: Int!
   maxBaselineSetMembers: Int!
+  """
+  Optional so clients built before it existed stay valid; when omitted the
+  insights default applies.
+  """
+  maxTransactionsPerService: Int
 }
 
 input InsightsSystemWritebackSettingsInput {
