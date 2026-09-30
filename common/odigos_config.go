@@ -685,7 +685,9 @@ type OdigosConfiguration struct {
 	// configuration for odigos own metrics store in the cluster.
 	OdigosOwnTelemetryStore *OdigosOwnTelemetryConfiguration `json:"odigosOwnTelemetryStore,omitempty" yaml:"odigosOwnTelemetryStore"`
 
-	// ImagePullSecrets to use for collectors and init container
+	// ImagePullSecrets to use for Odigos components and the agents init container.
+	// On Kubernetes 1.35+ the pod webhook injects these names onto init-container pods.
+	// The Secret objects must already exist in each instrumented namespace.
 	ImagePullSecrets []string `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets"`
 
 	// global configurations for sampling.

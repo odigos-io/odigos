@@ -1,5 +1,6 @@
 FROM debian:bookworm-slim AS rsync-builder
-ARG RSYNC_VERSION=3.2.7
+ARG RSYNC_VERSION=3.5.1
+ARG RSYNC_SHA256=c55f9c9dc10fb8bec397b399a0fdded53cc9a2d8e30891bb0d63724d25c37bef
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     wget \
@@ -10,13 +11,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     liblz4-dev \
     libzstd-dev \
     libxxhash-dev \
-    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# rsync is only used for local copies, so it is built without OpenSSL (it falls back to
+# its built-in MD4/MD5 and xxhash checksums) and without IDN hostname support.
 RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz \
+    && echo "${RSYNC_SHA256}  rsync-${RSYNC_VERSION}.tar.gz" | sha256sum -c - \
     && tar -xzf rsync-${RSYNC_VERSION}.tar.gz \
     && cd rsync-${RSYNC_VERSION} \
-    && ./configure --prefix=/usr LDFLAGS="-static" \
+    && ./configure --prefix=/usr --disable-openssl --disable-idn LDFLAGS="-static" \
     && make -j"$(nproc)" \
     && make install DESTDIR=/rsync-install \
     && cd .. \

@@ -131,7 +131,7 @@ jobs:
 
       - name: Push Docker Images to ECR
         run: |
-          for image in collector instrumentor ui scheduler autoscaler odiglet cli; do
+          for image in collector instrumentor ui autoscaler odiglet cli; do
             docker tag "${DOCKER_REGISTRY}/odigos-${image}:e2e-test" "${REGISTRY}/odigos-${image}:${COMMIT_HASH}"
             docker push "${REGISTRY}/odigos-${image}:${COMMIT_HASH}"
           done

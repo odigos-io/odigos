@@ -18,19 +18,23 @@ import (
 func TestServiceConvertersMapEveryField(t *testing.T) {
 	t.Run("service stats", func(t *testing.T) {
 		got := ServiceStatsToModel([]ServiceStat{{
-			Namespace:        "prod",
-			Service:          "checkout",
-			TransactionCount: 11,
-			Volume:           22,
-			LastSeen:         "2026-09-01T10:00:00Z",
+			Namespace:               "prod",
+			Service:                 "checkout",
+			TransactionCount:        11,
+			Volume:                  22,
+			LastSeen:                "2026-09-01T10:00:00Z",
+			TransactionLimit:        23,
+			TransactionLimitReached: true,
 		}})
 
 		assert.Equal(t, []*model.InsightsServiceStat{{
-			Namespace:        "prod",
-			Service:          "checkout",
-			TransactionCount: 11,
-			Volume:           22,
-			LastSeen:         "2026-09-01T10:00:00Z",
+			Namespace:               "prod",
+			Service:                 "checkout",
+			TransactionCount:        11,
+			Volume:                  22,
+			LastSeen:                "2026-09-01T10:00:00Z",
+			TransactionLimit:        23,
+			TransactionLimitReached: true,
 		}}, got)
 	})
 
@@ -124,6 +128,7 @@ func TestTransactionConvertersMapEveryField(t *testing.T) {
 			LastSeen:           "2026-09-01T12:00:00Z",
 			HasBaseline:        &hasBaseline,
 			Promoted:           &promoted,
+			SaturatedClasses:   []DeviationClass{"D1_call_edges", "D2_egress"},
 		}})
 
 		assert.Equal(t, []*model.InsightsTransactionStat{{
@@ -138,7 +143,13 @@ func TestTransactionConvertersMapEveryField(t *testing.T) {
 			LastSeen:           "2026-09-01T12:00:00Z",
 			HasBaseline:        &hasBaseline,
 			Promoted:           &promoted,
+			SaturatedClasses:   []model.InsightsDeviationClass{model.InsightsDeviationClassD1CallEdges, model.InsightsDeviationClassD2Egress},
 		}}, got)
+	})
+
+	t.Run("saturated classes are never null", func(t *testing.T) {
+		got := TransactionStatToModel(TransactionStat{ID: 45})
+		assert.Equal(t, []model.InsightsDeviationClass{}, got.SaturatedClasses)
 	})
 
 	t.Run("transaction", func(t *testing.T) {
@@ -193,11 +204,12 @@ func TestBaselineConvertersMapEveryField(t *testing.T) {
 		DataSchemaVersion:            &schemaVersion,
 		ObservationCount:             56,
 		Promoted:                     true,
+		Saturated:                    true,
 		LearningStartedAt:            &learningStartedAt,
 		LastChangedAt:                &lastChangedAt,
 		ObservationCountAtLastChange: &countAtLastChange,
 		Learning: BaselineLearning{
-			Phase:                       BaselineLearningPhaseLearning,
+			Phase:                       BaselineLearningPhaseSaturated,
 			ObservationsSinceLastChange: 57,
 			QuietMinutes:                58,
 			Mode:                        "auto",
@@ -228,11 +240,12 @@ func TestBaselineConvertersMapEveryField(t *testing.T) {
 		DataSchemaVersion:            &schemaVersion,
 		ObservationCount:             56,
 		Promoted:                     true,
+		Saturated:                    true,
 		LearningStartedAt:            &learningStartedAt,
 		LastChangedAt:                &lastChangedAt,
 		ObservationCountAtLastChange: intPtr(51),
 		Learning: &model.InsightsBaselineLearning{
-			Phase:                       model.InsightsBaselineLearningPhase("learning"),
+			Phase:                       model.InsightsBaselineLearningPhaseSaturated,
 			ObservationsSinceLastChange: 57,
 			QuietMinutes:                58,
 			Mode:                        model.InsightsLearningMode("auto"),
@@ -881,7 +894,7 @@ func TestSystemSettingsConverterMapsEveryField(t *testing.T) {
 		Sampling:  SystemSamplingSettings{ExamplesPerTransaction: 141, ExampleSampleIntervalSeconds: 142},
 		Retention: SystemRetentionSettings{ObservationRetentionDays: 143},
 		Findings:  SystemFindingsSettings{DefaultWindowHours: 144, MaxWindowHours: 145},
-		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 146, MaxBaselineSetMembers: 147},
+		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 146, MaxBaselineSetMembers: 147, MaxTransactionsPerService: 149},
 		Writeback: SystemWritebackSettings{FlushIntervalSeconds: 148},
 		Detection: SystemDetectionSettings{AutoTransactionGuardrail: true},
 		Identity: SystemIdentitySettings{TransactionIdentityDimensions: []SystemTransactionIdentityDimension{
@@ -893,7 +906,7 @@ func TestSystemSettingsConverterMapsEveryField(t *testing.T) {
 	assert.Equal(t, &model.InsightsSystemSettings{
 		Sampling:  &model.InsightsSystemSamplingSettings{ExamplesPerTransaction: 141, ExampleSampleIntervalSeconds: 142},
 		Retention: &model.InsightsSystemRetentionSettings{ObservationRetentionDays: 143},
-		Capacity:  &model.InsightsSystemCapacitySettings{MaxResidentTransactions: 146, MaxBaselineSetMembers: 147},
+		Capacity:  &model.InsightsSystemCapacitySettings{MaxResidentTransactions: 146, MaxBaselineSetMembers: 147, MaxTransactionsPerService: 149},
 		Writeback: &model.InsightsSystemWritebackSettings{FlushIntervalSeconds: 148},
 		Detection: &model.InsightsSystemDetectionSettings{AutoTransactionGuardrail: true},
 		Identity: &model.InsightsSystemIdentitySettings{

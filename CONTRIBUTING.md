@@ -169,7 +169,6 @@ make deploy
 make deploy-odiglet
 make deploy-autoscaler
 make deploy-collector
-make deploy-scheduler
 make deploy-instrumentor
 make deploy-ui
 ```

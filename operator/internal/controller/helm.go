@@ -53,7 +53,6 @@ var relatedImageEnvVars = map[string]string{
 	"enterprise-ui":           "RELATED_IMAGE_ENTERPRISE_UI",
 	"odiglet":                 "RELATED_IMAGE_ODIGLET",
 	"enterprise-odiglet":      "RELATED_IMAGE_ENTERPRISE_ODIGLET",
-	"scheduler":               "RELATED_IMAGE_SCHEDULER",
 }
 
 // restClientGetter implements genericclioptions.RESTClientGetter using an existing rest.Config.

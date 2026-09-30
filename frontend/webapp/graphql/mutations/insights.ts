@@ -67,6 +67,7 @@ const SYSTEM_SETTINGS_FIELDS = `
   capacity {
     maxResidentTransactions
     maxBaselineSetMembers
+    maxTransactionsPerService
   }
   writeback {
     flushIntervalSeconds

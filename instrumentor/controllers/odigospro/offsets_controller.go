@@ -81,7 +81,7 @@ func (r *odigosproOffsetsController) Reconcile(ctx context.Context, _ ctrl.Reque
 
 	template := corev1.PodTemplateSpec{
 		Spec: corev1.PodSpec{
-			ServiceAccountName: k8sconsts.SchedulerServiceAccountName,
+			ServiceAccountName: k8sconsts.OffsetUpdaterServiceAccountName,
 			Containers: []corev1.Container{
 				{
 					Name:  imageName,
