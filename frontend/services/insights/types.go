@@ -63,11 +63,13 @@ type ListGuardrailViolationsParams struct {
 }
 
 type ServiceStat struct {
-	Namespace        string `json:"namespace"`
-	Service          string `json:"service"`
-	TransactionCount int64  `json:"transaction_count"`
-	Volume           int64  `json:"volume"`
-	LastSeen         string `json:"last_seen"`
+	Namespace               string `json:"namespace"`
+	Service                 string `json:"service"`
+	TransactionCount        int64  `json:"transaction_count"`
+	Volume                  int64  `json:"volume"`
+	LastSeen                string `json:"last_seen"`
+	TransactionLimit        int64  `json:"transaction_limit"`
+	TransactionLimitReached bool   `json:"transaction_limit_reached"`
 }
 
 type ServiceProfile struct {
@@ -120,6 +122,7 @@ type TransactionStat struct {
 	LastSeen           string                     `json:"last_seen"`
 	HasBaseline        *bool                      `json:"has_baseline,omitempty"`
 	Promoted           *bool                      `json:"promoted,omitempty"`
+	SaturatedClasses   []DeviationClass           `json:"saturated_classes,omitempty"`
 }
 
 type Transaction struct {
@@ -168,6 +171,7 @@ type BaselineClass struct {
 	DataSchemaVersion            *int               `json:"data_schema_version,omitempty"`
 	ObservationCount             int64              `json:"observation_count"`
 	Promoted                     bool               `json:"promoted"`
+	Saturated                    bool               `json:"saturated"`
 	LearningStartedAt            *string            `json:"learning_started_at,omitempty"`
 	LastChangedAt                *string            `json:"last_changed_at,omitempty"`
 	ObservationCountAtLastChange *int64             `json:"observation_count_at_last_change,omitempty"`
@@ -181,6 +185,9 @@ const (
 	BaselineLearningPhasePromoted BaselineLearningPhase = "promoted"
 	BaselineLearningPhaseEmpty    BaselineLearningPhase = "empty"
 	BaselineLearningPhaseLearning BaselineLearningPhase = "learning"
+	// BaselineLearningPhaseSaturated: the set crossed max_baseline_set_members;
+	// the class is frozen, never promoted and never scored.
+	BaselineLearningPhaseSaturated BaselineLearningPhase = "saturated"
 )
 
 // BaselineStabilityProgress is one stability dimension (observations count or duration minutes).
@@ -580,8 +587,9 @@ type SystemFindingsSettings struct {
 }
 
 type SystemCapacitySettings struct {
-	MaxResidentTransactions int `json:"max_resident_transactions"`
-	MaxBaselineSetMembers   int `json:"max_baseline_set_members"`
+	MaxResidentTransactions   int `json:"max_resident_transactions"`
+	MaxBaselineSetMembers     int `json:"max_baseline_set_members"`
+	MaxTransactionsPerService int `json:"max_transactions_per_service,omitempty"`
 }
 
 type SystemWritebackSettings struct {
