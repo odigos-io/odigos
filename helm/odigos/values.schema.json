@@ -45,16 +45,8 @@
       "title": "autoRollback"
     },
     "autoscaler": {
-      "additionalProperties": true,
+      "additionalProperties": false,
       "description": "Compatibility stub for the autoscaler Deployment (replicas 0). Controllers now run in the instrumentor.",
-      "properties": {
-        "deploymentName": {
-          "default": "odigos-autoscaler",
-          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-autoscaler'",
-          "required": [],
-          "title": "deploymentName"
-        }
-      },
       "required": [],
       "title": "autoscaler"
     },
