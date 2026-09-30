@@ -25,7 +25,10 @@ spec:
   insecureSkipTLSVerify: false
   groupPriorityMinimum: 100
   versionPriority: 100
-  {{- if and $existing $existing.spec $existing.spec.caBundle }}
-  caBundle: {{ $existing.spec.caBundle | quote }}
+  {{- if $existing }}
+    {{- $ca := dig "spec" "caBundle" "" $existing }}
+    {{- if $ca }}
+  caBundle: {{ $ca | quote }}
+    {{- end }}
   {{- end }}
 {{- end }}
