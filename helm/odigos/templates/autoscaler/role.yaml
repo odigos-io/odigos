@@ -42,25 +42,6 @@ rules:
   - apiGroups:
       - apps
     resources:
-      - daemonsets
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - patch
-      - update
-      - delete
-      - deletecollection
-  - apiGroups:
-      - apps
-    resources:
-      - daemonsets/status
-    verbs:
-      - get
-  - apiGroups:
-      - apps
-    resources:
       - deployments
     verbs:
       - create
