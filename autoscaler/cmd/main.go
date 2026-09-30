@@ -56,7 +56,6 @@ import (
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
-	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
 
 	//+kubebuilder:scaffold:imports
 
@@ -134,13 +133,6 @@ func main() {
 	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: commonlogger.ToLogr(), Secret: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      k8sconsts.DeprecatedAutoscalerWebhookSecretName,
-	}})
-
-	// remove the data collection daemonset if exists because it is part of the odiglet pod now.
-	// TODO: once we're done with the migration, we can remove this.
-	mgr.Add(&nodecollector.DataCollectionDSMigration{Client: mgr.GetClient(), Logger: commonlogger.ToLogr(), DataCollectionDaemonSet: types.NamespacedName{
-		Namespace: env.GetCurrentNamespace(),
-		Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
 	}})
 
 	collectorImage := defaultCollectorImage
