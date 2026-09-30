@@ -5,23 +5,15 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
+  name: odigos-autoscaler
+  namespace: odigos-test
   labels:
     app.kubernetes.io/name: odigos-autoscaler
-  namespace: odigos-test
 spec:
-  containers:
-    - name: manager
-      image: docker.io/keyval/odigos-autoscaler:e2e-test
-status:
-  containerStatuses:
-    - name: manager
-      ready: true
-      restartCount: 0
-      started: true
-  phase: Running
+  replicas: 0
 ---
 apiVersion: v1
 kind: Pod

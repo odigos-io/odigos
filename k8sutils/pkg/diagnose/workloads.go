@@ -68,9 +68,9 @@ func FetchOdigosWorkloads(
 				DirName:     fmt.Sprintf("deployment-%s", d.Name),
 				IncludeLogs: includeLogs,
 			}
-			if isDeprecatedSchedulerDeployment(d) {
+			if isDeprecatedStubDeployment(d) {
 				target.IncludeLogs = false
-				warnIfDeprecatedSchedulerScaledUp(builder, path.Join(rootDir, odigosNamespace, target.DirName), d)
+				warnIfDeprecatedStubScaledUp(builder, path.Join(rootDir, odigosNamespace, target.DirName), d)
 			}
 			targets = append(targets, target)
 		}
@@ -106,13 +106,14 @@ func FetchOdigosWorkloads(
 	return nil
 }
 
-// The odigos-scheduler deployment is kept at zero replicas since its controllers moved into the instrumentor.
-// It has no RBAC, so a scaled-up replica cannot do anything useful and only signals a misconfiguration.
-func isDeprecatedSchedulerDeployment(d *appsv1.Deployment) bool {
-	return d.Labels["app.kubernetes.io/name"] == k8sconsts.SchedulerDeploymentName
+// Scheduler and autoscaler Deployments are kept at zero replicas since their controllers moved into the instrumentor.
+// They have no RBAC, so a scaled-up replica cannot do anything useful and only signals a misconfiguration.
+func isDeprecatedStubDeployment(d *appsv1.Deployment) bool {
+	name := d.Labels["app.kubernetes.io/name"]
+	return name == k8sconsts.SchedulerDeploymentName || name == k8sconsts.AutoScalerAppLabelValue
 }
 
-func warnIfDeprecatedSchedulerScaledUp(builder Builder, workloadDir string, d *appsv1.Deployment) {
+func warnIfDeprecatedStubScaledUp(builder Builder, workloadDir string, d *appsv1.Deployment) {
 	desired := int32(0)
 	if d.Spec.Replicas != nil {
 		desired = *d.Spec.Replicas
@@ -126,7 +127,7 @@ func warnIfDeprecatedSchedulerScaledUp(builder Builder, workloadDir string, d *a
 		d.Namespace, d.Name, desired, d.Status.Replicas, d.Namespace, d.Name)
 	klog.Warning(msg)
 	if err := builder.AddFile(workloadDir, "WARNING.txt", []byte(msg)); err != nil {
-		klog.V(1).ErrorS(err, "Failed to write scheduler warning file")
+		klog.V(1).ErrorS(err, "Failed to write stub deployment warning file")
 	}
 }
 

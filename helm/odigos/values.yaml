@@ -505,63 +505,9 @@ collectorNode:
       maxElapsedTime: 300s
 
 # @schema
-# description: Configuration for the autoscaler component.
+# description: Compatibility stub for the autoscaler Deployment (replicas 0). Controllers now run in the instrumentor.
 # @schema
-autoscaler:
-  # @schema
-  # description: Log level for autoscaler. Defaults to info.
-  # @schema
-  logLevel: "info"
-
-  # @schema
-  # description: Override the global nodeSelector (values.nodeSelector) for this component
-  # @schema
-  # nodeSelector:
-  #   kubernetes.io/os: linux
-
-  # @schema
-  # description: |-
-  #   tolerations for the autoscaler deployment.
-  # items:
-  #   description: |-
-  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-  #     Common fields: key, operator, value, effect, tolerationSeconds.
-  #   type: object
-  #   properties:
-  #     key:
-  #       type: string
-  #     operator:
-  #       type: string
-  #     value:
-  #       type: string
-  #     effect:
-  #       type: string
-  # @schema
-  tolerations: []
-  # @schema
-  # additionalProperties: true
-  # @schema
-  affinity: {}
-
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-
-  # @schema
-  # description: Priority class name. Set to use your existing cluster priority classes.
-  # @schema
-  # priorityClassName: ''
-
-  # @schema
-  # description: |-
-  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
-  #   default is 'odigos-autoscaler'
-  # @schema
-  # deploymentName: 'odigos-autoscaler'
+autoscaler: {}
 
 # @schema
 # description: Configuration for the UI component.

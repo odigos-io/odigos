@@ -158,7 +158,7 @@ build-agents:
 
 .PHONY: build-autoscaler
 build-autoscaler:
-	$(MAKE) build-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) build-image/autoscaler DOCKERFILE=autoscaler/Dockerfile SUMMARY="Autoscaler for Odigos" DESCRIPTION="Compatibility image. Autoscaler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: build-instrumentor
 build-instrumentor:
@@ -216,7 +216,7 @@ push-odiglet:
 
 .PHONY: push-autoscaler
 push-autoscaler:
-	$(MAKE) push-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/autoscaler DOCKERFILE=autoscaler/Dockerfile SUMMARY="Autoscaler for Odigos" DESCRIPTION="Compatibility image. Autoscaler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-instrumentor
 push-instrumentor:
@@ -542,7 +542,7 @@ publish-to-ecr:
 	fi
 	make ecr-login
 	make -j 3 build-tag-push-ecr-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-ecr-image/autoscaler DOCKERFILE=autoscaler/Dockerfile SUMMARY="Autoscaler for Odigos" DESCRIPTION="Compatibility image. Autoscaler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/scheduler DOCKERFILE=scheduler/Dockerfile SUMMARY="Scheduler for Odigos" DESCRIPTION="Compatibility image. Scheduler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)

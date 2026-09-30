@@ -28,7 +28,6 @@ go 1.23.5
 
 use (
 	./api
-	./autoscaler
 	./cli
 <several more>
 )
@@ -58,7 +57,6 @@ use (
    ../runtime-detector
 
 	./api
-	./autoscaler
 	./cli
 <several more>
 )

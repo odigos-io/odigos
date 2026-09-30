@@ -10,7 +10,6 @@ updates:
   - package-ecosystem: gomod
     directories:
       - /api
-      - /autoscaler
       - /cli
       - /common
       - /config

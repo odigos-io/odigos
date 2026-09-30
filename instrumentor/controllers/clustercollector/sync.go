@@ -1,0 +1,127 @@
+package clustercollector
+
+import (
+	"context"
+	"slices"
+	"strings"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
+	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	ClusterCollectorGateway = map[string]string{
+		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+	}
+)
+
+func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, odigosVersion string, tier common.OdigosTier) (ctrl.Result, error) {
+	logger := commonlogger.FromContext(ctx)
+
+	odigosNs := env.GetCurrentNamespace()
+	var gatewayCollectorGroup odigosv1.CollectorsGroup
+	err := k8sClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &gatewayCollectorGroup)
+	if err != nil {
+		// collectors group is created by the scheduler, after the first destination is added.
+		// it is however possible that some reconciler (like deployment) triggered and the collectors group will be created shortly.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	var dests odigosv1.DestinationList
+	err = k8sClient.List(ctx, &dests)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var processors odigosv1.ProcessorList
+	err = k8sClient.List(ctx, &processors)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var actionList odigosv1.ActionList
+	err = k8sClient.List(ctx, &actionList, client.InNamespace(odigosNs))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	configExtProcessors := commonconf.ConvertActionsToConfigExtensionProcessors(actionList)
+
+	// Add the generic batch processor to the list of processors
+	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
+	processors.Items = append(processors.Items, configExtProcessors...)
+
+	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, odigosVersion, tier)
+	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err, gatewayCollectorGroup.Spec.Role)
+	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
+	if statusErr != nil {
+		logger.Error(statusErr, "Failed to patch collectors group status")
+		// just log the error, do not fail the reconciliation
+	}
+	return ctrl.Result{}, err
+}
+
+func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
+	gateway *odigosv1.CollectorsGroup, ctx context.Context,
+	c client.Client, scheme *runtime.Scheme, odigosVersion string, tier common.OdigosTier) error {
+	logger := commonlogger.FromContext(ctx)
+	logger.Info("Syncing gateway")
+
+	enabledDests := &odigosv1.DestinationList{Items: []odigosv1.Destination{}}
+	for _, dest := range dests.Items {
+		// skip disabled destinations
+		if dest.Spec.Disabled != nil && *dest.Spec.Disabled {
+			continue
+		}
+		enabledDests.Items = append(enabledDests.Items, dest)
+	}
+
+	// Kubernetes list order is unspecified; sort once so downstream config is stable.
+	slices.SortFunc(enabledDests.Items, func(a, b odigosv1.Destination) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	signals, err := syncConfigMap(enabledDests, processors, gateway, ctx, c, scheme, tier)
+	if err != nil {
+		logger.Error(err, "Failed to sync config map")
+		return err
+	}
+
+	err = deletePreviousServices(ctx, c, gateway.Namespace)
+	if err != nil {
+		logger.Error(err, "Failed to delete previous services")
+		return err
+	}
+
+	_, err = syncService(gateway, ctx, c, scheme)
+	if err != nil {
+		logger.Error(err, "Failed to sync service")
+		return err
+	}
+
+	_, err = syncDeployment(enabledDests, gateway, ctx, c, scheme, odigosVersion, tier)
+	if err != nil {
+		logger.Error(err, "Failed to sync deployment")
+		return err
+	}
+
+	err = commonconf.UpdateCollectorGroupReceiverSignals(ctx, c, gateway, signals)
+	if err != nil {
+		logger.Error(err, "Failed to update cluster collectors group received signals")
+		return err
+	}
+
+	err = syncHPA(gateway, ctx, c, scheme)
+	if err != nil {
+		logger.Error(err, "Failed to sync HPA")
+	}
+
+	return nil
+}

@@ -1,0 +1,411 @@
+package nodecollector
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"maps"
+	"slices"
+	"strings"
+	"time"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
+	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
+	odigoscommon "github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
+)
+
+const DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = 10 * time.Second
+
+func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList,
+	datacollection *odigosv1.CollectorsGroup) error {
+
+	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
+
+	if b.ownerDeployment == nil {
+		// we only need to get the instrumentor deployment once since it can't change while this code is running
+		ownerDeployment := &appsv1.Deployment{}
+		ownerDeploymentName := env.GetComponentDeploymentNameOrDefault(k8sconsts.InstrumentorDeploymentName)
+		err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: ownerDeploymentName}, ownerDeployment)
+		if err != nil {
+			return err
+		}
+		b.ownerDeployment = ownerDeployment
+	}
+
+	tracingLoadBalancingNeeded, err := isTracingLoadBalancingNeeded(ctx, b.Client, clusterCollectorGroup)
+	if err != nil {
+		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
+	}
+
+	var profilingCfg *odigoscommon.ProfilingConfiguration
+	if cfg, err := utils.GetCurrentOdigosConfiguration(ctx, b.Client); err == nil {
+		profilingCfg = cfg.Profiling
+	}
+
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.tier)
+	if err != nil {
+		return errors.Join(err, errors.New("failed to calculate collector config domains"))
+	}
+
+	err = b.persistCollectorConfig(ctx, configAsYamlText)
+	if err != nil {
+		return errors.Join(err, errors.New("failed to persist node collector config"))
+	}
+
+	err = b.persistCollectorConfigDomains(ctx, configDomains)
+	if err != nil {
+		return errors.Join(err, errors.New("failed to persist node collector config domains"))
+	}
+
+	return nil
+}
+
+func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context, configAsYamlText string) error {
+	desiredData := map[string]string{
+		k8sconsts.OdigosNodeCollectorConfigMapKey: configAsYamlText,
+	}
+
+	b.logConfigMapDataIfChanged(ctx, k8sconsts.OdigosNodeCollectorConfigMapName, desiredData)
+
+	nodeCollectorCg := v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosNodeCollectorConfigMapName,
+			Namespace: b.odigosNamespace,
+		},
+		Data: desiredData,
+	}
+
+	// set the instrumentor deployment as the owner of the configmap
+	// since it is the one creating it and updating it.
+	// cg might not yet exist and failing to have an owner will lead to un-cleaned resources on uninstall.
+	if err := ctrl.SetControllerReference(b.ownerDeployment, &nodeCollectorCg, b.scheme); err != nil {
+		return errors.Join(err, errors.New("failed to set owner reference to node collector config map"))
+	}
+
+	// apply the config map (override it regardless of the existing data so it will always have the latest data)
+	if err := b.Client.Patch(ctx, &nodeCollectorCg, client.Apply, client.ForceOwnership, client.FieldOwner("autoscaler")); err != nil {
+		return errors.Join(err, errors.New("failed to apply node collector config map in kubernetes"))
+	}
+	return nil
+}
+
+func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.Context, configDomains map[string]config.Config) error {
+
+	data := map[string]string{}
+	for domain, config := range configDomains {
+		configYaml, err := yaml.Marshal(config)
+		if err != nil {
+			return errors.Join(err, errors.New("failed to marshal collector config domain to yaml"))
+		}
+		data[domain] = string(configYaml)
+	}
+
+	// log existing vs desired data at debug level to help diagnose unexpected configmap churn
+	b.logConfigMapDataIfChanged(ctx, k8sconsts.OdigosNodeCollectorConfigMapConfigDomainsName, data)
+
+	cmDomains := v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosNodeCollectorConfigMapConfigDomainsName,
+			Namespace: b.odigosNamespace,
+		},
+		Data: data,
+	}
+
+	if err := ctrl.SetControllerReference(b.ownerDeployment, &cmDomains, b.scheme); err != nil {
+		return errors.Join(err, errors.New("failed to set owner reference to node collector config map domains"))
+	}
+
+	// apply the config map (override it regardless of the existing data so it will always have the latest data)
+	if err := b.Client.Patch(ctx, &cmDomains, client.Apply, client.ForceOwnership, client.FieldOwner("autoscaler")); err != nil {
+		return errors.Join(err, errors.New("failed to apply node collector config map domains in kubernetes"))
+	}
+	return nil
+}
+
+func (b *nodeCollectorBaseReconciler) logConfigMapDataIfChanged(ctx context.Context, cmName string, desiredData map[string]string) {
+	logger := commonlogger.FromContext(ctx)
+
+	existing := &v1.ConfigMap{}
+	err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: cmName}, existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			logger.Debug("failed to get existing configmap for comparison, skipping", "configMap", cmName, "error", err)
+		}
+		return
+	}
+
+	if len(existing.Data) == 0 {
+		return
+	}
+
+	if maps.Equal(existing.Data, desiredData) {
+		logger.Debug("node collector configmap unchanged", "configMap", cmName)
+		return
+	}
+
+	logger.Debug("node collector configmap changed", "configMap", cmName, "existingData", existing.Data, "desiredData", desiredData)
+}
+
+func calculateCollectorConfigDomains(
+	ctx context.Context,
+	odigosNamespace string,
+	nodeCG *odigosv1.CollectorsGroup,
+	sources *odigosv1.InstrumentationConfigList,
+	clusterCollectorSignals []odigoscommon.ObservabilitySignal,
+	processors []*odigosv1.Processor,
+	onGKE bool,
+	loadBalancingNeeded bool,
+	profiling *odigoscommon.ProfilingConfiguration,
+	tier odigoscommon.OdigosTier) (map[string]config.Config, string, error) {
+
+	logger := commonlogger.FromContext(ctx)
+
+	// common config domains - always set and active
+	configDomains := map[string]config.Config{
+		"common": collectorconfig.CommonConfig(tier),
+	}
+
+	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
+	configDomains["own_metrics_ui"] = collectorconfig.OwnMetricsConfigUi(ownMetricsPort)
+
+	// all the rest of the config is only evaluated if the node collector group is not nil
+	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.
+	// this logic should be revisited in the future, but kept as is for now (nov 2025)
+	if nodeCG == nil {
+		mergedConfig, err := config.MergeConfigs(configDomains)
+		if err != nil {
+			return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
+		}
+		mergedConfigYaml, err := yaml.Marshal(mergedConfig)
+		if err != nil {
+			return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
+		}
+		return configDomains, string(mergedConfigYaml), nil
+	}
+
+	// processors from k8s "Processor" custom resource
+	processorsResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
+	for name, err := range processorsResults.Errs {
+		logger.Error(err, "failed to convert processor manifest to config", "processor", name)
+		return nil, "", err
+	}
+	configDomains["processors"] = processorsResults.ProcessorsConfig
+
+	if collectorconfig.NodeNeedsOdigosConfigK8sExtension(processors, profiling) {
+		configDomains["odigos_config_extension"] = collectorconfig.NodeOdigosExtDomain()
+	}
+
+	// resource detectors [ec2, eks, azure, aks, gcp] built once.
+	detectors := collectorconfig.BuildResourceDetectors(nodeCG.Spec.ResourceDetectors, onGKE)
+	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace, detectors, tier)
+
+	commonSignalConfig := collectorconfig.CommonSignalConfig{
+		Logger:                   logger.Logr(),
+		OdigosNamespace:          odigosNamespace,
+		ResourceDetectionEnabled: collectorconfig.ResourceDetectionEnabled(detectors),
+		Tier:                     tier,
+	}
+
+	// metrics
+	metricsEnabled := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
+	metricsConfigSettings := nodeCG.Spec.Metrics
+	var additionalTraceExporters []string
+	var postSpanMetricsProcessorNames []string
+	if metricsEnabled && metricsConfigSettings != nil {
+
+		// span metrics
+		if metricsConfigSettings.SpanMetrics != nil {
+			spanMetricsConfig, additionalSpanMetricsTraceExporters, _, spanMetricsPostProcessors := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
+			additionalTraceExporters = append(additionalTraceExporters, additionalSpanMetricsTraceExporters...)
+			postSpanMetricsProcessorNames = append(postSpanMetricsProcessorNames, spanMetricsPostProcessors...)
+			// NOTICE: temporarily bypass the normal metrics pipeline.
+			// this is to allow span metrics to be reported without any additional metric resource attributes.
+			// once finer control is implemented as to what resource attributes are included in the metrics pipeline,
+			// we can send span metrics back into the normal metrics pipeline.
+			// additionalMetricsReceivers = append(additionalMetricsReceivers, additionalSpanMetricsMetricsReceivers...)
+			configDomains["span_metrics"] = spanMetricsConfig
+		}
+
+		metricsConfig := collectorconfig.MetricsConfig(nodeCG, collectorconfig.MetricsConfigOptions{
+			CommonSignalConfig:    commonSignalConfig.WithProcessors(processorsResults.MetricsProcessors),
+			MetricsConfigSettings: metricsConfigSettings,
+		})
+		configDomains["metrics"] = metricsConfig
+	}
+
+	// ownmetrics - report the node collector's own telemetry to the cluster collector
+	if nodeCG.Spec.Metrics != nil && nodeCG.Spec.Metrics.OdigosOwnMetrics != nil {
+		ownMetricsConfig, err := ownMetricsTelemetryConfig(nodeCG.Spec.Metrics.OdigosOwnMetrics, odigosNamespace)
+		if err != nil {
+			return nil, "", errors.Join(err, errors.New("failed to calculate own metrics config"))
+		}
+		configDomains["own_metrics"] = ownMetricsConfig
+
+		odigletMetrics := collectorconfig.OdigletMetricsConfig(odigosNamespace)
+		// Pass only when the user already enabled kubeletstats (metrics destination).
+		// Own-metrics must not start a kubelet scrape on its own.
+		if metricsEnabled && nodeCG.Spec.Metrics.KubeletStats != nil {
+			odigletMetrics = collectorconfig.AddKubeletStatsToOwnMetrics(odigletMetrics, odigosNamespace)
+		}
+		configDomains["odiglet_metrics"] = odigletMetrics
+	}
+
+	// traces
+	tracesEnabledInClusterCollector := slices.Contains(clusterCollectorSignals, odigoscommon.TracesObservabilitySignal)
+	// create traces pipeline if either:
+	// - cluster collector has traces enabled (trace destination is enabled)
+	// - there are additional trace exporters (e.g. spanmetrics connector)
+	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, collectorconfig.TracesConfigOptions{
+			CommonSignalConfig:              commonSignalConfig.WithProcessors(processorsResults.TracesProcessors),
+			PostSpanMetricsProcessorNames:   append(processorsResults.TracesProcessorsPostSpanMetrics, postSpanMetricsProcessorNames...),
+			AdditionalTraceExporters:        additionalTraceExporters,
+			TracesEnabledInClusterCollector: tracesEnabledInClusterCollector,
+			LoadBalancingNeeded:             loadBalancingNeeded,
+		})
+		configDomains["traces"] = tracesConfig
+	}
+
+	// logs
+	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
+	if collectLogs {
+		logsConfig := collectorconfig.LogsConfig(nodeCG, collectorconfig.LogsConfigOptions{
+			CommonSignalConfig: commonSignalConfig.WithProcessors(processorsResults.LogsProcessors),
+			Sources:            sources,
+		})
+		configDomains["logs"] = logsConfig
+	}
+
+	// The profiling pipeline's receiver is enterprise-only, so community tier never gets one
+	// regardless of what OdigosConfiguration asks for.
+	if tier.IsEnterprise() && odigoscommon.ProfilingPipelineActive(profiling) {
+		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors)
+	}
+
+	mergedConfig, err := config.MergeConfigs(configDomains)
+	if err != nil {
+		return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
+	}
+	mergedConfigYaml, err := yaml.Marshal(mergedConfig)
+	if err != nil {
+		return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
+	}
+
+	return configDomains, string(mergedConfigYaml), nil
+}
+
+func ownMetricsTelemetryConfig(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string) (config.Config, error) {
+	duration, err := time.ParseDuration(ownMetricsConfig.Interval)
+	if err != nil {
+		// Default to 10 seconds if the interval is not set
+		duration = DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL
+	}
+
+	clusterCollectorEndpoint := fmt.Sprintf("%s.%s:44318", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
+
+	reader := config.GenericMap{
+		"periodic": config.GenericMap{
+			"interval": int64(duration.Milliseconds()),
+			"exporter": config.GenericMap{
+				"otlp": config.GenericMap{
+					"endpoint": clusterCollectorEndpoint,
+					"insecure": true,
+					"protocol": "http/protobuf",
+				},
+			},
+		},
+	}
+
+	return config.Config{
+		Service: config.Service{
+			Telemetry: config.Telemetry{
+				Metrics: config.MetricsConfig{
+					Readers: []config.GenericMap{reader},
+				},
+			},
+		},
+	}, nil
+}
+
+func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.ConfigMap, error) {
+	configMap := &v1.ConfigMap{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: k8sconsts.OdigosNodeCollectorConfigMapName}, configMap); err != nil {
+		return nil, err
+	}
+
+	return configMap, nil
+}
+
+func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.ObservabilitySignal, error) {
+	config := config.Config{}
+	err := yaml.Unmarshal([]byte(otelcolConfigContent), &config)
+	if err != nil {
+		return nil, err
+	}
+
+	tracesEnabled := false
+	metricsEnabled := false
+	logsEnabled := false
+	for pipelineName, pipeline := range config.Service.Pipelines {
+		// only consider pipelines with `otlp` receiver
+		// which are the ones that can actually receive data
+		if !slices.Contains(pipeline.Receivers, collectorconfig.OTLPInReceiverName) {
+			continue
+		}
+		if strings.HasPrefix(pipelineName, "traces") {
+			tracesEnabled = true
+		} else if strings.HasPrefix(pipelineName, "metrics") {
+			metricsEnabled = true
+		} else if strings.HasPrefix(pipelineName, "logs") {
+			logsEnabled = true
+		}
+	}
+
+	signals := []odigoscommon.ObservabilitySignal{}
+	if tracesEnabled {
+		signals = append(signals, odigoscommon.TracesObservabilitySignal)
+	}
+	if metricsEnabled {
+		signals = append(signals, odigoscommon.MetricsObservabilitySignal)
+	}
+	if logsEnabled {
+		signals = append(signals, odigoscommon.LogsObservabilitySignal)
+	}
+
+	return signals, nil
+}
+
+func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
+	// Tracing load balancing is required by every gateway feature that aggregates a whole trace.
+	// Without it the node collectors round-robin over the gateway replicas, so spans of the same
+	// trace reach different pods and each one only ever sees a fragment of the trace.
+	// The tail sampling and trace correlations conditions must stay in sync with the ones that
+	// install groupbytrace on the gateway in instrumentor/controllers/clustercollector/configmap.go.
+	serviceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
+	tailSamplingEnabled := clusterCollectorGroup.Spec.TailSampling != nil &&
+		clusterCollectorGroup.Spec.TailSampling.Disabled != nil &&
+		!*clusterCollectorGroup.Spec.TailSampling.Disabled
+	traceCorrelationsEnabled := clusterCollectorGroup.Spec.TraceCorrelations != nil
+	return serviceGraphEnabled || tailSamplingEnabled || traceCorrelationsEnabled, nil
+}
