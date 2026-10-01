@@ -120,7 +120,7 @@ jobs:
           key: ${{ github.run_id }}-odigos-images
 
       - name: Configure AWS credentials from OIDC
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
           aws-region: us-east-1
