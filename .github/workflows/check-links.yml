@@ -29,6 +29,8 @@ jobs:
           args: >-
             -v -n "*.md" "**/*.md" "**/*.mdx"
             --exclude-path "docs/snippets"
+            --root-dir "${{ github.workspace }}/docs"
+            --fallback-extensions mdx,md
             --exclude "http://localhost*"
             --exclude "^https://logs-prod.*"
             --exclude ".*your-account.*"
