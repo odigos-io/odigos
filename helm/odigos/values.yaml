@@ -1147,8 +1147,9 @@ odiglet:
 
   # @schema
   # description: |-
-  #   extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.
+  #   extended controls whether to use the extended odiglet image variant which includes legacy .NET and Ruby 2.7 instrumentation.
   #   When true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).
+  #   Selecting those distros still requires the legacy-dotnet-instrumentation and legacy-ruby-instrumentation profiles.
   #   Default: false
   # @schema
   extended: false

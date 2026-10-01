@@ -424,6 +424,17 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, k8sconsts.OdigosPhpAgentCustomInstrumentationsEnvVar, string(customInstrumentationsConfigJson))
 	}
 
+	// Payload collection configuration (native agents that receive config via env vars)
+	payloadCollectionEnabled := containerConfig.Traces != nil && containerConfig.Traces.PayloadCollection != nil
+	supportsPayloadCollection := distroMetadata.Traces != nil && distroMetadata.Traces.PayloadCollection != nil && distroMetadata.Traces.PayloadCollection.Supported
+	if payloadCollectionEnabled && supportsPayloadCollection && distroMetadata.ConfigAsEnvVars {
+		payloadCollectionConfigJson, err := json.Marshal(containerConfig.Traces.PayloadCollection)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to marshal payload collection config: %w", err)
+		}
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, k8sconsts.OdigosAgentPayloadCollectionEnvVar, string(payloadCollectionConfigJson))
+	}
+
 	volumeMounted := false
 	containerDirsToCopy := make(map[string]struct{})
 	if distroMetadata.RuntimeAgent != nil {

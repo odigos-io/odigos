@@ -1745,7 +1745,7 @@
         },
         "extended": {
           "default": "false",
-          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nDefault: false",
+          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET and Ruby 2.7 instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nSelecting those distros still requires the legacy-dotnet-instrumentation and legacy-ruby-instrumentation profiles.\nDefault: false",
           "required": [],
           "title": "extended"
         },
