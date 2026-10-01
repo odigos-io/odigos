@@ -762,6 +762,7 @@ type ComplexityRoot struct {
 		ObservationCount             func(childComplexity int) int
 		ObservationCountAtLastChange func(childComplexity int) int
 		Promoted                     func(childComplexity int) int
+		Saturated                    func(childComplexity int) int
 		TransactionID                func(childComplexity int) int
 	}
 
@@ -1148,11 +1149,13 @@ type ComplexityRoot struct {
 	}
 
 	InsightsServiceStat struct {
-		LastSeen         func(childComplexity int) int
-		Namespace        func(childComplexity int) int
-		Service          func(childComplexity int) int
-		TransactionCount func(childComplexity int) int
-		Volume           func(childComplexity int) int
+		LastSeen                func(childComplexity int) int
+		Namespace               func(childComplexity int) int
+		Service                 func(childComplexity int) int
+		TransactionCount        func(childComplexity int) int
+		TransactionLimit        func(childComplexity int) int
+		TransactionLimitReached func(childComplexity int) int
+		Volume                  func(childComplexity int) int
 	}
 
 	InsightsSeverityBand struct {
@@ -1234,8 +1237,9 @@ type ComplexityRoot struct {
 	}
 
 	InsightsSystemCapacitySettings struct {
-		MaxBaselineSetMembers   func(childComplexity int) int
-		MaxResidentTransactions func(childComplexity int) int
+		MaxBaselineSetMembers     func(childComplexity int) int
+		MaxResidentTransactions   func(childComplexity int) int
+		MaxTransactionsPerService func(childComplexity int) int
 	}
 
 	InsightsSystemDetectionSettings struct {
@@ -1298,6 +1302,7 @@ type ComplexityRoot struct {
 		Operation          func(childComplexity int) int
 		OperationName      func(childComplexity int) int
 		Promoted           func(childComplexity int) int
+		SaturatedClasses   func(childComplexity int) int
 		Service            func(childComplexity int) int
 		Volume             func(childComplexity int) int
 	}
@@ -5978,6 +5983,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsBaselineClass.Promoted(childComplexity), true
 
+	case "InsightsBaselineClass.saturated":
+		if e.complexity.InsightsBaselineClass.Saturated == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineClass.Saturated(childComplexity), true
+
 	case "InsightsBaselineClass.transactionId":
 		if e.complexity.InsightsBaselineClass.TransactionID == nil {
 			break
@@ -7826,6 +7838,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsServiceStat.TransactionCount(childComplexity), true
 
+	case "InsightsServiceStat.transactionLimit":
+		if e.complexity.InsightsServiceStat.TransactionLimit == nil {
+			break
+		}
+
+		return e.complexity.InsightsServiceStat.TransactionLimit(childComplexity), true
+
+	case "InsightsServiceStat.transactionLimitReached":
+		if e.complexity.InsightsServiceStat.TransactionLimitReached == nil {
+			break
+		}
+
+		return e.complexity.InsightsServiceStat.TransactionLimitReached(childComplexity), true
+
 	case "InsightsServiceStat.volume":
 		if e.complexity.InsightsServiceStat.Volume == nil {
 			break
@@ -8183,6 +8209,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsSystemCapacitySettings.MaxResidentTransactions(childComplexity), true
 
+	case "InsightsSystemCapacitySettings.maxTransactionsPerService":
+		if e.complexity.InsightsSystemCapacitySettings.MaxTransactionsPerService == nil {
+			break
+		}
+
+		return e.complexity.InsightsSystemCapacitySettings.MaxTransactionsPerService(childComplexity), true
+
 	case "InsightsSystemDetectionSettings.autoTransactionGuardrail":
 		if e.complexity.InsightsSystemDetectionSettings.AutoTransactionGuardrail == nil {
 			break
@@ -8406,6 +8439,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsTransactionStat.Promoted(childComplexity), true
+
+	case "InsightsTransactionStat.saturatedClasses":
+		if e.complexity.InsightsTransactionStat.SaturatedClasses == nil {
+			break
+		}
+
+		return e.complexity.InsightsTransactionStat.SaturatedClasses(childComplexity), true
 
 	case "InsightsTransactionStat.service":
 		if e.complexity.InsightsTransactionStat.Service == nil {
@@ -35678,6 +35718,10 @@ func (ec *executionContext) fieldContext_Insights_services(_ context.Context, fi
 				return ec.fieldContext_InsightsServiceStat_volume(ctx, field)
 			case "lastSeen":
 				return ec.fieldContext_InsightsServiceStat_lastSeen(ctx, field)
+			case "transactionLimit":
+				return ec.fieldContext_InsightsServiceStat_transactionLimit(ctx, field)
+			case "transactionLimitReached":
+				return ec.fieldContext_InsightsServiceStat_transactionLimitReached(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsServiceStat", field.Name)
 		},
@@ -35922,6 +35966,8 @@ func (ec *executionContext) fieldContext_Insights_transactions(ctx context.Conte
 				return ec.fieldContext_InsightsTransactionStat_hasBaseline(ctx, field)
 			case "promoted":
 				return ec.fieldContext_InsightsTransactionStat_promoted(ctx, field)
+			case "saturatedClasses":
+				return ec.fieldContext_InsightsTransactionStat_saturatedClasses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsTransactionStat", field.Name)
 		},
@@ -36065,6 +36111,8 @@ func (ec *executionContext) fieldContext_Insights_baseline(ctx context.Context, 
 				return ec.fieldContext_InsightsBaselineClass_observationCount(ctx, field)
 			case "promoted":
 				return ec.fieldContext_InsightsBaselineClass_promoted(ctx, field)
+			case "saturated":
+				return ec.fieldContext_InsightsBaselineClass_saturated(ctx, field)
 			case "learningStartedAt":
 				return ec.fieldContext_InsightsBaselineClass_learningStartedAt(ctx, field)
 			case "lastChangedAt":
@@ -40220,6 +40268,50 @@ func (ec *executionContext) _InsightsBaselineClass_promoted(ctx context.Context,
 }
 
 func (ec *executionContext) fieldContext_InsightsBaselineClass_promoted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineClass",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineClass_saturated(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineClass) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineClass_saturated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Saturated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineClass_saturated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InsightsBaselineClass",
 		Field:      field,
@@ -52195,6 +52287,94 @@ func (ec *executionContext) fieldContext_InsightsServiceStat_lastSeen(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsServiceStat_transactionLimit(ctx context.Context, field graphql.CollectedField, obj *model.InsightsServiceStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsServiceStat_transactionLimit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsServiceStat_transactionLimit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsServiceStat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsServiceStat_transactionLimitReached(ctx context.Context, field graphql.CollectedField, obj *model.InsightsServiceStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsServiceStat_transactionLimitReached(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionLimitReached, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsServiceStat_transactionLimitReached(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsServiceStat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsSeverityBand_severity(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSeverityBand) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsSeverityBand_severity(ctx, field)
 	if err != nil {
@@ -54497,6 +54677,50 @@ func (ec *executionContext) fieldContext_InsightsSystemCapacitySettings_maxBasel
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsSystemCapacitySettings_maxTransactionsPerService(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemCapacitySettings) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsSystemCapacitySettings_maxTransactionsPerService(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxTransactionsPerService, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsSystemCapacitySettings_maxTransactionsPerService(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsSystemCapacitySettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsSystemDetectionSettings_autoTransactionGuardrail(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemDetectionSettings) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsSystemDetectionSettings_autoTransactionGuardrail(ctx, field)
 	if err != nil {
@@ -54864,6 +55088,8 @@ func (ec *executionContext) fieldContext_InsightsSystemSettings_capacity(_ conte
 				return ec.fieldContext_InsightsSystemCapacitySettings_maxResidentTransactions(ctx, field)
 			case "maxBaselineSetMembers":
 				return ec.fieldContext_InsightsSystemCapacitySettings_maxBaselineSetMembers(ctx, field)
+			case "maxTransactionsPerService":
+				return ec.fieldContext_InsightsSystemCapacitySettings_maxTransactionsPerService(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsSystemCapacitySettings", field.Name)
 		},
@@ -56028,6 +56254,50 @@ func (ec *executionContext) fieldContext_InsightsTransactionStat_promoted(_ cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsTransactionStat_saturatedClasses(ctx context.Context, field graphql.CollectedField, obj *model.InsightsTransactionStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsTransactionStat_saturatedClasses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SaturatedClasses, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.InsightsDeviationClass)
+	fc.Result = res
+	return ec.marshalNInsightsDeviationClass2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClassᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsTransactionStat_saturatedClasses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsTransactionStat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsDeviationClass does not have child fields")
 		},
 	}
 	return fc, nil
@@ -91072,7 +91342,7 @@ func (ec *executionContext) unmarshalInputInsightsSystemCapacitySettingsInput(ct
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"maxResidentTransactions", "maxBaselineSetMembers"}
+	fieldsInOrder := [...]string{"maxResidentTransactions", "maxBaselineSetMembers", "maxTransactionsPerService"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -91093,6 +91363,13 @@ func (ec *executionContext) unmarshalInputInsightsSystemCapacitySettingsInput(ct
 				return it, err
 			}
 			it.MaxBaselineSetMembers = data
+		case "maxTransactionsPerService":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxTransactionsPerService"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxTransactionsPerService = data
 		}
 	}
 
@@ -98642,6 +98919,11 @@ func (ec *executionContext) _InsightsBaselineClass(ctx context.Context, sel ast.
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "saturated":
+			out.Values[i] = ec._InsightsBaselineClass_saturated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "learningStartedAt":
 			out.Values[i] = ec._InsightsBaselineClass_learningStartedAt(ctx, field, obj)
 		case "lastChangedAt":
@@ -101209,6 +101491,16 @@ func (ec *executionContext) _InsightsServiceStat(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "transactionLimit":
+			out.Values[i] = ec._InsightsServiceStat_transactionLimit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transactionLimitReached":
+			out.Values[i] = ec._InsightsServiceStat_transactionLimitReached(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -101821,6 +102113,11 @@ func (ec *executionContext) _InsightsSystemCapacitySettings(ctx context.Context,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "maxTransactionsPerService":
+			out.Values[i] = ec._InsightsSystemCapacitySettings_maxTransactionsPerService(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -102325,6 +102622,11 @@ func (ec *executionContext) _InsightsTransactionStat(ctx context.Context, sel as
 			out.Values[i] = ec._InsightsTransactionStat_hasBaseline(ctx, field, obj)
 		case "promoted":
 			out.Values[i] = ec._InsightsTransactionStat_promoted(ctx, field, obj)
+		case "saturatedClasses":
+			out.Values[i] = ec._InsightsTransactionStat_saturatedClasses(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

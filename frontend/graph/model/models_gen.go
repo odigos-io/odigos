@@ -914,14 +914,18 @@ type InsightsBaselineClass struct {
 	// JSON-encoded baseline data; shape varies per deviation class.
 	Data *string `json:"data,omitempty"`
 	// Chart-ready histogram for D3_latency / D7_payload_size. Omitted for other classes.
-	Histogram                    *InsightsBaselineHistogram `json:"histogram,omitempty"`
-	DataSchemaVersion            *int                       `json:"dataSchemaVersion,omitempty"`
-	ObservationCount             int                        `json:"observationCount"`
-	Promoted                     bool                       `json:"promoted"`
-	LearningStartedAt            *string                    `json:"learningStartedAt,omitempty"`
-	LastChangedAt                *string                    `json:"lastChangedAt,omitempty"`
-	ObservationCountAtLastChange *int                       `json:"observationCountAtLastChange,omitempty"`
-	Learning                     *InsightsBaselineLearning  `json:"learning"`
+	Histogram         *InsightsBaselineHistogram `json:"histogram,omitempty"`
+	DataSchemaVersion *int                       `json:"dataSchemaVersion,omitempty"`
+	ObservationCount  int                        `json:"observationCount"`
+	Promoted          bool                       `json:"promoted"`
+	// True when this class's set crossed maxBaselineSetMembers. The class is frozen
+	// at a truncated set, will never promote and is never scored.
+	// learning.phase is saturated.
+	Saturated                    bool                      `json:"saturated"`
+	LearningStartedAt            *string                   `json:"learningStartedAt,omitempty"`
+	LastChangedAt                *string                   `json:"lastChangedAt,omitempty"`
+	ObservationCountAtLastChange *int                      `json:"observationCountAtLastChange,omitempty"`
+	Learning                     *InsightsBaselineLearning `json:"learning"`
 }
 
 // Chart-ready exponential histogram for D3_latency and D7_payload_size.
@@ -1569,6 +1573,12 @@ type InsightsServiceStat struct {
 	TransactionCount int    `json:"transactionCount"`
 	Volume           int    `json:"volume"`
 	LastSeen         string `json:"lastSeen"`
+	// The maxTransactionsPerService setting in effect, so a client can explain
+	// transactionLimitReached without a second request.
+	TransactionLimit int `json:"transactionLimit"`
+	// True once the service holds transactionLimit transactions. Operations of this
+	// service not seen before are dropped and not learned.
+	TransactionLimitReached bool `json:"transactionLimitReached"`
 }
 
 type InsightsSeverityBand struct {
@@ -1654,11 +1664,18 @@ type InsightsStorageWriteback struct {
 type InsightsSystemCapacitySettings struct {
 	MaxResidentTransactions int `json:"maxResidentTransactions"`
 	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
+	// Max distinct transactions one service may add to the inventory. Once reached,
+	// operations not seen before are dropped, so span names carrying ids cannot grow
+	// the inventory without bound.
+	MaxTransactionsPerService int `json:"maxTransactionsPerService"`
 }
 
 type InsightsSystemCapacitySettingsInput struct {
 	MaxResidentTransactions int `json:"maxResidentTransactions"`
 	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
+	// Optional so clients built before it existed stay valid; when omitted the
+	// insights default applies.
+	MaxTransactionsPerService *int `json:"maxTransactionsPerService,omitempty"`
 }
 
 type InsightsSystemDetectionSettings struct {
@@ -1774,7 +1791,13 @@ type InsightsTransactionStat struct {
 	Volume             int                                 `json:"volume"`
 	LastSeen           string                              `json:"lastSeen"`
 	HasBaseline        *bool                               `json:"hasBaseline,omitempty"`
-	Promoted           *bool                               `json:"promoted,omitempty"`
+	// True when every learned baseline class has finished learning: promoted, or
+	// saturated (see saturatedClasses).
+	Promoted *bool `json:"promoted,omitempty"`
+	// Baseline classes whose learned set crossed maxBaselineSetMembers. They are
+	// frozen, never promoted and never scored; the other classes keep working.
+	// Empty when no class saturated.
+	SaturatedClasses []InsightsDeviationClass `json:"saturatedClasses"`
 }
 
 type InsightsViolationActionInput struct {
@@ -3605,24 +3628,27 @@ func (e InsightsBaselineHistogramUnit) MarshalGQL(w io.Writer) {
 
 // Coarse learning state for one baseline class. `promoted` means the baseline is
 // frozen. `empty` means it has never grown. `learning` means it has grown and is
-// still in the learning phase.
+// still in the learning phase. `saturated` means the set crossed
+// maxBaselineSetMembers; the class is frozen, will not promote and is not enforced.
 type InsightsBaselineLearningPhase string
 
 const (
-	InsightsBaselineLearningPhasePromoted InsightsBaselineLearningPhase = "promoted"
-	InsightsBaselineLearningPhaseEmpty    InsightsBaselineLearningPhase = "empty"
-	InsightsBaselineLearningPhaseLearning InsightsBaselineLearningPhase = "learning"
+	InsightsBaselineLearningPhasePromoted  InsightsBaselineLearningPhase = "promoted"
+	InsightsBaselineLearningPhaseEmpty     InsightsBaselineLearningPhase = "empty"
+	InsightsBaselineLearningPhaseLearning  InsightsBaselineLearningPhase = "learning"
+	InsightsBaselineLearningPhaseSaturated InsightsBaselineLearningPhase = "saturated"
 )
 
 var AllInsightsBaselineLearningPhase = []InsightsBaselineLearningPhase{
 	InsightsBaselineLearningPhasePromoted,
 	InsightsBaselineLearningPhaseEmpty,
 	InsightsBaselineLearningPhaseLearning,
+	InsightsBaselineLearningPhaseSaturated,
 }
 
 func (e InsightsBaselineLearningPhase) IsValid() bool {
 	switch e {
-	case InsightsBaselineLearningPhasePromoted, InsightsBaselineLearningPhaseEmpty, InsightsBaselineLearningPhaseLearning:
+	case InsightsBaselineLearningPhasePromoted, InsightsBaselineLearningPhaseEmpty, InsightsBaselineLearningPhaseLearning, InsightsBaselineLearningPhaseSaturated:
 		return true
 	}
 	return false
