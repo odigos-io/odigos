@@ -5744,6 +5744,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.network-telemetry.2/helm-chart-odigos-0.0.0-feat.network-telemetry.2.tgz
     version: 0.0.0-feat.network-telemetry.2
   - apiVersion: v2
+    appVersion: v0.0.0-feat.interrogation.0
+    created: "2026-10-01T15:16:22.797151141Z"
+    description: Instant Distributed Tracing
+    digest: 465276da6aa4ea3238871576f8d4e790e88fec8982c56e42041401a3a1c8c786
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.interrogation.0/helm-chart-odigos-0.0.0-feat.interrogation.0.tgz
+    version: 0.0.0-feat.interrogation.0
+  - apiVersion: v2
     appVersion: v0.0.0-feat.insights.8
     created: "2026-09-01T08:20:56.484629929Z"
     description: Instant Distributed Tracing
@@ -9369,6 +9381,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.network-telemetry.2/helm-chart-odigos-central-0.0.0-feat.network-telemetry.2.tgz
     version: 0.0.0-feat.network-telemetry.2
   - apiVersion: v2
+    appVersion: v0.0.0-feat.interrogation.0
+    created: "2026-10-01T15:16:22.797835187Z"
+    description: Centralized components for Odigos (UI + Backend)
+    digest: 7758869adf05520710e007a459e2c1f46d9df3942567401b31ca1c1f16be7ede
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos-central
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.interrogation.0/helm-chart-odigos-central-0.0.0-feat.interrogation.0.tgz
+    version: 0.0.0-feat.interrogation.0
+  - apiVersion: v2
     appVersion: v0.0.0-feat.insights.8
     created: "2026-09-01T08:20:56.485541366Z"
     description: Centralized components for Odigos (UI + Backend)
@@ -9464,4 +9488,4 @@ entries:
     urls:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.amir-testing.4/helm-chart-odigos-central-0.0.0-feat.amir-testing.4.tgz
     version: 0.0.0-feat.amir-testing.4
-generated: "2026-10-01T13:42:23.314444258Z"
+generated: "2026-10-01T15:16:22.793741529Z"
