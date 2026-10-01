@@ -47,7 +47,8 @@ const (
 	InstrumentationInstance = "InstrumentationInstance"
 	Destination             = "Destination"
 
-	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
+	GoOffsetsPublicBucketURL = "https://storage.googleapis.com/odigos-cloud/"
+	GoOffsetsPublicURL       = GoOffsetsPublicBucketURL + "offset_results_min.json"
 
 	LdPreloadEnvVarName = "LD_PRELOAD"
 	OdigosLoaderDirName = "loader"
