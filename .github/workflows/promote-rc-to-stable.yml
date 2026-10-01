@@ -84,7 +84,7 @@ jobs:
           tag: ${{ env.RC_TAG }}
 
       - name: Install crane
-        uses: imjasonh/setup-crane@v0.4
+        uses: imjasonh/setup-crane@v0.7
 
       # oras is used for the cross-repo mirrors: `oras copy -r` carries the
       # cosign signature and SBOM referrers with the image, which `crane copy`
