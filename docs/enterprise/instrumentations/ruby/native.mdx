@@ -7,3 +7,12 @@ icon: "code"
 import Content from "/snippets/shared/instrumentations/ruby/native.mdx";
 
 <Content />
+
+## Ruby 2.7 (legacy distribution)
+
+Ruby **2.7.x** is supported by a separate legacy distribution, `ruby-community-legacy`, which pins the last OpenTelemetry Ruby gems that still run on Ruby 2.7 (traces only). It is not part of the standard images. To use it:
+
+1. Run the **extended** odiglet image by setting `odiglet.extended: true` in the Helm values.
+2. Enable the `legacy-ruby-instrumentation` profile.
+
+With the profile enabled, Ruby 2.7 workloads get `ruby-community-legacy`, Ruby 3.1 - 3.4 workloads keep `ruby-community`, and any other Ruby version falls back to eBPF instrumentation. Without the profile nothing changes.
