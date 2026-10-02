@@ -411,9 +411,12 @@ spec:
               mountPath: /hostfs
               readOnly: true
             {{- end }}
+            {{- if .Values.profiling.enabled }}
+            # the eBPF profiler attaches to tracepoints, which needs the host tracefs
             - name: sys-kernel
               mountPath: /sys/kernel
               readOnly: true
+            {{- end }}
             - name: exchange-dir
               mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
