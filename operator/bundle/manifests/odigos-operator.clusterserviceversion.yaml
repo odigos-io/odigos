@@ -33,6 +33,10 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.42.3
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/os.linux: supported
   name: odigos-operator.v1.37.1
   namespace: odigos-operator-system
 spec:
