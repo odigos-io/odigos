@@ -405,6 +405,9 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 			} else {
 				apiProbe.MethodName = ""
 			}
+			if probe.Notes != nil {
+				apiProbe.Notes = *probe.Notes
+			}
 			customInstrumentations.Java = append(customInstrumentations.Java, apiProbe)
 		}
 	}
@@ -433,6 +436,9 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 			} else {
 				apiProbe.ReceiverMethodName = ""
 			}
+			if probe.Notes != nil {
+				apiProbe.Notes = *probe.Notes
+			}
 			customInstrumentations.Golang = append(customInstrumentations.Golang, apiProbe)
 		}
 	}
@@ -446,6 +452,9 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 			}
 			if probe.FunctionName != nil {
 				apiProbe.FunctionName = *probe.FunctionName
+			}
+			if probe.Notes != nil {
+				apiProbe.Notes = *probe.Notes
 			}
 			customInstrumentations.Php = append(customInstrumentations.Php, apiProbe)
 		}
@@ -847,6 +856,7 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 				FunctionName:       &golangProbe.FunctionName,
 				ReceiverName:       &golangProbe.ReceiverName,
 				ReceiverMethodName: &golangProbe.ReceiverMethodName,
+				Notes:              &golangProbe.Notes,
 			})
 		}
 	}
@@ -855,6 +865,7 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			customInstruAsGqlModel.Java = append(customInstruAsGqlModel.Java, &model.JavaCustomProbe{
 				ClassName:  &javaProbe.ClassName,
 				MethodName: &javaProbe.MethodName,
+				Notes:      &javaProbe.Notes,
 			})
 		}
 	}
@@ -863,6 +874,7 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			customInstruAsGqlModel.Php = append(customInstruAsGqlModel.Php, &model.PhpCustomProbe{
 				ClassName:    &phpProbe.ClassName,
 				FunctionName: &phpProbe.FunctionName,
+				Notes:        &phpProbe.Notes,
 			})
 		}
 	}

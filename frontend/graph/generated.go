@@ -589,6 +589,7 @@ type ComplexityRoot struct {
 
 	GolangCustomProbe struct {
 		FunctionName       func(childComplexity int) int
+		Notes              func(childComplexity int) int
 		PackageName        func(childComplexity int) int
 		ReceiverMethodName func(childComplexity int) int
 		ReceiverName       func(childComplexity int) int
@@ -1400,6 +1401,7 @@ type ComplexityRoot struct {
 	JavaCustomProbe struct {
 		ClassName  func(childComplexity int) int
 		MethodName func(childComplexity int) int
+		Notes      func(childComplexity int) int
 	}
 
 	K8sActualNamespace struct {
@@ -1942,6 +1944,7 @@ type ComplexityRoot struct {
 	PhpCustomProbe struct {
 		ClassName    func(childComplexity int) int
 		FunctionName func(childComplexity int) int
+		Notes        func(childComplexity int) int
 	}
 
 	PodAnalyze struct {
@@ -5037,6 +5040,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GolangCustomProbe.FunctionName(childComplexity), true
+
+	case "GolangCustomProbe.notes":
+		if e.complexity.GolangCustomProbe.Notes == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.Notes(childComplexity), true
 
 	case "GolangCustomProbe.packageName":
 		if e.complexity.GolangCustomProbe.PackageName == nil {
@@ -8895,6 +8905,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.JavaCustomProbe.MethodName(childComplexity), true
 
+	case "JavaCustomProbe.notes":
+		if e.complexity.JavaCustomProbe.Notes == nil {
+			break
+		}
+
+		return e.complexity.JavaCustomProbe.Notes(childComplexity), true
+
 	case "K8sActualNamespace.dataStreamNames":
 		if e.complexity.K8sActualNamespace.DataStreamNames == nil {
 			break
@@ -11647,6 +11664,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PhpCustomProbe.FunctionName(childComplexity), true
+
+	case "PhpCustomProbe.notes":
+		if e.complexity.PhpCustomProbe.Notes == nil {
+			break
+		}
+
+		return e.complexity.PhpCustomProbe.Notes(childComplexity), true
 
 	case "PodAnalyze.agentInjected":
 		if e.complexity.PodAnalyze.AgentInjected == nil {
@@ -26988,6 +27012,8 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_golang(_ context
 				return ec.fieldContext_GolangCustomProbe_receiverName(ctx, field)
 			case "receiverMethodName":
 				return ec.fieldContext_GolangCustomProbe_receiverMethodName(ctx, field)
+			case "notes":
+				return ec.fieldContext_GolangCustomProbe_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GolangCustomProbe", field.Name)
 		},
@@ -27035,6 +27061,8 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_java(_ context.C
 				return ec.fieldContext_JavaCustomProbe_className(ctx, field)
 			case "methodName":
 				return ec.fieldContext_JavaCustomProbe_methodName(ctx, field)
+			case "notes":
+				return ec.fieldContext_JavaCustomProbe_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type JavaCustomProbe", field.Name)
 		},
@@ -27082,6 +27110,8 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_php(_ context.Co
 				return ec.fieldContext_PhpCustomProbe_className(ctx, field)
 			case "functionName":
 				return ec.fieldContext_PhpCustomProbe_functionName(ctx, field)
+			case "notes":
+				return ec.fieldContext_PhpCustomProbe_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PhpCustomProbe", field.Name)
 		},
@@ -34363,6 +34393,47 @@ func (ec *executionContext) _GolangCustomProbe_receiverMethodName(ctx context.Co
 }
 
 func (ec *executionContext) fieldContext_GolangCustomProbe_receiverMethodName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GolangCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "GolangCustomProbe",
 		Field:      field,
@@ -59094,6 +59165,47 @@ func (ec *executionContext) fieldContext_JavaCustomProbe_methodName(_ context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _JavaCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.JavaCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_JavaCustomProbe_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_JavaCustomProbe_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JavaCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sActualNamespace_name(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualNamespace) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sActualNamespace_name(ctx, field)
 	if err != nil {
@@ -76266,6 +76378,47 @@ func (ec *executionContext) fieldContext_PhpCustomProbe_functionName(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _PhpCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.PhpCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PhpCustomProbe_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PhpCustomProbe_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PhpCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PodAnalyze_podName(ctx context.Context, field graphql.CollectedField, obj *model.PodAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodAnalyze_podName(ctx, field)
 	if err != nil {
@@ -90464,7 +90617,7 @@ func (ec *executionContext) unmarshalInputGolangCustomProbeInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"packageName", "functionName", "receiverName", "receiverMethodName"}
+	fieldsInOrder := [...]string{"packageName", "functionName", "receiverName", "receiverMethodName", "notes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -90499,6 +90652,13 @@ func (ec *executionContext) unmarshalInputGolangCustomProbeInput(ctx context.Con
 				return it, err
 			}
 			it.ReceiverMethodName = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
 		}
 	}
 
@@ -91862,7 +92022,7 @@ func (ec *executionContext) unmarshalInputJavaCustomProbeInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"className", "methodName"}
+	fieldsInOrder := [...]string{"className", "methodName", "notes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -91883,6 +92043,13 @@ func (ec *executionContext) unmarshalInputJavaCustomProbeInput(ctx context.Conte
 				return it, err
 			}
 			it.MethodName = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
 		}
 	}
 
@@ -93006,7 +93173,7 @@ func (ec *executionContext) unmarshalInputPhpCustomProbeInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"className", "functionName"}
+	fieldsInOrder := [...]string{"className", "functionName", "notes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -93027,6 +93194,13 @@ func (ec *executionContext) unmarshalInputPhpCustomProbeInput(ctx context.Contex
 				return it, err
 			}
 			it.FunctionName = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
 		}
 	}
 
@@ -97257,6 +97431,8 @@ func (ec *executionContext) _GolangCustomProbe(ctx context.Context, sel ast.Sele
 			out.Values[i] = ec._GolangCustomProbe_receiverName(ctx, field, obj)
 		case "receiverMethodName":
 			out.Values[i] = ec._GolangCustomProbe_receiverMethodName(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._GolangCustomProbe_notes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -103218,6 +103394,8 @@ func (ec *executionContext) _JavaCustomProbe(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._JavaCustomProbe_className(ctx, field, obj)
 		case "methodName":
 			out.Values[i] = ec._JavaCustomProbe_methodName(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._JavaCustomProbe_notes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -107694,6 +107872,8 @@ func (ec *executionContext) _PhpCustomProbe(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._PhpCustomProbe_className(ctx, field, obj)
 		case "functionName":
 			out.Values[i] = ec._PhpCustomProbe_functionName(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._PhpCustomProbe_notes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

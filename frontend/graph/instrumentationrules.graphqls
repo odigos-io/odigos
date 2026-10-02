@@ -117,16 +117,19 @@ type GolangCustomProbe {
   functionName: String
   receiverName: String
   receiverMethodName: String
+  notes: String
 }
 
 type JavaCustomProbe {
   className: String
   methodName: String
+  notes: String
 }
 
 type PhpCustomProbe {
   className: String
   functionName: String
+  notes: String
 }
 
 input CustomInstrumentationsInput {
@@ -140,16 +143,19 @@ input GolangCustomProbeInput {
   functionName: String
   receiverName: String
   receiverMethodName: String
+  notes: String
 }
 
 input JavaCustomProbeInput {
   className: String
   methodName: String
+  notes: String
 }
 
 input PhpCustomProbeInput {
   className: String
   functionName: String
+  notes: String
 }
 #### END CUSTOM PROBES ####
 
