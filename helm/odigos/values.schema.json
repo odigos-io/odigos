@@ -1614,8 +1614,13 @@
             },
             "seLinuxOptions": {
               "additionalProperties": false,
-              "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThis is an advanced option and should only be changed if you know what you are doing.",
+              "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThe level matches the odiglet container's, since containers sharing a volume must share its SELinux label.\nThis is an advanced option and should only be changed if you know what you are doing.",
               "properties": {
+                "level": {
+                  "default": "s0",
+                  "title": "level",
+                  "type": "string"
+                },
                 "type": {
                   "default": "spc_t",
                   "title": "type",

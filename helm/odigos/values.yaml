@@ -935,10 +935,12 @@ odiglet:
     # description: |-
     #   seLinuxOptions for the data-collection container when running non-privileged.
     #   "spc_t" is the SELinux domain the container already gets when running privileged.
+    #   The level matches the odiglet container's, since containers sharing a volume must share its SELinux label.
     #   This is an advanced option and should only be changed if you know what you are doing.
     # @schema
     seLinuxOptions:
       type: "spc_t"
+      level: "s0"
 
   # @schema
   # description: Uncomment to override the global nodeSelector (values.nodeSelector) for this component
