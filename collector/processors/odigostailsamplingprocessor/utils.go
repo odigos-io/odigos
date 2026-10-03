@@ -61,10 +61,10 @@ func checkPrerequists(td ptrace.Traces) (pcommon.TraceID, bool, int, error) {
 				currTraceId := span.TraceID()
 				if spanCount == 0 {
 					traceId = currTraceId
-					spanCount++
 				} else if currTraceId != traceId {
 					return pcommon.TraceID{}, false, 0, errors.New("not all spans belong to the same trace")
 				}
+				spanCount++
 
 				// check if we have odigos entry in the trace state, which indicates head sampling was applied.
 				odigosTraceState := extractOdigosTraceStateValue(span.TraceState().AsRaw())
