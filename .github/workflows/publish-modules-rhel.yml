@@ -259,7 +259,7 @@ jobs:
               echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
 
           - name: Install crane
-            uses: imjasonh/setup-crane@v0.4
+            uses: imjasonh/setup-crane@v0.7
 
           # ko only supports a single KO_DOCKER_REPO, so mirror the published
           # multi-arch index to Docker Hub, GHCR, and Quay with `crane copy` to
