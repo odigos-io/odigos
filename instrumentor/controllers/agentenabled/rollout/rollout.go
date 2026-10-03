@@ -18,6 +18,7 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -58,6 +59,12 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
 	if getErr != nil {
+		if apierrors.IsNotFound(getErr) {
+			// The workload is gone, so a rollout that was in flight for it can never report
+			// completion and release its slot from any of the paths below. Release it here, or every
+			// workload deleted mid-rollout permanently shrinks the concurrency pool.
+			rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
+		}
 		return RolloutResult{}, client.IgnoreNotFound(getErr)
 	}
 
