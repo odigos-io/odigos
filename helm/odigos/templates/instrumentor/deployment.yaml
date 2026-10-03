@@ -102,6 +102,12 @@ spec:
                 name: odigos-pro
                 key: odigos-onprem-token
           {{- end }}
+          - name: ODIGOS_COLLECTOR_IMAGE
+            {{- if include "odigos.secretExists" . }}
+            value: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-collector" "Tag" $imageTag) }}'
+            {{- else }}
+            value: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "collector" "Tag" $imageTag) }}'
+            {{- end }}
           - name: ODIGOS_INIT_CONTAINER_IMAGE
             {{- if include "odigos.secretExists" . }}
             value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-agents" "Tag" $agentsImageTag) }}

@@ -10,6 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	googlecloudmetadata "cloud.google.com/go/compute/metadata"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -17,10 +19,14 @@ import (
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
+	commonconfig "github.com/odigos-io/odigos/instrumentor/controllers/common"
+	controllerconfig "github.com/odigos-io/odigos/instrumentor/controllers/controller_config"
+	"github.com/odigos-io/odigos/instrumentor/controllers/metricshandler"
 	"github.com/odigos-io/odigos/instrumentor/internal/clusterinfo"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/recommendations"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
@@ -33,6 +39,8 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
+
+const defaultCollectorImage = "registry.odigos.io/odigos-collector"
 
 type Instrumentor struct {
 	mgr                controllerruntime.Manager
@@ -53,6 +61,10 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return nil, fmt.Errorf("unable to load destinations data: %w", err)
 	}
 
+	if err := recommendations.Load(); err != nil {
+		return nil, fmt.Errorf("unable to load recommendations catalog: %w", err)
+	}
+
 	mgr, err := controllers.CreateManager(opts)
 	if err != nil {
 		return nil, err
@@ -65,6 +77,18 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		Namespace: odigosNs,
 		Name:      k8sconsts.DeprecatedInstrumentorWebhookSecretName,
 	}})
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
+		Namespace: odigosNs,
+		Name:      k8sconsts.DeprecatedAutoscalerWebhookSecretName,
+	}})
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
+		Namespace: odigosNs,
+		Name:      k8sconsts.AutoscalerWebhookSecretName,
+	}})
+	mgr.Add(&metricshandler.APIServiceDeleteMigration{
+		Client: mgr.GetClient(),
+		Logger: opts.Logger,
+	})
 
 	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
@@ -94,6 +118,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 			{Name: k8sconsts.InstrumentorMutatingWebhookName, Type: rotator.Mutating},
 			{Name: k8sconsts.InstrumentorSourceMutatingWebhookName, Type: rotator.Mutating},
 			{Name: k8sconsts.InstrumentorSourceValidatingWebhookName, Type: rotator.Validating},
+			{Name: k8sconsts.AutoscalerActionValidatingWebhookName, Type: rotator.Validating},
 		},
 		DNSName: "serving-cert",
 		ExtraDNSNames: []string{
@@ -122,6 +147,20 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 	k8sVersion, err := utils.ClusterVersion()
 	if err != nil {
 		return nil, err
+	}
+
+	collectorImage := defaultCollectorImage
+	if collectorImageEnv, ok := os.LookupEnv("ODIGOS_COLLECTOR_IMAGE"); ok {
+		collectorImage = collectorImageEnv
+	}
+	onGKE := isRunningOnGKE(context.Background())
+	if onGKE {
+		opts.Logger.Info("Running on GKE")
+	}
+	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{
+		K8sVersion:     feature.K8sVersion(),
+		CollectorImage: collectorImage,
+		OnGKE:          onGKE,
 	}
 
 	// wire up the controllers and webhooks
@@ -218,6 +257,11 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		if err != nil {
 			return err
 		}
+		if err := metricshandler.RegisterCustomMetricsAPI(i.mgr); err != nil {
+			logger.Error("failed to register custom metrics API", "err", err)
+		} else {
+			logger.Info("Custom Metrics API registered successfully")
+		}
 		i.webhooksRegistered.Store(true)
 		logger.Info("Webhooks registered")
 		return nil
@@ -244,4 +288,14 @@ func parseFirstInstrumentedPodAtNodeLabelRetention() (enabled bool, retention ti
 		d = 0
 	}
 	return true, d
+}
+
+// based on https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/19c4db6ea12211308fbd2cba12cc8665a5b7c890/detectors/gcp/gke.go#L34
+func isRunningOnGKE(ctx context.Context) bool {
+	c := googlecloudmetadata.NewClient(nil)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	_, err := c.InstanceAttributeValueWithContext(ctx, "cluster-location")
+	return err == nil
 }

@@ -11,7 +11,6 @@ TIMEOUT=${2:-$DEFAULT_TIMEOUT}
 EXPECTED_LABELS=(
   "odigos.io/collector-role=NODE_COLLECTOR" # For odigos-data-collection pods
   "odigos.io/collector-role=CLUSTER_GATEWAY" # For odigos-gateway pods
-  "app.kubernetes.io/name=odigos-autoscaler"
   "app.kubernetes.io/name=odigos-instrumentor"
   "app=odigos-ui"
 )
