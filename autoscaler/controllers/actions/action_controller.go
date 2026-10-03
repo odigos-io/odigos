@@ -12,8 +12,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	actionscatalog "github.com/odigos-io/odigos/actions"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	actionutil "github.com/odigos-io/odigos/k8sutils/pkg/action"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
@@ -104,9 +106,37 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	return nil, errors.New("no supported action found in resource")
 }
 
+// supportedSignals filters the signals requested by the action down to the ones the action catalog
+// declares its processor can consume. The Action CRD accepts any signal, but a processor placed in a
+// pipeline its factory does not implement makes the collector fail to build that pipeline
+// ("telemetry type is not supported") and crash-loop, so unsupported signals must never reach the
+// Processor CR. Actions with no catalog entry are left as-is, there is nothing authoritative to
+// filter against.
+func supportedSignals(action *odigosv1.Action, signals []common.ObservabilitySignal) []common.ObservabilitySignal {
+	manifest, found := actionscatalog.GetActionByType(actionutil.CatalogType(action))
+	if !found {
+		return signals
+	}
+
+	supported := map[common.ObservabilitySignal]bool{
+		common.TracesObservabilitySignal:   manifest.Spec.Signals.Traces.Supported,
+		common.MetricsObservabilitySignal:  manifest.Spec.Signals.Metrics.Supported,
+		common.LogsObservabilitySignal:     manifest.Spec.Signals.Logs.Supported,
+		common.ProfilesObservabilitySignal: manifest.Spec.Signals.Profiles.Supported,
+	}
+
+	filtered := make([]common.ObservabilitySignal, 0, len(signals))
+	for _, signal := range signals {
+		if supported[signal] {
+			filtered = append(filtered, signal)
+		}
+	}
+	return filtered
+}
+
 // returns a processor object with:
 // - ns and name similar to the action name
-// - signals based on the action signals
+// - signals based on the action signals, limited to those its processor supports
 // - owner reference to the action
 // - type and order hint based on the function input
 // - config based on the function input, stringified in JSON
@@ -145,7 +175,7 @@ func convertToDefaultProcessor(action *odigosv1.Action, actionConfig ActionConfi
 			ProcessorName:   action.Spec.ActionName,
 			Disabled:        action.Spec.Disabled,
 			Notes:           action.Spec.Notes,
-			Signals:         action.Spec.Signals,
+			Signals:         supportedSignals(action, action.Spec.Signals),
 			CollectorRoles:  collectorRoles,
 			OrderHint:       actionConfig.OrderHint(),
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
