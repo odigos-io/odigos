@@ -46,7 +46,7 @@ true
 {{- end -}}
 
 {{- define "odigos.usesOdigosRegistry" -}}
-{{- if eq (include "utils.imagePrefix" .) "registry.odigos.io" -}}
+{{- if and (not .Values.marketplace.enabled) (eq (include "utils.imagePrefix" .) "registry.odigos.io") -}}
 true
 {{- end -}}
 {{- end -}}
@@ -70,11 +70,20 @@ true
 {{- end -}}
 
 {{- define "utils.imageName" -}}
+{{- if and $.Values.marketplace.enabled (not (include "odigos.secretExists" .)) -}}
+{{- fail "Marketplace requires an existing Enterprise license: set onPremToken or externalOnpremTokenSecret" -}}
+{{- end -}}
 {{- /* Check for component-specific image override in .Values.images.<component> */ -}}
 {{- $images := $.Values.images | default dict -}}
 {{- $componentImage := get $images .Component -}}
 {{- if $componentImage -}}
-  {{- $componentImage -}}
+  {{- if kindIs "map" $componentImage -}}
+    {{- required (printf "images.%s.repository is required" .Component) (get $componentImage "repository") -}}
+  {{- else -}}
+    {{- $componentImage -}}
+  {{- end -}}
+{{- else if $.Values.marketplace.enabled -}}
+  {{- fail (printf "Marketplace requires an explicit images.%s reference from its release artifact list" .Component) -}}
 {{- else -}}
   {{- $certified := $.Values.openshift.enabled }}
   {{- if hasKey $.Values.openshift "certifiedImageTags" }}
@@ -253,3 +262,12 @@ imagePullSecrets:
 {{- define "traceCorrelations.serviceIO.enabled" -}}
 {{- and .Values.traceCorrelations .Values.traceCorrelations.serviceIO .Values.traceCorrelations.serviceIO.enabled -}}
 {{- end }}
+
+{{/* AWS Marketplace can supply an existing IRSA service account at launch. */}}
+{{- define "odigos.instrumentorServiceAccountName" -}}
+{{- if and .Values.marketplace.enabled .Values.marketplace.serviceAccountName -}}
+{{- .Values.marketplace.serviceAccountName -}}
+{{- else -}}
+odigos-instrumentor
+{{- end -}}
+{{- end -}}

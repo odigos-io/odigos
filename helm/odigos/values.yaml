@@ -37,6 +37,30 @@ imagePrefix:
 images: {}
 
 # @schema
+# description: AWS Marketplace node billing. Requires Marketplace images and an existing Enterprise license token.
+# type: object
+# @schema
+marketplace:
+  # @schema
+  # description: Configure IRSA and image validation for a Marketplace-bound instrumentor image.
+  # type: boolean
+  # @schema
+  enabled: false
+  # @schema
+  # description: IRSA annotations for the instrumentor service account only.
+  # type: object
+  # additionalProperties:
+  #   type: string
+  # @schema
+  serviceAccountAnnotations: {}
+  # @schema
+  # description: Existing instrumentor IRSA service account supplied by AWS Marketplace. Leave empty to create odigos-instrumentor using serviceAccountAnnotations.
+  # type: string
+  # @schema
+  serviceAccountName: ""
+
+
+# @schema
 # description: |-
 #   Namespaces excluded from the Odigos UI so system and infrastructure namespaces
 #   (service meshes, local storage, lease holders, etc.) do not clutter the sources list.
