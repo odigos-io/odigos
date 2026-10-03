@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
@@ -57,6 +58,13 @@ func WithAttributes(identifying []odigosv1.Attribute, nonIdentifying []odigosv1.
 func WithComponents(components []odigosv1.InstrumentationLibraryStatus) InstrumentationInstanceOption {
 	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 		s.Components = components
+		return s
+	})
+}
+
+func WithCustomProbes(report *instrumentationrules.CustomProbeReport) InstrumentationInstanceOption {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+		s.CustomProbes = report.DeepCopy()
 		return s
 	})
 }
@@ -132,8 +140,7 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 		retryBackoff := retry.DefaultBackoff
 		retryBackoff.Steps = 6
 		return retry.OnError(retryBackoff, func(err error) bool {
-			// retry on any error
-			return true
+			return ctx.Err() == nil
 		}, func() error {
 			// Re-fetch latest version to avoid conflict errors
 			instance := odigosv1.InstrumentationInstance{}
