@@ -33,6 +33,7 @@ func (d pyroscopeDest) GetType() common.DestinationType { return common.Pyroscop
 func (d pyroscopeDest) GetConfig() map[string]string {
 	return map[string]string{"PYROSCOPE_URL": "pyroscope.example.com:4040"}
 }
+func (d pyroscopeDest) GetSendingQueueConfig() *config.SendingQueueConfig { return nil }
 func (d pyroscopeDest) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{common.ProfilesObservabilitySignal}
 }

@@ -78,7 +78,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer, testers
 		Extensions: make(config.GenericMap),
 		Connectors: make(config.GenericMap),
 	}
-	if _, err := configer.ModifyConfig(dest, &currentConfig); err != nil {
+	if _, _, err := config.ConfigureDestination(configer, dest, &currentConfig); err != nil {
 		return failResult(destType, InvalidConfig, http.StatusInternalServerError, err.Error())
 	}
 	if len(currentConfig.Exporters) == 0 {

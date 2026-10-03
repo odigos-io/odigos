@@ -36,3 +36,7 @@ func (c *TestConnectionConfig) GetConfig() map[string]string {
 	}
 	return c.Config
 }
+
+func (c *TestConnectionConfig) GetSendingQueueConfig() *config.SendingQueueConfig {
+	return nil
+}
