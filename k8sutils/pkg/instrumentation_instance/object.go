@@ -10,7 +10,7 @@ import (
 )
 
 func DeleteInstrumentationInstance(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client, pid int) error {
-	instrumentationInstanceName := InstrumentationInstanceName(owner.GetName(), pid)
+	instrumentationInstanceName := InstrumentationInstanceName(owner.GetName(), containerName, pid)
 	err := kubeClient.Delete(ctx, &v1alpha1.InstrumentationInstance{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      instrumentationInstanceName,
