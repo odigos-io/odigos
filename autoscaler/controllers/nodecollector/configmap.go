@@ -46,14 +46,16 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		b.autoscalerDeployment = autoscalerDeployment
 	}
 
-	tracingLoadBalancingNeeded, err := isTracingLoadBalancingNeeded(ctx, b.Client, clusterCollectorGroup)
-	if err != nil {
-		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
-	}
-
 	var profilingCfg *odigoscommon.ProfilingConfiguration
+	var insightsCfg *odigoscommon.InsightsConfiguration
 	if cfg, err := utils.GetCurrentOdigosConfiguration(ctx, b.Client); err == nil {
 		profilingCfg = cfg.Profiling
+		insightsCfg = commonconf.EffectiveInsightsConfig(cfg.Insights, b.tier)
+	}
+
+	tracingLoadBalancingNeeded, err := isTracingLoadBalancingNeeded(ctx, b.Client, clusterCollectorGroup, insightsCfg)
+	if err != nil {
+		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
 	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.tier)
@@ -397,16 +399,20 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	return signals, nil
 }
 
-func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
+func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCollectorGroup odigosv1.CollectorsGroup,
+	insights *odigoscommon.InsightsConfiguration) (bool, error) {
 	// Tracing load balancing is required by every gateway feature that aggregates a whole trace.
 	// Without it the node collectors round-robin over the gateway replicas, so spans of the same
 	// trace reach different pods and each one only ever sees a fragment of the trace.
-	// The tail sampling and trace correlations conditions must stay in sync with the ones that
-	// install groupbytrace on the gateway in autoscaler/controllers/clustercollector/configmap.go.
+	// The tail sampling, trace correlations and insights conditions must stay in sync with
+	// traceAggregationNeeded in common/pipelinegen, which is what installs groupbytrace on the
+	// gateway. insights is expected to already be tier-gated by EffectiveInsightsConfig, the same
+	// way the gateway gates it in autoscaler/controllers/clustercollector/configmap.go.
 	serviceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
 	tailSamplingEnabled := clusterCollectorGroup.Spec.TailSampling != nil &&
 		clusterCollectorGroup.Spec.TailSampling.Disabled != nil &&
 		!*clusterCollectorGroup.Spec.TailSampling.Disabled
 	traceCorrelationsEnabled := clusterCollectorGroup.Spec.TraceCorrelations != nil
-	return serviceGraphEnabled || tailSamplingEnabled || traceCorrelationsEnabled, nil
+	insightsEnabled := odigoscommon.InsightsPipelineActive(insights)
+	return serviceGraphEnabled || tailSamplingEnabled || traceCorrelationsEnabled || insightsEnabled, nil
 }

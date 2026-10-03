@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/config"
@@ -201,9 +202,10 @@ func TestIsTracingLoadBalancingNeeded(t *testing.T) {
 	activeTailSampling := &sampling.TailSamplingConfiguration{Disabled: boolPtr(false)}
 
 	for _, tt := range []struct {
-		name string
-		spec odigosv1.CollectorsGroupSpec
-		want bool
+		name     string
+		spec     odigosv1.CollectorsGroupSpec
+		insights *common.InsightsConfiguration
+		want     bool
 	}{
 		{
 			name: "defaults - service graph is enabled",
@@ -241,12 +243,43 @@ func TestIsTracingLoadBalancingNeeded(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name:     "service graph disabled but insights is active",
+			spec:     odigosv1.CollectorsGroupSpec{ServiceGraphDisabled: boolPtr(true)},
+			insights: &common.InsightsConfiguration{Enabled: boolPtr(true)},
+			want:     true,
+		},
+		{
+			name:     "service graph disabled and insights is explicitly disabled",
+			spec:     odigosv1.CollectorsGroupSpec{ServiceGraphDisabled: boolPtr(true)},
+			insights: &common.InsightsConfiguration{Enabled: boolPtr(false)},
+			want:     false,
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := isTracingLoadBalancingNeeded(context.Background(), nil, odigosv1.CollectorsGroup{Spec: tt.spec})
+			got, err := isTracingLoadBalancingNeeded(context.Background(), nil, odigosv1.CollectorsGroup{Spec: tt.spec}, tt.insights)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
+	}
+}
+
+// EffectiveInsightsConfig nils out the configuration on community tier, where helm renders no
+// odigos-insights workloads and the gateway therefore never installs groupbytrace. The node
+// collectors must not turn load balancing on for a pipeline that does not exist.
+func TestIsTracingLoadBalancingNeededInsightsIsTierGated(t *testing.T) {
+	spec := odigosv1.CollectorsGroupSpec{ServiceGraphDisabled: boolPtr(true)}
+	insights := &common.InsightsConfiguration{Enabled: boolPtr(true)}
+
+	for tier, want := range map[common.OdigosTier]bool{
+		common.CommunityOdigosTier: false,
+		common.OnPremOdigosTier:    true,
+		common.CloudOdigosTier:     true,
+	} {
+		got, err := isTracingLoadBalancingNeeded(context.Background(), nil,
+			odigosv1.CollectorsGroup{Spec: spec}, commonconf.EffectiveInsightsConfig(insights, tier))
+		assert.NoError(t, err)
+		assert.Equal(t, want, got, "tier %q", tier)
 	}
 }
 
@@ -260,7 +293,47 @@ func TestNodeCollectorUsesLoadBalancingExporterForTailSampling(t *testing.T) {
 		},
 	}
 
-	loadBalancingNeeded, err := isTracingLoadBalancingNeeded(context.Background(), nil, clusterCollectorGroup)
+	loadBalancingNeeded, err := isTracingLoadBalancingNeeded(context.Background(), nil, clusterCollectorGroup, nil)
+	assert.NoError(t, err)
+
+	_, got, err := calculateCollectorConfigDomains(
+		context.Background(),
+		"odigos-system",
+		&odigosv1.CollectorsGroup{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
+			Spec:       odigosv1.CollectorsGroupSpec{CollectorOwnMetricsPort: 4317},
+		},
+		&odigosv1.InstrumentationConfigList{
+			Items: []v1alpha1.InstrumentationConfig{
+				*NewMockInstrumentationConfig(NewMockTestDeployment(NewMockNamespace("default"))),
+			},
+		},
+		[]common.ObservabilitySignal{common.TracesObservabilitySignal},
+		nil,                     /* processors */
+		false,                   /* onGKE */
+		loadBalancingNeeded,     /* loadBalancingNeeded */
+		nil,                     /* profiling */
+		common.OnPremOdigosTier, /* tier */
+	)
+
+	assert.NoError(t, err)
+
+	collectorConfig := config.Config{}
+	assert.NoError(t, yaml.Unmarshal([]byte(got), &collectorConfig))
+	assert.Equal(t, []string{"loadbalancing/traces"}, collectorConfig.Service.Pipelines["traces"].Exporters)
+}
+
+// Insights installs groupbytrace on the gateway on its own, without tail sampling or trace
+// correlations. Without load balancing the node collectors spread the spans of a single trace
+// over the HPA-scaled gateway replicas and each replica hands insights a trace fragment.
+func TestNodeCollectorUsesLoadBalancingExporterForInsights(t *testing.T) {
+	clusterCollectorGroup := odigosv1.CollectorsGroup{
+		Spec: odigosv1.CollectorsGroupSpec{ServiceGraphDisabled: boolPtr(true)},
+	}
+	insights := commonconf.EffectiveInsightsConfig(
+		&common.InsightsConfiguration{Enabled: boolPtr(true)}, common.OnPremOdigosTier)
+
+	loadBalancingNeeded, err := isTracingLoadBalancingNeeded(context.Background(), nil, clusterCollectorGroup, insights)
 	assert.NoError(t, err)
 
 	_, got, err := calculateCollectorConfigDomains(
