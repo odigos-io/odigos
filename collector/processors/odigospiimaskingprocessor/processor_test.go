@@ -2,6 +2,7 @@ package odigospiimaskingprocessor
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -425,4 +426,326 @@ func TestExtension_SkipsWhenNoConfig(t *testing.T) {
 	msg, ok := span.Attributes().Get("message")
 	require.True(t, ok)
 	require.Equal(t, "contact user@example.com", msg.Str())
+}
+
+// keyByWorkloadExtension resolves the cache key from a resource attribute, so a single batch can
+// carry spans from several workloads with different masking configs.
+type keyByWorkloadExtension struct {
+	stubOdigosConfigExtension
+	unregistered bool
+}
+
+func (e *keyByWorkloadExtension) GetWorkloadCacheKey(res pcommon.Resource) (string, error) {
+	workload, ok := res.Attributes().Get("k8s.container.name")
+	if !ok {
+		return "", fmt.Errorf("resource carries no workload identity")
+	}
+	return workload.Str(), nil
+}
+
+func (e *keyByWorkloadExtension) UnregisterWorkloadConfigCacheCallback(collector.WorkloadConfigCacheCallback) {
+	e.unregistered = true
+}
+
+// generateWorkloadTrace builds one resource span per workload, each with a single span carrying the
+// given message attribute. A workload named "" gets no identity attribute at all.
+func generateWorkloadTrace(messagesByWorkload map[string]string) ptrace.Traces {
+	traces := ptrace.NewTraces()
+	for workload, message := range messagesByWorkload {
+		rs := traces.ResourceSpans().AppendEmpty()
+		if workload != "" {
+			rs.Resource().Attributes().PutStr("k8s.container.name", workload)
+		}
+		span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+		span.SetName("test")
+		span.Attributes().PutStr("message", message)
+	}
+	return traces
+}
+
+func messageForWorkload(t *testing.T, traces ptrace.Traces, workload string) string {
+	t.Helper()
+	resourceSpans := traces.ResourceSpans()
+	for i := 0; i < resourceSpans.Len(); i++ {
+		rs := resourceSpans.At(i)
+		name, ok := rs.Resource().Attributes().Get("k8s.container.name")
+		if workload == "" {
+			if ok {
+				continue
+			}
+		} else if !ok || name.Str() != workload {
+			continue
+		}
+		message, ok := rs.ScopeSpans().At(0).Spans().At(0).Attributes().Get("message")
+		require.True(t, ok, "span of workload %q has no message attribute", workload)
+		return message.Str()
+	}
+	t.Fatalf("no resource span found for workload %q", workload)
+	return ""
+}
+
+func emailMaskingConfig() *commonapi.ContainerCollectorConfig {
+	return &commonapi.ContainerCollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{PiiCategories: []actions.PiiCategory{actions.EmailMasking}},
+	}
+}
+
+// The masking rules of a workload live in a cache the config extension updates at runtime. A
+// workload whose config is removed, replaced or rejected must not affect any other workload, since
+// that would silently stop masking traffic the user did configure.
+func TestOnSetUpdatesOnlyItsOwnWorkload(t *testing.T) {
+	const message = "contact user@example.com"
+
+	tests := []struct {
+		name       string
+		update     *commonapi.ContainerCollectorConfig
+		wantMasked string
+		// Workloads with nothing to mask are dropped from the cache instead of being kept with an
+		// empty rule set, which would walk every attribute of every span for nothing.
+		wantCached bool
+	}{
+		{
+			name:       "a replaced config applies the new rules instead of the old ones",
+			update:     &commonapi.ContainerCollectorConfig{PiiMasking: &actions.PiiMaskingConfig{PiiCategories: []actions.PiiCategory{actions.UuidMasking}}},
+			wantMasked: message,
+			wantCached: true,
+		},
+		{
+			name:       "removing the masking config stops masking",
+			update:     &commonapi.ContainerCollectorConfig{},
+			wantMasked: message,
+		},
+		{
+			name: "a config with nothing to mask stops masking",
+			update: &commonapi.ContainerCollectorConfig{
+				PiiMasking: &actions.PiiMaskingConfig{},
+			},
+			wantMasked: message,
+		},
+		{
+			// Rejected configs leave the workload unmasked rather than keeping the previous rules.
+			name: "an unsupported category is rejected as a whole",
+			update: &commonapi.ContainerCollectorConfig{
+				PiiMasking: &actions.PiiMaskingConfig{
+					PiiCategories: []actions.PiiCategory{actions.EmailMasking, "not-a-category"},
+				},
+			},
+			wantMasked: message,
+		},
+		{
+			name: "a custom regex without a capture group is rejected as a whole",
+			update: &commonapi.ContainerCollectorConfig{
+				PiiMasking: &actions.PiiMaskingConfig{
+					PiiCategories:       []actions.PiiCategory{actions.EmailMasking},
+					CustomRegexMaskings: []actions.CustomRegexMasking{{Regex: "secret"}},
+				},
+			},
+			wantMasked: message,
+		},
+		{
+			name:       "a still valid config keeps masking",
+			update:     emailMaskingConfig(),
+			wantMasked: "contact ***EMAIL***",
+			wantCached: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+			proc.provider = &keyByWorkloadExtension{}
+			proc.OnSet("updated", emailMaskingConfig())
+			proc.OnSet("untouched", emailMaskingConfig())
+
+			proc.OnSet("updated", tt.update)
+
+			_, cached := proc.maskersCache.get("updated")
+			assert.Equal(t, tt.wantCached, cached, "presence of compiled rules for the updated workload")
+
+			out, err := proc.processTraces(context.Background(), generateWorkloadTrace(map[string]string{
+				"updated":   message,
+				"untouched": message,
+			}))
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.wantMasked, messageForWorkload(t, out, "updated"))
+			assert.Equal(t, "contact ***EMAIL***", messageForWorkload(t, out, "untouched"),
+				"the config of one workload must not affect another")
+		})
+	}
+}
+
+func TestOnDeleteKeyRemovesOnlyItsOwnWorkload(t *testing.T) {
+	const message = "contact user@example.com"
+
+	proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+	proc.provider = &keyByWorkloadExtension{}
+	proc.OnSet("deleted", emailMaskingConfig())
+	proc.OnSet("kept", emailMaskingConfig())
+
+	proc.OnDeleteKey("deleted")
+
+	out, err := proc.processTraces(context.Background(), generateWorkloadTrace(map[string]string{
+		"deleted": message,
+		"kept":    message,
+		// A resource the extension cannot identify is passed through untouched.
+		"": message,
+	}))
+	require.NoError(t, err)
+
+	assert.Equal(t, message, messageForWorkload(t, out, "deleted"))
+	assert.Equal(t, "contact ***EMAIL***", messageForWorkload(t, out, "kept"))
+	assert.Equal(t, message, messageForWorkload(t, out, ""))
+}
+
+func TestShutdownStopsMaskingAndReleasesTheCallback(t *testing.T) {
+	proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+	ext := &keyByWorkloadExtension{}
+	proc.provider = ext
+	proc.OnSet("app", emailMaskingConfig())
+
+	require.NoError(t, proc.Shutdown(context.Background()))
+
+	// A registration that outlives the processor keeps the extension calling into it.
+	assert.True(t, ext.unregistered, "the workload config callback must be unregistered")
+	if _, cached := proc.maskersCache.get("app"); cached {
+		t.Error("compiled masking rules must not survive shutdown")
+	}
+
+	out, err := proc.processTraces(context.Background(), generateWorkloadTrace(map[string]string{
+		"app": "contact user@example.com",
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "contact user@example.com", messageForWorkload(t, out, "app"))
+}
+
+// registeringExtension records the callbacks registered with it and doubles as a collector
+// component so it can be handed to the processor through a host.
+type registeringExtension struct {
+	keyByWorkloadExtension
+	registered  []collector.WorkloadConfigCacheCallback
+	cacheSynced bool
+}
+
+func (e *registeringExtension) Start(context.Context, component.Host) error { return nil }
+
+func (e *registeringExtension) Shutdown(context.Context) error { return nil }
+
+func (e *registeringExtension) RegisterWorkloadConfigCacheCallback(cb collector.WorkloadConfigCacheCallback) {
+	e.registered = append(e.registered, cb)
+}
+
+func (e *registeringExtension) WaitForCacheSync(context.Context) bool { return e.cacheSynced }
+
+// plainExtension is a collector component that is not an OdigosConfigExtension.
+type plainExtension struct{}
+
+func (plainExtension) Start(context.Context, component.Host) error { return nil }
+
+func (plainExtension) Shutdown(context.Context) error { return nil }
+
+type stubHost struct {
+	extensions map[component.ID]component.Component
+}
+
+func (h stubHost) GetExtensions() map[component.ID]component.Component { return h.extensions }
+
+// Start is what connects the processor to the per-workload config it masks by. Failing to register
+// the callback leaves the masking cache empty forever, which looks exactly like "no PII rules
+// configured" instead of an error.
+func TestStartResolvesTheConfigExtension(t *testing.T) {
+	extID := component.MustNewID("odigosconfigk8s")
+	otherID := component.MustNewID("odigosconfigvm")
+
+	t.Run("registers the processor for workload config updates", func(t *testing.T) {
+		proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{OdigosConfigExtension: &extID})
+		ext := &registeringExtension{cacheSynced: true}
+
+		require.NoError(t, proc.Start(context.Background(), stubHost{
+			extensions: map[component.ID]component.Component{extID: ext},
+		}))
+
+		assert.Same(t, ext, proc.provider)
+		require.Len(t, ext.registered, 1)
+		assert.Same(t, proc, ext.registered[0])
+	})
+
+	t.Run("an incomplete cache sync is not fatal", func(t *testing.T) {
+		// Spans that arrive before the sync completes go out unmasked, but refusing to start would
+		// take down the whole collector instead.
+		proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{OdigosConfigExtension: &extID})
+		ext := &registeringExtension{cacheSynced: false}
+
+		require.NoError(t, proc.Start(context.Background(), stubHost{
+			extensions: map[component.ID]component.Component{extID: ext},
+		}))
+		assert.Same(t, ext, proc.provider)
+	})
+
+	errorCases := []struct {
+		name    string
+		cfg     *Config
+		host    stubHost
+		wantErr string
+	}{
+		{
+			name:    "no extension configured",
+			cfg:     &Config{},
+			wantErr: "odigos_config_extension is required",
+		},
+		{
+			name:    "the configured extension is not enabled",
+			cfg:     &Config{OdigosConfigExtension: &extID},
+			host:    stubHost{extensions: map[component.ID]component.Component{otherID: &registeringExtension{}}},
+			wantErr: "not found",
+		},
+		{
+			name:    "the configured extension is of another kind",
+			cfg:     &Config{OdigosConfigExtension: &extID},
+			host:    stubHost{extensions: map[component.ID]component.Component{extID: plainExtension{}}},
+			wantErr: "is not an OdigosConfigExtension",
+		},
+	}
+
+	for _, tt := range errorCases {
+		t.Run(tt.name, func(t *testing.T) {
+			proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), tt.cfg)
+
+			err := proc.Start(context.Background(), tt.host)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+			assert.Nil(t, proc.provider, "a failed start must not leave a provider behind")
+		})
+	}
+}
+
+// Header and similar attributes reach the collector as arrays, so PII in them is only masked if the
+// slice is walked. A string-only implementation leaks them without failing anywhere.
+func TestExtension_MasksPiiInsideSliceAttributes(t *testing.T) {
+	proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
+	proc.provider = ext
+	proc.OnSet(ext.key, emailMaskingConfig())
+
+	traces := ptrace.NewTraces()
+	span := traces.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	header := span.Attributes().PutEmptySlice("http.request.header.from")
+	header.AppendEmpty().SetStr("user@example.com")
+	header.AppendEmpty().SetStr("no pii here")
+	header.AppendEmpty().SetInt(7)
+	nested := header.AppendEmpty().SetEmptySlice()
+	nested.AppendEmpty().SetStr("nested user@example.com")
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	got := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).Attributes()
+	masked, ok := got.Get("http.request.header.from")
+	require.True(t, ok)
+	values := masked.Slice()
+	require.Equal(t, 4, values.Len())
+	assert.Equal(t, "***EMAIL***", values.At(0).Str())
+	assert.Equal(t, "no pii here", values.At(1).Str())
+	assert.Equal(t, int64(7), values.At(2).Int())
+	assert.Equal(t, "nested ***EMAIL***", values.At(3).Slice().At(0).Str())
 }

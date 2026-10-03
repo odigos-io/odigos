@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -262,6 +263,208 @@ func TestCopyDirectories_PreservesMtime(t *testing.T) {
 			t.Fatalf("mtime not preserved for %s: src=%v dst=%v", file, srcInfo.ModTime(), dstInfo.ModTime())
 		}
 	}
+}
+
+func TestRenameWithHashSuffix(t *testing.T) {
+	// sha256("old-javaagent-v1"), the hash removeChangedFilesFromKeepMap passes in.
+	const oldJarHash = "9166e887cfbf29e9f515c2c2d23ca381f21f8931c84cf14d9f2d28cb53f44046"
+
+	tests := []struct {
+		name     string
+		filename string
+		hash     string
+		want     string
+	}{
+		{
+			name:     "the suffix is the first twelve characters of the hash",
+			filename: "javaagent.jar",
+			hash:     oldJarHash,
+			want:     "javaagent_hash_version-9166e887cfbf.jar",
+		},
+		{
+			name:     "only the last extension is separated from the base name",
+			filename: "pythonUSDT.abi3.so",
+			hash:     oldJarHash,
+			want:     "pythonUSDT.abi3_hash_version-9166e887cfbf.so",
+		},
+		{
+			name:     "a file without an extension keeps its whole name",
+			filename: "loader",
+			hash:     oldJarHash,
+			want:     "loader_hash_version-9166e887cfbf",
+		},
+		{
+			name:     "a hash shorter than the suffix length is used as is",
+			filename: "javaagent.jar",
+			hash:     "abc",
+			want:     "javaagent_hash_version-abc.jar",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			original := filepath.Join(dir, tt.filename)
+			if err := os.WriteFile(original, []byte("old-javaagent-v1"), 0644); err != nil {
+				t.Fatalf("write file: %v", err)
+			}
+
+			got, err := renameWithHashSuffix(original, tt.hash)
+			if err != nil {
+				t.Fatalf("renameWithHashSuffix failed: %v", err)
+			}
+
+			if want := filepath.Join(dir, tt.want); got != want {
+				t.Fatalf("renamed to %q, want %q", got, want)
+			}
+			// The rename must move the inode a running process holds open, not copy it, and it must
+			// free the canonical path for the incoming version.
+			content, err := os.ReadFile(got)
+			if err != nil {
+				t.Fatalf("read renamed file: %v", err)
+			}
+			if string(content) != "old-javaagent-v1" {
+				t.Errorf("renamed file holds %q, want %q", string(content), "old-javaagent-v1")
+			}
+			if _, err := os.Stat(original); !os.IsNotExist(err) {
+				t.Errorf("original path still exists, stat error: %v", err)
+			}
+		})
+	}
+
+	t.Run("a missing file is not an error", func(t *testing.T) {
+		path, err := renameWithHashSuffix(filepath.Join(t.TempDir(), "javaagent.jar"), oldJarHash)
+		if err != nil {
+			t.Fatalf("renameWithHashSuffix failed: %v", err)
+		}
+		if path != "" {
+			t.Errorf("returned path %q, want none", path)
+		}
+	})
+}
+
+func TestFindHashVersionFiles(t *testing.T) {
+	t.Run("returns every version preserved by an earlier upgrade", func(t *testing.T) {
+		dir := t.TempDir()
+		base := filepath.Join(dir, "javaagent.jar")
+		want := []string{
+			filepath.Join(dir, "javaagent_hash_version-3bfc269594ef.jar"),
+			filepath.Join(dir, "javaagent_hash_version-fb04dcb6970e.jar"),
+		}
+		for _, path := range append([]string{base}, want...) {
+			if err := os.WriteFile(path, []byte("content"), 0644); err != nil {
+				t.Fatalf("write file: %v", err)
+			}
+		}
+
+		got, err := findHashVersionFiles(base)
+		if err != nil {
+			t.Fatalf("findHashVersionFiles failed: %v", err)
+		}
+		if !slices.Equal(got, want) {
+			t.Errorf("found %v, want %v", got, want)
+		}
+	})
+
+	t.Run("ignores files that are not versions of the same agent file", func(t *testing.T) {
+		dir := t.TempDir()
+		base := filepath.Join(dir, "javaagent.jar")
+		for _, name := range []string{
+			"javaagent.jar",
+			"javaagent.jar.bak",
+			"other_hash_version-3bfc269594ef.jar",
+			"javaagent_hash_version-3bfc269594ef.so",
+			"javaagent-hash_version-3bfc269594ef.jar",
+		} {
+			if err := os.WriteFile(filepath.Join(dir, name), []byte("content"), 0644); err != nil {
+				t.Fatalf("write file: %v", err)
+			}
+		}
+
+		got, err := findHashVersionFiles(base)
+		if err != nil {
+			t.Fatalf("findHashVersionFiles failed: %v", err)
+		}
+		if len(got) != 0 {
+			t.Errorf("found %v, want nothing", got)
+		}
+	})
+
+	t.Run("a missing directory yields no versions", func(t *testing.T) {
+		got, err := findHashVersionFiles(filepath.Join(t.TempDir(), "java", "javaagent.jar"))
+		if err != nil {
+			t.Fatalf("findHashVersionFiles failed: %v", err)
+		}
+		if len(got) != 0 {
+			t.Errorf("found %v, want nothing", got)
+		}
+	})
+}
+
+func TestFileHash(t *testing.T) {
+	// Whether an agent file is considered changed, and therefore whether the copy still in use is
+	// preserved, is decided entirely by these hashes.
+	tests := []struct {
+		name    string
+		content string
+		want    string
+	}{
+		{
+			name:    "hashes the content with sha256",
+			content: "odigos",
+			want:    "9b8407c4a1718d0abc03bcb3ef56f4dee61ef75e1b34851496e5270cea752168",
+		},
+		{
+			name:    "an empty file has the empty sha256",
+			content: "",
+			want:    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "javaagent.jar")
+			if err := os.WriteFile(path, []byte(tt.content), 0644); err != nil {
+				t.Fatalf("write file: %v", err)
+			}
+
+			got, err := fileHash(path)
+			if err != nil {
+				t.Fatalf("fileHash failed: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("fileHash = %q, want %q", got, tt.want)
+			}
+		})
+	}
+
+	t.Run("the same content in two files hashes the same", func(t *testing.T) {
+		dir := t.TempDir()
+		src, dst := filepath.Join(dir, "src.jar"), filepath.Join(dir, "dst.jar")
+		for _, path := range []string{src, dst} {
+			if err := os.WriteFile(path, []byte("same-agent-version"), 0644); err != nil {
+				t.Fatalf("write file: %v", err)
+			}
+		}
+
+		srcHash, err := fileHash(src)
+		if err != nil {
+			t.Fatalf("fileHash failed: %v", err)
+		}
+		dstHash, err := fileHash(dst)
+		if err != nil {
+			t.Fatalf("fileHash failed: %v", err)
+		}
+		if srcHash != dstHash {
+			t.Errorf("identical files hashed differently: %q != %q", srcHash, dstHash)
+		}
+	})
+
+	t.Run("a missing file is an error", func(t *testing.T) {
+		if _, err := fileHash(filepath.Join(t.TempDir(), "javaagent.jar")); err == nil {
+			t.Fatal("expected an error for a missing file")
+		}
+	})
 }
 
 func BenchmarkCopyDirectories(b *testing.B) {
