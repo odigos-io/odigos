@@ -14,3 +14,21 @@ func TestGolangGenerationValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestGolangExpirationValidation(t *testing.T) {
+	for _, tc := range []struct {
+		generation, expiry string
+		valid              bool
+	}{
+		{"", "", true},
+		{"", "2026-09-10T18:30:00Z", false},
+		{"0123456789abcdef0123456789abcdef", "2026-09-10T18:30:00Z", true},
+		{"0123456789abcdef0123456789abcdef", "yesterday", false},
+		{"0123456789abcdef0123456789abcdef", "0001-01-01T00:00:00Z", false},
+	} {
+		p := GolangCustomProbe{PackageName: "main", FunctionName: "work", Generation: tc.generation, ExpiresAt: tc.expiry}
+		if err := p.Verify(); (err == nil) != tc.valid {
+			t.Errorf("expiry %q: valid=%v, error=%v", tc.expiry, tc.valid, err)
+		}
+	}
+}
