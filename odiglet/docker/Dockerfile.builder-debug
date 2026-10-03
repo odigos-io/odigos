@@ -1,0 +1,5 @@
+# Adds delve on top of odiglet-builder for remote debugging.
+# Expects named bake context: builder (from Dockerfile.builder).
+
+FROM builder AS odiglet-builder-debug
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
