@@ -3,9 +3,13 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-tail-sampling-errors
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'tail-sampling-errors']):
     - kind: Deployment
       name: tail-sampling-errors
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 spec:
   workloadCollectorConfig:
     - containerName: tail-sampling-errors
@@ -26,9 +30,13 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-tail-sampling-duration
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'tail-sampling-duration']):
     - kind: Deployment
       name: tail-sampling-duration
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 spec:
   workloadCollectorConfig:
     - containerName: tail-sampling-duration
@@ -50,9 +58,13 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-tail-sampling-http-server
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'tail-sampling-http-server']):
     - kind: Deployment
       name: tail-sampling-http-server
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 spec:
   workloadCollectorConfig:
     - containerName: tail-sampling-http-server

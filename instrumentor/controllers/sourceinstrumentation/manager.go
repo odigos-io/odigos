@@ -10,6 +10,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -54,7 +55,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&DeploymentReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -67,7 +68,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&DaemonSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -80,7 +81,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-statefulset").
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&StatefulSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -93,7 +94,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-cronjob").
 		For(&batchv1.CronJob{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&CronJobReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -106,7 +107,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-namespace").
 		For(&v1.Namespace{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&NamespaceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -119,7 +120,10 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-instrumentationconfig").
 		For(&v1alpha1.InstrumentationConfig{}).
-		WithEventFilter(&odigospredicate.ExistencePredicate{}).
+		WithEventFilter(predicate.Or(
+			&odigospredicate.ExistencePredicate{},
+			&ownerReferencesCountChangedPredicate{},
+		)).
 		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

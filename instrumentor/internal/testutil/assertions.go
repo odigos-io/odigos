@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,6 +44,27 @@ func AssertInstrumentationConfigDeleted(ctx context.Context, k8sClient client.Cl
 		err := k8sClient.Get(ctx, key, &ic)
 		return apierrors.IsNotFound(err)
 	}, timeout, interval).Should(BeTrue())
+}
+
+// SimulateSourceOwnerRefGarbageCollected removes Source owner refs named sourceName from the IC,
+// mimicking kube GC after a Source is deleted (envtest does not run the garbage collector).
+func SimulateSourceOwnerRefGarbageCollected(ctx context.Context, k8sClient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, sourceName string) {
+	key := client.ObjectKey{Namespace: instrumentationConfig.GetNamespace(), Name: instrumentationConfig.GetName()}
+	Eventually(func() error {
+		var ic odigosv1.InstrumentationConfig
+		if err := k8sClient.Get(ctx, key, &ic); err != nil {
+			return err
+		}
+		kept := make([]metav1.OwnerReference, 0, len(ic.OwnerReferences))
+		for _, ref := range ic.OwnerReferences {
+			if ref.Kind == "Source" && ref.Name == sourceName {
+				continue
+			}
+			kept = append(kept, ref)
+		}
+		ic.OwnerReferences = kept
+		return k8sClient.Update(ctx, &ic)
+	}, timeout, interval).Should(Succeed())
 }
 
 func AssertInstrumentationConfigRetained(ctx context.Context, k8sClient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig) {

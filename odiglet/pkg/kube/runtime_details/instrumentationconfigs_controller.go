@@ -2,7 +2,6 @@ package runtime_details
 
 import (
 	"context"
-	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
@@ -64,10 +63,6 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	err := r.Get(ctx, request.NamespacedName, &instrumentationConfig)
 	if err != nil {
 		return reconcile.Result{}, client.IgnoreNotFound(err)
-	}
-
-	if len(instrumentationConfig.OwnerReferences) != 1 {
-		return reconcile.Result{}, fmt.Errorf("InstrumentationConfig %s/%s has %d owner references, expected 1", instrumentationConfig.Namespace, instrumentationConfig.Name, len(instrumentationConfig.OwnerReferences))
 	}
 
 	selectedPods, err := kubecommon.WorkloadPodsOnCurrentNode(r.Client, ctx, &instrumentationConfig)
