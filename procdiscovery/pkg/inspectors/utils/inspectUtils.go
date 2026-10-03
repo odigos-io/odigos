@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"bytes"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -39,13 +40,21 @@ func IsProcessEqualProcessNamesWithVersion(pcx *process.ProcessContext, processN
 }
 
 func IsMapsFileContainsBinary(mapsFile process.ProcessFile, binaries []string) bool {
+	if len(binaries) == 0 {
+		return false
+	}
+
+	// Convert once; []byte(string) inside the per-line loop would re-allocate.
+	binaryBytes := make([][]byte, len(binaries))
+	for i, binary := range binaries {
+		binaryBytes[i] = []byte(binary)
+	}
+
 	scanner := bufio.NewScanner(mapsFile)
-
 	for scanner.Scan() {
-		line := scanner.Text()
-
-		for _, binary := range binaries {
-			if strings.Contains(line, binary) {
+		line := scanner.Bytes()
+		for _, binary := range binaryBytes {
+			if bytes.Contains(line, binary) {
 				return true
 			}
 		}
