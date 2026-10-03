@@ -30,6 +30,10 @@ func CalculatePayloadCollectionConfig(distro *distro.OtelDistro, irls *[]odigosv
 
 // givin 2 payload collection configs, return the merged config.
 // for each field, we either merge commutative values (e.g. mime types), or take the most restrictive value (e.g. smaller max payload length, or drop partial payloads if one of the configs is set to drop).
+// the arguments point into the InstrumentationRule objects of the caller, which are
+// evaluated once per container, so the merge must produce a new value instead of
+// writing into p1 - otherwise a rule picks up the config of another rule that was
+// merged with it for a previous container, and applies it to containers it does not scope.
 func mergePayloadCollectionConfigs(p1 *instrumentationrules.PayloadCollection, p2 *instrumentationrules.PayloadCollection) *instrumentationrules.PayloadCollection {
 	if p1 == nil {
 		return p2
@@ -37,19 +41,12 @@ func mergePayloadCollectionConfigs(p1 *instrumentationrules.PayloadCollection, p
 	if p2 == nil {
 		return p1
 	}
-	if p2.HttpRequest != nil {
-		p1.HttpRequest = mergeHttpPayloadCollectionRules(p1.HttpRequest, p2.HttpRequest)
+	return &instrumentationrules.PayloadCollection{
+		HttpRequest:  mergeHttpPayloadCollectionRules(p1.HttpRequest, p2.HttpRequest),
+		HttpResponse: mergeHttpPayloadCollectionRules(p1.HttpResponse, p2.HttpResponse),
+		DbQuery:      mergeDbPayloadCollectionRules(p1.DbQuery, p2.DbQuery),
+		Messaging:    mergeMessagingPayloadCollectionRules(p1.Messaging, p2.Messaging),
 	}
-	if p2.HttpResponse != nil {
-		p1.HttpResponse = mergeHttpPayloadCollectionRules(p1.HttpResponse, p2.HttpResponse)
-	}
-	if p2.DbQuery != nil {
-		p1.DbQuery = mergeDbPayloadCollectionRules(p1.DbQuery, p2.DbQuery)
-	}
-	if p2.Messaging != nil {
-		p1.Messaging = mergeMessagingPayloadCollectionRules(p1.Messaging, p2.Messaging)
-	}
-	return p1
 }
 
 func mergeHttpPayloadCollectionRules(p1 *instrumentationrules.HttpPayloadCollection, p2 *instrumentationrules.HttpPayloadCollection) *instrumentationrules.HttpPayloadCollection {
