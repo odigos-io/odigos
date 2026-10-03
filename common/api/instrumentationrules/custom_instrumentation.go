@@ -38,6 +38,12 @@ func (ci *CustomInstrumentations) Verify() error {
 			return fmt.Errorf("invalid configuration for php custom instrumentation: %w", err)
 		}
 	}
+	// Validate Cpp probes
+	for _, p := range ci.Cpp {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for cpp custom instrumentation: %w", err)
+		}
+	}
 	return nil
 }
 
