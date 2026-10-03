@@ -1,19 +1,27 @@
 package odigosextractattributeprocessor
 
 import (
+	"context"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/processor/processortest"
 )
 
-// firstCapture returns the first captured group from m, or "" if there was no
-// match. Encoded as a helper so table-driven tests can use the empty string to
-// mean "expect no match".
-func firstCapture(m []string) string {
-	if len(m) < 2 {
-		return ""
+// firstCapture returns the first captured group produced by regexes, trying them in
+// the same order the processor does, or "" if none matched. Encoded as a helper so
+// table-driven tests can use the empty string to mean "expect no match".
+func firstCapture(regexes []*regexp.Regexp, input string) string {
+	for _, re := range regexes {
+		if m := re.FindStringSubmatch(input); len(m) > 1 {
+			return m[1]
+		}
 	}
-	return m[1]
+	return ""
 }
 
 func TestBuildExtractionRegex_JSON(t *testing.T) {
@@ -46,6 +54,36 @@ func TestBuildExtractionRegex_JSON(t *testing.T) {
 			key:       "study_id",
 			input:     `{"outer":{"study_id":"x"}}`,
 			extracted: "x",
+		},
+		{
+			name:      "quoted value containing spaces",
+			key:       "full_name",
+			input:     `{"full_name": "Jane Q Public", "id": 7}`,
+			extracted: "Jane Q Public",
+		},
+		{
+			name:      "quoted value containing a comma",
+			key:       "full_name",
+			input:     `{"full_name": "Public, Jane"}`,
+			extracted: "Public, Jane",
+		},
+		{
+			name:      "quoted value containing escaped quotes",
+			key:       "note",
+			input:     `{"note": "say \"hi\" now", "x": 1}`,
+			extracted: `say \"hi\" now`,
+		},
+		{
+			name:      "quoted timestamp value",
+			key:       "created_at",
+			input:     `{"created_at": "2026-09-15 10:03:49", "id": 7}`,
+			extracted: "2026-09-15 10:03:49",
+		},
+		{
+			name:      "quoted value is not truncated at a closing brace",
+			key:       "address",
+			input:     `{"address": "742 Evergreen Terrace}"}`,
+			extracted: "742 Evergreen Terrace}",
 		},
 		{
 			name:      "unquoted value with colon and space",
@@ -115,9 +153,9 @@ func TestBuildExtractionRegex_JSON(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			re, err := buildExtractionRegex(tc.key, FormatJSON)
+			regexes, err := buildExtractionRegexes(tc.key, FormatJSON)
 			assert.NoError(t, err)
-			got := firstCapture(re.FindStringSubmatch(tc.input))
+			got := firstCapture(regexes, tc.input)
 			assert.Equal(t, tc.extracted, got, "json regex(key=%q) on %q", tc.key, tc.input)
 		})
 	}
@@ -180,6 +218,24 @@ func TestBuildExtractionRegex_SQL(t *testing.T) {
 			input:     `WHERE study_id=42;`,
 			extracted: "42",
 		},
+		{
+			name:      "quoted value containing spaces",
+			key:       "full_name",
+			input:     `UPDATE t SET x=1 WHERE full_name = 'Jane Q Public' RETURNING id`,
+			extracted: "Jane Q Public",
+		},
+		{
+			name:      "quoted value containing a comma",
+			key:       "full_name",
+			input:     `WHERE full_name = 'Public, Jane'`,
+			extracted: "Public, Jane",
+		},
+		{
+			name:      "quoted value containing a semicolon",
+			key:       "note",
+			input:     `WHERE note = 'first; second' AND x = 1`,
+			extracted: "first; second",
+		},
 
 		// False positives -- these should NOT match.
 		{
@@ -224,10 +280,61 @@ func TestBuildExtractionRegex_SQL(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			re, err := buildExtractionRegex(tc.key, FormatSQL)
+			regexes, err := buildExtractionRegexes(tc.key, FormatSQL)
 			assert.NoError(t, err)
-			got := firstCapture(re.FindStringSubmatch(tc.input))
+			got := firstCapture(regexes, tc.input)
 			assert.Equal(t, tc.extracted, got, "sql regex(key=%q) on %q", tc.key, tc.input)
+		})
+	}
+}
+
+// TestProcessTraces_QuotedValueIsExtractedInFull drives the whole processor so the
+// extracted span attribute, not just the regex, is covered.
+func TestProcessTraces_QuotedValueIsExtractedInFull(t *testing.T) {
+	tests := []struct {
+		name          string
+		dataFormat    DataFormat
+		payloadAttr   string
+		payload       string
+		wantAttribute string
+	}{
+		{
+			name:          "json payload",
+			dataFormat:    FormatJSON,
+			payloadAttr:   "http.request.payload",
+			payload:       `{"full_name": "Jane Q Public", "id": 7}`,
+			wantAttribute: "Jane Q Public",
+		},
+		{
+			name:          "sql statement",
+			dataFormat:    FormatSQL,
+			payloadAttr:   "db.query.text",
+			payload:       `SELECT id FROM users WHERE full_name = 'Jane Q Public'`,
+			wantAttribute: "Jane Q Public",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := &Config{Extractions: []Extraction{{
+				TargetAttributeName: "user.full_name",
+				LookupKey:           "full_name",
+				DataFormat:          tc.dataFormat,
+			}}}
+
+			proc, err := newExtractAttributeProcessor(processortest.NewNopSettings(component.MustNewType("odigosextractattribute")), cfg)
+			require.NoError(t, err)
+
+			traces := ptrace.NewTraces()
+			span := traces.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+			span.Attributes().PutStr(tc.payloadAttr, tc.payload)
+
+			_, err = proc.processTraces(context.Background(), traces)
+			require.NoError(t, err)
+
+			got, ok := span.Attributes().Get("user.full_name")
+			require.True(t, ok, "expected the target attribute to be set")
+			assert.Equal(t, tc.wantAttribute, got.Str())
 		})
 	}
 }
@@ -331,9 +438,9 @@ func TestBuildExtractionRegex_URL(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			re, err := buildExtractionRegex(tc.key, FormatResourcePath)
+			regexes, err := buildExtractionRegexes(tc.key, FormatResourcePath)
 			assert.NoError(t, err)
-			got := firstCapture(re.FindStringSubmatch(tc.input))
+			got := firstCapture(regexes, tc.input)
 			assert.Equal(t, tc.extracted, got, "url regex(key=%q) on %q", tc.key, tc.input)
 		})
 	}
