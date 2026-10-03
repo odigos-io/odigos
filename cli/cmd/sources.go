@@ -333,8 +333,14 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 			sourceList = sources
 		}
 
+		// the flag defaults to false, so applying it unconditionally would re-enable
+		// instrumentation on every matched Source whenever the user updates something else.
+		disableInstrumentationProvided := cmd.Flag(sourceDisableInstrumentationFlagName).Changed
+
 		for _, source := range sourceList.Items {
-			source.Spec.DisableInstrumentation = sourceDisableInstrumentationFlag
+			if disableInstrumentationProvided {
+				source.Spec.DisableInstrumentation = sourceDisableInstrumentationFlag
+			}
 			if len(sourceRemoveGroupFlag) > 0 {
 				for label, value := range source.Labels {
 					if label == k8sconsts.SourceDataStreamLabelPrefix+sourceRemoveGroupFlag && value == "true" {
@@ -618,7 +624,7 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 			if len(sourceList) > 0 {
 				fmt.Printf("NOTE: Configured Namespace Source, but the following Workload Sources will not be affected (individual Workload Sources take priority over Namespace Sources):\n")
 				for _, line := range sourceList {
-					fmt.Printf(line)
+					fmt.Print(line)
 				}
 			}
 		}
