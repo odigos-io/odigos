@@ -5,6 +5,7 @@ import (
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	odigoscommon "github.com/odigos-io/odigos/common"
 )
 
 const odigosConfigExtensionMechanism = "odigosConfigExtension"
@@ -30,6 +31,33 @@ func ConfigExtensionProcessorTypes(action *odigosv1.Action) []string {
 		}
 	}
 	return processors
+}
+
+// SupportedSignals returns the signals the action catalog declares this Action's type can
+// process. The Action CRD accepts any signal, but a collector processor that cannot consume a
+// signal makes the collector fail to build that pipeline ("telemetry type is not supported") and
+// crash-loop, so callers must intersect the requested signals with these before wiring a
+// processor into the collector config.
+func SupportedSignals(action *odigosv1.Action) []odigoscommon.ObservabilitySignal {
+	manifest, ok := actionManifestForCRD(action)
+	if !ok {
+		return nil
+	}
+
+	signals := make([]odigoscommon.ObservabilitySignal, 0, 4)
+	if manifest.Spec.Signals.Traces.Supported {
+		signals = append(signals, odigoscommon.TracesObservabilitySignal)
+	}
+	if manifest.Spec.Signals.Metrics.Supported {
+		signals = append(signals, odigoscommon.MetricsObservabilitySignal)
+	}
+	if manifest.Spec.Signals.Logs.Supported {
+		signals = append(signals, odigoscommon.LogsObservabilitySignal)
+	}
+	if manifest.Spec.Signals.Profiles.Supported {
+		signals = append(signals, odigoscommon.ProfilesObservabilitySignal)
+	}
+	return signals
 }
 
 func actionManifestForCRD(action *odigosv1.Action) (actionscatalog.Action, bool) {
