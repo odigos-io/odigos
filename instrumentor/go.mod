@@ -20,7 +20,7 @@ require (
 	github.com/onsi/gomega v1.43.0
 	github.com/openshift/api v3.9.0+incompatible
 	go.opentelemetry.io/otel v1.46.0
-	golang.org/x/sync v0.22.0
+	golang.org/x/sync v0.23.0
 	k8s.io/api v0.35.4
 	k8s.io/apimachinery v0.35.4
 	k8s.io/client-go v0.35.4
