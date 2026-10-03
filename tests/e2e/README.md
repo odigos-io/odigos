@@ -17,7 +17,7 @@ Install these tools once when setting up your local testing environment the firs
 - [Kubernetes In Docker (KinD)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
 
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
-  - Hombrew:
+  - Homebrew:
 
   ```bash
   brew tap kyverno/chainsaw https://github.com/kyverno/chainsaw

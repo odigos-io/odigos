@@ -39,7 +39,7 @@ spec:
       componentProps:
         type: password
         required: true
-        tooltip: This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `metrics:write` scope.
+        tooltip: This field is referred to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `metrics:write` scope.
         placeholder: "glc_eyJvIj..."
     - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS
       displayName: Resource Attributes Labels

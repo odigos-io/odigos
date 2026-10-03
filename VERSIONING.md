@@ -9,7 +9,7 @@ Stable releases are the default and recommended version to install. Release cand
 
 ## Consuming Odigos Versions
 
-Odigos should always default to using a stable version for any installation method. The instllation options are mentioned in [the docs](https://docs.odigos.io/setup/installation).
+Odigos should always default to using a stable version for any installation method. The installation options are mentioned in [the docs](https://docs.odigos.io/setup/installation).
 
 To install a release candidate version, one needs to "hop-in" to the release candidate version.
 
