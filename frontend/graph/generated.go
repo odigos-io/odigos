@@ -89981,28 +89981,28 @@ func (ec *executionContext) unmarshalInputCostReductionRuleInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOTailSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTailSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtMost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtMost"))
 			data, err := ec.unmarshalNFloat2float64(ctx, v)
@@ -90016,7 +90016,7 @@ func (ec *executionContext) unmarshalInputCostReductionRuleInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-			it.Notes = data
+			it.Notes = graphql.OmittableOf(data)
 		}
 	}
 
@@ -90716,56 +90716,56 @@ func (ec *executionContext) unmarshalInputHighlyRelevantOperationRuleInput(ctx c
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "error":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("error"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Error = data
+			it.Error = graphql.OmittableOf(data)
 		case "durationAtLeastMs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("durationAtLeastMs"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DurationAtLeastMs = data
+			it.DurationAtLeastMs = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOTailSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTailSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtLeast":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtLeast"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.PercentageAtLeast = data
+			it.PercentageAtLeast = graphql.OmittableOf(data)
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Notes = data
+			it.Notes = graphql.OmittableOf(data)
 		}
 	}
 
@@ -91751,14 +91751,14 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
-			it.SourcesScopes = data
+			it.SourcesScopes = graphql.OmittableOf(data)
 		case "instrumentationLibraries":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentationLibraries"))
 			data, err := ec.unmarshalOInstrumentationLibraryGlobalIdInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationLibraryGlobalIDInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.InstrumentationLibraries = data
+			it.InstrumentationLibraries = graphql.OmittableOf(data)
 		case "codeAttributes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("codeAttributes"))
 			data, err := ec.unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributesInput(ctx, v)
@@ -92744,42 +92744,42 @@ func (ec *executionContext) unmarshalInputNoisyOperationRuleInput(ctx context.Co
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOHeadSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtMost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtMost"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.PercentageAtMost = data
+			it.PercentageAtMost = graphql.OmittableOf(data)
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Notes = data
+			it.Notes = graphql.OmittableOf(data)
 		}
 	}
 
