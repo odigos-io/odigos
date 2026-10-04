@@ -17,7 +17,6 @@ const (
 	OdigosEffectiveConfigName           = "effective-config"
 	OdigosRemoteConfigName              = "odigos-remote-config"   // backend/GraphQL overlay (e.g. rollout)
 	OdigosLocalUiConfigName             = "odigos-local-ui-config" // UI overlay (log level, sampling)
-	OdigosLegacyConfigName              = "odigos-config"          // Deprecated: only used for migrations
 	OdigosConfigurationFileName         = "config.yaml"
 	OTLPPort                            = 4317
 	OTLPHttpPort                        = 4318
@@ -48,7 +47,8 @@ const (
 	InstrumentationInstance = "InstrumentationInstance"
 	Destination             = "Destination"
 
-	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
+	GoOffsetsPublicBucketURL = "https://storage.googleapis.com/odigos-cloud/"
+	GoOffsetsPublicURL       = GoOffsetsPublicBucketURL + "offset_results_min.json"
 
 	LdPreloadEnvVarName = "LD_PRELOAD"
 	OdigosLoaderDirName = "loader"

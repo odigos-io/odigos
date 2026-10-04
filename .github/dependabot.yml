@@ -28,7 +28,6 @@ updates:
       - /operator
       - /procdiscovery
       - /profiles
-      - /scheduler
       - /status
     schedule:
       day: sunday

@@ -61,13 +61,18 @@ func FetchOdigosWorkloads(
 	} else {
 		for i := 0; i < len(deployments.Items); i++ {
 			d := &deployments.Items[i]
-			targets = append(targets, WorkloadTarget{
+			target := WorkloadTarget{
 				Namespace:   odigosNamespace,
 				Name:        d.Name,
 				Kind:        k8sconsts.WorkloadKindDeployment,
 				DirName:     fmt.Sprintf("deployment-%s", d.Name),
 				IncludeLogs: includeLogs,
-			})
+			}
+			if isDeprecatedSchedulerDeployment(d) {
+				target.IncludeLogs = false
+				warnIfDeprecatedSchedulerScaledUp(builder, path.Join(rootDir, odigosNamespace, target.DirName), d)
+			}
+			targets = append(targets, target)
 		}
 	}
 
@@ -99,6 +104,30 @@ func FetchOdigosWorkloads(
 	}
 
 	return nil
+}
+
+// The odigos-scheduler deployment is kept at zero replicas since its controllers moved into the instrumentor.
+// It has no RBAC, so a scaled-up replica cannot do anything useful and only signals a misconfiguration.
+func isDeprecatedSchedulerDeployment(d *appsv1.Deployment) bool {
+	return d.Labels["app.kubernetes.io/name"] == k8sconsts.SchedulerDeploymentName
+}
+
+func warnIfDeprecatedSchedulerScaledUp(builder Builder, workloadDir string, d *appsv1.Deployment) {
+	desired := int32(0)
+	if d.Spec.Replicas != nil {
+		desired = *d.Spec.Replicas
+	}
+	if desired == 0 && d.Status.Replicas == 0 {
+		return
+	}
+
+	msg := fmt.Sprintf("deployment %s/%s is deprecated and expected to have 0 replicas, but has spec.replicas=%d status.replicas=%d.\n"+
+		"Its controllers run inside the instrumentor. Scale it back to 0: kubectl -n %s scale deployment/%s --replicas=0\n",
+		d.Namespace, d.Name, desired, d.Status.Replicas, d.Namespace, d.Name)
+	klog.Warning(msg)
+	if err := builder.AddFile(workloadDir, "WARNING.txt", []byte(msg)); err != nil {
+		klog.V(1).ErrorS(err, "Failed to write scheduler warning file")
+	}
 }
 
 func collectWorkload(

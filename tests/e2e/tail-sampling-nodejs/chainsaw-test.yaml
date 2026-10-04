@@ -111,7 +111,6 @@ spec:
               bash <<'EOF'
               set -euo pipefail
               export TESTS_NAMESPACE=default
-              export ODIGOS_NAMESPACE=odigos-test
               ../../common/victoriametrics_sampling_metrics_runner.sh record-baseline \
                 ./queries/metrics/trace-sampling-metrics.yaml \
                 ./.trace-sampling-metrics-baseline-nodejs.json
@@ -233,7 +232,6 @@ spec:
               bash <<'EOF'
               set -euo pipefail
               export TESTS_NAMESPACE=default
-              export ODIGOS_NAMESPACE=odigos-test
               deadline=$(($(date +%s) + 120))
               while true; do
                 if ../../common/victoriametrics_sampling_metrics_runner.sh assert-delta \
@@ -255,12 +253,11 @@ spec:
               bash <<'EOF'
               set -euo pipefail
               export TESTS_NAMESPACE=default
-              export ODIGOS_NAMESPACE=odigos-test
               ../../common/victoriametrics_sampling_metrics_runner.sh assert-delta \
                 ./queries/metrics/trace-sampling-metrics.yaml \
                 ./.trace-sampling-metrics-baseline-nodejs.json || true
               echo "--- current totals by rule name (match / keep / drop) ---"
-              base="http://odigos-victoriametrics.odigos-test.svc.cluster.local:8428"
+              base="/api/v1/namespaces/odigos-test/services/odigos-victoriametrics:8428/proxy"
               for deployment in tail-sampling-errors tail-sampling-duration tail-sampling-http-server; do
                 ic="deployment-${deployment}"
                 kubectl get instrumentationconfig "$ic" -n default -o json | jq -r --arg dep "$deployment" '
@@ -272,9 +269,7 @@ spec:
                   for m in match_count_total keep_count_total drop_count_total; do
                     q="sum(otelcol_odigos.sampling.trace.${m}{odigos.sampling.rule.id=\"${id}\"})"
                     echo "${label} ${m}:"
-                    kubectl run "vm-debug-$RANDOM" --rm -i --restart=Never -n odigos-test \
-                      --image=curlimages/curl:8.4.0 --command -- \
-                      curl -sG "${base}/api/v1/query" --data-urlencode "query=${q}" 2>/dev/null | sed 's/pod ".*$//' || true
+                    kubectl get --raw "${base}/api/v1/query?query=$(jq -rn --arg q "$q" '$q|@uri')" || true
                     echo ""
                   done
                 done

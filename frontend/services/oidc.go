@@ -63,7 +63,7 @@ func GetOidcSecret(ctx context.Context) (string, error) {
 	return string(secret.Data[consts.OidcClientSecretProperty]), nil
 }
 
-// gets the OIDC configuration values from the odigos-config ConfigMap
+// gets the OIDC configuration values from the odigos-configuration ConfigMap
 func getOidcValuesFromConfig(ctx context.Context) (string, string, string, string, bool) {
 	var odigosConfiguration common.OdigosConfiguration
 	odigosns := env.GetCurrentNamespace()

@@ -13,6 +13,24 @@ You can configure the Odigos VM Agent in two ways:
 - **[odictl](/vmagent/setup/configuration/odictl)** — A terminal user interface (TUI) that you use to add and manage sources, destinations, and actions interactively.
 - **YAML** — Each configuration task (sources, destinations, actions) can be done via YAML; the pages linked below include a YAML tab with examples.
 
+## Log collection
+
+When a [destination](/vmagent/setup/configuration/add-destinations) is configured with the `LOGS` signal, the VM Agent automatically collects application logs from **instrumented** sources and exports them. How logs are collected depends on the source kind:
+
+| Source kind | How the VM Agent collects logs |
+|---|---|
+| `process` | Scans the process PID file descriptors for paths containing `*.log` |
+| `docker` | Streams Docker logs for the instrumented container |
+| `systemd` | Streams logs via the journald receiver for the service |
+
+<Note>
+  A non-root agent can only read the systemd journal if the `odigos` user is in `adm` and/or `systemd-journal`. See [Linux Permissions](/vmagent/setup/permissions#systemd-journal-group-logs).
+</Note>
+
+<Note>
+  The odictl **Logs** panel shows live logs for the `odigos-vmagent` and `odigos-otelcol` services themselves. That is separate from application OpenTelemetry logs exported to your destination.
+</Note>
+
 ## Configuration tasks
 
 <CardGroup cols={2}>
@@ -39,19 +57,5 @@ You can configure the Odigos VM Agent in two ways:
 <Tip>
 Add a [destination](/vmagent/setup/configuration/add-destinations) first, then [sources](/vmagent/setup/configuration/add-sources), then [actions](/vmagent/setup/configuration/actions/overview) and [instrumentation rules](/vmagent/setup/configuration/instrumentation-rules/overview) as needed.
 </Tip>
-
-## Log collection
-
-When a [destination](/vmagent/setup/configuration/add-destinations) is configured with the `LOGS` signal, the VM Agent automatically collects application logs from **instrumented** sources and exports them. How logs are collected depends on the source kind:
-
-| Source kind | How the VM Agent collects logs |
-|---|---|
-| `process` | Scans the process PID file descriptors for paths containing `*.log` |
-| `docker` | Streams Docker logs for the instrumented container |
-| `systemd` | Streams logs via `journalctl` for the service |
-
-<Note>
-  The odictl **Logs** panel shows live logs for the `odigos-vmagent` and `odigos-otelcol` services themselves. That is separate from application OpenTelemetry logs exported to your destination.
-</Note>
 
 For definitions of sources, destinations, and actions, see [Key concepts](/vmagent/overview#key-concepts) in the VM Agent overview.
