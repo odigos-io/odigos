@@ -32,22 +32,29 @@ func (l *Loaders) GetAutoRollbackConfig() *computed.AutoRollbackConfig {
 		enabled = false
 	}
 
+	// the durations below are free text in the configuration (settable from the UI and from helm)
+	// and nothing validates them on the write path, so an unparsable value must fall back to the
+	// default rather than drop the whole config - callers dereference the returned value.
 	stabilityWindow := consts.DefaultAutoRollbackStabilityWindow
 	if l.odigosConfiguration.RollbackStabilityWindow != "" {
 		sw, err := time.ParseDuration(l.odigosConfiguration.RollbackStabilityWindow)
 		if err != nil {
-			return nil
+			l.logger.Error(err, "invalid rollbackStabilityWindow in odigos configuration, using the default",
+				"value", l.odigosConfiguration.RollbackStabilityWindow, "default", stabilityWindow)
+		} else {
+			stabilityWindow = sw
 		}
-		stabilityWindow = sw
 	}
 
 	graceTime := consts.DefaultAutoRollbackGraceTime
 	if l.odigosConfiguration.RollbackGraceTime != "" {
 		gt, err := time.ParseDuration(l.odigosConfiguration.RollbackGraceTime)
 		if err != nil {
-			return nil
+			l.logger.Error(err, "invalid rollbackGraceTime in odigos configuration, using the default",
+				"value", l.odigosConfiguration.RollbackGraceTime, "default", graceTime)
+		} else {
+			graceTime = gt
 		}
-		graceTime = gt
 	}
 
 	return &computed.AutoRollbackConfig{
