@@ -76,6 +76,7 @@ rules:
       - ''
     resources:
       - pods/finalizers
+      - configmaps/finalizers
     verbs:
       - update
   - apiGroups:

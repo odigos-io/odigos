@@ -3,6 +3,7 @@ package sampling
 import (
 	"testing"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
@@ -108,7 +109,7 @@ func TestMergeNoisyOperationUpdatePreservesScopesAndOperationOnOmit(t *testing.T
 	}
 
 	got := mergeNoisyOperationUpdate(existing, model.NoisyOperationRuleInput{
-		Name: stringPtr("renamed"),
+		Name: graphql.OmittableOf(stringPtr("renamed")),
 	})
 
 	require.Equal(t, "renamed", got.Name)
@@ -133,8 +134,8 @@ func TestMergeNoisyOperationUpdateEmptyScopesClearsExplicitly(t *testing.T) {
 	}
 
 	got := mergeNoisyOperationUpdate(existing, model.NoisyOperationRuleInput{
-		SourceScopes:     &model.SourcesScopesInput{},
-		PercentageAtMost: float64Ptr(10),
+		SourceScopes:     graphql.OmittableOf(&model.SourcesScopesInput{}),
+		PercentageAtMost: graphql.OmittableOf(float64Ptr(10)),
 	})
 
 	require.NotNil(t, got.SourceScopes)
@@ -159,7 +160,7 @@ func TestMergeCostReductionRuleUpdatePreservesScopesAndOperationOnOmit(t *testin
 	}
 
 	got := mergeCostReductionRuleUpdate(existing, model.CostReductionRuleInput{
-		Name:             stringPtr("renamed"),
+		Name:             graphql.OmittableOf(stringPtr("renamed")),
 		PercentageAtMost: 1,
 	})
 
@@ -189,7 +190,7 @@ func TestMergeHighlyRelevantOperationUpdatePreservesMatchersOnOmit(t *testing.T)
 	}
 
 	got := mergeHighlyRelevantOperationUpdate(existing, model.HighlyRelevantOperationRuleInput{
-		Name: stringPtr("renamed"),
+		Name: graphql.OmittableOf(stringPtr("renamed")),
 	})
 
 	require.Equal(t, "renamed", got.Name)
@@ -211,9 +212,92 @@ func TestMergeHighlyRelevantOperationUpdateCanClearErrorExplicitly(t *testing.T)
 	}
 
 	got := mergeHighlyRelevantOperationUpdate(existing, model.HighlyRelevantOperationRuleInput{
-		Error: boolPtr(false),
+		Error: graphql.OmittableOf(boolPtr(false)),
 	})
 
 	require.False(t, got.Error)
 	require.Equal(t, existing.SourceScopes, got.SourceScopes)
+}
+
+func TestMergeNoisyOperationUpdateExplicitNullWidensToAll(t *testing.T) {
+	existing := v1alpha1.NoisyOperation{
+		Name: "payments-health",
+		SourceScopes: &k8sconsts.SourcesScopes{
+			Namespaces: []string{"payments"},
+		},
+		Operation: &commonapisampling.HeadSamplingOperationMatcher{
+			HttpServer: &commonapisampling.HeadSamplingHttpServerOperationMatcher{
+				Route: "/healthz",
+			},
+		},
+		PercentageAtMost: float64Ptr(5),
+		Notes:            "scoped drop",
+	}
+
+	// The edit form sends null for "All Operations", "all sources", "drop all" and a cleared note.
+	got := mergeNoisyOperationUpdate(existing, model.NoisyOperationRuleInput{
+		Name:             graphql.OmittableOf(stringPtr("payments-health")),
+		Disabled:         graphql.OmittableOf(boolPtr(false)),
+		SourceScopes:     graphql.OmittableOf[*model.SourcesScopesInput](nil),
+		Operation:        graphql.OmittableOf[*model.HeadSamplingOperationMatcherInput](nil),
+		PercentageAtMost: graphql.OmittableOf[*float64](nil),
+		Notes:            graphql.OmittableOf[*string](nil),
+	})
+
+	require.Equal(t, "payments-health", got.Name)
+	require.Nil(t, got.SourceScopes)
+	require.Nil(t, got.Operation)
+	require.Nil(t, got.PercentageAtMost)
+	require.Empty(t, got.Notes)
+}
+
+func TestMergeHighlyRelevantOperationUpdateExplicitNullClearsMatchers(t *testing.T) {
+	existing := v1alpha1.HighlyRelevantOperation{
+		Name: "slow-charges",
+		SourceScopes: &k8sconsts.SourcesScopes{
+			Namespaces: []string{"payments"},
+		},
+		DurationAtLeastMs: intPtr(500),
+		Operation: &commonapisampling.TailSamplingOperationMatcher{
+			HttpServer: &commonapisampling.TailSamplingHttpServerOperationMatcher{
+				Route: "/charge",
+			},
+		},
+		PercentageAtLeast: float64Ptr(50),
+	}
+
+	// Switching a scoped duration rule to an error rule on all operations, keeping all traces.
+	got := mergeHighlyRelevantOperationUpdate(existing, model.HighlyRelevantOperationRuleInput{
+		Error:             graphql.OmittableOf(boolPtr(true)),
+		DurationAtLeastMs: graphql.OmittableOf[*int](nil),
+		Operation:         graphql.OmittableOf[*model.TailSamplingOperationMatcherInput](nil),
+		PercentageAtLeast: graphql.OmittableOf[*float64](nil),
+	})
+
+	require.Equal(t, "slow-charges", got.Name)
+	require.Equal(t, existing.SourceScopes, got.SourceScopes)
+	require.True(t, got.Error)
+	require.Nil(t, got.DurationAtLeastMs)
+	require.Nil(t, got.Operation)
+	require.Nil(t, got.PercentageAtLeast)
+}
+
+func TestMergeCostReductionRuleUpdateExplicitNullWidensToAllOperations(t *testing.T) {
+	existing := v1alpha1.CostReductionRule{
+		Name: "checkout-drop",
+		Operation: &commonapisampling.TailSamplingOperationMatcher{
+			KafkaConsumer: &commonapisampling.TailSamplingKafkaOperationMatcher{
+				KafkaTopic: "orders",
+			},
+		},
+		PercentageAtMost: 10,
+	}
+
+	got := mergeCostReductionRuleUpdate(existing, model.CostReductionRuleInput{
+		Operation:        graphql.OmittableOf[*model.TailSamplingOperationMatcherInput](nil),
+		PercentageAtMost: 10,
+	})
+
+	require.Equal(t, "checkout-drop", got.Name)
+	require.Nil(t, got.Operation)
 }

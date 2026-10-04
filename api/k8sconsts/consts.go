@@ -25,6 +25,11 @@ const (
 // this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
 var MinK8SVersionForInstallation = version.MustParse("v1.20.15-0")
 
+// MinK8SVersionForInitContainerPullSecrets is the first Kubernetes version where
+// kubelet re-verifies pull credentials for cached images
+// (KubeletEnsureSecretPulledImages, beta default-on in 1.35).
+var MinK8SVersionForInitContainerPullSecrets = version.MustParse("1.35.0")
+
 var (
 	// Openshift namespaces
 	OpenshiftIgnoredNamespaces = []string{

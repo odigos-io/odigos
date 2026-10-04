@@ -148,7 +148,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 
 	ebpfLogger := commonlogger.LoggerCompat().With("subsystem", "ebpfmanager")
 	metricsLogger := commonlogger.LoggerCompat().With("subsystem", "ebpfmetrics")
-	collector := ebpfMetrics.NewEBPFMetricsCollector(env.Current.NodeName, metricsLogger)
+	collector := ebpfMetrics.NewEBPFMetricsCollector(metricsLogger)
 	if err := collector.RegisterMetrics(); err != nil {
 		metricsLogger.Error("failed to register metrics", "err", err)
 	}

@@ -1,0 +1,87 @@
+{{- if (include "connectors.managedCollectorsEnabled" .) }}
+{{- $gw := .Values.cloudConnectors.managedCollectors }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connector-opamp-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: connector-opamp-gateway
+    odigos.io/system-object: "true"
+spec:
+  replicas: {{ $gw.replicas }}
+  selector:
+    matchLabels:
+      app: connector-opamp-gateway
+  template:
+    metadata:
+      labels:
+        app: connector-opamp-gateway
+        # The selector the connector's NetworkPolicy admits on its OpAMP port. connector-runtime builds
+        # that policy with a PodSelector on odigos.io/component=connector-opamp-gateway, so without this
+        # label the gateway is denied the one port it exists to reach — and nothing else would fail:
+        # both pods report healthy while every Collector session hangs on connect.
+        odigos.io/component: connector-opamp-gateway
+    spec:
+      serviceAccountName: connector-opamp-gateway
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      {{- with $gw.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $gw.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $gw.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: connector-opamp-gateway
+          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ $gw.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-opamp-gateway" "Tag" $imageTag)) | quote }}
+          env:
+            # Scopes both watches to this namespace, which is what lets the RBAC above be a Role.
+            # Leaving it empty would watch cluster-wide and the Role would not cover it.
+            - name: ODIGOS_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # The same odigos_central database the connectors use. The gateway reads the platform
+            # schema only, to authenticate the credential a Collector presents.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-connector-postgres
+                  key: dsn
+            - name: ODIGOS_OPAMP_GATEWAY_LISTEN_ADDR
+              value: ":{{ $gw.port }}"
+            - name: ODIGOS_OPAMP_PATH
+              value: {{ $gw.path | quote }}
+            {{- with $gw.revalidateInterval }}
+            - name: ODIGOS_OPAMP_REVALIDATE_INTERVAL
+              value: {{ . | quote }}
+            {{- end }}
+          ports:
+            - containerPort: {{ $gw.port }}
+              name: {{ $gw.portName }}
+          # One listener serves the OpAMP path and both probes, so a probe can never pass on a port
+          # while the one that matters is refusing connections.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ $gw.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ $gw.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          {{- with $gw.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

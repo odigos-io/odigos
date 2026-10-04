@@ -667,7 +667,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-insights",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights",
       "required": [],
       "title": "images"
     },
@@ -1614,8 +1614,13 @@
             },
             "seLinuxOptions": {
               "additionalProperties": false,
-              "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThis is an advanced option and should only be changed if you know what you are doing.",
+              "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThe level matches the odiglet container's, since containers sharing a volume must share its SELinux label.\nThis is an advanced option and should only be changed if you know what you are doing.",
               "properties": {
+                "level": {
+                  "default": "s0",
+                  "title": "level",
+                  "type": "string"
+                },
                 "type": {
                   "default": "spc_t",
                   "title": "type",
@@ -1745,7 +1750,7 @@
         },
         "extended": {
           "default": "false",
-          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nDefault: false",
+          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET and Ruby 2.7 instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nSelecting those distros still requires the legacy-dotnet-instrumentation and legacy-ruby-instrumentation profiles.\nDefault: false",
           "required": [],
           "title": "extended"
         },
@@ -2418,111 +2423,6 @@
       },
       "required": [],
       "title": "sampling"
-    },
-    "scheduler": {
-      "additionalProperties": false,
-      "description": "Configuration for the scheduler component.",
-      "properties": {
-        "affinity": {
-          "additionalProperties": true,
-          "required": [],
-          "title": "affinity"
-        },
-        "deploymentName": {
-          "default": "odigos-scheduler",
-          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-scheduler'",
-          "required": [],
-          "title": "deploymentName"
-        },
-        "logLevel": {
-          "default": "info",
-          "description": "Log level for scheduler. Defaults to info.",
-          "required": [],
-          "title": "logLevel"
-        },
-        "nodeSelector": {
-          "default": "",
-          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
-          "required": [],
-          "title": "nodeSelector"
-        },
-        "priorityClassName": {
-          "default": "",
-          "description": "Priority class name. Set to use your existing cluster priority classes.",
-          "required": [],
-          "title": "priorityClassName"
-        },
-        "resources": {
-          "additionalProperties": false,
-          "properties": {
-            "limits": {
-              "additionalProperties": false,
-              "properties": {
-                "cpu": {
-                  "default": "500m",
-                  "title": "cpu",
-                  "type": "string"
-                },
-                "memory": {
-                  "default": "512Mi",
-                  "title": "memory",
-                  "type": "string"
-                }
-              },
-              "required": [],
-              "title": "limits",
-              "type": "object"
-            },
-            "requests": {
-              "additionalProperties": false,
-              "properties": {
-                "cpu": {
-                  "default": "10m",
-                  "title": "cpu",
-                  "type": "string"
-                },
-                "memory": {
-                  "default": "64Mi",
-                  "title": "memory",
-                  "type": "string"
-                }
-              },
-              "required": [],
-              "title": "requests",
-              "type": "object"
-            }
-          },
-          "required": [],
-          "title": "resources",
-          "type": "object"
-        },
-        "tolerations": {
-          "description": "tolerations for the scheduler deployment.",
-          "items": {
-            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
-            "properties": {
-              "effect": {
-                "type": "string"
-              },
-              "key": {
-                "type": "string"
-              },
-              "operator": {
-                "type": "string"
-              },
-              "value": {
-                "type": "string"
-              }
-            },
-            "required": [],
-            "type": "object"
-          },
-          "required": [],
-          "title": "tolerations"
-        }
-      },
-      "required": [],
-      "title": "scheduler"
     },
     "signals": {
       "description": "User should be specifying the signals they want to collect.",
