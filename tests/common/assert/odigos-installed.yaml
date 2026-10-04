@@ -5,16 +5,6 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: odigos-autoscaler
-  namespace: odigos-test
-  labels:
-    app.kubernetes.io/name: odigos-autoscaler
-spec:
-  replicas: 0
----
 apiVersion: v1
 kind: Pod
 metadata:
