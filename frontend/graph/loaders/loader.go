@@ -508,8 +508,9 @@ func (l *Loaders) LoadWorkloadsWithFilter(ctx context.Context, filter *model.Wor
 		allWorkloads := make(map[model.K8sWorkloadID]struct{})
 		for workloadId, source := range l.workloadSources {
 			// only take into account sources that represent a workload,
-			// and not a group of workloads.
-			if source.Spec.MatchWorkloadNameAsRegex {
+			// and not a group of workloads. for a group source, workloadId.Name is
+			// a regex pattern rather than the name of any real workload.
+			if !source.Spec.MatchWorkloadNameAsRegex {
 				allWorkloads[workloadId] = struct{}{}
 			}
 		}
