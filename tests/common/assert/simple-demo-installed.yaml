@@ -4,9 +4,10 @@ metadata:
   name: frontend
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'Available']):
     - type: Available
       status: "True"
+  (conditions[?type == 'Progressing']):
     - type: Progressing
       status: "True"
   replicas: 1
@@ -20,9 +21,10 @@ metadata:
   name: coupon
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'Available']):
     - type: Available
       status: "True"
+  (conditions[?type == 'Progressing']):
     - type: Progressing
       status: "True"
   replicas: 1
@@ -36,9 +38,10 @@ metadata:
   name: inventory
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'Available']):
     - type: Available
       status: "True"
+  (conditions[?type == 'Progressing']):
     - type: Progressing
       status: "True"
   replicas: 1
@@ -52,9 +55,10 @@ metadata:
   name: membership
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'Available']):
     - type: Available
       status: "True"
+  (conditions[?type == 'Progressing']):
     - type: Progressing
       status: "True"
   replicas: 1
@@ -68,9 +72,10 @@ metadata:
   name: pricing
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'Available']):
     - type: Available
       status: "True"
+  (conditions[?type == 'Progressing']):
     - type: Progressing
       status: "True"
   replicas: 1
@@ -84,9 +89,10 @@ metadata:
   name: currency
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'Available']):
     - type: Available
       status: "True"
+  (conditions[?type == 'Progressing']):
     - type: Progressing
       status: "True"
   replicas: 1
@@ -100,9 +106,10 @@ metadata:
   name: geolocation
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'Available']):
     - type: Available
       status: "True"
+  (conditions[?type == 'Progressing']):
     - type: Progressing
       status: "True"
   replicas: 1
@@ -116,9 +123,10 @@ metadata:
   name: shipping
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'Available']):
     - type: Available
       status: "True"
+  (conditions[?type == 'Progressing']):
     - type: Progressing
       status: "True"
   replicas: 1
