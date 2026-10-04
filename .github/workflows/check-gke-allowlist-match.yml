@@ -1,0 +1,63 @@
+name: GKE Autopilot Allowlist Match
+
+# Renders the odiglet DaemonSet with Autopilot flags and verifies it matches a
+# WorkloadAllowlist from odigos-io/gke-ap-allowlist.
+on:
+  pull_request:
+    paths:
+      - helm/odigos/templates/odiglet/**
+      - helm/odigos/values.yaml
+      - helm/odigos/templates/gke/**
+      - .github/workflows/check-gke-allowlist-match.yml
+      - .github/workflows/scripts/check-gke-allowlist-match.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-odiglet-allowlist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout odigos
+        uses: actions/checkout@v5
+
+      - name: Checkout gke-ap-allowlist
+        uses: actions/checkout@v5
+        with:
+          repository: odigos-io/gke-ap-allowlist
+          path: gke-ap-allowlist
+          # Internal org repo; GITHUB_TOKEN works when the allowlist repo grants
+          # access to this workflow's repository.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Render odiglet DaemonSet (Autopilot)
+        working-directory: helm/odigos
+        run: |
+          helm template odigos . \
+            --namespace odigos-system \
+            --set image.tag=v0.0.0-ci \
+            --set onPremToken=ci-onprem-token \
+            --set gke.enabled=true \
+            --set gke.autopilot=true \
+            -s templates/odiglet/daemonset.yaml \
+            > "${GITHUB_WORKSPACE}/odiglet-daemonset.yaml"
+          echo "Rendered DaemonSet:"
+          sed -n '1,40p' "${GITHUB_WORKSPACE}/odiglet-daemonset.yaml"
+
+      - name: Verify DaemonSet matches a WorkloadAllowlist
+        run: |
+          python3 .github/workflows/scripts/check-gke-allowlist-match.py \
+            --daemonset "${GITHUB_WORKSPACE}/odiglet-daemonset.yaml" \
+            --allowlists-dir "${GITHUB_WORKSPACE}/gke-ap-allowlist/Odigos"
