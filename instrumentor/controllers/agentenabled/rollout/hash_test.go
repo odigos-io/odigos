@@ -6,6 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
+	"github.com/odigos-io/odigos/common/api/sampling"
 )
 
 func TestHashForContainersConfig(t *testing.T) {
@@ -64,4 +67,50 @@ func TestHashForContainersConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Greater(t, len(hash4), 0)
 	assert.NotEqual(t, hashText, hash4)
+
+	// HeadSampling is applied by the agent at runtime (OpAMP), so it must not
+	// change the hash and must not roll the workload.
+	withHeadSampling := []odigosv1alpha1.ContainerAgentConfig{
+		{
+			ContainerName:  "container1",
+			AgentEnabled:   true,
+			OtelDistroName: "otel-distro-1",
+			Traces: &agentsignalconfig.AgentTracesConfig{
+				HeadSampling: &sampling.HeadSamplingConfig{
+					NoisyOperations: []sampling.NoisyOperation{{Id: "health"}},
+				},
+			},
+		},
+		{
+			ContainerName:  "container2",
+			AgentEnabled:   true,
+			OtelDistroName: "otel-distro-3",
+		},
+	}
+	hash5, err := HashForContainersConfig(withHeadSampling)
+	assert.NoError(t, err)
+	assert.Greater(t, len(hash5), 0)
+	assert.Equal(t, hash4, hash5)
+
+	// Same for payload collection.
+	withPayloadCollection := []odigosv1alpha1.ContainerAgentConfig{
+		{
+			ContainerName:  "container1",
+			AgentEnabled:   true,
+			OtelDistroName: "otel-distro-1",
+			Traces: &agentsignalconfig.AgentTracesConfig{
+				PayloadCollection: &instrumentationrules.PayloadCollection{
+					HttpRequest: &instrumentationrules.HttpPayloadCollection{},
+				},
+			},
+		},
+		{
+			ContainerName:  "container2",
+			AgentEnabled:   true,
+			OtelDistroName: "otel-distro-3",
+		},
+	}
+	hash6, err := HashForContainersConfig(withPayloadCollection)
+	assert.NoError(t, err)
+	assert.Equal(t, hash4, hash6)
 }

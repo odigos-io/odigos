@@ -67,6 +67,7 @@ const SYSTEM_SETTINGS_FIELDS = `
   capacity {
     maxResidentTransactions
     maxBaselineSetMembers
+    maxTransactionsPerService
   }
   writeback {
     flushIntervalSeconds
@@ -80,6 +81,22 @@ const SYSTEM_SETTINGS_FIELDS = `
       enabled
     }
   }
+`;
+
+const RECOMMENDATION_BULK_RESULT_FIELDS = `
+  done
+  failed
+  errors {
+    id
+    error
+  }
+`;
+
+const RECOMMENDATION_EXAMPLE_FIELDS = `
+  traceId
+  leftValue
+  rightValue
+  observedAt
 `;
 
 export const PROMOTE_INSIGHTS_BASELINE_CLASS = gql`
@@ -228,5 +245,49 @@ export const REOPEN_INSIGHTS_GUARDRAIL_VIOLATION = gql`
 export const UPDATE_INSIGHTS_SYSTEM_SETTINGS = gql`
   mutation UpdateInsightsSystemSettings($settings: InsightsSystemSettingsInput!) {
     updateInsightsSystemSettings(settings: $settings) { ${SYSTEM_SETTINGS_FIELDS} }
+  }
+`;
+
+export const APPLY_INSIGHTS_RECOMMENDATIONS = gql`
+  mutation ApplyInsightsRecommendations($items: [InsightsRecommendationApplyItemInput!]!) {
+    applyInsightsRecommendations(items: $items) { ${RECOMMENDATION_BULK_RESULT_FIELDS} }
+  }
+`;
+
+export const DISMISS_INSIGHTS_RECOMMENDATIONS = gql`
+  mutation DismissInsightsRecommendations($ids: [ID!]!) {
+    dismissInsightsRecommendations(ids: $ids) { ${RECOMMENDATION_BULK_RESULT_FIELDS} }
+  }
+`;
+
+export const RESTORE_INSIGHTS_RECOMMENDATIONS = gql`
+  mutation RestoreInsightsRecommendations($ids: [ID!]!) {
+    restoreInsightsRecommendations(ids: $ids) { ${RECOMMENDATION_BULK_RESULT_FIELDS} }
+  }
+`;
+
+export const REVERT_INSIGHTS_RECOMMENDATIONS = gql`
+  mutation RevertInsightsRecommendations($ids: [ID!]!) {
+    revertInsightsRecommendations(ids: $ids) { ${RECOMMENDATION_BULK_RESULT_FIELDS} }
+  }
+`;
+
+export const PREVIEW_INSIGHTS_RECOMMENDATION = gql`
+  mutation PreviewInsightsRecommendation($transactionId: ID!, $spec: InsightsCorrelationSpecInput!) {
+    previewInsightsRecommendation(transactionId: $transactionId, spec: $spec) {
+      sampleCount
+      observed
+      held
+      distinct
+      holdRatio
+      examples { ${RECOMMENDATION_EXAMPLE_FIELDS} }
+      counterExamples { ${RECOMMENDATION_EXAMPLE_FIELDS} }
+    }
+  }
+`;
+
+export const RECOMPUTE_INSIGHTS_RECOMMENDATIONS = gql`
+  mutation RecomputeInsightsRecommendations($transactionId: ID, $namespace: String, $service: String) {
+    recomputeInsightsRecommendations(transactionId: $transactionId, namespace: $namespace, service: $service)
   }
 `;

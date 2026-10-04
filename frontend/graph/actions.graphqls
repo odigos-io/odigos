@@ -188,8 +188,11 @@ type Action {
   disabled: Boolean!
   signals: [SignalType!]!
   fields: ActionFields!
+  # Which Odigos surface owns this Action (metadata label odigos.io/managed-by).
+  managedBy: ManagedBy!
   # True when this Action was created from the Odigos UI
   # (metadata label odigos.io/managed-by=odigos-ui).
+  # Prefer managedBy for new UI; kept for older clients.
   uiGenerated: Boolean!
   conditions: [Condition!]
   # Desired-state statuses derived from Action CR status conditions

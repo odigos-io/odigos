@@ -1,0 +1,45 @@
+{{- if (include "connectors.managedCollectorsEnabled" .) }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: connector-opamp-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+---
+# A Role, not a ClusterRole: the gateway is given ODIGOS_NAMESPACE below, which scopes its caches to
+# this namespace. Read-only throughout — the gateway routes sessions, it never writes to the cluster.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: connector-opamp-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+rules:
+  # Which connector owns the account a Collector's credential belongs to, and whether it still exists.
+  - apiGroups: ["odigos.io"]
+    resources: ["odigoscloudconnectors"]
+    verbs: ["get", "list", "watch"]
+  # The upstream address to proxy a session to. Found by the odigos.io/connector-id label the runtime
+  # stamps on a Collector-managing connector's Service, never by recomputing the workload name.
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: connector-opamp-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+subjects:
+  - kind: ServiceAccount
+    name: connector-opamp-gateway
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: connector-opamp-gateway
+{{- end }}

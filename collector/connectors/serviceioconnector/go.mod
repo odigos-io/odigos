@@ -14,7 +14,7 @@ require (
 	go.opentelemetry.io/collector/consumer v1.65.0
 	go.opentelemetry.io/collector/consumer/consumertest v0.159.0
 	go.opentelemetry.io/collector/otelcol/otelcoltest v0.159.0
-	go.opentelemetry.io/collector/pdata v1.65.0
+	go.opentelemetry.io/collector/pdata v1.67.0
 	go.opentelemetry.io/collector/pipeline v1.65.0
 	go.opentelemetry.io/otel v1.46.0
 	go.uber.org/goleak v1.3.0
@@ -74,7 +74,7 @@ require (
 	go.opentelemetry.io/collector/extension v1.65.0 // indirect
 	go.opentelemetry.io/collector/extension/extensioncapabilities v0.159.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.159.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.65.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.67.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.159.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.159.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.159.0 // indirect
@@ -119,7 +119,7 @@ require (
 	gonum.org/v1/gonum v0.17.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
-	google.golang.org/grpc v1.83.1 // indirect
+	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
 

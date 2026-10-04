@@ -31,7 +31,7 @@ imagePrefix:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,
-#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-insights
+#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights
 # additionalProperties: true
 # @schema
 images: {}
@@ -564,65 +564,6 @@ autoscaler:
   # deploymentName: 'odigos-autoscaler'
 
 # @schema
-# description: Configuration for the scheduler component.
-# @schema
-scheduler:
-  # @schema
-  # description: Log level for scheduler. Defaults to info.
-  # @schema
-  logLevel: "info"
-
-  # @schema
-  # description: Override the global nodeSelector (values.nodeSelector) for this component
-  # @schema
-  # nodeSelector:
-  #   kubernetes.io/os: linux
-
-  # @schema
-  # description: |-
-  #   tolerations for the scheduler deployment.
-  # items:
-  #   description: |-
-  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-  #     Common fields: key, operator, value, effect, tolerationSeconds.
-  #   type: object
-  #   properties:
-  #     key:
-  #       type: string
-  #     operator:
-  #       type: string
-  #     value:
-  #       type: string
-  #     effect:
-  #       type: string
-  # @schema
-  tolerations: []
-  # @schema
-  # additionalProperties: true
-  # @schema
-  affinity: {}
-
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-
-  # @schema
-  # description: Priority class name. Set to use your existing cluster priority classes.
-  # @schema
-  # priorityClassName: ''
-
-  # @schema
-  # description: |-
-  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
-  #   default is 'odigos-scheduler'
-  # @schema
-  # deploymentName: 'odigos-scheduler'
-
-# @schema
 # description: Configuration for the UI component.
 # @schema
 ui:
@@ -994,10 +935,12 @@ odiglet:
     # description: |-
     #   seLinuxOptions for the data-collection container when running non-privileged.
     #   "spc_t" is the SELinux domain the container already gets when running privileged.
+    #   The level matches the odiglet container's, since containers sharing a volume must share its SELinux label.
     #   This is an advanced option and should only be changed if you know what you are doing.
     # @schema
     seLinuxOptions:
       type: "spc_t"
+      level: "s0"
 
   # @schema
   # description: Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -1206,8 +1149,9 @@ odiglet:
 
   # @schema
   # description: |-
-  #   extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.
+  #   extended controls whether to use the extended odiglet image variant which includes legacy .NET and Ruby 2.7 instrumentation.
   #   When true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).
+  #   Selecting those distros still requires the legacy-dotnet-instrumentation and legacy-ruby-instrumentation profiles.
   #   Default: false
   # @schema
   extended: false

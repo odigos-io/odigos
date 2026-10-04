@@ -1,0 +1,23 @@
+{{- if (include "connectors.managedCollectorsEnabled" .) }}
+{{- $gw := .Values.cloudConnectors.managedCollectors }}
+# Deliberately has no odigos.io/connector-id label. The gateway's own registry watches Services
+# carrying that label to find the connector to proxy a session UP to; labelling the gateway's Service
+# would offer the gateway itself as an upstream.
+apiVersion: v1
+kind: Service
+metadata:
+  name: connector-opamp-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: connector-opamp-gateway
+    odigos.io/system-object: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app: connector-opamp-gateway
+  ports:
+    - name: {{ $gw.portName }}
+      port: {{ $gw.port }}
+      targetPort: {{ $gw.port }}
+      protocol: TCP
+{{- end }}

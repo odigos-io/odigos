@@ -2,7 +2,9 @@ package k8sconsts
 
 const (
 	NodeNameEnvVar = "NODE_NAME"
-	NodeIPEnvVar   = "NODE_IP"
+	// set on the odiglet init container when the chart runs with openshift.enabled
+	OpenShiftEnabledEnvVar = "ODIGOS_OPENSHIFT_ENABLED"
+	NodeIPEnvVar           = "NODE_IP"
 
 	GKEAutopilotEnvVar = "GKE_AUTOPILOT"
 

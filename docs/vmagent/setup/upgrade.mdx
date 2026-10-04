@@ -33,7 +33,46 @@ To upgrade the Odigos VM Agent, run the following based on your Linux package ma
     <Note>Replace \<otelcol-version\> and \<agent-version\> with the versions you downloaded.</Note>
 
     ```shell
-    rpm -Uvh odigos-otelcol-<otelcol-version>.rpm odigos-<agent-version>.rpm
+    sudo rpm -Uvh odigos-otelcol-<otelcol-version>.rpm odigos-<agent-version>.rpm
     ```
   </Tab>
 </Tabs>
+
+## What an upgrade changes
+
+Starting from version v0.1.106, every upgrade switches the agent to **non-root**, including a host that has been running as root. During the upgrade, the package:
+
+- Moves leftover `/etc/odigos-vmagent/*` into `/var/lib/odigos-agent/config/`, then deletes `/etc/odigos-vmagent`
+- Moves agent logs from `/var/log` into `/var/lib/odigos-agent/log/`
+- Chowns `/var/odigos` and `/etc/odigos-otelcol` to the `odigos` user
+- Adds `odigos` to the `docker` group when that group exists
+- Disables `odigos-otelcol.service` (the collector becomes a child of the agent)
+- Re-renders `/etc/systemd/system/odigos-vmagent.service.d/nonroot.conf` unless you replaced its `# Managed by the odigos-vmagent package` header
+
+<Note>
+  Config and logs still move to `/var/lib/odigos-agent` even if you stay on root. Only the service user stays `root`.
+</Note>
+
+<Warning>
+  To **stay on root**, set the mode before the upgrade:
+
+  ```shell
+  echo root | sudo tee /var/lib/odigos-agent/user-mode
+  sudo ODIGOS_AGENT_USER_MODE=root dnf upgrade odigos    # or apt upgrade odigos
+  ```
+
+  Hosts that cannot grant ambient capabilities (systemd older than 229) stay on root automatically.
+</Warning>
+
+After a root-to-non-root migration, review [Additional permissions](/vmagent/setup/permissions#additional-permissions).
+
+## Migrate an existing root install
+
+To switch a running root host to non-root without waiting for the next package upgrade:
+
+```shell
+sudo /usr/lib/odigos/bin/odigos-migrate-to-nonroot --dry-run
+sudo /usr/lib/odigos/bin/odigos-migrate-to-nonroot
+```
+
+`--dry-run` prints the plan only. The migrate tool performs the same steps as [an upgrade](#what-an-upgrade-changes).
