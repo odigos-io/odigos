@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 type Action struct {
@@ -321,12 +323,12 @@ type CostReductionRule struct {
 }
 
 type CostReductionRuleInput struct {
-	Name             *string                            `json:"name,omitempty"`
-	Disabled         *bool                              `json:"disabled,omitempty"`
-	SourceScopes     *SourcesScopesInput                `json:"sourceScopes,omitempty"`
-	Operation        *TailSamplingOperationMatcherInput `json:"operation,omitempty"`
-	PercentageAtMost float64                            `json:"percentageAtMost"`
-	Notes            *string                            `json:"notes,omitempty"`
+	Name             graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled         graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes     graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Operation        graphql.Omittable[*TailSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtMost float64                                               `json:"percentageAtMost"`
+	Notes            graphql.Omittable[*string]                            `json:"notes,omitempty"`
 }
 
 type CustomFormatMasking struct {
@@ -739,14 +741,14 @@ type HighlyRelevantOperationRule struct {
 }
 
 type HighlyRelevantOperationRuleInput struct {
-	Name              *string                            `json:"name,omitempty"`
-	Disabled          *bool                              `json:"disabled,omitempty"`
-	SourceScopes      *SourcesScopesInput                `json:"sourceScopes,omitempty"`
-	Error             *bool                              `json:"error,omitempty"`
-	DurationAtLeastMs *int                               `json:"durationAtLeastMs,omitempty"`
-	Operation         *TailSamplingOperationMatcherInput `json:"operation,omitempty"`
-	PercentageAtLeast *float64                           `json:"percentageAtLeast,omitempty"`
-	Notes             *string                            `json:"notes,omitempty"`
+	Name              graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled          graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes      graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Error             graphql.Omittable[*bool]                              `json:"error,omitempty"`
+	DurationAtLeastMs graphql.Omittable[*int]                               `json:"durationAtLeastMs,omitempty"`
+	Operation         graphql.Omittable[*TailSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtLeast graphql.Omittable[*float64]                           `json:"percentageAtLeast,omitempty"`
+	Notes             graphql.Omittable[*string]                            `json:"notes,omitempty"`
 }
 
 type HorizontalPodAutoscalerInfo struct {
@@ -2462,12 +2464,12 @@ type NoisyOperationRule struct {
 }
 
 type NoisyOperationRuleInput struct {
-	Name             *string                            `json:"name,omitempty"`
-	Disabled         *bool                              `json:"disabled,omitempty"`
-	SourceScopes     *SourcesScopesInput                `json:"sourceScopes,omitempty"`
-	Operation        *HeadSamplingOperationMatcherInput `json:"operation,omitempty"`
-	PercentageAtMost *float64                           `json:"percentageAtMost,omitempty"`
-	Notes            *string                            `json:"notes,omitempty"`
+	Name             graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled         graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes     graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Operation        graphql.Omittable[*HeadSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtMost graphql.Omittable[*float64]                           `json:"percentageAtMost,omitempty"`
+	Notes            graphql.Omittable[*string]                            `json:"notes,omitempty"`
 }
 
 type NonIdentifyingAttribute struct {

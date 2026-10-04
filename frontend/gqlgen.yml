@@ -155,6 +155,37 @@ models:
       costReductionRules:
         resolver: true
 
+  # Sampling rule updates are partial: an omitted field keeps its current value,
+  # while an explicit null clears it (e.g. a null operation widens the rule to all
+  # operations). Omittable lets the update merge tell the two apart.
+  NoisyOperationRuleInput:
+    fields:
+      name: { omittable: true }
+      disabled: { omittable: true }
+      sourceScopes: { omittable: true }
+      operation: { omittable: true }
+      percentageAtMost: { omittable: true }
+      notes: { omittable: true }
+
+  HighlyRelevantOperationRuleInput:
+    fields:
+      name: { omittable: true }
+      disabled: { omittable: true }
+      sourceScopes: { omittable: true }
+      error: { omittable: true }
+      durationAtLeastMs: { omittable: true }
+      operation: { omittable: true }
+      percentageAtLeast: { omittable: true }
+      notes: { omittable: true }
+
+  CostReductionRuleInput:
+    fields:
+      name: { omittable: true }
+      disabled: { omittable: true }
+      sourceScopes: { omittable: true }
+      operation: { omittable: true }
+      notes: { omittable: true }
+
   K8sNamespace:
     fields:
       markedForInstrumentation:
