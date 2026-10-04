@@ -12,9 +12,12 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
+	"github.com/odigos-io/odigos/instrumentor/internal/clusterinfo"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -24,6 +27,9 @@ import (
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/version"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
@@ -33,6 +39,7 @@ type Instrumentor struct {
 	certReady          chan struct{}
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
+	k8sVersion         *version.Version
 }
 
 func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
@@ -41,16 +48,37 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return nil, err
 	}
 
+	err = destinations.Load()
+	if err != nil {
+		return nil, fmt.Errorf("unable to load destinations data: %w", err)
+	}
+
 	mgr, err := controllers.CreateManager(opts)
 	if err != nil {
 		return nil, err
 	}
 
+	odigosNs := env.GetCurrentNamespace()
+
 	// remove the deprecated webhook secret if it exists
 	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
-		Namespace: env.GetCurrentNamespace(),
+		Namespace: odigosNs,
 		Name:      k8sconsts.DeprecatedInstrumentorWebhookSecretName,
 	}})
+
+	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return nil, fmt.Errorf("unable to create dynamic client: %w", err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return nil, fmt.Errorf("unable to create kubernetes client: %w", err)
+	}
+	err = clusterinfo.RecordClusterInfo(context.Background(), clientset, odigosNs)
+	if err != nil {
+		opts.Logger.Error(err, "unable to record cluster info, skipping")
+	}
 
 	// setup the certificate rotator
 	rotatorSetupFinished := make(chan struct{})
@@ -98,7 +126,12 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 
 	// wire up the controllers and webhooks
 	scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention := parseFirstInstrumentedPodAtNodeLabelRetention()
-	err = controllers.SetupWithManager(context.Background(), mgr, dp, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention)
+	configOpts := controllers.OdigosConfigurationOptions{
+		Tier:          env.GetOdigosTierFromEnv(),
+		OdigosVersion: os.Getenv(consts.OdigosVersionEnvVarName),
+		DynamicClient: dynamicClient,
+	}
+	err = controllers.SetupWithManager(context.Background(), mgr, dp, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention, configOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +162,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		certReady:          rotatorSetupFinished,
 		dp:                 dp,
 		webhooksRegistered: webhooksRegistered,
+		k8sVersion:         k8sVersion,
 	}, nil
 }
 
@@ -179,6 +213,7 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		logger.Info("Cert rotator is ready")
 		err := controllers.RegisterWebhooks(i.mgr, controllers.WebhookConfig{
 			DistrosProvider: i.dp,
+			K8sVersion:      i.k8sVersion,
 		})
 		if err != nil {
 			return err
