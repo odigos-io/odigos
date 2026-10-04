@@ -6,6 +6,8 @@ const SERVICE_STAT_FIELDS = `
   transactionCount
   volume
   lastSeen
+  transactionLimit
+  transactionLimitReached
 `;
 
 const TRANSACTION_STAT_FIELDS = `
@@ -23,6 +25,7 @@ const TRANSACTION_STAT_FIELDS = `
   lastSeen
   hasBaseline
   promoted
+  saturatedClasses
 `;
 
 const TRANSACTION_FIELDS = `
@@ -61,6 +64,7 @@ const BASELINE_CLASS_FIELDS = `
   dataSchemaVersion
   observationCount
   promoted
+  saturated
   learningStartedAt
   lastChangedAt
   observationCountAtLastChange
@@ -100,6 +104,7 @@ const FINDING_FIELDS = `
   service
   namespace
   title
+  summary
   operation
   operationName
   identityDimensions {
@@ -197,6 +202,24 @@ const GUARDRAIL_FIELDS = `
     label
     mode
     allowlist
+    correlations {
+      name
+      left {
+        service
+        span
+        attr
+        extract
+      }
+      right {
+        service
+        span
+        attr
+        extract
+      }
+      relation
+      severity
+      why
+    }
     origin
   }
 `;
@@ -213,6 +236,79 @@ const GUARDRAIL_VIOLATION_FIELDS = `
   severity
   lastSeen
   status
+`;
+
+const RECOMMENDATION_FIELDS = `
+  id
+  kind
+  state
+  stale
+  rank
+  scope
+  scopeKey
+  transactionId
+  transactionKind
+  service
+  namespace
+  operation
+  title
+  summary
+  whyItMatters
+  transform
+  transport
+  spec {
+    name
+    left {
+      service
+      span
+      attr
+      extract
+    }
+    right {
+      service
+      span
+      attr
+      extract
+    }
+    relation
+    severity
+    why
+  }
+  rules {
+    rule
+    label
+    description
+    items
+    confidence
+    liveChecked
+    liveViolated
+    liveSince
+    liveLast
+  }
+  appliedRules
+  confidence {
+    level
+    holdRatio
+    observed
+    held
+    distinct
+    sampleCount
+    liveHeld
+    liveBroken
+    liveSince
+    liveLast
+    reasons
+  }
+  examples {
+    traceId
+    leftValue
+    rightValue
+    observedAt
+  }
+  alreadyCovered
+  minedAt
+  createdAt
+  updatedAt
 `;
 
 const CATALOG_FIELDS = `
@@ -276,6 +372,7 @@ const SYSTEM_SETTINGS_FIELDS = `
   capacity {
     maxResidentTransactions
     maxBaselineSetMembers
+    maxTransactionsPerService
   }
   writeback {
     flushIntervalSeconds
@@ -567,6 +664,22 @@ export const GET_INSIGHTS_GUARDRAIL_VIOLATION = gql`
         }
         evidenceTrace { ${OBSERVATION_FIELDS} }
       }
+    }
+  }
+`;
+
+export const GET_INSIGHTS_RECOMMENDATIONS = gql`
+  query GetInsightsRecommendations($kind: InsightsRecommendationKind, $state: InsightsRecommendationState, $transactionId: ID, $service: String, $namespace: String, $includeStale: Boolean) {
+    insights {
+      recommendations(kind: $kind, state: $state, transactionId: $transactionId, service: $service, namespace: $namespace, includeStale: $includeStale) { ${RECOMMENDATION_FIELDS} }
+    }
+  }
+`;
+
+export const GET_INSIGHTS_RECOMMENDATION = gql`
+  query GetInsightsRecommendation($id: ID!) {
+    insights {
+      recommendation(id: $id) { ${RECOMMENDATION_FIELDS} }
     }
   }
 `;

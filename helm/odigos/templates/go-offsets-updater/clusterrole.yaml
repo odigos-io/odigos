@@ -1,0 +1,16 @@
+{{- if ne .Values.goAutoOffsetsMode "off" }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: odigos-go-offsets-updater
+  labels:
+    odigos.io/system-object: "true"
+rules:
+  # the cli resolves the odigos namespace by listing the odigos-configuration configmap across namespaces
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    verbs:
+      - list
+{{- end }}

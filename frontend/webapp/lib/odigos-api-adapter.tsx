@@ -41,6 +41,8 @@ import type {
   ExtendedPodInfo,
   FetchedConfig,
   GatewayInfo,
+  GoOffsets,
+  GoOffsetsUpdateCheck,
   InsightsAnomalyIssue,
   InsightsAnomalySummary,
   InsightsBaselineClass,
@@ -57,6 +59,9 @@ import type {
   InsightsObservationSummary,
   InsightsPolicy,
   InsightsPromoteResult,
+  InsightsRecommendation,
+  InsightsRecommendationBulkResult,
+  InsightsRecommendationPreview,
   InsightsServiceStat,
   InsightsServiceProfile,
   InsightsBlastRadiusSubgraph,
@@ -64,6 +69,7 @@ import type {
   InsightsSystemSettings,
   InsightsTransaction,
   InsightsTransactionStat,
+  InstrumentationAgent,
   Namespace,
   NodeCollectoInfo,
   PodInfo,
@@ -91,6 +97,10 @@ import {
   GET_METRICS,
   GET_NAMESPACES_WITH_WORKLOADS,
   GET_PEER_SOURCES,
+  GET_GO_OFFSETS,
+  CHECK_GO_OFFSETS_UPDATES,
+  UPDATE_GO_OFFSETS,
+  GET_INSTRUMENTATION_AGENTS,
   GET_POTENTIAL_DESTINATIONS,
   GET_PROFILING_SLOTS,
   GET_RECOMMENDATIONS,
@@ -128,6 +138,8 @@ import {
   GET_INSIGHTS_CATALOG,
   GET_INSIGHTS_SYSTEM_SETTINGS,
   GET_INSIGHTS_STORAGE_HEALTH,
+  GET_INSIGHTS_RECOMMENDATIONS,
+  GET_INSIGHTS_RECOMMENDATION,
   DESCRIBE_ODIGOS,
   DESCRIBE_SOURCE,
   DOWNLOAD_DIAGNOSE,
@@ -189,6 +201,12 @@ import {
   DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,
   REOPEN_INSIGHTS_GUARDRAIL_VIOLATION,
   UPDATE_INSIGHTS_SYSTEM_SETTINGS,
+  APPLY_INSIGHTS_RECOMMENDATIONS,
+  DISMISS_INSIGHTS_RECOMMENDATIONS,
+  RESTORE_INSIGHTS_RECOMMENDATIONS,
+  REVERT_INSIGHTS_RECOMMENDATIONS,
+  PREVIEW_INSIGHTS_RECOMMENDATION,
+  RECOMPUTE_INSIGHTS_RECOMMENDATIONS,
 } from '@/graphql';
 
 // The CREATE_DATA_STREAM op is intentionally absent: the standalone backend
@@ -399,6 +417,24 @@ const operations: OdigosApiOperations = {
   ENABLE_SOURCE_PROFILING: {
     document: ENABLE_SOURCE_PROFILING,
     transformResult: (raw: unknown) => (raw as { enableSourceProfiling?: EnableProfilingResult } | null | undefined)?.enableSourceProfiling,
+  },
+
+  // instrumentation agents — bare-shape slots; flatten the per-field envelope.
+  GET_INSTRUMENTATION_AGENTS: {
+    document: GET_INSTRUMENTATION_AGENTS,
+    transformResult: (raw: unknown) => (raw as { instrumentationAgents?: InstrumentationAgent[] } | null | undefined)?.instrumentationAgents ?? [],
+  },
+  GET_GO_OFFSETS: {
+    document: GET_GO_OFFSETS,
+    transformResult: (raw: unknown) => (raw as { goOffsets?: GoOffsets } | null | undefined)?.goOffsets,
+  },
+  CHECK_GO_OFFSETS_UPDATES: {
+    document: CHECK_GO_OFFSETS_UPDATES,
+    transformResult: (raw: unknown) => (raw as { checkGoOffsetsUpdates?: GoOffsetsUpdateCheck } | null | undefined)?.checkGoOffsetsUpdates,
+  },
+  UPDATE_GO_OFFSETS: {
+    document: UPDATE_GO_OFFSETS,
+    transformResult: (raw: unknown) => !!(raw as { updateGoOffsets?: boolean } | null | undefined)?.updateGoOffsets,
   },
 
   // pipeline collectors — bare-shape slots. The standalone backend's
@@ -642,6 +678,38 @@ const operations: OdigosApiOperations = {
   UPDATE_INSIGHTS_SYSTEM_SETTINGS: {
     document: UPDATE_INSIGHTS_SYSTEM_SETTINGS,
     transformResult: (raw: unknown) => (raw as { updateInsightsSystemSettings?: InsightsSystemSettings } | null | undefined)?.updateInsightsSystemSettings,
+  },
+  GET_INSIGHTS_RECOMMENDATIONS: {
+    document: GET_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { insights?: { recommendations?: InsightsRecommendation[] } } | null | undefined)?.insights?.recommendations,
+  },
+  GET_INSIGHTS_RECOMMENDATION: {
+    document: GET_INSIGHTS_RECOMMENDATION,
+    transformResult: (raw: unknown) => (raw as { insights?: { recommendation?: InsightsRecommendation } } | null | undefined)?.insights?.recommendation,
+  },
+  APPLY_INSIGHTS_RECOMMENDATIONS: {
+    document: APPLY_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { applyInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.applyInsightsRecommendations,
+  },
+  DISMISS_INSIGHTS_RECOMMENDATIONS: {
+    document: DISMISS_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { dismissInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.dismissInsightsRecommendations,
+  },
+  RESTORE_INSIGHTS_RECOMMENDATIONS: {
+    document: RESTORE_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { restoreInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.restoreInsightsRecommendations,
+  },
+  REVERT_INSIGHTS_RECOMMENDATIONS: {
+    document: REVERT_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { revertInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.revertInsightsRecommendations,
+  },
+  PREVIEW_INSIGHTS_RECOMMENDATION: {
+    document: PREVIEW_INSIGHTS_RECOMMENDATION,
+    transformResult: (raw: unknown) => (raw as { previewInsightsRecommendation?: InsightsRecommendationPreview } | null | undefined)?.previewInsightsRecommendation,
+  },
+  RECOMPUTE_INSIGHTS_RECOMMENDATIONS: {
+    document: RECOMPUTE_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { recomputeInsightsRecommendations?: boolean } | null | undefined)?.recomputeInsightsRecommendations,
   },
   // recommendations
   GET_RECOMMENDATIONS: { document: GET_RECOMMENDATIONS },

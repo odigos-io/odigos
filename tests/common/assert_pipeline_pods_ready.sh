@@ -13,7 +13,6 @@ EXPECTED_LABELS=(
   "odigos.io/collector-role=CLUSTER_GATEWAY" # For odigos-gateway pods
   "app.kubernetes.io/name=odigos-autoscaler"
   "app.kubernetes.io/name=odigos-instrumentor"
-  "app.kubernetes.io/name=odigos-scheduler"
   "app=odigos-ui"
 )
 

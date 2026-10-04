@@ -78,6 +78,7 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups=apps,resources=deployments/scale,verbs=get;update;patch
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;create;update;patch;watch;delete
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=create;list;watch;delete;get
+// +kubebuilder:rbac:groups=batch,resources=cronjobs/finalizers;jobs/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=nodes/stats,verbs=get;list;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;roles;rolebindings,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=use
@@ -89,6 +90,7 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups=apps.openshift.io,resources=deploymentconfigs;deploymentconfigs/finalizers,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=argoproj.io,resources=rollouts,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=argoproj.io,resources=rollouts/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=pods/log,verbs=get
 // +kubebuilder:rbac:groups="",resources=pods/proxy,verbs=get
 // Odigos Helm chart odigos-gateway ClusterRole (collectorGateway.clusterMetricsEnabled).

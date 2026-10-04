@@ -121,9 +121,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
-				&appsv1.DaemonSet{}: {
-					Field: nsSelector,
-				},
 				&corev1.ConfigMap{}: {
 					Field: nsSelector,
 				},

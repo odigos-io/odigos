@@ -5,13 +5,16 @@ go 1.26.4
 require (
 	github.com/argoproj/argo-rollouts v1.9.1
 	github.com/go-logr/logr v1.4.4
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.9.0
 	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/destinations v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/distros v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/profiles v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/status v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.43.0
@@ -98,17 +101,19 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
+	sigs.k8s.io/yaml v1.6.0
 )
 
 replace (
 	github.com/odigos-io/odigos/actions => ../actions
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/destinations => ../destinations
 	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	// k8sutils requires this via its own local-only replace, which doesn't propagate to us.
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
+	github.com/odigos-io/odigos/profiles => ../profiles
 	github.com/odigos-io/odigos/status => ../status
 	// argo-rollouts@v1.9.1 requires this via its own internal-only replace, which doesn't propagate to us.
 	k8s.io/kubelet => k8s.io/kubelet v0.34.1

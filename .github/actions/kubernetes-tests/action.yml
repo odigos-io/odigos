@@ -81,7 +81,7 @@ runs:
       uses: kyverno/action-install-chainsaw@v0.2.13
 
     - name: Create kind cluster
-      uses: helm/kind-action@v1.12.0
+      uses: helm/kind-action@v1.14.0
       with:
         node_image: ${{ fromJSON(inputs.supported-versions)[inputs.kubernetes-version].nodeImage }}
         version: "v0.33.0"
@@ -195,6 +195,20 @@ runs:
       with:
         name: run-details-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }}
         path: odigos_debug*.tar.gz
+      continue-on-error: true
+
+    - name: Export kind logs
+      if: failure()
+      shell: bash
+      run: kind export logs kind-logs
+      continue-on-error: true
+
+    - name: Upload kind logs artifact
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: kind-logs-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }}
+        path: kind-logs
       continue-on-error: true
 
     - name: Upload UI screenshots artifact

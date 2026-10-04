@@ -98,6 +98,9 @@ func TestLearningPolicyFromInputWithoutConditions(t *testing.T) {
 }
 
 func TestGuardrailFromInputMapsEveryField(t *testing.T) {
+	severity := model.InsightsSeverityCritical
+	extract := `(\d+)`
+	why := "principal must match account"
 	got := GuardrailFromInput(model.InsightsGuardrailInput{
 		Scope:    model.InsightsPolicyScope("service"),
 		ScopeKey: "prod/checkout",
@@ -114,6 +117,28 @@ func TestGuardrailFromInputMapsEveryField(t *testing.T) {
 				Key:   "allowed_callers",
 				Label: "Allowed callers",
 				Mode:  model.InsightsRuleMode("off"),
+			},
+			{
+				Key:   "attribute_correlation",
+				Label: "Attribute correlation",
+				Mode:  model.InsightsRuleMode("enforce"),
+				Correlations: []*model.InsightsCorrelationSpecInput{{
+					Name: "principal-matches-account",
+					Left: &model.InsightsCorrelationSelectorInput{
+						Service: "edge-gateway",
+						Span:    "resolvePrincipal",
+						Attr:    "return.value",
+						Extract: &extract,
+					},
+					Right: &model.InsightsCorrelationSelectorInput{
+						Service: "account-service",
+						Span:    "getAccount",
+						Attr:    "arg.0",
+					},
+					Relation: model.InsightsCorrelationRelationEquals,
+					Severity: &severity,
+					Why:      &why,
+				}},
 			},
 		},
 	})
@@ -133,6 +158,28 @@ func TestGuardrailFromInputMapsEveryField(t *testing.T) {
 				Key:   "allowed_callers",
 				Label: "Allowed callers",
 				Mode:  "off",
+			},
+			{
+				Key:   "attribute_correlation",
+				Label: "Attribute correlation",
+				Mode:  "enforce",
+				Correlations: []CorrelationSpec{{
+					Name: "principal-matches-account",
+					Left: CorrelationSelector{
+						Service: "edge-gateway",
+						Span:    "resolvePrincipal",
+						Attr:    "return.value",
+						Extract: `(\d+)`,
+					},
+					Right: CorrelationSelector{
+						Service: "account-service",
+						Span:    "getAccount",
+						Attr:    "arg.0",
+					},
+					Relation: CorrelationRelationEquals,
+					Severity: "critical",
+					Why:      "principal must match account",
+				}},
 			},
 		},
 	}, got)
@@ -267,4 +314,69 @@ func TestSystemSettingsFromInputCarriesResetTransactions(t *testing.T) {
 func TestSystemIdentitySettingsFromInputWithoutASection(t *testing.T) {
 	got := SystemIdentitySettingsFromInput(nil)
 	assert.Equal(t, SystemIdentitySettings{TransactionIdentityDimensions: []SystemTransactionIdentityDimension{}}, got)
+}
+
+func TestRecommendationApplyItemsFromInput(t *testing.T) {
+	t.Run("an item without a spec applies the mined rule", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{{ID: "rec-1"}})
+		assert.Equal(t, []RecommendationApplyItem{{ID: "rec-1"}}, got)
+	})
+
+	t.Run("an edited spec is carried through", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{{
+			ID: "rec-1",
+			Spec: &model.InsightsCorrelationSpecInput{
+				Name:     "cart owner",
+				Left:     &model.InsightsCorrelationSelectorInput{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+				Right:    &model.InsightsCorrelationSelectorInput{Service: "cart", Span: "getCart", Attr: "arg.0"},
+				Relation: model.InsightsCorrelationRelationEquals,
+			},
+		}})
+
+		require.Len(t, got, 1)
+		require.NotNil(t, got[0].Spec)
+		assert.Equal(t, CorrelationSpec{
+			Name:     "cart owner",
+			Left:     CorrelationSelector{Service: "checkout", Span: "resolvePrincipal", Attr: "return.value"},
+			Right:    CorrelationSelector{Service: "cart", Span: "getCart", Attr: "arg.0"},
+			Relation: CorrelationRelationEquals,
+			// The spec converter defaults severity, so an edit that only
+			// renames the rule still writes a complete rule.
+			Severity: "critical",
+		}, *got[0].Spec)
+	})
+
+	t.Run("a rule selection is carried through", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{{
+			ID:    "60dd0838cd7e5977",
+			Rules: []string{"allowed_callees", "allowed_egress"},
+		}})
+
+		assert.Equal(t, []RecommendationApplyItem{{
+			ID:    "60dd0838cd7e5977",
+			Rules: []string{"allowed_callees", "allowed_egress"},
+		}}, got)
+	})
+
+	// The engine reads an empty selection as "every rule on the card", the same
+	// as omitting it, so an empty list is not forwarded as one — there is no
+	// way to spell "apply nothing", and a caller that wants that skips the item.
+	t.Run("an empty rule selection is left off the request", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{{
+			ID:    "60dd0838cd7e5977",
+			Rules: []string{},
+		}})
+
+		require.Len(t, got, 1)
+		assert.Nil(t, got[0].Rules)
+	})
+
+	t.Run("nil entries are skipped", func(t *testing.T) {
+		got := RecommendationApplyItemsFromInput([]*model.InsightsRecommendationApplyItemInput{nil, {ID: "rec-2"}, nil})
+		assert.Equal(t, []RecommendationApplyItem{{ID: "rec-2"}}, got)
+	})
+
+	t.Run("no items is an empty batch, not nil", func(t *testing.T) {
+		assert.Equal(t, []RecommendationApplyItem{}, RecommendationApplyItemsFromInput(nil))
+	})
 }
