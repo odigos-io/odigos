@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
-	"github.com/odigos-io/odigos/common/consts"
 )
 
 type odigosproOffsetsController struct {
@@ -27,18 +27,14 @@ type odigosproOffsetsController struct {
 
 func (r *odigosproOffsetsController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	logger := commonlogger.FromContext(ctx)
-	var configMap corev1.ConfigMap
 	odigosNs := env.GetCurrentNamespace()
 
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: consts.OdigosConfigurationName}, &configMap)
+	// the effective config is the only document that carries the UI (odigos-local-ui-config) and
+	// central (odigos-remote-config) overlays, so reading the helm-managed odigos-configuration
+	// here would ignore a cron/mode set from anywhere but helm values.
+	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, r.Client)
 	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	odigosConfiguration := &common.OdigosConfiguration{}
-	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), odigosConfiguration)
-	if err != nil {
-		return ctrl.Result{}, err
+		return utils.K8SNoEffectiveConfigErrorHandler(err)
 	}
 
 	// Determine the mode to use (default to "direct" if not specified)
@@ -114,7 +110,7 @@ func (r *odigosproOffsetsController) Reconcile(ctx context.Context, _ ctrl.Reque
 			},
 		},
 	}
-	return ctrl.Result{}, applyCronJob(ctx, r.Client, odigosNs, cronJob, odigosConfiguration)
+	return ctrl.Result{}, applyCronJob(ctx, r.Client, odigosNs, cronJob, &odigosConfiguration)
 }
 
 func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string) error {
