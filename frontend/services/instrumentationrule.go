@@ -503,27 +503,19 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.Notes = *input.Notes
 	existingRule.Spec.Disabled = *input.Disabled
 
-	// Preserve selectors and type payloads when omitted. GraphQL clients (and UI
-	// forms that don't re-send unchanged optional fields) send nil for these;
-	// treating omit as clear would widen scoped rules or silently drop headers,
-	// payloads, custom probes, or network-metrics enablement.
-	// Explicit empty lists/objects still clear via the converters below.
-	if input.SourcesScopes != nil {
-		existingRule.Spec.Scopes = convertSourcesScopeInput(input.SourcesScopes)
+	// Selectors: an omitted field keeps the stored value, so a partial update never
+	// widens a scoped rule, while an explicit null clears it (null scopes means the
+	// entire cluster, null libraries means all libraries).
+	if input.SourcesScopes.IsSet() {
+		existingRule.Spec.Scopes = convertSourcesScopeInput(input.SourcesScopes.Value())
 	}
 
-	if input.InstrumentationLibraries != nil {
-		convertedLibraries := make([]v1alpha1.InstrumentationLibraryGlobalId, len(input.InstrumentationLibraries))
-		for i, lib := range input.InstrumentationLibraries {
-			convertedLibraries[i] = v1alpha1.InstrumentationLibraryGlobalId{
-				Name:     lib.Name,
-				SpanKind: common.SpanKind(*lib.SpanKind),
-				Language: common.ProgrammingLanguage(*lib.Language),
-			}
-		}
-		existingRule.Spec.InstrumentationLibraries = &convertedLibraries
+	if input.InstrumentationLibraries.IsSet() {
+		existingRule.Spec.InstrumentationLibraries = convertInstrumentationLibrariesInput(input.InstrumentationLibraries.Value())
 	}
 
+	// Type payloads are preserved when nil: clients send null for the payloads that
+	// don't apply to the rule's type, so nil can't mean "clear" here.
 	if input.PayloadCollection != nil {
 		existingRule.Spec.PayloadCollection = mergePayloadCollectionUpdate(existingRule.Spec.PayloadCollection, input.PayloadCollection)
 	}
@@ -594,23 +586,8 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	notes := *input.Notes
 	disabled := *input.Disabled
 
-	var sourcesScopes *k8sconsts.SourcesScopes
-	if input.SourcesScopes != nil {
-		sourcesScopes = convertSourcesScopeInput(input.SourcesScopes)
-	}
-
-	var instrumentationLibraries *[]v1alpha1.InstrumentationLibraryGlobalId
-	if input.InstrumentationLibraries != nil {
-		convertedLibraries := make([]v1alpha1.InstrumentationLibraryGlobalId, len(input.InstrumentationLibraries))
-		for i, lib := range input.InstrumentationLibraries {
-			convertedLibraries[i] = v1alpha1.InstrumentationLibraryGlobalId{
-				Name:     lib.Name,
-				SpanKind: common.SpanKind(*lib.SpanKind),
-				Language: common.ProgrammingLanguage(*lib.Language),
-			}
-		}
-		instrumentationLibraries = &convertedLibraries
-	}
+	sourcesScopes := convertSourcesScopeInput(input.SourcesScopes.Value())
+	instrumentationLibraries := convertInstrumentationLibrariesInput(input.InstrumentationLibraries.Value())
 
 	customInstrumentations, err := getCustomInstrumentationsInput(input)
 	if err != nil {
@@ -718,6 +695,23 @@ func convertSourcesScopeInput(scopes []*model.InstrumentationRuleSourcesScopeInp
 // row-per-criterion GraphQL shape: one row per Source, one per Namespace, one
 // per Language. This is the inverse of convertSourcesScopeInput for the common
 // case of single-dimension rows.
+// convertInstrumentationLibrariesInput returns nil (all libraries) for a nil list and
+// a pointer to an empty list for an explicit empty one.
+func convertInstrumentationLibrariesInput(libraries []*model.InstrumentationLibraryGlobalIDInput) *[]v1alpha1.InstrumentationLibraryGlobalId {
+	if libraries == nil {
+		return nil
+	}
+	converted := make([]v1alpha1.InstrumentationLibraryGlobalId, len(libraries))
+	for i, lib := range libraries {
+		converted[i] = v1alpha1.InstrumentationLibraryGlobalId{
+			Name:     lib.Name,
+			SpanKind: common.SpanKind(*lib.SpanKind),
+			Language: common.ProgrammingLanguage(*lib.Language),
+		}
+	}
+	return &converted
+}
+
 func convertSourcesScope(scopes *k8sconsts.SourcesScopes) []*model.InstrumentationRuleSourcesScope {
 	if scopes == nil {
 		return nil
