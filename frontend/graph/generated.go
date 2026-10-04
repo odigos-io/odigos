@@ -91751,14 +91751,14 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
-			it.SourcesScopes = data
+			it.SourcesScopes = graphql.OmittableOf(data)
 		case "instrumentationLibraries":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentationLibraries"))
 			data, err := ec.unmarshalOInstrumentationLibraryGlobalIdInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationLibraryGlobalIDInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.InstrumentationLibraries = data
+			it.InstrumentationLibraries = graphql.OmittableOf(data)
 		case "codeAttributes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("codeAttributes"))
 			data, err := ec.unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributesInput(ctx, v)

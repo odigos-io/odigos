@@ -1875,17 +1875,17 @@ type InstrumentationRuleFieldYamlProperties struct {
 }
 
 type InstrumentationRuleInput struct {
-	RuleName                 *string                                 `json:"ruleName,omitempty"`
-	Notes                    *string                                 `json:"notes,omitempty"`
-	Disabled                 *bool                                   `json:"disabled,omitempty"`
-	Workloads                []*PodWorkloadInput                     `json:"workloads,omitempty"`
-	SourcesScopes            []*InstrumentationRuleSourcesScopeInput `json:"sourcesScopes,omitempty"`
-	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput  `json:"instrumentationLibraries,omitempty"`
-	CodeAttributes           *CodeAttributesInput                    `json:"codeAttributes,omitempty"`
-	HeadersCollection        *HeadersCollectionInput                 `json:"headersCollection,omitempty"`
-	PayloadCollection        *PayloadCollectionInput                 `json:"payloadCollection,omitempty"`
-	CustomInstrumentations   *CustomInstrumentationsInput            `json:"customInstrumentations,omitempty"`
-	NetworkMetrics           *bool                                   `json:"networkMetrics,omitempty"`
+	RuleName                 *string                                                    `json:"ruleName,omitempty"`
+	Notes                    *string                                                    `json:"notes,omitempty"`
+	Disabled                 *bool                                                      `json:"disabled,omitempty"`
+	Workloads                []*PodWorkloadInput                                        `json:"workloads,omitempty"`
+	SourcesScopes            graphql.Omittable[[]*InstrumentationRuleSourcesScopeInput] `json:"sourcesScopes,omitempty"`
+	InstrumentationLibraries graphql.Omittable[[]*InstrumentationLibraryGlobalIDInput]  `json:"instrumentationLibraries,omitempty"`
+	CodeAttributes           *CodeAttributesInput                                       `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollectionInput                                    `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollectionInput                                    `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentationsInput                               `json:"customInstrumentations,omitempty"`
+	NetworkMetrics           *bool                                                      `json:"networkMetrics,omitempty"`
 }
 
 type InstrumentationRuleSourcesScope struct {

@@ -186,6 +186,15 @@ models:
       operation: { omittable: true }
       notes: { omittable: true }
 
+  # Same partial-update semantics for the instrumentation rule selectors: a null
+  # sourcesScopes widens the rule to the entire cluster, and a null
+  # instrumentationLibraries to all libraries. The type payloads are left as-is:
+  # clients send null for the ones that don't apply to the rule's type.
+  InstrumentationRuleInput:
+    fields:
+      sourcesScopes: { omittable: true }
+      instrumentationLibraries: { omittable: true }
+
   K8sNamespace:
     fields:
       markedForInstrumentation:
