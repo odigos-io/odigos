@@ -214,7 +214,6 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
 	gatewayOptions.Insights = insightsCfg
-	gatewayOptions.CardinalityControl = cardinalityControlCfg
 	// Provide the insights OTLP endpoint so pipelinegen (in the common module, which
 	// cannot import api/k8sconsts) can add an OTLP exporter to metrics/servicegraph
 	// for the blast-radius topology. Target the headless Service via dns:/// so
