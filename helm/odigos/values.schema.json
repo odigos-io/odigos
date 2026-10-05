@@ -149,6 +149,113 @@
       "required": [],
       "title": "autoscaler"
     },
+    "cacheDb": {
+      "additionalProperties": false,
+      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (default image is Redis); values stay backend-agnostic\nso the chart can switch to another cache (e.g. Memcached) without renaming this section.",
+      "properties": {
+        "image": {
+          "default": "redis:7.4.2",
+          "description": "Cache container image (third-party; override for private mirrors or version pins).",
+          "required": [],
+          "title": "image"
+        },
+        "maxmemory": {
+          "default": "220mb",
+          "description": "Soft memory cap for the cache process when the backend supports it.\nWhen unset, derived as ~85% of the effective memory limit (see resources).",
+          "required": [],
+          "title": "maxmemory"
+        },
+        "maxmemoryPolicy": {
+          "default": "allkeys-lru",
+          "description": "Eviction policy when maxmemory is reached, when the backend supports it (e.g. allkeys-lru).",
+          "required": [],
+          "title": "maxmemoryPolicy"
+        },
+        "resources": {
+          "additionalProperties": true,
+          "default": "",
+          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults are chosen from the features that use the cache\n(e.g. cardinalityControl.urlTemplatization.liveTrafficLearning.enabled), with\nrequest equal to limit (Guaranteed QoS) so the pod is not evicted under pressure.\nSet requests and/or limits to override; if only one side is set, the other\nis mirrored from it.",
+          "required": [],
+          "title": "resources"
+        }
+      },
+      "required": [],
+      "title": "cacheDb"
+    },
+    "cardinalityControl": {
+      "additionalProperties": false,
+      "description": "Cardinality control settings. Configure how Odigos produces and maintains low-cardinality\nattributes and span names in telemetry, and discovers and removes high-cardinality ones\n(for example URL templatization, which sets http.route / url.template and rewrites\nHTTP span names to templated routes that must stay low-cardinality).",
+      "properties": {
+        "urlTemplatization": {
+          "additionalProperties": false,
+          "description": "URL templatization replaces variable parts of HTTP paths with placeholders\n(e.g. /users/123 → /users/{id}) in span names and attributes (http.route / url.template).",
+          "properties": {
+            "liveTrafficLearning": {
+              "additionalProperties": false,
+              "description": "Learn URL templatization rules from live traffic based on path segment\noccurrence counts. Enterprise-only — requires an on-prem token\n(onPremToken / odigos-pro secret). Enabling this deploys the shared\ncache under cacheDb.",
+              "properties": {
+                "automaticRules": {
+                  "additionalProperties": false,
+                  "description": "Live-traffic automatic rules: apply URL templatization rules learned\nfrom live traffic when they meet the observation threshold. Opt-in;\nunset/empty keeps live-traffic automatic rules off (rules are only\nsuggested).",
+                  "properties": {
+                    "enabled": {
+                      "default": "",
+                      "description": "When true, enables live-traffic automatic rules — learned URL\ntemplatization rules that meet minObservationsForTemplating are\napplied for you. Opt-in; unset/empty keeps live-traffic automatic\nrules off.",
+                      "required": [],
+                      "title": "enabled"
+                    },
+                    "learningInterval": {
+                      "default": "30s",
+                      "description": "Learning interval: how often the instrumentor checks live traffic\nfor new URL templatization rules. Smaller intervals react faster to\ntraffic changes but use more instrumentor resources. Default: 30s.",
+                      "required": [],
+                      "title": "learningInterval"
+                    },
+                    "minCardinalityForTemplating": {
+                      "default": "20",
+                      "description": "Min cardinality for templating: minimum number of distinct child\nsegment values required before a path segment is collapsed into a\ntemplated placeholder ({id}) in recommended and live-traffic\nautomatic rules. Below this threshold, high-branching segments stay\nas wildcards (*). Additive with the other maturity criteria — rules\nmust still meet minObservationsForTemplating and the remaining\nlearning checks. Default: 20.",
+                      "required": [],
+                      "title": "minCardinalityForTemplating"
+                    },
+                    "minObservationsForTemplating": {
+                      "default": "100",
+                      "description": "Min observations for templating: minimum number of path observations\nrequired before a rule is recommended in the UI, and before it is\napplied as a live-traffic automatic rule when automaticRules.enabled\nis true. Default: 100.",
+                      "required": [],
+                      "title": "minObservationsForTemplating"
+                    }
+                  },
+                  "required": [],
+                  "title": "automaticRules"
+                },
+                "enabled": {
+                  "default": "",
+                  "description": "When true, enables live-traffic learning of URL templatization rules.\nOpt-in; unset/empty keeps the feature off.",
+                  "required": [],
+                  "title": "enabled"
+                },
+                "maxExamplePathsPerWorkload": {
+                  "default": "5000",
+                  "description": "Max example paths per workload: maximum distinct unmatched HTTP paths\nstored per workload for live-traffic learning (server and client\nhashes are capped independently). A larger number can increase the\naccuracy and speed of automatic live-traffic rules, but requires more\nresources. Default: 5000.",
+                  "required": [],
+                  "title": "maxExamplePathsPerWorkload"
+                },
+                "pathExampleIdleTTL": {
+                  "default": "48h",
+                  "description": "Path example idle TTL: how long an unmatched path example is kept\nafter its last observation. Each new observation refreshes the TTL\n(sliding window). Expired paths free quota for new examples. Must\nstay well above the collector flush interval and the learning\ninterval. Default: 48h (2 days).",
+                  "required": [],
+                  "title": "pathExampleIdleTTL"
+                }
+              },
+              "required": [],
+              "title": "liveTrafficLearning"
+            }
+          },
+          "required": [],
+          "title": "urlTemplatization"
+        }
+      },
+      "required": [],
+      "title": "cardinalityControl"
+    },
     "centralProxy": {
       "additionalProperties": false,
       "description": "Configuration for the central proxy component.",
@@ -533,113 +640,6 @@
       "description": "When false (default), selected recommendation Actions (URL templatization, Infer DB Attributes)\nare created automatically as post-install Helm hooks. Set to true to skip auto-applying them.",
       "required": [],
       "title": "disableAutoRecommendations"
-    },
-    "cardinalityControl": {
-      "additionalProperties": false,
-      "description": "Cardinality control settings. Configure how Odigos produces and maintains low-cardinality\nattributes and span names in telemetry, and discovers and removes high-cardinality ones\n(for example URL templatization, which sets http.route / url.template and rewrites\nHTTP span names to templated routes that must stay low-cardinality).",
-      "properties": {
-        "urlTemplatization": {
-          "additionalProperties": false,
-          "description": "URL templatization replaces variable parts of HTTP paths with placeholders\n(e.g. /users/123 \u2192 /users/{id}) in span names and attributes (http.route / url.template).",
-          "properties": {
-            "liveTrafficLearning": {
-              "additionalProperties": false,
-              "description": "Learn URL templatization rules from live traffic based on path segment\noccurrence counts. Enterprise-only \u2014 requires an on-prem token\n(onPremToken / odigos-pro secret). Enabling this deploys the shared\ncache under cacheDb.",
-              "properties": {
-                "automaticRules": {
-                  "additionalProperties": false,
-                  "description": "Live-traffic automatic rules: apply URL templatization rules learned\nfrom live traffic when they meet the observation threshold. Opt-in;\nunset/empty keeps live-traffic automatic rules off (rules are only\nsuggested).",
-                  "properties": {
-                    "enabled": {
-                      "default": "",
-                      "description": "When true, enables live-traffic automatic rules \u2014 learned URL\ntemplatization rules that meet minObservationsForTemplating are\napplied for you. Opt-in; unset/empty keeps live-traffic automatic\nrules off.",
-                      "required": [],
-                      "title": "enabled"
-                    },
-                    "learningInterval": {
-                      "default": "30s",
-                      "description": "Learning interval: how often the instrumentor checks live traffic\nfor new URL templatization rules. Smaller intervals react faster to\ntraffic changes but use more instrumentor resources. Default: 30s.",
-                      "required": [],
-                      "title": "learningInterval"
-                    },
-                    "minCardinalityForTemplating": {
-                      "default": "20",
-                      "description": "Min cardinality for templating: minimum number of distinct child\nsegment values required before a path segment is collapsed into a\ntemplated placeholder ({id}) in recommended and live-traffic\nautomatic rules. Below this threshold, high-branching segments stay\nas wildcards (*). Additive with the other maturity criteria \u2014 rules\nmust still meet minObservationsForTemplating and the remaining\nlearning checks. Default: 20.",
-                      "required": [],
-                      "title": "minCardinalityForTemplating"
-                    },
-                    "minObservationsForTemplating": {
-                      "default": "100",
-                      "description": "Min observations for templating: minimum number of path observations\nrequired before a rule is recommended in the UI, and before it is\napplied as a live-traffic automatic rule when automaticRules.enabled\nis true. Default: 100.",
-                      "required": [],
-                      "title": "minObservationsForTemplating"
-                    }
-                  },
-                  "required": [],
-                  "title": "automaticRules"
-                },
-                "enabled": {
-                  "default": "",
-                  "description": "When true, enables live-traffic learning of URL templatization rules.\nOpt-in; unset/empty keeps the feature off.",
-                  "required": [],
-                  "title": "enabled"
-                },
-                "maxExamplePathsPerWorkload": {
-                  "default": "5000",
-                  "description": "Max example paths per workload: maximum distinct unmatched HTTP paths\nstored per workload for live-traffic learning (server and client\nhashes are capped independently). A larger number can increase the\naccuracy and speed of automatic live-traffic rules, but requires more\nresources. Default: 5000.",
-                  "required": [],
-                  "title": "maxExamplePathsPerWorkload"
-                },
-                "pathExampleIdleTTL": {
-                  "default": "48h",
-                  "description": "Path example idle TTL: how long an unmatched path example is kept\nafter its last observation. Each new observation refreshes the TTL\n(sliding window). Expired paths free quota for new examples. Must\nstay well above the collector flush interval and the learning\ninterval. Default: 48h (2 days).",
-                  "required": [],
-                  "title": "pathExampleIdleTTL"
-                }
-              },
-              "required": [],
-              "title": "liveTrafficLearning"
-            }
-          },
-          "required": [],
-          "title": "urlTemplatization"
-        }
-      },
-      "required": [],
-      "title": "cardinalityControl"
-    },
-    "cacheDb": {
-      "additionalProperties": false,
-      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (default image is Redis); values stay backend-agnostic\nso the chart can switch to another cache (e.g. Memcached) without renaming this section.",
-      "properties": {
-        "image": {
-          "default": "redis:7.4.2",
-          "description": "Cache container image (third-party; override for private mirrors or version pins).",
-          "required": [],
-          "title": "image"
-        },
-        "maxmemory": {
-          "default": "220mb",
-          "description": "Soft memory cap for the cache process when the backend supports it.\nWhen unset, derived as ~85% of the effective memory limit (see resources).",
-          "required": [],
-          "title": "maxmemory"
-        },
-        "maxmemoryPolicy": {
-          "default": "allkeys-lru",
-          "description": "Eviction policy when maxmemory is reached, when the backend supports it (e.g. allkeys-lru).",
-          "required": [],
-          "title": "maxmemoryPolicy"
-        },
-        "resources": {
-          "additionalProperties": true,
-          "default": "",
-          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults are chosen from the features that use the cache\n(e.g. cardinalityControl.urlTemplatization.liveTrafficLearning.enabled), with\nrequest equal to limit (Guaranteed QoS) so the pod is not evicted under pressure.\nSet requests and/or limits to override; if only one side is set, the other\nis mirrored from it.",
-          "required": [],
-          "title": "resources"
-        }
-      },
-      "required": [],
-      "title": "cacheDb"
     },
     "externalOnpremPullSecret": {
       "default": "false",
