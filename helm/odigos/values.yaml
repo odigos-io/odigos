@@ -138,14 +138,13 @@ cardinalityControl:
 
       # @schema
       # description: |-
-      #   Garbage collection interval: how often the instrumentor runs garbage
-      #   collection on live-traffic learning path examples in the shared cache.
-      #   Independent of automaticRules.learningInterval — use a different value
-      #   when you want GC to run more or less often than rule learning.
-      #   Smaller intervals reclaim expired path quota sooner but use more
+      #   Learning interval: how often the instrumentor runs the live-traffic
+      #   learning cycle — checking for new URL templatization rules and
+      #   garbage-collecting path examples in the shared cache. Smaller
+      #   intervals react faster and reclaim quota sooner but use more
       #   instrumentor resources. Default: 30s.
       # @schema
-      garbageCollectionInterval: 30s
+      learningInterval: 30s
 
       # @schema
       # description: |-
@@ -163,14 +162,6 @@ cardinalityControl:
         #   rules off.
         # @schema
         enabled:
-
-        # @schema
-        # description: |-
-        #   Learning interval: how often the instrumentor checks live traffic
-        #   for new URL templatization rules. Smaller intervals react faster to
-        #   traffic changes but use more instrumentor resources. Default: 30s.
-        # @schema
-        learningInterval: 30s
 
         # @schema
         # description: |-

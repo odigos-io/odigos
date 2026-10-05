@@ -469,21 +469,16 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 					ltlModel.PathExampleIdleTTL = &ttl
 					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL")
 				}
-				if ltl.GarbageCollectionInterval != "" {
-					interval := ltl.GarbageCollectionInterval
-					ltlModel.GarbageCollectionInterval = &interval
-					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.garbageCollectionInterval")
+				if ltl.LearningInterval != "" {
+					interval := ltl.LearningInterval
+					ltlModel.LearningInterval = &interval
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval")
 				}
 				if ltl.AutomaticRules != nil {
 					ltlModel.AutomaticRules = &model.LiveTrafficLearningAutomaticRulesConfig{
 						Enabled:                      ltl.AutomaticRules.Enabled,
 						MinObservationsForTemplating: ltl.AutomaticRules.MinObservationsForTemplating,
 						MinCardinalityForTemplating:  ltl.AutomaticRules.MinCardinalityForTemplating,
-					}
-					if ltl.AutomaticRules.LearningInterval != "" {
-						interval := ltl.AutomaticRules.LearningInterval
-						ltlModel.AutomaticRules.LearningInterval = &interval
-						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.learningInterval")
 					}
 					if ltl.AutomaticRules.Enabled != nil {
 						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled")

@@ -27,12 +27,12 @@ spec:
       description: How long an unmatched path example is kept after its last observation. Each new observation refreshes the TTL. Expired paths free quota for new examples. Default is 48h (2 days) when unset.
       helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL
       renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
-    - displayName: Garbage Collection Interval
+    - displayName: Learning Interval
       componentType: time
       isHelmOnly: false
       isEnterpriseOnly: true
-      description: How often the instrumentor runs garbage collection on live-traffic learning path examples in the shared cache. Independent of the learning interval. Default is 30s when unset.
-      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.garbageCollectionInterval
+      description: How often the instrumentor runs the live-traffic learning cycle — checking for new URL templatization rules and garbage-collecting path examples in the shared cache. Default is 30s when unset.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval
       renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
     - displayName: Live-traffic Automatic Rules
       componentType: toggle
@@ -41,12 +41,6 @@ spec:
       description: Apply learned URL templatization rules automatically when they meet the observation threshold. When off, rules are only suggested.
       helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled
       renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
-    - displayName: Learning Interval
-      componentType: time
-      isHelmOnly: false
-      isEnterpriseOnly: true
-      description: How often the instrumentor checks live traffic for new URL templatization rules. Smaller intervals react faster to traffic changes but use more instrumentor resources. Default is 30s when unset.
-      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.learningInterval
     - displayName: Min Observations for Templating
       componentType: input
       isHelmOnly: false

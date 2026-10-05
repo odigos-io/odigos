@@ -638,12 +638,6 @@ type LiveTrafficLearningAutomaticRulesConfiguration struct {
 	// live-traffic automatic rules off (rules are only suggested).
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 
-	// LearningInterval is how often the instrumentor checks live traffic for
-	// new URL templatization rules (Go duration, e.g. "30s"). Smaller intervals
-	// react faster to traffic changes but use more instrumentor resources.
-	// Defaults to 30s when unset.
-	LearningInterval string `json:"learningInterval,omitempty" yaml:"learningInterval,omitempty"`
-
 	// MinObservationsForTemplating is the minimum number of path observations
 	// required before a rule is recommended in the UI, and before it is applied
 	// as a live-traffic automatic rule when Enabled. Defaults to 100 when unset.
@@ -684,11 +678,12 @@ type LiveTrafficLearningConfiguration struct {
 	// Defaults to 48h (2 days) when unset.
 	PathExampleIdleTTL string `json:"pathExampleIdleTTL,omitempty" yaml:"pathExampleIdleTTL,omitempty"`
 
-	// GarbageCollectionInterval is how often the instrumentor runs garbage
-	// collection on live-traffic learning path examples in the shared cache
-	// (Go duration, e.g. "30s"). Independent of AutomaticRules.LearningInterval.
-	// Defaults to 30s when unset.
-	GarbageCollectionInterval string `json:"garbageCollectionInterval,omitempty" yaml:"garbageCollectionInterval,omitempty"`
+	// LearningInterval is how often the instrumentor runs the live-traffic
+	// learning cycle (Go duration, e.g. "30s"): checking for new URL
+	// templatization rules and garbage-collecting path examples in the shared
+	// cache. Smaller intervals react faster and reclaim quota sooner but use
+	// more instrumentor resources. Defaults to 30s when unset.
+	LearningInterval string `json:"learningInterval,omitempty" yaml:"learningInterval,omitempty"`
 
 	// AutomaticRules controls live-traffic automatic rules — whether learned
 	// rules are applied for you when they meet the observation threshold.

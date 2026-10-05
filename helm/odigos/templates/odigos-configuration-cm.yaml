@@ -87,16 +87,13 @@ data:
           {{- if $ltl.pathExampleIdleTTL }}
           pathExampleIdleTTL: {{ $ltl.pathExampleIdleTTL | quote }}
           {{- end }}
-          {{- if $ltl.garbageCollectionInterval }}
-          garbageCollectionInterval: {{ $ltl.garbageCollectionInterval | quote }}
+          {{- if $ltl.learningInterval }}
+          learningInterval: {{ $ltl.learningInterval | quote }}
           {{- end }}
-          {{- if or $automaticRules.enabled $automaticRules.learningInterval $automaticRules.minObservationsForTemplating $automaticRules.minCardinalityForTemplating }}
+          {{- if or $automaticRules.enabled $automaticRules.minObservationsForTemplating $automaticRules.minCardinalityForTemplating }}
           automaticRules:
             {{- if $automaticRules.enabled }}
             enabled: {{ $automaticRules.enabled }}
-            {{- end }}
-            {{- if $automaticRules.learningInterval }}
-            learningInterval: {{ $automaticRules.learningInterval | quote }}
             {{- end }}
             {{- if $automaticRules.minObservationsForTemplating }}
             minObservationsForTemplating: {{ $automaticRules.minObservationsForTemplating }}

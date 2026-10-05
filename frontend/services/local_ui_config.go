@@ -191,11 +191,11 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 	}
 	ltlInput := input.URLTemplatization.LiveTrafficLearning
 	// enabled is Helm-only; UI overlays may set maxExamplePathsPerWorkload,
-	// pathExampleIdleTTL, garbageCollectionInterval, and automaticRules.
+	// pathExampleIdleTTL, learningInterval, and automaticRules.
 	if ltlInput.AutomaticRules == nil &&
 		ltlInput.MaxExamplePathsPerWorkload == nil &&
 		ltlInput.PathExampleIdleTTL == nil &&
-		ltlInput.GarbageCollectionInterval == nil {
+		ltlInput.LearningInterval == nil {
 		return
 	}
 
@@ -216,8 +216,8 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 	if ltlInput.PathExampleIdleTTL != nil {
 		ltl.PathExampleIdleTTL = *ltlInput.PathExampleIdleTTL
 	}
-	if ltlInput.GarbageCollectionInterval != nil {
-		ltl.GarbageCollectionInterval = *ltlInput.GarbageCollectionInterval
+	if ltlInput.LearningInterval != nil {
+		ltl.LearningInterval = *ltlInput.LearningInterval
 	}
 	if ltlInput.AutomaticRules == nil {
 		return
@@ -229,9 +229,6 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 	dst := ltl.AutomaticRules
 	if ltlInput.AutomaticRules.Enabled != nil {
 		dst.Enabled = ltlInput.AutomaticRules.Enabled
-	}
-	if ltlInput.AutomaticRules.LearningInterval != nil {
-		dst.LearningInterval = *ltlInput.AutomaticRules.LearningInterval
 	}
 	if ltlInput.AutomaticRules.MinObservationsForTemplating != nil {
 		dst.MinObservationsForTemplating = ltlInput.AutomaticRules.MinObservationsForTemplating

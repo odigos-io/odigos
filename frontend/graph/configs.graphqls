@@ -158,7 +158,6 @@ type ProfilingConfig {
 
 type LiveTrafficLearningAutomaticRulesConfig {
   enabled: Boolean
-  learningInterval: String
   minObservationsForTemplating: Int
   minCardinalityForTemplating: Int
 }
@@ -167,7 +166,7 @@ type LiveTrafficLearningConfig {
   enabled: Boolean
   maxExamplePathsPerWorkload: Int
   pathExampleIdleTTL: String
-  garbageCollectionInterval: String
+  learningInterval: String
   automaticRules: LiveTrafficLearningAutomaticRulesConfig
 }
 
@@ -391,18 +390,17 @@ input LocalUiConfigTraceCorrelationsInput {
 
 input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
   enabled: Boolean
-  learningInterval: String
   minObservationsForTemplating: Int
   minCardinalityForTemplating: Int
 }
 
 input LocalUiConfigLiveTrafficLearningInput {
   # enabled is Helm-only (deploys cacheDb); UI may override
-  # maxExamplePathsPerWorkload, pathExampleIdleTTL, garbageCollectionInterval,
+  # maxExamplePathsPerWorkload, pathExampleIdleTTL, learningInterval,
   # and automaticRules.
   maxExamplePathsPerWorkload: Int
   pathExampleIdleTTL: String
-  garbageCollectionInterval: String
+  learningInterval: String
   automaticRules: LocalUiConfigLiveTrafficLearningAutomaticRulesInput
 }
 

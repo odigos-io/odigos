@@ -192,12 +192,6 @@
                       "required": [],
                       "title": "enabled"
                     },
-                    "learningInterval": {
-                      "default": "30s",
-                      "description": "Learning interval: how often the instrumentor checks live traffic\nfor new URL templatization rules. Smaller intervals react faster to\ntraffic changes but use more instrumentor resources. Default: 30s.",
-                      "required": [],
-                      "title": "learningInterval"
-                    },
                     "minCardinalityForTemplating": {
                       "default": "20",
                       "description": "Min cardinality for templating: minimum number of distinct child\nsegment values required before a path segment is collapsed into a\ntemplated placeholder ({id}) in recommended and live-traffic\nautomatic rules. Below this threshold, high-branching segments stay\nas wildcards (*). Additive with the other maturity criteria — rules\nmust still meet minObservationsForTemplating and the remaining\nlearning checks. Default: 20.",
@@ -220,11 +214,11 @@
                   "required": [],
                   "title": "enabled"
                 },
-                "garbageCollectionInterval": {
+                "learningInterval": {
                   "default": "30s",
-                  "description": "Garbage collection interval: how often the instrumentor runs garbage\ncollection on live-traffic learning path examples in the shared cache.\nIndependent of automaticRules.learningInterval — use a different value\nwhen you want GC to run more or less often than rule learning.\nSmaller intervals reclaim expired path quota sooner but use more\ninstrumentor resources. Default: 30s.",
+                  "description": "Learning interval: how often the instrumentor runs the live-traffic\nlearning cycle — checking for new URL templatization rules and\ngarbage-collecting path examples in the shared cache. Smaller\nintervals react faster and reclaim quota sooner but use more\ninstrumentor resources. Default: 30s.",
                   "required": [],
-                  "title": "garbageCollectionInterval"
+                  "title": "learningInterval"
                 },
                 "maxExamplePathsPerWorkload": {
                   "default": "5000",
