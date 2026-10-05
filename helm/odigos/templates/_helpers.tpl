@@ -258,3 +258,75 @@ imagePullSecrets:
 {{- define "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" -}}
 {{- and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.liveTrafficLearning .Values.cardinalityControl.urlTemplatization.liveTrafficLearning.enabled (include "odigos.secretExists" .) -}}
 {{- end }}
+
+{{/*
+  Fail install/upgrade when liveTrafficLearning.enabled is requested without an enterprise token.
+  Mirrors odigos.secretExists (onPremToken, odigos-pro secret, or externalOnpremTokenSecret).
+*/}}
+{{- define "cardinalityControl.urlTemplatization.liveTrafficLearning.validate" -}}
+{{- if and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.liveTrafficLearning .Values.cardinalityControl.urlTemplatization.liveTrafficLearning.enabled (not (include "odigos.secretExists" .)) -}}
+{{- fail "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled is an enterprise feature and requires an on-prem token. Set onPremToken, set externalOnpremTokenSecret to true when providing the odigos-pro secret externally, or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
+{{- end -}}
+{{- end }}
+
+{{/* Returns true when the shared cache DB should be deployed (any consuming feature enabled). */}}
+{{- define "cacheDb.enabled" -}}
+{{- include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . -}}
+{{- end }}
+
+{{/*
+  Feature-derived default resources for the shared cache when cacheDb.resources is unset.
+  Used only by cacheDb.resolvedResources; user-configured resources always win.
+  request == limit for Guaranteed QoS so the cache is not evicted under pressure.
+*/}}
+{{- define "cacheDb.featureDefaultResources" -}}
+{{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" -}}
+requests:
+  cpu: 200m
+  memory: 256Mi
+limits:
+  cpu: 200m
+  memory: 256Mi
+{{- end -}}
+{{- end }}
+
+{{/* Effective cache resources: user override, else feature-derived defaults. */}}
+{{- define "cacheDb.resolvedResources" -}}
+{{- $resources := deepCopy (.Values.cacheDb.resources | default dict) -}}
+{{- $requests := get $resources "requests" | default dict -}}
+{{- $limits := get $resources "limits" | default dict -}}
+{{- if and (empty $limits) (not (empty $requests)) -}}
+  {{- $_ := set $resources "limits" $requests -}}
+{{- else if and (empty $requests) (not (empty $limits)) -}}
+  {{- $_ := set $resources "requests" $limits -}}
+{{- else if and (empty $limits) (empty $requests) -}}
+  {{- $resources = include "cacheDb.featureDefaultResources" . | fromYaml -}}
+{{- end -}}
+{{- toYaml $resources -}}
+{{- end }}
+
+{{/*
+  Soft memory cap for the cache process. User override, else ~85% of the
+  effective memory limit (Mi → mb) to leave process overhead headroom.
+*/}}
+{{- define "cacheDb.resolvedMaxmemory" -}}
+{{- if .Values.cacheDb.maxmemory -}}
+{{- .Values.cacheDb.maxmemory -}}
+{{- else -}}
+{{- $resources := include "cacheDb.resolvedResources" . | fromYaml -}}
+{{- $raw := (get (get $resources "limits" | default dict) "memory") | default (get (get $resources "requests" | default dict) "memory") -}}
+{{- $number := regexFind "^[0-9]+" ($raw | toString) -}}
+{{- $unit := regexFind "[a-zA-Z]+$" ($raw | toString) -}}
+{{- $num := int $number -}}
+{{- if eq $unit "Ki" -}}
+  {{- $num = div $num 1024 -}}
+{{- else if eq $unit "Gi" -}}
+  {{- $num = mul $num 1024 -}}
+{{- else if eq $unit "Ti" -}}
+  {{- $num = mul $num 1048576 -}}
+{{- else if and (ne $unit "Mi") (ne $unit "") -}}
+  {{- fail (printf "Unsupported memory unit %q in cacheDb resources for maxmemory derivation" $unit) -}}
+{{- end -}}
+{{- printf "%dmb" (div (mul $num 85) 100) -}}
+{{- end -}}
+{{- end }}
