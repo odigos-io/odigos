@@ -293,7 +293,8 @@ limits:
 
 {{/* Effective cache resources: user override, else feature-derived defaults. */}}
 {{- define "cacheDb.resolvedResources" -}}
-{{- $resources := deepCopy (.Values.cacheDb.resources | default dict) -}}
+{{- $cacheDb := .Values.cacheDb | default dict -}}
+{{- $resources := deepCopy (get $cacheDb "resources" | default dict) -}}
 {{- $requests := get $resources "requests" | default dict -}}
 {{- $limits := get $resources "limits" | default dict -}}
 {{- if and (empty $limits) (not (empty $requests)) -}}
@@ -311,8 +312,9 @@ limits:
   effective memory limit (Mi → mb) to leave process overhead headroom.
 */}}
 {{- define "cacheDb.resolvedMaxmemory" -}}
-{{- if .Values.cacheDb.maxmemory -}}
-{{- .Values.cacheDb.maxmemory -}}
+{{- $cacheDb := .Values.cacheDb | default dict -}}
+{{- if get $cacheDb "maxmemory" -}}
+{{- get $cacheDb "maxmemory" -}}
 {{- else -}}
 {{- $resources := include "cacheDb.resolvedResources" . | fromYaml -}}
 {{- $raw := (get (get $resources "limits" | default dict) "memory") | default (get (get $resources "requests" | default dict) "memory") -}}
