@@ -24,7 +24,8 @@ spec:
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: cache
-          image: {{ .Values.cacheDb.image | quote }}
+          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "cache" "Tag" $imageTag) }}
           command: ["redis-server"]
           args:
             - "--port"

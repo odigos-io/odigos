@@ -151,14 +151,8 @@
     },
     "cacheDb": {
       "additionalProperties": false,
-      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (default image is Redis); values stay backend-agnostic\nso the chart can switch to another cache (e.g. Memcached) without renaming this section.",
+      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (Redis, published as odigos-cache with the\nOdigos release tag); values stay backend-agnostic so the chart can switch to\nanother cache (e.g. Memcached) without renaming this section. Override the\nimage via images.cache or imagePrefix like other Odigos components.",
       "properties": {
-        "image": {
-          "default": "redis:7.4.2",
-          "description": "Cache container image (third-party; override for private mirrors or version pins).",
-          "required": [],
-          "title": "image"
-        },
         "maxmemory": {
           "default": "220mb",
           "description": "Soft memory cap for the cache process when the backend supports it.\nWhen unset, derived as ~85% of the effective memory limit (see resources).",
@@ -774,7 +768,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents,\n  enterprise-insights, victoria-metrics, cache",
       "required": [],
       "title": "images"
     },

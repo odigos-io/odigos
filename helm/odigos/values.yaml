@@ -31,7 +31,8 @@ imagePrefix:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,
-#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights
+#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents,
+#     enterprise-insights, victoria-metrics, cache
 # additionalProperties: true
 # @schema
 images: {}
@@ -185,15 +186,12 @@ cardinalityControl:
 #   Deployed when a consuming feature is enabled (currently
 #   cardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is
 #   enterprise-only and requires an on-prem token).
-#   Backend is an implementation detail (default image is Redis); values stay backend-agnostic
-#   so the chart can switch to another cache (e.g. Memcached) without renaming this section.
+#   Backend is an implementation detail (Redis, published as odigos-cache with the
+#   Odigos release tag); values stay backend-agnostic so the chart can switch to
+#   another cache (e.g. Memcached) without renaming this section. Override the
+#   image via images.cache or imagePrefix like other Odigos components.
 # @schema
 cacheDb:
-  # @schema
-  # description: Cache container image (third-party; override for private mirrors or version pins).
-  # @schema
-  image: redis:7.4.2
-
   # @schema
   # description: |-
   #   Soft memory cap for the cache process when the backend supports it.

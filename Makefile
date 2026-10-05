@@ -279,9 +279,22 @@ load-to-kind-victoria-metrics:
 		-
 	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
 
+# odigos-cache is a re-host of upstream Redis — pull the published image and retag for e2e.
+# Materialize a single-platform image via buildx --load so kind load does not fail on
+# multi-arch manifests (ctr: content digest ... not found).
+.PHONY: load-to-kind-cache
+load-to-kind-cache:
+	printf 'FROM $(ORG)/odigos-cache:latest\n' | docker buildx build \
+		--platform=linux/$$(docker version -f '{{.Server.Arch}}') \
+		--pull \
+		-t $(ORG)/odigos-cache$(IMG_SUFFIX):$(TAG) \
+		--load \
+		-
+	kind load docker-image $(ORG)/odigos-cache$(IMG_SUFFIX):$(TAG)
+
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics load-to-kind-cache ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:

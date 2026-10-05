@@ -110,6 +110,16 @@ jobs:
             -
           docker save docker.io/keyval/odigos-victoria-metrics:e2e-test -o victoria-metrics-image.tar
 
+      - name: Prepare Cache Image
+        run: |
+          printf 'FROM docker.io/keyval/odigos-cache:latest\n' | docker buildx build \
+            --platform=linux/$(docker version -f '{{.Server.Arch}}') \
+            --pull \
+            -t docker.io/keyval/odigos-cache:e2e-test \
+            --load \
+            -
+          docker save docker.io/keyval/odigos-cache:e2e-test -o cache-image.tar
+
       - name: Save Odigos images to cache
         uses: actions/cache/save@v4
         with:
@@ -117,6 +127,7 @@ jobs:
             odigos-images.tar
             cli-image.tar
             victoria-metrics-image.tar
+            cache-image.tar
           key: ${{ github.run_id }}-odigos-images
 
       - name: Configure AWS credentials from OIDC
