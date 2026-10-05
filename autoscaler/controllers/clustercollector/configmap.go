@@ -203,15 +203,18 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
 	var insightsCfg *odigoscommon.InsightsConfiguration
+	var cardinalityControlCfg *odigoscommon.CardinalityControlConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
 		insightsCfg = effectiveInsightsConfig(odigosCfg.Insights, tier)
+		cardinalityControlCfg = effectiveCardinalityControl(odigosCfg.CardinalityControl, tier)
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
 	}
 	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
 	gatewayOptions.Insights = insightsCfg
+	gatewayOptions.CardinalityControl = cardinalityControlCfg
 	// Provide the insights OTLP endpoint so pipelinegen (in the common module, which
 	// cannot import api/k8sconsts) can add an OTLP exporter to metrics/servicegraph
 	// for the blast-radius topology. Target the headless Service via dns:/// so
@@ -247,6 +250,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				addEnterpriseAuthExtension(c)
 			}
 			if err := addInsightsGatewayExporter(c, env.GetCurrentNamespace(), insightsCfg); err != nil {
+				return err
+			}
+			if err := addUrlTemplatizationUnmatchedExporter(c, env.GetCurrentNamespace(), cardinalityControlCfg); err != nil {
 				return err
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}

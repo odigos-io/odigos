@@ -67,6 +67,11 @@ type GatewayConfigOptions struct {
 	// round_robin so traffic fans out across insights replicas.
 	InsightsOtlpEndpoint string
 
+	// CardinalityControl enables traffic-based URL templatization rule
+	// computation. When LiveTrafficLearning is active, traces are forced on so
+	// the gateway can tap HTTP spans missing http.route / url.template.
+	CardinalityControl *common.CardinalityControlConfiguration
+
 	// Trace correlations configuration for the serviceio connector (service I/O metrics).
 	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
 }
@@ -209,6 +214,10 @@ func CalculateGatewayConfig(
 	// Insights taps the root traces pipeline; force traces on even with no destinations
 	// so the gateway receives spans and ReceiverSignals advertises traces to agents.
 	if common.InsightsPipelineActive(gatewayOptions.Insights) {
+		tracesEnabled = true
+	}
+	// URL templatization live traffic learning also taps the root traces pipeline.
+	if common.UrlTemplatizationLiveTrafficLearningActive(gatewayOptions.CardinalityControl) {
 		tracesEnabled = true
 	}
 
