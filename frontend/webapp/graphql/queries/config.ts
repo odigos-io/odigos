@@ -189,6 +189,21 @@ export const GET_EFFECTIVE_CONFIG = gql`
       profiling {
         enabled
       }
+      cardinalityControl {
+        urlTemplatization {
+          liveTrafficLearning {
+            enabled
+            maxExamplePathsPerWorkload
+            pathExampleIdleTTL
+            automaticRules {
+              enabled
+              learningInterval
+              minObservationsForTemplating
+              minCardinalityForTemplating
+            }
+          }
+        }
+      }
       traceCorrelations {
         serviceIO {
           enabled

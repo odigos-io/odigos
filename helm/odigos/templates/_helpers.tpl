@@ -253,3 +253,8 @@ imagePullSecrets:
 {{- define "traceCorrelations.serviceIO.enabled" -}}
 {{- and .Values.traceCorrelations .Values.traceCorrelations.serviceIO .Values.traceCorrelations.serviceIO.enabled -}}
 {{- end }}
+
+{{/* Returns true when enterprise URL templatization live traffic learning is enabled. */}}
+{{- define "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" -}}
+{{- and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.liveTrafficLearning .Values.cardinalityControl.urlTemplatization.liveTrafficLearning.enabled (include "odigos.secretExists" .) -}}
+{{- end }}

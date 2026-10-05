@@ -167,6 +167,35 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 			provenance["traceCorrelations.serviceIO.metricsFlushInterval"] = sourceName
 		}
 	}
+
+	if config.CardinalityControl != nil &&
+		config.CardinalityControl.UrlTemplatization != nil &&
+		config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
+		ltl := config.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+		if ltl.Enabled != nil {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled"] = sourceName
+		}
+		if ltl.MaxExamplePathsPerWorkload != nil {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.maxExamplePathsPerWorkload"] = sourceName
+		}
+		if ltl.PathExampleIdleTTL != "" {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL"] = sourceName
+		}
+		if ltl.AutomaticRules != nil {
+			if ltl.AutomaticRules.Enabled != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled"] = sourceName
+			}
+			if ltl.AutomaticRules.LearningInterval != "" {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.learningInterval"] = sourceName
+			}
+			if ltl.AutomaticRules.MinObservationsForTemplating != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.minObservationsForTemplating"] = sourceName
+			}
+			if ltl.AutomaticRules.MinCardinalityForTemplating != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.minCardinalityForTemplating"] = sourceName
+			}
+		}
+	}
 }
 
 // detectProfileProvenance identifies fields modified by profile application.

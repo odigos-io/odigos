@@ -448,6 +448,53 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		}
 	}
 
+	if config.CardinalityControl != nil {
+		result.CardinalityControl = &model.CardinalityControlConfig{}
+		if config.CardinalityControl.UrlTemplatization != nil {
+			result.CardinalityControl.URLTemplatization = &model.URLTemplatizationCardinalityControlConfig{}
+			if config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
+				ltl := config.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+				ltlModel := &model.LiveTrafficLearningConfig{
+					Enabled:                    ltl.Enabled,
+					MaxExamplePathsPerWorkload: ltl.MaxExamplePathsPerWorkload,
+				}
+				if ltl.Enabled != nil {
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.enabled")
+				}
+				if ltl.MaxExamplePathsPerWorkload != nil {
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.maxExamplePathsPerWorkload")
+				}
+				if ltl.PathExampleIdleTTL != "" {
+					ttl := ltl.PathExampleIdleTTL
+					ltlModel.PathExampleIdleTTL = &ttl
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL")
+				}
+				if ltl.AutomaticRules != nil {
+					ltlModel.AutomaticRules = &model.LiveTrafficLearningAutomaticRulesConfig{
+						Enabled:                      ltl.AutomaticRules.Enabled,
+						MinObservationsForTemplating: ltl.AutomaticRules.MinObservationsForTemplating,
+						MinCardinalityForTemplating:  ltl.AutomaticRules.MinCardinalityForTemplating,
+					}
+					if ltl.AutomaticRules.LearningInterval != "" {
+						interval := ltl.AutomaticRules.LearningInterval
+						ltlModel.AutomaticRules.LearningInterval = &interval
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.learningInterval")
+					}
+					if ltl.AutomaticRules.Enabled != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled")
+					}
+					if ltl.AutomaticRules.MinObservationsForTemplating != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.minObservationsForTemplating")
+					}
+					if ltl.AutomaticRules.MinCardinalityForTemplating != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.minCardinalityForTemplating")
+					}
+				}
+				result.CardinalityControl.URLTemplatization.LiveTrafficLearning = ltlModel
+			}
+		}
+	}
+
 	if config.TraceCorrelations != nil {
 		result.TraceCorrelations = &model.TraceCorrelationsConfig{
 			ServiceIo: &model.TraceCorrelationsServiceIOConfig{},

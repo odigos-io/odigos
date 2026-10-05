@@ -156,6 +156,28 @@ type ProfilingConfig {
   enabled: Boolean
 }
 
+type LiveTrafficLearningAutomaticRulesConfig {
+  enabled: Boolean
+  learningInterval: String
+  minObservationsForTemplating: Int
+  minCardinalityForTemplating: Int
+}
+
+type LiveTrafficLearningConfig {
+  enabled: Boolean
+  maxExamplePathsPerWorkload: Int
+  pathExampleIdleTTL: String
+  automaticRules: LiveTrafficLearningAutomaticRulesConfig
+}
+
+type UrlTemplatizationCardinalityControlConfig {
+  liveTrafficLearning: LiveTrafficLearningConfig
+}
+
+type CardinalityControlConfig {
+  urlTemplatization: UrlTemplatizationCardinalityControlConfig
+}
+
 type TraceCorrelationsServiceIOConfig {
   enabled: Boolean
   inputSpanAttributes: [String!]
@@ -287,6 +309,7 @@ type EffectiveConfig {
   componentLogLevels: ComponentLogLevelsConfig
   sampling: SamplingConfig
   profiling: ProfilingConfig
+  cardinalityControl: CardinalityControlConfig
   traceCorrelations: TraceCorrelationsConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
@@ -365,6 +388,29 @@ input LocalUiConfigTraceCorrelationsInput {
   serviceIO: LocalUiConfigTraceCorrelationsServiceIOInput
 }
 
+input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
+  enabled: Boolean
+  learningInterval: String
+  minObservationsForTemplating: Int
+  minCardinalityForTemplating: Int
+}
+
+input LocalUiConfigLiveTrafficLearningInput {
+  # enabled is Helm-only (deploys cacheDb); UI may override
+  # maxExamplePathsPerWorkload, pathExampleIdleTTL, and automaticRules.
+  maxExamplePathsPerWorkload: Int
+  pathExampleIdleTTL: String
+  automaticRules: LocalUiConfigLiveTrafficLearningAutomaticRulesInput
+}
+
+input LocalUiConfigUrlTemplatizationCardinalityControlInput {
+  liveTrafficLearning: LocalUiConfigLiveTrafficLearningInput
+}
+
+input LocalUiConfigCardinalityControlInput {
+  urlTemplatization: LocalUiConfigUrlTemplatizationCardinalityControlInput
+}
+
 input LocalUiConfigInput {
   telemetryEnabled: Boolean
   ignoredNamespaces: [String!]
@@ -380,6 +426,7 @@ input LocalUiConfigInput {
   sampling: LocalUiConfigSamplingInput
   componentLogLevels: LocalUiConfigComponentLogLevelsInput
   traceCorrelations: LocalUiConfigTraceCorrelationsInput
+  cardinalityControl: LocalUiConfigCardinalityControlInput
 }
 
 type ConfigYamlField {

@@ -180,6 +180,59 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 	if input.TraceCorrelations != nil {
 		applyTraceCorrelationsInput(cfg, input.TraceCorrelations)
 	}
+	if input.CardinalityControl != nil {
+		applyCardinalityControlInput(cfg, input.CardinalityControl)
+	}
+}
+
+func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.LocalUIConfigCardinalityControlInput) {
+	if input == nil || input.URLTemplatization == nil || input.URLTemplatization.LiveTrafficLearning == nil {
+		return
+	}
+	ltlInput := input.URLTemplatization.LiveTrafficLearning
+	// enabled is Helm-only; UI overlays may set maxExamplePathsPerWorkload,
+	// pathExampleIdleTTL, and automaticRules.
+	if ltlInput.AutomaticRules == nil && ltlInput.MaxExamplePathsPerWorkload == nil && ltlInput.PathExampleIdleTTL == nil {
+		return
+	}
+
+	if cfg.CardinalityControl == nil {
+		cfg.CardinalityControl = &common.CardinalityControlConfiguration{}
+	}
+	if cfg.CardinalityControl.UrlTemplatization == nil {
+		cfg.CardinalityControl.UrlTemplatization = &common.UrlTemplatizationCardinalityControlConfiguration{}
+	}
+	if cfg.CardinalityControl.UrlTemplatization.LiveTrafficLearning == nil {
+		cfg.CardinalityControl.UrlTemplatization.LiveTrafficLearning = &common.LiveTrafficLearningConfiguration{}
+	}
+
+	ltl := cfg.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+	if ltlInput.MaxExamplePathsPerWorkload != nil {
+		ltl.MaxExamplePathsPerWorkload = ltlInput.MaxExamplePathsPerWorkload
+	}
+	if ltlInput.PathExampleIdleTTL != nil {
+		ltl.PathExampleIdleTTL = *ltlInput.PathExampleIdleTTL
+	}
+	if ltlInput.AutomaticRules == nil {
+		return
+	}
+	if ltl.AutomaticRules == nil {
+		ltl.AutomaticRules = &common.LiveTrafficLearningAutomaticRulesConfiguration{}
+	}
+
+	dst := ltl.AutomaticRules
+	if ltlInput.AutomaticRules.Enabled != nil {
+		dst.Enabled = ltlInput.AutomaticRules.Enabled
+	}
+	if ltlInput.AutomaticRules.LearningInterval != nil {
+		dst.LearningInterval = *ltlInput.AutomaticRules.LearningInterval
+	}
+	if ltlInput.AutomaticRules.MinObservationsForTemplating != nil {
+		dst.MinObservationsForTemplating = ltlInput.AutomaticRules.MinObservationsForTemplating
+	}
+	if ltlInput.AutomaticRules.MinCardinalityForTemplating != nil {
+		dst.MinCardinalityForTemplating = ltlInput.AutomaticRules.MinCardinalityForTemplating
+	}
 }
 
 func applyTraceCorrelationsInput(cfg *common.OdigosConfiguration, input *model.LocalUIConfigTraceCorrelationsInput) {

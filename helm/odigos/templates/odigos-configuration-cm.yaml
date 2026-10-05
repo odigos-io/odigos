@@ -70,6 +70,39 @@ data:
     insights:
       enabled: {{ .Values.insights.enabled }}
     {{- end }}
+    {{- /*
+    Enterprise-only. Gated on odigos.secretExists like insights: without a token the
+    gateway must not force traces on or install the unmatched-URL debug side-channel.
+    */}}
+    {{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" }}
+    {{- $ltl := .Values.cardinalityControl.urlTemplatization.liveTrafficLearning }}
+    {{- $automaticRules := $ltl.automaticRules | default dict }}
+    cardinalityControl:
+      urlTemplatization:
+        liveTrafficLearning:
+          enabled: true
+          {{- if $ltl.maxExamplePathsPerWorkload }}
+          maxExamplePathsPerWorkload: {{ $ltl.maxExamplePathsPerWorkload }}
+          {{- end }}
+          {{- if $ltl.pathExampleIdleTTL }}
+          pathExampleIdleTTL: {{ $ltl.pathExampleIdleTTL | quote }}
+          {{- end }}
+          {{- if or $automaticRules.enabled $automaticRules.learningInterval $automaticRules.minObservationsForTemplating $automaticRules.minCardinalityForTemplating }}
+          automaticRules:
+            {{- if $automaticRules.enabled }}
+            enabled: {{ $automaticRules.enabled }}
+            {{- end }}
+            {{- if $automaticRules.learningInterval }}
+            learningInterval: {{ $automaticRules.learningInterval | quote }}
+            {{- end }}
+            {{- if $automaticRules.minObservationsForTemplating }}
+            minObservationsForTemplating: {{ $automaticRules.minObservationsForTemplating }}
+            {{- end }}
+            {{- if $automaticRules.minCardinalityForTemplating }}
+            minCardinalityForTemplating: {{ $automaticRules.minCardinalityForTemplating }}
+            {{- end }}
+          {{- end }}
+    {{- end }}
     {{- if .Values.profiling.enabled }}
     {{- $pex := .Values.profiling.exporter | default dict }}
     {{- $pretry := $pex.retryOnFailure | default dict }}
