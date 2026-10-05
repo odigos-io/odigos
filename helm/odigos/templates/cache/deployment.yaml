@@ -32,10 +32,8 @@ spec:
             - "6379"
             - "--maxmemory"
             - {{ include "cacheDb.resolvedMaxmemory" . | quote }}
-            {{- if .Values.cacheDb.maxmemoryPolicy }}
             - "--maxmemory-policy"
-            - "{{ .Values.cacheDb.maxmemoryPolicy }}"
-            {{- end }}
+            - "allkeys-lru"
             - "--tcp-keepalive"
             - "30"
           ports:

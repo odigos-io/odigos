@@ -159,12 +159,6 @@
           "required": [],
           "title": "maxmemory"
         },
-        "maxmemoryPolicy": {
-          "default": "allkeys-lru",
-          "description": "Eviction policy when maxmemory is reached, when the backend supports it (e.g. allkeys-lru).",
-          "required": [],
-          "title": "maxmemoryPolicy"
-        },
         "resources": {
           "additionalProperties": true,
           "default": "",

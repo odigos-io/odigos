@@ -200,11 +200,6 @@ cacheDb:
   # maxmemory: 220mb
 
   # @schema
-  # description: Eviction policy when maxmemory is reached, when the backend supports it (e.g. allkeys-lru).
-  # @schema
-  maxmemoryPolicy: allkeys-lru
-
-  # @schema
   # additionalProperties: true
   # description: |-
   #   Optional CPU/memory requests and limits for the shared cache pod.
