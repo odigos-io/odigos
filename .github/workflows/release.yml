@@ -275,8 +275,47 @@ jobs:
           fi
           echo "Using Homebrew repository: $HOMEBREW_REPO"
           echo "HOMEBREW_REPO=$HOMEBREW_REPO" >> $GITHUB_ENV
-          
+
+      - name: Check if CLI GitHub release assets already exist
+        id: existing_cli_assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.TAG }}
+        run: |
+          VERSION="${TAG#v}"
+          EXPECTED=(
+            "cli_${VERSION}_darwin_amd64.tar.gz"
+            "cli_${VERSION}_darwin_arm64.tar.gz"
+            "cli_${VERSION}_linux_amd64.tar.gz"
+            "cli_${VERSION}_linux_arm64.tar.gz"
+            "cli_${VERSION}_windows_amd64.tar.gz"
+            "cli_${VERSION}_windows_arm64.tar.gz"
+            "checksums.txt"
+          )
+
+          if ! gh release view "$TAG" --json assets --jq '.assets[].name' > /tmp/release-assets.txt 2>/dev/null; then
+            echo "No GitHub release for $TAG yet — goreleaser will create it"
+            echo "skip_goreleaser=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          missing=()
+          for name in "${EXPECTED[@]}"; do
+            if ! grep -Fxq "$name" /tmp/release-assets.txt; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "All CLI archives already on $TAG — skipping goreleaser"
+            echo "skip_goreleaser=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Missing CLI assets on $TAG: ${missing[*]} — goreleaser will upload"
+            echo "skip_goreleaser=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: odigos-io/ci-core/sts@main
+        if: steps.existing_cli_assets.outputs.skip_goreleaser != 'true'
         id: sts-goreleaser
         with:
           scope: odigos-io/${{ env.HOMEBREW_REPO }}
@@ -284,6 +323,8 @@ jobs:
           output-git-config: "false"
 
       - uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 #v7.0.0
+        id: goreleaser
+        if: steps.existing_cli_assets.outputs.skip_goreleaser != 'true'
         with:
           distribution: goreleaser
           version: '~> v2'
@@ -294,6 +335,15 @@ jobs:
           IS_PRERELEASE: ${{ env.IS_PRERELEASE }}
           SKIP_HOMEBREW_UPDATE: ${{ env.SKIP_HOMEBREW_UPDATE }}
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
+
+      - name: Notify Slack (goreleaser)
+        if: failure() && steps.goreleaser.outcome == 'failure'
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "CLI GitHub release assets published"
+          failure-description: "ERROR: Failed to publish CLI GitHub release assets (goreleaser)"
+          tag: ${{ env.TAG }}
 
       - name: Generate and update release notes
         id: release_notes
@@ -306,7 +356,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify Slack (release notes)
-        if: always() && env.IS_FEATURE_RELEASE != 'true'
+        if: always() && env.IS_FEATURE_RELEASE != 'true' && steps.release_notes.outcome != 'skipped'
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -425,7 +475,7 @@ jobs:
           fi
 
       - name: Notify Slack
-        if: always()
+        if: always() && steps.ko-cli.outcome != 'skipped'
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}

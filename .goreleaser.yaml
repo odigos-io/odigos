@@ -40,6 +40,9 @@ changelog:
       - "^test:"
 release:
   prerelease: "auto"
+  # Re-running Release Odigos for an already-published tag used to 422 on
+  # already-uploaded archives. Delete the matching asset and retry the upload.
+  replace_existing_artifacts: true
 brews:
   - repository:
       owner: odigos-io
