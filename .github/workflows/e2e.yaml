@@ -107,11 +107,11 @@ jobs:
             -
           docker save docker.io/keyval/odigos-victoria-metrics:e2e-test -o victoria-metrics-image.tar
 
-      # odigos-cache is a re-host of upstream Redis. Materialize a single-platform
-      # image (buildx --load) so kind load does not fail on multi-arch manifests.
+      # odigos-cache is only published on release. Until then e2e re-hosts upstream
+      # Redis (pin must match REDIS_VERSION in release.yml).
       - name: Prepare Cache Image
         run: |
-          printf 'FROM docker.io/keyval/odigos-cache:latest\n' | docker buildx build \
+          printf 'FROM docker.io/library/redis:8.10.2\n' | docker buildx build \
             --platform=linux/$(docker version -f '{{.Server.Arch}}') \
             --pull \
             -t docker.io/keyval/odigos-cache:e2e-test \

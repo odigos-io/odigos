@@ -279,12 +279,11 @@ load-to-kind-victoria-metrics:
 		-
 	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
 
-# odigos-cache is a re-host of upstream Redis — pull the published image and retag for e2e.
-# Materialize a single-platform image via buildx --load so kind load does not fail on
-# multi-arch manifests (ctr: content digest ... not found).
+# odigos-cache is only published on release. Until then e2e re-hosts upstream Redis
+# (pin must match REDIS_VERSION in .github/workflows/release.yml).
 .PHONY: load-to-kind-cache
 load-to-kind-cache:
-	printf 'FROM $(ORG)/odigos-cache:latest\n' | docker buildx build \
+	printf 'FROM docker.io/library/redis:8.10.2\n' | docker buildx build \
 		--platform=linux/$$(docker version -f '{{.Server.Arch}}') \
 		--pull \
 		-t $(ORG)/odigos-cache$(IMG_SUFFIX):$(TAG) \
