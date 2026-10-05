@@ -804,7 +804,11 @@ func (o *OdigosConfiguration) InsightsEnabled() bool {
 // UrlTemplatizationLiveTrafficLearningActive reports whether traffic-based URL
 // templatization rule learning is enabled. Opt-in: Enabled must be explicitly true.
 func UrlTemplatizationLiveTrafficLearningActive(c *CardinalityControlConfiguration) bool {
-	return c != nil && c.UrlTemplatization != nil && c.UrlTemplatization.LiveTrafficLearning != nil && c.UrlTemplatization.LiveTrafficLearning.Enabled != nil && *c.UrlTemplatization.LiveTrafficLearning.Enabled
+	return c != nil &&
+		c.UrlTemplatization != nil &&
+		c.UrlTemplatization.LiveTrafficLearning != nil &&
+		c.UrlTemplatization.LiveTrafficLearning.Enabled != nil &&
+		*c.UrlTemplatization.LiveTrafficLearning.Enabled
 }
 
 // UrlTemplatizationLiveTrafficLearningEnabled reports whether traffic-based URL
