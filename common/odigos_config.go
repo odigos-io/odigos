@@ -684,6 +684,12 @@ type LiveTrafficLearningConfiguration struct {
 	// Defaults to 48h (2 days) when unset.
 	PathExampleIdleTTL string `json:"pathExampleIdleTTL,omitempty" yaml:"pathExampleIdleTTL,omitempty"`
 
+	// GarbageCollectionInterval is how often the instrumentor runs garbage
+	// collection on live-traffic learning path examples in the shared cache
+	// (Go duration, e.g. "30s"). Independent of AutomaticRules.LearningInterval.
+	// Defaults to 30s when unset.
+	GarbageCollectionInterval string `json:"garbageCollectionInterval,omitempty" yaml:"garbageCollectionInterval,omitempty"`
+
 	// AutomaticRules controls live-traffic automatic rules — whether learned
 	// rules are applied for you when they meet the observation threshold.
 	AutomaticRules *LiveTrafficLearningAutomaticRulesConfiguration `json:"automaticRules,omitempty" yaml:"automaticRules,omitempty"`

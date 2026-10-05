@@ -220,6 +220,12 @@
                   "required": [],
                   "title": "enabled"
                 },
+                "garbageCollectionInterval": {
+                  "default": "30s",
+                  "description": "Garbage collection interval: how often the instrumentor runs garbage\ncollection on live-traffic learning path examples in the shared cache.\nIndependent of automaticRules.learningInterval — use a different value\nwhen you want GC to run more or less often than rule learning.\nSmaller intervals reclaim expired path quota sooner but use more\ninstrumentor resources. Default: 30s.",
+                  "required": [],
+                  "title": "garbageCollectionInterval"
+                },
                 "maxExamplePathsPerWorkload": {
                   "default": "5000",
                   "description": "Max example paths per workload: for each workload, Odigos keeps two\nseparate collections of unmatched HTTP path examples — one for\ninbound (server) spans and one for outbound (client) spans. This\nlimit is the maximum distinct paths in each collection, not both\ncombined (so a workload can store up to this many server paths and\nthis many client paths). A larger number can increase the accuracy\nand speed of automatic live-traffic rules, but requires more\nresources. Default: 5000.",

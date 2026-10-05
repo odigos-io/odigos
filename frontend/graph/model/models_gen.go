@@ -2308,6 +2308,7 @@ type LiveTrafficLearningConfig struct {
 	Enabled                    *bool                                    `json:"enabled,omitempty"`
 	MaxExamplePathsPerWorkload *int                                     `json:"maxExamplePathsPerWorkload,omitempty"`
 	PathExampleIdleTTL         *string                                  `json:"pathExampleIdleTTL,omitempty"`
+	GarbageCollectionInterval  *string                                  `json:"garbageCollectionInterval,omitempty"`
 	AutomaticRules             *LiveTrafficLearningAutomaticRulesConfig `json:"automaticRules,omitempty"`
 }
 
@@ -2369,6 +2370,7 @@ type LocalUIConfigLiveTrafficLearningAutomaticRulesInput struct {
 type LocalUIConfigLiveTrafficLearningInput struct {
 	MaxExamplePathsPerWorkload *int                                                 `json:"maxExamplePathsPerWorkload,omitempty"`
 	PathExampleIdleTTL         *string                                              `json:"pathExampleIdleTTL,omitempty"`
+	GarbageCollectionInterval  *string                                              `json:"garbageCollectionInterval,omitempty"`
 	AutomaticRules             *LocalUIConfigLiveTrafficLearningAutomaticRulesInput `json:"automaticRules,omitempty"`
 }
 

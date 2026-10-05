@@ -87,6 +87,9 @@ data:
           {{- if $ltl.pathExampleIdleTTL }}
           pathExampleIdleTTL: {{ $ltl.pathExampleIdleTTL | quote }}
           {{- end }}
+          {{- if $ltl.garbageCollectionInterval }}
+          garbageCollectionInterval: {{ $ltl.garbageCollectionInterval | quote }}
+          {{- end }}
           {{- if or $automaticRules.enabled $automaticRules.learningInterval $automaticRules.minObservationsForTemplating $automaticRules.minCardinalityForTemplating }}
           automaticRules:
             {{- if $automaticRules.enabled }}

@@ -191,8 +191,11 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 	}
 	ltlInput := input.URLTemplatization.LiveTrafficLearning
 	// enabled is Helm-only; UI overlays may set maxExamplePathsPerWorkload,
-	// pathExampleIdleTTL, and automaticRules.
-	if ltlInput.AutomaticRules == nil && ltlInput.MaxExamplePathsPerWorkload == nil && ltlInput.PathExampleIdleTTL == nil {
+	// pathExampleIdleTTL, garbageCollectionInterval, and automaticRules.
+	if ltlInput.AutomaticRules == nil &&
+		ltlInput.MaxExamplePathsPerWorkload == nil &&
+		ltlInput.PathExampleIdleTTL == nil &&
+		ltlInput.GarbageCollectionInterval == nil {
 		return
 	}
 
@@ -212,6 +215,9 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 	}
 	if ltlInput.PathExampleIdleTTL != nil {
 		ltl.PathExampleIdleTTL = *ltlInput.PathExampleIdleTTL
+	}
+	if ltlInput.GarbageCollectionInterval != nil {
+		ltl.GarbageCollectionInterval = *ltlInput.GarbageCollectionInterval
 	}
 	if ltlInput.AutomaticRules == nil {
 		return

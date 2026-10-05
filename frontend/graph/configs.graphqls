@@ -167,6 +167,7 @@ type LiveTrafficLearningConfig {
   enabled: Boolean
   maxExamplePathsPerWorkload: Int
   pathExampleIdleTTL: String
+  garbageCollectionInterval: String
   automaticRules: LiveTrafficLearningAutomaticRulesConfig
 }
 
@@ -397,9 +398,11 @@ input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
 
 input LocalUiConfigLiveTrafficLearningInput {
   # enabled is Helm-only (deploys cacheDb); UI may override
-  # maxExamplePathsPerWorkload, pathExampleIdleTTL, and automaticRules.
+  # maxExamplePathsPerWorkload, pathExampleIdleTTL, garbageCollectionInterval,
+  # and automaticRules.
   maxExamplePathsPerWorkload: Int
   pathExampleIdleTTL: String
+  garbageCollectionInterval: String
   automaticRules: LocalUiConfigLiveTrafficLearningAutomaticRulesInput
 }
 

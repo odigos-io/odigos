@@ -195,6 +195,7 @@ export const GET_EFFECTIVE_CONFIG = gql`
             enabled
             maxExamplePathsPerWorkload
             pathExampleIdleTTL
+            garbageCollectionInterval
             automaticRules {
               enabled
               learningInterval

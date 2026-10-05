@@ -27,6 +27,13 @@ spec:
       description: How long an unmatched path example is kept after its last observation. Each new observation refreshes the TTL. Expired paths free quota for new examples. Default is 48h (2 days) when unset.
       helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL
       renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
+    - displayName: Garbage Collection Interval
+      componentType: time
+      isHelmOnly: false
+      isEnterpriseOnly: true
+      description: How often the instrumentor runs garbage collection on live-traffic learning path examples in the shared cache. Independent of the learning interval. Default is 30s when unset.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.garbageCollectionInterval
+      renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
     - displayName: Live-traffic Automatic Rules
       componentType: toggle
       isHelmOnly: false

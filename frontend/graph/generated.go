@@ -1728,6 +1728,7 @@ type ComplexityRoot struct {
 	LiveTrafficLearningConfig struct {
 		AutomaticRules             func(childComplexity int) int
 		Enabled                    func(childComplexity int) int
+		GarbageCollectionInterval  func(childComplexity int) int
 		MaxExamplePathsPerWorkload func(childComplexity int) int
 		PathExampleIdleTTL         func(childComplexity int) int
 	}
@@ -10310,6 +10311,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LiveTrafficLearningConfig.Enabled(childComplexity), true
+
+	case "LiveTrafficLearningConfig.garbageCollectionInterval":
+		if e.complexity.LiveTrafficLearningConfig.GarbageCollectionInterval == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.GarbageCollectionInterval(childComplexity), true
 
 	case "LiveTrafficLearningConfig.maxExamplePathsPerWorkload":
 		if e.complexity.LiveTrafficLearningConfig.MaxExamplePathsPerWorkload == nil {
@@ -68555,6 +68563,47 @@ func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_pathExampleId
 	return fc, nil
 }
 
+func (ec *executionContext) _LiveTrafficLearningConfig_garbageCollectionInterval(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_garbageCollectionInterval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GarbageCollectionInterval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_garbageCollectionInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LiveTrafficLearningConfig_automaticRules(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LiveTrafficLearningConfig_automaticRules(ctx, field)
 	if err != nil {
@@ -87621,6 +87670,8 @@ func (ec *executionContext) fieldContext_UrlTemplatizationCardinalityControlConf
 				return ec.fieldContext_LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx, field)
 			case "pathExampleIdleTTL":
 				return ec.fieldContext_LiveTrafficLearningConfig_pathExampleIdleTTL(ctx, field)
+			case "garbageCollectionInterval":
+				return ec.fieldContext_LiveTrafficLearningConfig_garbageCollectionInterval(ctx, field)
 			case "automaticRules":
 				return ec.fieldContext_LiveTrafficLearningConfig_automaticRules(ctx, field)
 			}
@@ -93159,7 +93210,7 @@ func (ec *executionContext) unmarshalInputLocalUiConfigLiveTrafficLearningInput(
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"maxExamplePathsPerWorkload", "pathExampleIdleTTL", "automaticRules"}
+	fieldsInOrder := [...]string{"maxExamplePathsPerWorkload", "pathExampleIdleTTL", "garbageCollectionInterval", "automaticRules"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -93180,6 +93231,13 @@ func (ec *executionContext) unmarshalInputLocalUiConfigLiveTrafficLearningInput(
 				return it, err
 			}
 			it.PathExampleIdleTTL = data
+		case "garbageCollectionInterval":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("garbageCollectionInterval"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GarbageCollectionInterval = data
 		case "automaticRules":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("automaticRules"))
 			data, err := ec.unmarshalOLocalUiConfigLiveTrafficLearningAutomaticRulesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningAutomaticRulesInput(ctx, v)
@@ -106913,6 +106971,8 @@ func (ec *executionContext) _LiveTrafficLearningConfig(ctx context.Context, sel 
 			out.Values[i] = ec._LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx, field, obj)
 		case "pathExampleIdleTTL":
 			out.Values[i] = ec._LiveTrafficLearningConfig_pathExampleIdleTTL(ctx, field, obj)
+		case "garbageCollectionInterval":
+			out.Values[i] = ec._LiveTrafficLearningConfig_garbageCollectionInterval(ctx, field, obj)
 		case "automaticRules":
 			out.Values[i] = ec._LiveTrafficLearningConfig_automaticRules(ctx, field, obj)
 		default:

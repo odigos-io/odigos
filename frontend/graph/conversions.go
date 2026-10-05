@@ -469,6 +469,11 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 					ltlModel.PathExampleIdleTTL = &ttl
 					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL")
 				}
+				if ltl.GarbageCollectionInterval != "" {
+					interval := ltl.GarbageCollectionInterval
+					ltlModel.GarbageCollectionInterval = &interval
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.garbageCollectionInterval")
+				}
 				if ltl.AutomaticRules != nil {
 					ltlModel.AutomaticRules = &model.LiveTrafficLearningAutomaticRulesConfig{
 						Enabled:                      ltl.AutomaticRules.Enabled,
