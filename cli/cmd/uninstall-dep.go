@@ -329,8 +329,10 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 	l := log.Print("Removing Odigos Sources...")
 	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
-		if sources != nil && len(sources.Items) == 0 {
-			// no sources found, nothing to do here
+		// only a missing Source CRD means there is nothing to delete. any other error leaves
+		// sources in the cluster, and reporting success here would let the caller go on to
+		// delete the CRD and the instrumentor while workloads are still instrumented.
+		if apierrors.IsNotFound(err) {
 			l.Success()
 			return nil
 		}
