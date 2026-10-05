@@ -32,3 +32,10 @@ const (
 	// InsightsGatewayExporter forwards spans to the in-cluster sidecar service.
 	InsightsGatewayExporter = "otlp_grpc/insights"
 )
+
+// OpenTelemetry component instance name for URL templatization live traffic learning:
+// enterprise exporter appended to the root traces pipeline that writes unmatched
+// HTTP path counts to cacheDb Redis.
+const (
+	UrlTemplatizationExporter = "odigos_url_templatization"
+)
