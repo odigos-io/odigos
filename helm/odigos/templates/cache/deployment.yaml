@@ -34,6 +34,10 @@ spec:
             - {{ include "cacheDb.resolvedMaxmemory" . | quote }}
             - "--maxmemory-policy"
             - "allkeys-lru"
+            - "--save"
+            - ""
+            - "--appendonly"
+            - "no"
             - "--tcp-keepalive"
             - "30"
           ports:
@@ -55,4 +59,15 @@ spec:
             failureThreshold: 3
           resources:
             {{- include "cacheDb.resolvedResources" . | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
 {{- end }}

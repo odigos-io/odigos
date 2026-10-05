@@ -150,8 +150,23 @@
       "title": "autoscaler"
     },
     "cacheDb": {
-      "additionalProperties": true,
-      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (Redis, published as odigos-cache with the\nOdigos release tag); values stay backend-agnostic so the chart can switch to\nanother cache (e.g. Memcached) without renaming this section. Override the\nimage via images.cache or imagePrefix like other Odigos components.\n\nOptional keys:\n  maxmemory — soft memory cap for the cache process when the backend supports\n    it. When unset, derived as ~85% of the effective memory limit.\n  resources — CPU/memory requests and limits. When unset, defaults use\n    Burstable QoS (requests below limits) since the cache is usually idle:\n      requests: { cpu: 50m, memory: 64Mi }\n      limits:   { cpu: 200m, memory: 256Mi }\n    If only one of requests/limits is set, the other is mirrored from it.",
+      "additionalProperties": false,
+      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (Redis, published as odigos-cache with the\nOdigos release tag); values stay backend-agnostic so the chart can switch to\nanother cache (e.g. Memcached) without renaming this section. Override the\nimage via images.cache or imagePrefix like other Odigos components.",
+      "properties": {
+        "maxmemory": {
+          "default": "220mb",
+          "description": "Soft memory cap for the cache process when the backend supports it.\nWhen unset, derived as ~85% of the effective memory limit (see resources).",
+          "required": [],
+          "title": "maxmemory"
+        },
+        "resources": {
+          "additionalProperties": true,
+          "default": "",
+          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults use Burstable QoS (requests below limits) since the\ncache is usually idle. Set requests and/or limits to override; if only one\nside is set, the other is mirrored from it.",
+          "required": [],
+          "title": "resources"
+        }
+      },
       "required": [],
       "title": "cacheDb"
     },

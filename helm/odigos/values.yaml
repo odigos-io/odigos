@@ -185,7 +185,6 @@ cardinalityControl:
         minCardinalityForTemplating: 20
 
 # @schema
-# additionalProperties: true
 # description: |-
 #   Shared cache DB used by Odigos features that need a cluster-local cache
 #   (for example cardinality-control URL templatization rule computation).
@@ -196,17 +195,30 @@ cardinalityControl:
 #   Odigos release tag); values stay backend-agnostic so the chart can switch to
 #   another cache (e.g. Memcached) without renaming this section. Override the
 #   image via images.cache or imagePrefix like other Odigos components.
-#
-#   Optional keys:
-#     maxmemory — soft memory cap for the cache process when the backend supports
-#       it. When unset, derived as ~85% of the effective memory limit.
-#     resources — CPU/memory requests and limits. When unset, defaults use
-#       Burstable QoS (requests below limits) since the cache is usually idle:
-#         requests: { cpu: 50m, memory: 64Mi }
-#         limits:   { cpu: 200m, memory: 256Mi }
-#       If only one of requests/limits is set, the other is mirrored from it.
 # @schema
-cacheDb: {}
+cacheDb:
+  # @schema
+  # description: |-
+  #   Soft memory cap for the cache process when the backend supports it.
+  #   When unset, derived as ~85% of the effective memory limit (see resources).
+  # @schema
+  # maxmemory: 220mb
+
+  # @schema
+  # additionalProperties: true
+  # description: |-
+  #   Optional CPU/memory requests and limits for the shared cache pod.
+  #   When unset, defaults use Burstable QoS (requests below limits) since the
+  #   cache is usually idle. Set requests and/or limits to override; if only one
+  #   side is set, the other is mirrored from it.
+  # @schema
+  # resources:
+  #   requests:
+  #     cpu: 50m
+  #     memory: 64Mi
+  #   limits:
+  #     cpu: 200m
+  #     memory: 256Mi
 
 # @schema
 # description: |-
