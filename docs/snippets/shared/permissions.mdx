@@ -40,6 +40,12 @@ Below are the ClusterRoles used by Odigos components.
 | \* | pods<br />namespaces | \* | get<br />list<br />watch |
 | apps | replicasets<br />deployments<br />statefulsets<br />daemonsets | \* | get<br />list<br />watch |
 
+### odigos-go-offsets-updater
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | configmaps | \* | list |
+
 ### odigos-instrumentor
 
 | APIGroups | Resources | Resource Names | Verbs |
@@ -145,6 +151,13 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 |---|---|---|---|
 | \* | configmaps | odigos-gateway | get<br />list<br />watch |
 
+### odigos-go-offsets-updater
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | configmaps | odigos-go-offsets | get<br />update |
+| \* | secrets | odigos-pro | get |
+
 ### odigos-instrumentor
 
 | APIGroups | Resources | Resource Names | Verbs |
@@ -164,6 +177,8 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | \* | secrets | instrumentor-webhooks-cert | update |
 | \* | secrets | webhook-cert | delete |
 | apps | daemonsets | odiglet | get<br />list<br />watch |
+| batch | cronjobs | odigos-go-offsets-updater | get<br />list<br />watch<br />create<br />update<br />patch<br />delete |
+| batch | jobs | \* | create |
 
 ### odigos-leader-election-role
 
