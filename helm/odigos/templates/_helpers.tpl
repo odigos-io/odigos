@@ -277,13 +277,14 @@ imagePullSecrets:
 {{/*
   Feature-derived default resources for the shared cache when cacheDb.resources is unset.
   Used only by cacheDb.resolvedResources; user-configured resources always win.
-  request == limit for Guaranteed QoS so the cache is not evicted under pressure.
+  Requests are below limits (Burstable QoS): the cache is usually idle and only
+  needs headroom under load / during learning flushes.
 */}}
 {{- define "cacheDb.featureDefaultResources" -}}
 {{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" -}}
 requests:
-  cpu: 200m
-  memory: 256Mi
+  cpu: 50m
+  memory: 64Mi
 limits:
   cpu: 200m
   memory: 256Mi

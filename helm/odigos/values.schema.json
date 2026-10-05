@@ -162,7 +162,7 @@
         "resources": {
           "additionalProperties": true,
           "default": "",
-          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults are chosen from the features that use the cache\n(e.g. cardinalityControl.urlTemplatization.liveTrafficLearning.enabled), with\nrequest equal to limit (Guaranteed QoS) so the pod is not evicted under pressure.\nSet requests and/or limits to override; if only one side is set, the other\nis mirrored from it.",
+          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults are chosen from the features that use the cache\n(e.g. cardinalityControl.urlTemplatization.liveTrafficLearning.enabled), with\nrequests below limits (Burstable QoS) since the cache is usually idle.\nSet requests and/or limits to override; if only one side is set, the other\nis mirrored from it.",
           "required": [],
           "title": "resources"
         }

@@ -210,14 +210,14 @@ cacheDb:
   #   Optional CPU/memory requests and limits for the shared cache pod.
   #   When unset, defaults are chosen from the features that use the cache
   #   (e.g. cardinalityControl.urlTemplatization.liveTrafficLearning.enabled), with
-  #   request equal to limit (Guaranteed QoS) so the pod is not evicted under pressure.
+  #   requests below limits (Burstable QoS) since the cache is usually idle.
   #   Set requests and/or limits to override; if only one side is set, the other
   #   is mirrored from it.
   # @schema
   # resources:
   #   requests:
-  #     cpu: 200m
-  #     memory: 256Mi
+  #     cpu: 50m
+  #     memory: 64Mi
   #   limits:
   #     cpu: 200m
   #     memory: 256Mi
