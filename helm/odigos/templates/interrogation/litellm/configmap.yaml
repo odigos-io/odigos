@@ -1,4 +1,5 @@
 {{- if and (include "odigos.litellmEnabled" .) (include "odigos.secretExists" .) }}
+{{- $apiBase := include "odigos.interrogationApiBase" . }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,6 +15,9 @@ data:
         litellm_params:
           model: {{ include "odigos.interrogationUpstreamModel" . | quote }}
           api_key: os.environ/LITELLM_UPSTREAM_API_KEY
+          {{- if $apiBase }}
+          api_base: {{ $apiBase | quote }}
+          {{- end }}
     litellm_settings:
       drop_params: true
     general_settings:

@@ -1,0 +1,17 @@
+{{- if and (include "odigos.vllmEnabled" .) (include "odigos.secretExists" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-vllm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-vllm
+    odigos.io/system-object: "true"
+spec:
+  selector:
+    app.kubernetes.io/name: odigos-vllm
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+{{- end }}

@@ -1158,7 +1158,7 @@
     },
     "interrogation": {
       "additionalProperties": false,
-      "description": "Interrogation loop (off by default): correlates traces and profiles in ClickHouse\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.\nWhen enabled, also deploys bundled ClickHouse, odigos-interrogation, and odigos-litellm.\nSet interrogation.model provider, name, and apiKey for the upstream LLM.",
+      "description": "Interrogation loop (off by default): correlates traces and profiles in ClickHouse\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.\nWhen enabled, also deploys bundled ClickHouse, odigos-interrogation, and odigos-litellm.\nSet interrogation.model for a cloud LLM, interrogation.vllm for bundled in-cluster vLLM, or model.apiBase for BYO inference.",
       "properties": {
         "affinity": {
           "additionalProperties": true,
@@ -1181,9 +1181,16 @@
           "additionalProperties": false,
           "description": "Upstream LLM for interrogation analysis (routed via in-cluster odigos-litellm).",
           "properties": {
+            "apiBase": {
+              "default": "",
+              "description": "Optional OpenAI-compatible api_base for BYO inference when vllm.enabled is false.",
+              "required": [],
+              "title": "apiBase",
+              "type": "string"
+            },
             "apiKey": {
               "default": "",
-              "description": "Provider API key (OpenAI, Gemini, etc.). Stored in Secret odigos-litellm.",
+              "description": "Provider API key (OpenAI, Gemini, etc.). Stored in Secret odigos-litellm. Not required when vllm.enabled.",
               "required": [],
               "title": "apiKey",
               "type": "string"
@@ -1197,14 +1204,14 @@
             },
             "name": {
               "default": "gpt-4o-mini",
-              "description": "Model name at the provider (combined with provider for LiteLLM).",
+              "description": "Model name at the provider (combined with provider for LiteLLM). Ignored when vllm.enabled.",
               "required": [],
               "title": "name",
               "type": "string"
             },
             "provider": {
               "default": "openai",
-              "description": "LiteLLM provider prefix (openai, gemini, anthropic, ...).",
+              "description": "LiteLLM provider prefix (openai, gemini, anthropic, hosted_vllm, ...). Ignored when vllm.enabled.",
               "required": [],
               "title": "provider",
               "type": "string"
@@ -1306,6 +1313,163 @@
           },
           "required": [],
           "title": "litellm",
+          "type": "object"
+        },
+        "vllm": {
+          "additionalProperties": false,
+          "description": "Bundled in-cluster vLLM. Hard requirement is nvidia.com/gpu via the NVIDIA device plugin; nodeSelector/tolerations are optional and cluster-specific.",
+          "properties": {
+            "affinity": {
+              "additionalProperties": true,
+              "required": [],
+              "title": "affinity"
+            },
+            "enabled": {
+              "default": false,
+              "description": "When true, deploys odigos-vllm and points LiteLLM at it.",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "gpuCount": {
+              "default": 1,
+              "description": "Number of GPUs to request (nvidia.com/gpu).",
+              "required": [],
+              "title": "gpuCount",
+              "type": "integer"
+            },
+            "gpuMemoryUtilization": {
+              "default": "0.90",
+              "description": "vLLM --gpu-memory-utilization.",
+              "required": [],
+              "title": "gpuMemoryUtilization",
+              "type": "string"
+            },
+            "hfToken": {
+              "default": "",
+              "description": "Optional Hugging Face token for gated models.",
+              "required": [],
+              "title": "hfToken",
+              "type": "string"
+            },
+            "image": {
+              "additionalProperties": false,
+              "properties": {
+                "pullPolicy": {
+                  "default": "IfNotPresent",
+                  "title": "pullPolicy",
+                  "type": "string"
+                },
+                "repository": {
+                  "default": "vllm/vllm-openai",
+                  "title": "repository",
+                  "type": "string"
+                },
+                "tag": {
+                  "default": "v0.8.5",
+                  "title": "tag",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "image",
+              "type": "object"
+            },
+            "maxModelLen": {
+              "default": 8192,
+              "description": "vLLM --max-model-len.",
+              "required": [],
+              "title": "maxModelLen",
+              "type": "integer"
+            },
+            "model": {
+              "default": "Qwen/Qwen2.5-7B-Instruct",
+              "description": "Hugging Face model id to serve.",
+              "required": [],
+              "title": "model",
+              "type": "string"
+            },
+            "nodeSelector": {
+              "additionalProperties": true,
+              "description": "Optional GPU-pool nodeSelector. Empty by default; nvidia.com/gpu schedules onto any GPU node.",
+              "required": [],
+              "title": "nodeSelector"
+            },
+            "priorityClassName": {
+              "default": "",
+              "required": [],
+              "title": "priorityClassName"
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "8",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "32Gi",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "4",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "24Gi",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            },
+            "storage": {
+              "additionalProperties": false,
+              "properties": {
+                "persistence": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "size": {
+                  "default": "50Gi",
+                  "type": "string"
+                },
+                "storageClassName": {
+                  "default": "",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "storage",
+              "type": "object"
+            },
+            "tolerations": {
+              "items": {
+                "type": "object"
+              },
+              "required": [],
+              "title": "tolerations"
+            }
+          },
+          "required": [],
+          "title": "vllm",
           "type": "object"
         },
         "nodeSelector": {

@@ -53,6 +53,7 @@ spec:
                 secretKeyRef:
                   name: odigos-litellm
                   key: upstream-api-key
+                  optional: true
           volumeMounts:
             - name: config
               mountPath: /app/config.yaml

@@ -1,0 +1,121 @@
+{{- if and (include "odigos.vllmEnabled" .) (include "odigos.secretExists" .) }}
+{{- $gpuCount := .Values.interrogation.vllm.gpuCount | default 1 | toString }}
+{{- $persistent := ne .Values.interrogation.vllm.storage.persistence false }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-vllm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-vllm
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  {{- if $persistent }}
+  # Recreate so a single ReadWriteOnce PVC is not claimed by two pods during rollout.
+  strategy:
+    type: Recreate
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-vllm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-vllm
+    spec:
+      {{- /* Only honor vllm.nodeSelector — do not inherit the global chart
+           nodeSelector. GPU scheduling is driven by nvidia.com/gpu; cloud-specific
+           accelerator labels are optional and must be set explicitly. */}}
+      {{- with .Values.interrogation.vllm.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.interrogation.vllm.priorityClassName }}
+      priorityClassName: {{ .Values.interrogation.vllm.priorityClassName }}
+      {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      containers:
+        - name: vllm
+          image: "{{ .Values.interrogation.vllm.image.repository }}:{{ .Values.interrogation.vllm.image.tag }}"
+          imagePullPolicy: {{ .Values.interrogation.vllm.image.pullPolicy }}
+          args:
+            - --model
+            - {{ .Values.interrogation.vllm.model | quote }}
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8000"
+            - --max-model-len
+            - {{ .Values.interrogation.vllm.maxModelLen | default 8192 | quote }}
+            - --gpu-memory-utilization
+            - {{ .Values.interrogation.vllm.gpuMemoryUtilization | default "0.90" | quote }}
+            - --dtype
+            - auto
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-vllm
+                  key: hf-token
+                  optional: true
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-vllm
+                  key: hf-token
+                  optional: true
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /root/.cache/huggingface
+            - name: dshm
+              mountPath: /dev/shm
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: {{ .Values.interrogation.vllm.resources.requests.cpu | quote }}
+              memory: {{ .Values.interrogation.vllm.resources.requests.memory | quote }}
+              nvidia.com/gpu: {{ $gpuCount | quote }}
+            limits:
+              cpu: {{ .Values.interrogation.vllm.resources.limits.cpu | quote }}
+              memory: {{ .Values.interrogation.vllm.resources.limits.memory | quote }}
+              nvidia.com/gpu: {{ $gpuCount | quote }}
+      {{- with .Values.interrogation.vllm.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.interrogation.vllm.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: hf-cache
+          {{- if $persistent }}
+          persistentVolumeClaim:
+            claimName: odigos-vllm
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+{{- end }}

@@ -126,12 +126,38 @@ true
 {{- end -}}
 
 {{/*
-  LiteLLM upstream model id: provider/name (e.g. openai/gpt-4o-mini).
+  Bundled vLLM (odigos-vllm) for in-cluster inference. Requires interrogation.enabled.
+*/}}
+{{- define "odigos.vllmEnabled" -}}
+{{- if and .Values.interrogation.enabled .Values.interrogation.vllm.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+  LiteLLM upstream model id.
+  Bundled vLLM: hosted_vllm/<vllm.model>
+  Otherwise: provider/name (e.g. openai/gpt-4o-mini).
 */}}
 {{- define "odigos.interrogationUpstreamModel" -}}
+{{- if (include "odigos.vllmEnabled" .) -}}
+{{- printf "hosted_vllm/%s" (.Values.interrogation.vllm.model | default "Qwen/Qwen2.5-7B-Instruct") -}}
+{{- else -}}
 {{- $provider := .Values.interrogation.model.provider | default "openai" -}}
 {{- $name := .Values.interrogation.model.name | default "gpt-4o-mini" -}}
 {{- printf "%s/%s" $provider $name -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+  Optional LiteLLM api_base. Bundled vLLM wins; else model.apiBase (BYO).
+*/}}
+{{- define "odigos.interrogationApiBase" -}}
+{{- if (include "odigos.vllmEnabled" .) -}}
+http://odigos-vllm:8000/v1
+{{- else if .Values.interrogation.model.apiBase -}}
+{{- .Values.interrogation.model.apiBase | trimSuffix "/" -}}
+{{- end -}}
 {{- end -}}
 
 

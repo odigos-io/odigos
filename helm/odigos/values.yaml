@@ -183,8 +183,9 @@ transactionIdentity:
 #   When enabled, also deploys bundled ClickHouse (odigos-insights-clickhouse; shared with
 #   insights) in the Odigos namespace if not already present, deploys the
 #   odigos-interrogation control-loop service (enterprise; requires on-prem token),
-#   and deploys bundled LiteLLM (odigos-litellm). Configure provider, model
-#   name, and API key under interrogation.model.
+#   and deploys bundled LiteLLM (odigos-litellm). Configure a cloud provider under
+#   interrogation.model, or enable interrogation.vllm for an in-cluster OpenAI-compatible
+#   server. Optionally set model.apiBase to point LiteLLM at a BYO inference endpoint.
 # @schema
 interrogation:
   # @schema
@@ -231,20 +232,29 @@ interrogation:
   # User-facing LLM config: provider credentials and upstream model id for LiteLLM.
   # The worker always calls in-cluster odigos-litellm with the fixed alias
   # "interrogation" (see enterprise interrogation model client).
+  # When interrogation.vllm.enabled is true, LiteLLM ignores provider/name/apiKey and
+  # routes to the bundled odigos-vllm Service instead.
   # @schema
   model:
     # @schema
-    # description: LiteLLM provider prefix (openai, gemini, anthropic, etc.).
+    # description: LiteLLM provider prefix (openai, gemini, anthropic, hosted_vllm, etc.). Ignored when vllm.enabled.
     # @schema
     provider: openai
     # @schema
-    # description: Model name at that provider (e.g. gpt-4o-mini). Routed as provider/name.
+    # description: Model name at that provider (e.g. gpt-4o-mini). Ignored when vllm.enabled (uses vllm.model).
     # @schema
     name: gpt-4o-mini
     # @schema
-    # description: Provider API key. Stored in Secret odigos-litellm (upstream-api-key).
+    # description: Provider API key. Stored in Secret odigos-litellm (upstream-api-key). Not required when vllm.enabled.
     # @schema
     apiKey: ""
+    # @schema
+    # description: |-
+    #   Optional OpenAI-compatible api_base for LiteLLM (BYO inference). When set and
+    #   vllm.enabled is false, LiteLLM uses this endpoint with model.provider/name.
+    #   Example: http://my-vllm.ml.svc:8000/v1
+    # @schema
+    apiBase: ""
     # @schema
     # description: When true, apply parsed probes as InstrumentationRules. Default is dry-run.
     # @schema
@@ -269,6 +279,86 @@ interrogation:
         memory: 512Mi
     tolerations: []
     affinity: {}
+
+  # Bundled in-cluster vLLM (off by default). OpenAI-compatible server for air-gapped /
+  # no-cloud-key clusters. Hard requirement: NVIDIA device plugin so pods can request
+  # nvidia.com/gpu. Do NOT hardcode cloud nodeSelectors here — leave empty and set
+  # nodeSelector / tolerations / affinity for your GPU pool (GKE, EKS, AKS, on-prem).
+  # @schema
+  vllm:
+    # @schema
+    # description: When true, deploys odigos-vllm and points LiteLLM at it (hosted_vllm).
+    # @schema
+    enabled: false
+    # @schema
+    # description: vLLM OpenAI-compatible server image.
+    # @schema
+    image:
+      repository: vllm/vllm-openai
+      tag: "v0.8.5"
+      pullPolicy: IfNotPresent
+    # @schema
+    # description: Hugging Face model id to serve (also the LiteLLM upstream model name).
+    # @schema
+    model: Qwen/Qwen2.5-7B-Instruct
+    # @schema
+    # description: Optional Hugging Face token for gated models. Stored in Secret odigos-vllm.
+    # @schema
+    hfToken: ""
+    # @schema
+    # description: vLLM --max-model-len.
+    # @schema
+    maxModelLen: 8192
+    # @schema
+    # description: vLLM --gpu-memory-utilization (0–1).
+    # @schema
+    gpuMemoryUtilization: "0.90"
+    # @schema
+    # description: Number of GPUs to request (nvidia.com/gpu). This is the portable hard scheduling requirement.
+    # @schema
+    gpuCount: 1
+    resources:
+      requests:
+        cpu: "4"
+        memory: 24Gi
+      limits:
+        cpu: "8"
+        memory: 32Gi
+    storage:
+      # @schema
+      # description: When false, use emptyDir for the HF cache (re-downloads on reschedule).
+      # @schema
+      persistence: true
+      # @schema
+      # description: PVC size for the Hugging Face model cache.
+      # @schema
+      size: 50Gi
+      # @schema
+      # description: StorageClass for the HF cache PVC. Empty uses the cluster default.
+      # @schema
+      # storageClassName: ''
+    # @schema
+    # description: |-
+    #   Optional nodeSelector for the GPU pool. Empty by default so the nvidia.com/gpu
+    #   resource request can schedule on any GPU node. Cloud-specific examples:
+    #   GKE: cloud.google.com/gke-accelerator: nvidia-l4
+    #   EKS: nvidia.com/gpu.product: NVIDIA-L4
+    # @schema
+    # nodeSelector: {}
+    # @schema
+    # description: |-
+    #   Tolerations for GPU node taints. Many clusters taint GPU nodes; a common value is
+    #   key=nvidia.com/gpu, operator=Exists, effect=NoSchedule.
+    # @schema
+    tolerations: []
+    # @schema
+    # additionalProperties: true
+    # @schema
+    affinity: {}
+    # @schema
+    # description: Priority class name for the vLLM pod.
+    # @schema
+    # priorityClassName: ''
 
 # @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
