@@ -122,6 +122,10 @@ type AutoRollbackConfig struct {
 	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
 }
 
+type CardinalityControlConfig struct {
+	URLTemplatization *URLTemplatizationCardinalityControlConfig `json:"urlTemplatization,omitempty"`
+}
+
 // Clearing buffered OTLP data for a workload slot
 type ClearProfilingBufferResult struct {
 	Status      string `json:"status"`
@@ -527,6 +531,7 @@ type EffectiveConfig struct {
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
 	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
 	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
+	CardinalityControl               *CardinalityControlConfig           `json:"cardinalityControl,omitempty"`
 	TraceCorrelations                *TraceCorrelationsConfig            `json:"traceCorrelations,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
@@ -2292,6 +2297,24 @@ type LanguageConfig struct {
 	EnvVars *string `json:"envVars,omitempty"`
 }
 
+type LiveTrafficLearningAutomaticRulesConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LiveTrafficLearningConfig struct {
+	Enabled                    *bool                                     `json:"enabled,omitempty"`
+	MaxExamplePathsPerWorkload *int                                      `json:"maxExamplePathsPerWorkload,omitempty"`
+	PathExampleIdleTTL         *string                                   `json:"pathExampleIdleTTL,omitempty"`
+	LearningInterval           *string                                   `json:"learningInterval,omitempty"`
+	RuleComputation            *LiveTrafficLearningRuleComputationConfig `json:"ruleComputation,omitempty"`
+	AutomaticRules             *LiveTrafficLearningAutomaticRulesConfig  `json:"automaticRules,omitempty"`
+}
+
+type LiveTrafficLearningRuleComputationConfig struct {
+	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
+}
+
 type LocalUIConfigAllowConcurrentAgentsInput struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
@@ -2300,6 +2323,10 @@ type LocalUIConfigAutoRollbackInput struct {
 	Disabled            *bool   `json:"disabled,omitempty"`
 	GraceTime           *string `json:"graceTime,omitempty"`
 	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
+}
+
+type LocalUIConfigCardinalityControlInput struct {
+	URLTemplatization *LocalUIConfigURLTemplatizationCardinalityControlInput `json:"urlTemplatization,omitempty"`
 }
 
 type LocalUIConfigComponentLogLevelsInput struct {
@@ -2328,11 +2355,29 @@ type LocalUIConfigInput struct {
 	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
 	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
 	TraceCorrelations     *LocalUIConfigTraceCorrelationsInput     `json:"traceCorrelations,omitempty"`
+	CardinalityControl    *LocalUIConfigCardinalityControlInput    `json:"cardinalityControl,omitempty"`
 }
 
 type LocalUIConfigInstrumentorInput struct {
 	AgentEnvVarsInjectionMethod      *EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
 	CheckDeviceHealthBeforeInjection *bool               `json:"checkDeviceHealthBeforeInjection,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningAutomaticRulesInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningInput struct {
+	MaxExamplePathsPerWorkload *int                                                  `json:"maxExamplePathsPerWorkload,omitempty"`
+	PathExampleIdleTTL         *string                                               `json:"pathExampleIdleTTL,omitempty"`
+	LearningInterval           *string                                               `json:"learningInterval,omitempty"`
+	RuleComputation            *LocalUIConfigLiveTrafficLearningRuleComputationInput `json:"ruleComputation,omitempty"`
+	AutomaticRules             *LocalUIConfigLiveTrafficLearningAutomaticRulesInput  `json:"automaticRules,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningRuleComputationInput struct {
+	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
 }
 
 type LocalUIConfigRolloutInput struct {
@@ -2363,6 +2408,10 @@ type LocalUIConfigTraceCorrelationsServiceIOInput struct {
 	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
 	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
 	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
+}
+
+type LocalUIConfigURLTemplatizationCardinalityControlInput struct {
+	LiveTrafficLearning *LocalUIConfigLiveTrafficLearningInput `json:"liveTrafficLearning,omitempty"`
 }
 
 type MessagingPayloadCollection struct {
@@ -2972,6 +3021,10 @@ type URLTemplatizationRuleInput struct {
 	Template string   `json:"template"`
 	Notes    *string  `json:"notes,omitempty"`
 	Examples []string `json:"examples,omitempty"`
+}
+
+type URLTemplatizationCardinalityControlConfig struct {
+	LiveTrafficLearning *LiveTrafficLearningConfig `json:"liveTrafficLearning,omitempty"`
 }
 
 type URLTemplatizationDefaultGroup struct {

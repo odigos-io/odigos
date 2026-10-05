@@ -18,6 +18,8 @@ permissions:
 env:
   DOCKERHUB_ORG: "keyval"
   VICTORIA_METRICS_VERSION: "v1.144.0"
+  # Upstream Redis tag re-hosted as odigos-cache:<odigos-tag> (same pattern as VictoriaMetrics).
+  REDIS_VERSION: "8.10.2"
 
 jobs:
   package-helm:
@@ -410,6 +412,45 @@ jobs:
             us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
             us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
           digest: ${{ steps.vm-copy.outputs.digest }}
+
+      - name: Copy Redis image to Docker Hub and GCR as odigos-cache
+        id: cache-copy
+        env:
+          SOURCE_IMAGE: docker.io/library/redis:${{ env.REDIS_VERSION }}
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cache
+          GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cache
+          GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cache
+        run: |
+          oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+
+          # REDIS_VERSION is pinned per branch, so :latest here tracks whichever
+          # release owns it rather than the last one to run.
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+          else
+            echo "Skipping :latest mirror for ${{ env.TAG }}"
+          fi
+
+          # The copy preserves the upstream digest; capture it so our copies
+          # can be signed by digest.
+          echo "digest=$(oras resolve ${SOURCE_IMAGE})" >> "$GITHUB_OUTPUT"
+
+      # Redis is a re-host of an upstream image under our name. The signature
+      # attests that WE published this exact digest in our registries — not that
+      # we built it. Signed at the destinations because there is no upstream
+      # cosign signature to carry over.
+      - name: Sign re-hosted odigos-cache image
+        uses: odigos-io/ci-core/sign-oci@main
+        with:
+          refs: |
+            docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cache
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cache
+            us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cache
+          digest: ${{ steps.cache-copy.outputs.digest }}
 
       - name: Set notification messages
         run: |
