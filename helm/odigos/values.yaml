@@ -158,8 +158,8 @@ cardinalityControl:
         # description: |-
         #   When true, enables live-traffic automatic rules — learned URL
         #   templatization rules that meet minObservationsForTemplating are
-        #   applied for you. Opt-in; unset/empty keeps live-traffic automatic
-        #   rules off.
+        #   applied for you. Requires liveTrafficLearning.enabled. Opt-in;
+        #   unset/empty keeps live-traffic automatic rules off.
         # @schema
         enabled:
 

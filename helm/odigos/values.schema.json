@@ -173,7 +173,7 @@
                   "properties": {
                     "enabled": {
                       "default": "",
-                      "description": "When true, enables live-traffic automatic rules — learned URL\ntemplatization rules that meet minObservationsForTemplating are\napplied for you. Opt-in; unset/empty keeps live-traffic automatic\nrules off.",
+                      "description": "When true, enables live-traffic automatic rules — learned URL\ntemplatization rules that meet minObservationsForTemplating are\napplied for you. Requires liveTrafficLearning.enabled. Opt-in;\nunset/empty keeps live-traffic automatic rules off.",
                       "required": [],
                       "title": "enabled"
                     },
