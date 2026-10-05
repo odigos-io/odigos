@@ -115,10 +115,13 @@ cardinalityControl:
 
       # @schema
       # description: |-
-      #   Max example paths per workload: maximum distinct unmatched HTTP paths
-      #   stored per workload for live-traffic learning (server and client
-      #   hashes are capped independently). A larger number can increase the
-      #   accuracy and speed of automatic live-traffic rules, but requires more
+      #   Max example paths per workload: for each workload, Odigos keeps two
+      #   separate collections of unmatched HTTP path examples — one for
+      #   inbound (server) spans and one for outbound (client) spans. This
+      #   limit is the maximum distinct paths in each collection, not both
+      #   combined (so a workload can store up to this many server paths and
+      #   this many client paths). A larger number can increase the accuracy
+      #   and speed of automatic live-traffic rules, but requires more
       #   resources. Default: 5000.
       # @schema
       maxExamplePathsPerWorkload: 5000

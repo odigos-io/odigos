@@ -670,10 +670,12 @@ type LiveTrafficLearningConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 
 	// MaxExamplePathsPerWorkload is the maximum number of distinct unmatched
-	// HTTP paths stored per workload for live-traffic learning (server and
-	// client hashes are capped independently). A larger number can increase
-	// the accuracy and speed of automatic live-traffic rules, but requires
-	// more resources. Defaults to 5000 when unset.
+	// HTTP paths stored per workload for live-traffic learning. Each workload
+	// has separate server (inbound) and client (outbound) collections; this
+	// limit applies to each collection independently (not to their sum). A
+	// larger number can increase the accuracy and speed of automatic
+	// live-traffic rules, but requires more resources. Defaults to 5000 when
+	// unset.
 	MaxExamplePathsPerWorkload *int `json:"maxExamplePathsPerWorkload,omitempty" yaml:"maxExamplePathsPerWorkload,omitempty"`
 
 	// PathExampleIdleTTL is how long an unmatched path example is kept after

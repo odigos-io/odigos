@@ -222,7 +222,7 @@
                 },
                 "maxExamplePathsPerWorkload": {
                   "default": "5000",
-                  "description": "Max example paths per workload: maximum distinct unmatched HTTP paths\nstored per workload for live-traffic learning (server and client\nhashes are capped independently). A larger number can increase the\naccuracy and speed of automatic live-traffic rules, but requires more\nresources. Default: 5000.",
+                  "description": "Max example paths per workload: for each workload, Odigos keeps two\nseparate collections of unmatched HTTP path examples — one for\ninbound (server) spans and one for outbound (client) spans. This\nlimit is the maximum distinct paths in each collection, not both\ncombined (so a workload can store up to this many server paths and\nthis many client paths). A larger number can increase the accuracy\nand speed of automatic live-traffic rules, but requires more\nresources. Default: 5000.",
                   "required": [],
                   "title": "maxExamplePathsPerWorkload"
                 },
