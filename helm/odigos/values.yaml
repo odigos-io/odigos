@@ -148,29 +148,19 @@ cardinalityControl:
 
       # @schema
       # description: |-
-      #   Live-traffic automatic rules: apply URL templatization rules learned
-      #   from live traffic when they meet the observation threshold. Opt-in;
-      #   unset/empty keeps live-traffic automatic rules off (rules are only
-      #   suggested).
+      #   Thresholds used when computing URL templatization rules from live
+      #   traffic. They apply to both UI recommendations and live-traffic
+      #   automatic rules.
       # @schema
-      automaticRules:
+      ruleComputation:
         # @schema
         # description: |-
-        #   When true, enables live-traffic automatic rules — learned URL
-        #   templatization rules that meet minObservationsForTemplating are
-        #   applied for you. Requires liveTrafficLearning.enabled. Opt-in;
-        #   unset/empty keeps live-traffic automatic rules off.
-        # @schema
-        enabled:
-
-        # @schema
-        # description: |-
-        #   Min observations for templating: minimum number of path observations
+        #   Min observations for a rule: minimum number of path observations
         #   required before a rule is recommended in the UI, and before it is
         #   applied as a live-traffic automatic rule when automaticRules.enabled
         #   is true. Default: 100.
         # @schema
-        minObservationsForTemplating: 100
+        minObservationsForRule: 100
 
         # @schema
         # description: |-
@@ -178,11 +168,27 @@ cardinalityControl:
         #   segment values required before a path segment is collapsed into a
         #   templated placeholder ({id}) in recommended and live-traffic
         #   automatic rules. Below this threshold, high-branching segments stay
-        #   as wildcards (*). Additive with the other maturity criteria — rules
-        #   must still meet minObservationsForTemplating and the remaining
-        #   learning checks. Default: 20.
+        #   as wildcards (*). Additive with minObservationsForRule and
+        #   the remaining learning checks. Default: 20.
         # @schema
         minCardinalityForTemplating: 20
+
+      # @schema
+      # description: |-
+      #   Live-traffic automatic rules: apply URL templatization rules learned
+      #   from live traffic when they meet the ruleComputation thresholds.
+      #   Opt-in; unset/empty keeps live-traffic automatic rules off (rules
+      #   are only suggested).
+      # @schema
+      automaticRules:
+        # @schema
+        # description: |-
+        #   When true, enables live-traffic automatic rules — learned URL
+        #   templatization rules that meet the ruleComputation thresholds are
+        #   applied for you. Requires liveTrafficLearning.enabled. Opt-in;
+        #   unset/empty keeps live-traffic automatic rules off.
+        # @schema
+        enabled:
 
 # @schema
 # description: |-

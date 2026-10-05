@@ -76,6 +76,7 @@ data:
     */}}
     {{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" }}
     {{- $ltl := .Values.cardinalityControl.urlTemplatization.liveTrafficLearning }}
+    {{- $ruleComputation := $ltl.ruleComputation | default dict }}
     {{- $automaticRules := $ltl.automaticRules | default dict }}
     cardinalityControl:
       urlTemplatization:
@@ -90,17 +91,18 @@ data:
           {{- if $ltl.learningInterval }}
           learningInterval: {{ $ltl.learningInterval | quote }}
           {{- end }}
-          {{- if or $automaticRules.enabled $automaticRules.minObservationsForTemplating $automaticRules.minCardinalityForTemplating }}
+          {{- if or $ruleComputation.minObservationsForRule $ruleComputation.minCardinalityForTemplating }}
+          ruleComputation:
+            {{- if $ruleComputation.minObservationsForRule }}
+            minObservationsForRule: {{ $ruleComputation.minObservationsForRule }}
+            {{- end }}
+            {{- if $ruleComputation.minCardinalityForTemplating }}
+            minCardinalityForTemplating: {{ $ruleComputation.minCardinalityForTemplating }}
+            {{- end }}
+          {{- end }}
+          {{- if $automaticRules.enabled }}
           automaticRules:
-            {{- if $automaticRules.enabled }}
             enabled: {{ $automaticRules.enabled }}
-            {{- end }}
-            {{- if $automaticRules.minObservationsForTemplating }}
-            minObservationsForTemplating: {{ $automaticRules.minObservationsForTemplating }}
-            {{- end }}
-            {{- if $automaticRules.minCardinalityForTemplating }}
-            minCardinalityForTemplating: {{ $automaticRules.minCardinalityForTemplating }}
-            {{- end }}
           {{- end }}
     {{- end }}
     {{- if .Values.profiling.enabled }}

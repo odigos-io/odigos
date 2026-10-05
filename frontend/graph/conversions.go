@@ -474,20 +474,24 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 					ltlModel.LearningInterval = &interval
 					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval")
 				}
+				if ltl.RuleComputation != nil {
+					ltlModel.RuleComputation = &model.LiveTrafficLearningRuleComputationConfig{
+						MinObservationsForRule:      ltl.RuleComputation.MinObservationsForRule,
+						MinCardinalityForTemplating: ltl.RuleComputation.MinCardinalityForTemplating,
+					}
+					if ltl.RuleComputation.MinObservationsForRule != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minObservationsForRule")
+					}
+					if ltl.RuleComputation.MinCardinalityForTemplating != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minCardinalityForTemplating")
+					}
+				}
 				if ltl.AutomaticRules != nil {
 					ltlModel.AutomaticRules = &model.LiveTrafficLearningAutomaticRulesConfig{
-						Enabled:                      ltl.AutomaticRules.Enabled,
-						MinObservationsForTemplating: ltl.AutomaticRules.MinObservationsForTemplating,
-						MinCardinalityForTemplating:  ltl.AutomaticRules.MinCardinalityForTemplating,
+						Enabled: ltl.AutomaticRules.Enabled,
 					}
 					if ltl.AutomaticRules.Enabled != nil {
 						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled")
-					}
-					if ltl.AutomaticRules.MinObservationsForTemplating != nil {
-						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.minObservationsForTemplating")
-					}
-					if ltl.AutomaticRules.MinCardinalityForTemplating != nil {
-						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.minCardinalityForTemplating")
 					}
 				}
 				result.CardinalityControl.URLTemplatization.LiveTrafficLearning = ltlModel

@@ -632,24 +632,30 @@ type InsightsConfiguration struct {
 // rules — applying URL templatization rules learned from live traffic.
 type LiveTrafficLearningAutomaticRulesConfiguration struct {
 	// Enabled, when true, turns on live-traffic automatic rules: learned URL
-	// templatization rules that meet MinObservationsForTemplating are applied
+	// templatization rules that meet the ruleComputation thresholds are applied
 	// for you. That includes static exact-path rules and dynamic rules whose
 	// templated segments have high certainty. Opt-in; nil or false keeps
 	// live-traffic automatic rules off (rules are only suggested).
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+}
 
-	// MinObservationsForTemplating is the minimum number of path observations
+// +kubebuilder:object:generate=true
+// LiveTrafficLearningRuleComputationConfiguration holds thresholds used when
+// computing URL templatization rules from live traffic. They apply to both
+// UI recommendations and live-traffic automatic rules.
+type LiveTrafficLearningRuleComputationConfiguration struct {
+	// MinObservationsForRule is the minimum number of path observations
 	// required before a rule is recommended in the UI, and before it is applied
-	// as a live-traffic automatic rule when Enabled. Defaults to 100 when unset.
-	MinObservationsForTemplating *int `json:"minObservationsForTemplating,omitempty" yaml:"minObservationsForTemplating,omitempty"`
+	// as a live-traffic automatic rule when AutomaticRules.Enabled. Defaults to
+	// 100 when unset.
+	MinObservationsForRule *int `json:"minObservationsForRule,omitempty" yaml:"minObservationsForRule,omitempty"`
 
 	// MinCardinalityForTemplating is the min cardinality for templating: minimum
 	// number of distinct child segment values required before a path segment is
 	// collapsed into a templated placeholder ({id}) in recommended and
 	// live-traffic automatic rules. Below this threshold, high-branching
-	// segments stay as wildcards (*). Additive with the other maturity criteria —
-	// rules must still meet MinObservationsForTemplating and the remaining
-	// learning checks. Defaults to 20 when unset.
+	// segments stay as wildcards (*). Additive with MinObservationsForRule
+	// and the remaining learning checks. Defaults to 20 when unset.
 	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty" yaml:"minCardinalityForTemplating,omitempty"`
 }
 
@@ -685,8 +691,12 @@ type LiveTrafficLearningConfiguration struct {
 	// more instrumentor resources. Defaults to 30s when unset.
 	LearningInterval string `json:"learningInterval,omitempty" yaml:"learningInterval,omitempty"`
 
+	// RuleComputation holds thresholds used when computing URL templatization
+	// rules from live traffic (recommendations and automatic apply).
+	RuleComputation *LiveTrafficLearningRuleComputationConfiguration `json:"ruleComputation,omitempty" yaml:"ruleComputation,omitempty"`
+
 	// AutomaticRules controls live-traffic automatic rules — whether learned
-	// rules are applied for you when they meet the observation threshold.
+	// rules are applied for you when they meet the ruleComputation thresholds.
 	AutomaticRules *LiveTrafficLearningAutomaticRulesConfiguration `json:"automaticRules,omitempty" yaml:"automaticRules,omitempty"`
 }
 

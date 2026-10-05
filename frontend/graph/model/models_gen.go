@@ -2298,17 +2298,21 @@ type LanguageConfig struct {
 }
 
 type LiveTrafficLearningAutomaticRulesConfig struct {
-	Enabled                      *bool `json:"enabled,omitempty"`
-	MinObservationsForTemplating *int  `json:"minObservationsForTemplating,omitempty"`
-	MinCardinalityForTemplating  *int  `json:"minCardinalityForTemplating,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type LiveTrafficLearningConfig struct {
-	Enabled                    *bool                                    `json:"enabled,omitempty"`
-	MaxExamplePathsPerWorkload *int                                     `json:"maxExamplePathsPerWorkload,omitempty"`
-	PathExampleIdleTTL         *string                                  `json:"pathExampleIdleTTL,omitempty"`
-	LearningInterval           *string                                  `json:"learningInterval,omitempty"`
-	AutomaticRules             *LiveTrafficLearningAutomaticRulesConfig `json:"automaticRules,omitempty"`
+	Enabled                    *bool                                     `json:"enabled,omitempty"`
+	MaxExamplePathsPerWorkload *int                                      `json:"maxExamplePathsPerWorkload,omitempty"`
+	PathExampleIdleTTL         *string                                   `json:"pathExampleIdleTTL,omitempty"`
+	LearningInterval           *string                                   `json:"learningInterval,omitempty"`
+	RuleComputation            *LiveTrafficLearningRuleComputationConfig `json:"ruleComputation,omitempty"`
+	AutomaticRules             *LiveTrafficLearningAutomaticRulesConfig  `json:"automaticRules,omitempty"`
+}
+
+type LiveTrafficLearningRuleComputationConfig struct {
+	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
 }
 
 type LocalUIConfigAllowConcurrentAgentsInput struct {
@@ -2360,16 +2364,20 @@ type LocalUIConfigInstrumentorInput struct {
 }
 
 type LocalUIConfigLiveTrafficLearningAutomaticRulesInput struct {
-	Enabled                      *bool `json:"enabled,omitempty"`
-	MinObservationsForTemplating *int  `json:"minObservationsForTemplating,omitempty"`
-	MinCardinalityForTemplating  *int  `json:"minCardinalityForTemplating,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type LocalUIConfigLiveTrafficLearningInput struct {
-	MaxExamplePathsPerWorkload *int                                                 `json:"maxExamplePathsPerWorkload,omitempty"`
-	PathExampleIdleTTL         *string                                              `json:"pathExampleIdleTTL,omitempty"`
-	LearningInterval           *string                                              `json:"learningInterval,omitempty"`
-	AutomaticRules             *LocalUIConfigLiveTrafficLearningAutomaticRulesInput `json:"automaticRules,omitempty"`
+	MaxExamplePathsPerWorkload *int                                                  `json:"maxExamplePathsPerWorkload,omitempty"`
+	PathExampleIdleTTL         *string                                               `json:"pathExampleIdleTTL,omitempty"`
+	LearningInterval           *string                                               `json:"learningInterval,omitempty"`
+	RuleComputation            *LocalUIConfigLiveTrafficLearningRuleComputationInput `json:"ruleComputation,omitempty"`
+	AutomaticRules             *LocalUIConfigLiveTrafficLearningAutomaticRulesInput  `json:"automaticRules,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningRuleComputationInput struct {
+	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
 }
 
 type LocalUIConfigRolloutInput struct {

@@ -184,25 +184,13 @@
               "properties": {
                 "automaticRules": {
                   "additionalProperties": false,
-                  "description": "Live-traffic automatic rules: apply URL templatization rules learned\nfrom live traffic when they meet the observation threshold. Opt-in;\nunset/empty keeps live-traffic automatic rules off (rules are only\nsuggested).",
+                  "description": "Live-traffic automatic rules: apply URL templatization rules learned\nfrom live traffic when they meet the ruleComputation thresholds.\nOpt-in; unset/empty keeps live-traffic automatic rules off (rules\nare only suggested).",
                   "properties": {
                     "enabled": {
                       "default": "",
-                      "description": "When true, enables live-traffic automatic rules — learned URL\ntemplatization rules that meet minObservationsForTemplating are\napplied for you. Requires liveTrafficLearning.enabled. Opt-in;\nunset/empty keeps live-traffic automatic rules off.",
+                      "description": "When true, enables live-traffic automatic rules — learned URL\ntemplatization rules that meet the ruleComputation thresholds are\napplied for you. Requires liveTrafficLearning.enabled. Opt-in;\nunset/empty keeps live-traffic automatic rules off.",
                       "required": [],
                       "title": "enabled"
-                    },
-                    "minCardinalityForTemplating": {
-                      "default": "20",
-                      "description": "Min cardinality for templating: minimum number of distinct child\nsegment values required before a path segment is collapsed into a\ntemplated placeholder ({id}) in recommended and live-traffic\nautomatic rules. Below this threshold, high-branching segments stay\nas wildcards (*). Additive with the other maturity criteria — rules\nmust still meet minObservationsForTemplating and the remaining\nlearning checks. Default: 20.",
-                      "required": [],
-                      "title": "minCardinalityForTemplating"
-                    },
-                    "minObservationsForTemplating": {
-                      "default": "100",
-                      "description": "Min observations for templating: minimum number of path observations\nrequired before a rule is recommended in the UI, and before it is\napplied as a live-traffic automatic rule when automaticRules.enabled\nis true. Default: 100.",
-                      "required": [],
-                      "title": "minObservationsForTemplating"
                     }
                   },
                   "required": [],
@@ -231,6 +219,26 @@
                   "description": "Path example idle TTL: how long an unmatched path example is kept\nafter its last observation. Each new observation refreshes the TTL\n(sliding window). Expired paths free quota for new examples. Must\nstay well above the collector flush interval and the learning\ninterval. Default: 48h (2 days).",
                   "required": [],
                   "title": "pathExampleIdleTTL"
+                },
+                "ruleComputation": {
+                  "additionalProperties": false,
+                  "description": "Thresholds used when computing URL templatization rules from live\ntraffic. They apply to both UI recommendations and live-traffic\nautomatic rules.",
+                  "properties": {
+                    "minCardinalityForTemplating": {
+                      "default": "20",
+                      "description": "Min cardinality for templating: minimum number of distinct child\nsegment values required before a path segment is collapsed into a\ntemplated placeholder ({id}) in recommended and live-traffic\nautomatic rules. Below this threshold, high-branching segments stay\nas wildcards (*). Additive with minObservationsForRule and\nthe remaining learning checks. Default: 20.",
+                      "required": [],
+                      "title": "minCardinalityForTemplating"
+                    },
+                    "minObservationsForRule": {
+                      "default": "100",
+                      "description": "Min observations for a rule: minimum number of path observations\nrequired before a rule is recommended in the UI, and before it is\napplied as a live-traffic automatic rule when automaticRules.enabled\nis true. Default: 100.",
+                      "required": [],
+                      "title": "minObservationsForRule"
+                    }
+                  },
+                  "required": [],
+                  "title": "ruleComputation"
                 }
               },
               "required": [],

@@ -158,7 +158,10 @@ type ProfilingConfig {
 
 type LiveTrafficLearningAutomaticRulesConfig {
   enabled: Boolean
-  minObservationsForTemplating: Int
+}
+
+type LiveTrafficLearningRuleComputationConfig {
+  minObservationsForRule: Int
   minCardinalityForTemplating: Int
 }
 
@@ -167,6 +170,7 @@ type LiveTrafficLearningConfig {
   maxExamplePathsPerWorkload: Int
   pathExampleIdleTTL: String
   learningInterval: String
+  ruleComputation: LiveTrafficLearningRuleComputationConfig
   automaticRules: LiveTrafficLearningAutomaticRulesConfig
 }
 
@@ -390,17 +394,21 @@ input LocalUiConfigTraceCorrelationsInput {
 
 input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
   enabled: Boolean
-  minObservationsForTemplating: Int
+}
+
+input LocalUiConfigLiveTrafficLearningRuleComputationInput {
+  minObservationsForRule: Int
   minCardinalityForTemplating: Int
 }
 
 input LocalUiConfigLiveTrafficLearningInput {
   # enabled is Helm-only (deploys cacheDb); UI may override
   # maxExamplePathsPerWorkload, pathExampleIdleTTL, learningInterval,
-  # and automaticRules.
+  # ruleComputation, and automaticRules.
   maxExamplePathsPerWorkload: Int
   pathExampleIdleTTL: String
   learningInterval: String
+  ruleComputation: LocalUiConfigLiveTrafficLearningRuleComputationInput
   automaticRules: LocalUiConfigLiveTrafficLearningAutomaticRulesInput
 }
 

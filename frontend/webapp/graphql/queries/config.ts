@@ -196,10 +196,12 @@ export const GET_EFFECTIVE_CONFIG = gql`
             maxExamplePathsPerWorkload
             pathExampleIdleTTL
             learningInterval
+            ruleComputation {
+              minObservationsForRule
+              minCardinalityForTemplating
+            }
             automaticRules {
               enabled
-              minObservationsForTemplating
-              minCardinalityForTemplating
             }
           }
         }

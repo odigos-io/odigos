@@ -184,15 +184,17 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 		if ltl.LearningInterval != "" {
 			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval"] = sourceName
 		}
+		if ltl.RuleComputation != nil {
+			if ltl.RuleComputation.MinObservationsForRule != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minObservationsForRule"] = sourceName
+			}
+			if ltl.RuleComputation.MinCardinalityForTemplating != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minCardinalityForTemplating"] = sourceName
+			}
+		}
 		if ltl.AutomaticRules != nil {
 			if ltl.AutomaticRules.Enabled != nil {
 				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled"] = sourceName
-			}
-			if ltl.AutomaticRules.MinObservationsForTemplating != nil {
-				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.minObservationsForTemplating"] = sourceName
-			}
-			if ltl.AutomaticRules.MinCardinalityForTemplating != nil {
-				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.minCardinalityForTemplating"] = sourceName
 			}
 		}
 	}

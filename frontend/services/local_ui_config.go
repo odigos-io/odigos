@@ -191,8 +191,9 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 	}
 	ltlInput := input.URLTemplatization.LiveTrafficLearning
 	// enabled is Helm-only; UI overlays may set maxExamplePathsPerWorkload,
-	// pathExampleIdleTTL, learningInterval, and automaticRules.
+	// pathExampleIdleTTL, learningInterval, ruleComputation, and automaticRules.
 	if ltlInput.AutomaticRules == nil &&
+		ltlInput.RuleComputation == nil &&
 		ltlInput.MaxExamplePathsPerWorkload == nil &&
 		ltlInput.PathExampleIdleTTL == nil &&
 		ltlInput.LearningInterval == nil {
@@ -219,6 +220,17 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 	if ltlInput.LearningInterval != nil {
 		ltl.LearningInterval = *ltlInput.LearningInterval
 	}
+	if ltlInput.RuleComputation != nil {
+		if ltl.RuleComputation == nil {
+			ltl.RuleComputation = &common.LiveTrafficLearningRuleComputationConfiguration{}
+		}
+		if ltlInput.RuleComputation.MinObservationsForRule != nil {
+			ltl.RuleComputation.MinObservationsForRule = ltlInput.RuleComputation.MinObservationsForRule
+		}
+		if ltlInput.RuleComputation.MinCardinalityForTemplating != nil {
+			ltl.RuleComputation.MinCardinalityForTemplating = ltlInput.RuleComputation.MinCardinalityForTemplating
+		}
+	}
 	if ltlInput.AutomaticRules == nil {
 		return
 	}
@@ -226,15 +238,8 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 		ltl.AutomaticRules = &common.LiveTrafficLearningAutomaticRulesConfiguration{}
 	}
 
-	dst := ltl.AutomaticRules
 	if ltlInput.AutomaticRules.Enabled != nil {
-		dst.Enabled = ltlInput.AutomaticRules.Enabled
-	}
-	if ltlInput.AutomaticRules.MinObservationsForTemplating != nil {
-		dst.MinObservationsForTemplating = ltlInput.AutomaticRules.MinObservationsForTemplating
-	}
-	if ltlInput.AutomaticRules.MinCardinalityForTemplating != nil {
-		dst.MinCardinalityForTemplating = ltlInput.AutomaticRules.MinCardinalityForTemplating
+		ltl.AutomaticRules.Enabled = ltlInput.AutomaticRules.Enabled
 	}
 }
 
