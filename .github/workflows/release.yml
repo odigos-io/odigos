@@ -19,7 +19,7 @@ env:
   DOCKERHUB_ORG: "keyval"
   VICTORIA_METRICS_VERSION: "v1.144.0"
   # Upstream Redis tag re-hosted as odigos-cache:<odigos-tag> (same pattern as VictoriaMetrics).
-  REDIS_VERSION: "7.4.2"
+  REDIS_VERSION: "8.10.2"
 
 jobs:
   package-helm:
