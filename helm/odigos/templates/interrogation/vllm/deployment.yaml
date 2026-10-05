@@ -1,6 +1,8 @@
 {{- if and (include "odigos.vllmEnabled" .) (include "odigos.secretExists" .) }}
 {{- $gpuCount := .Values.interrogation.vllm.gpuCount | default 1 | toString }}
-{{- $persistent := ne .Values.interrogation.vllm.storage.persistence false }}
+{{- $imageTag := .Values.interrogation.vllm.image.tag | default .Values.image.tag | default .Chart.AppVersion }}
+{{- $modelPath := .Values.interrogation.vllm.modelPath | default "/models/interrogation" }}
+{{- $servedModelName := .Values.interrogation.vllm.servedModelName | default "interrogation" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,11 +13,6 @@ metadata:
     odigos.io/system-object: "true"
 spec:
   replicas: 1
-  {{- if $persistent }}
-  # Recreate so a single ReadWriteOnce PVC is not claimed by two pods during rollout.
-  strategy:
-    type: Recreate
-  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: odigos-vllm
@@ -24,12 +21,20 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-vllm
     spec:
-      {{- /* Only honor vllm.nodeSelector — do not inherit the global chart
-           nodeSelector. GPU scheduling is driven by nvidia.com/gpu; cloud-specific
-           accelerator labels are optional and must be set explicitly. */}}
-      {{- with .Values.interrogation.vllm.nodeSelector }}
+      {{- /* Do not inherit the global chart nodeSelector. GPU scheduling is
+           driven by nvidia.com/gpu; optional labels come from gkeAccelerator
+           and/or an explicit nodeSelector map (prefer gkeAccelerator / -f over
+           --set with dotted keys — Make strips Helm escapes). */}}
+      {{- $nodeSelector := dict }}
+      {{- range $k, $v := .Values.interrogation.vllm.nodeSelector }}
+      {{- $_ := set $nodeSelector $k $v }}
+      {{- end }}
+      {{- if .Values.interrogation.vllm.gkeAccelerator }}
+      {{- $_ := set $nodeSelector "cloud.google.com/gke-accelerator" .Values.interrogation.vllm.gkeAccelerator }}
+      {{- end }}
+      {{- if $nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $nodeSelector | nindent 8 }}
       {{- end }}
       {{- if .Values.interrogation.vllm.priorityClassName }}
       priorityClassName: {{ .Values.interrogation.vllm.priorityClassName }}
@@ -37,11 +42,17 @@ spec:
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: vllm
-          image: "{{ .Values.interrogation.vllm.image.repository }}:{{ .Values.interrogation.vllm.image.tag }}"
-          imagePullPolicy: {{ .Values.interrogation.vllm.image.pullPolicy }}
+          {{- if .Values.interrogation.vllm.image.repository }}
+          image: "{{ .Values.interrogation.vllm.image.repository }}:{{ $imageTag }}"
+          {{- else }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-vllm" "Tag" $imageTag) }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.interrogation.vllm.image.pullPolicy | default "IfNotPresent" }}
           args:
             - --model
-            - {{ .Values.interrogation.vllm.model | quote }}
+            - {{ $modelPath | quote }}
+            - --served-model-name
+            - {{ $servedModelName | quote }}
             - --host
             - "0.0.0.0"
             - --port
@@ -55,22 +66,7 @@ spec:
           ports:
             - name: http
               containerPort: 8000
-          env:
-            - name: HUGGING_FACE_HUB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: odigos-vllm
-                  key: hf-token
-                  optional: true
-            - name: HF_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: odigos-vllm
-                  key: hf-token
-                  optional: true
           volumeMounts:
-            - name: hf-cache
-              mountPath: /root/.cache/huggingface
             - name: dshm
               mountPath: /dev/shm
           startupProbe:
@@ -107,13 +103,6 @@ spec:
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        - name: hf-cache
-          {{- if $persistent }}
-          persistentVolumeClaim:
-            claimName: odigos-vllm
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
         - name: dshm
           emptyDir:
             medium: Memory

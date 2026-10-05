@@ -31,7 +31,7 @@ imagePrefix:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,
-#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights, enterprise-interrogation
+#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights, enterprise-interrogation, enterprise-vllm
 # additionalProperties: true
 # @schema
 images: {}
@@ -184,8 +184,9 @@ transactionIdentity:
 #   insights) in the Odigos namespace if not already present, deploys the
 #   odigos-interrogation control-loop service (enterprise; requires on-prem token),
 #   and deploys bundled LiteLLM (odigos-litellm). Configure a cloud provider under
-#   interrogation.model, or enable interrogation.vllm for an in-cluster OpenAI-compatible
-#   server. Optionally set model.apiBase to point LiteLLM at a BYO inference endpoint.
+#   interrogation.model, or enable interrogation.vllm for odigos-enterprise-vllm
+#   (weights baked into the image; no Hugging Face at runtime). Optionally set
+#   model.apiBase to point LiteLLM at a BYO inference endpoint.
 # @schema
 interrogation:
   # @schema
@@ -280,10 +281,10 @@ interrogation:
     tolerations: []
     affinity: {}
 
-  # Bundled in-cluster vLLM (off by default). OpenAI-compatible server for air-gapped /
-  # no-cloud-key clusters. Hard requirement: NVIDIA device plugin so pods can request
-  # nvidia.com/gpu. Do NOT hardcode cloud nodeSelectors here — leave empty and set
-  # nodeSelector / tolerations / affinity for your GPU pool (GKE, EKS, AKS, on-prem).
+  # Bundled in-cluster vLLM (off by default). Uses odigos-enterprise-vllm with
+  # model weights baked into the image (no Hugging Face at runtime). Hard
+  # requirement: NVIDIA device plugin (nvidia.com/gpu). Do NOT hardcode cloud
+  # nodeSelectors — use gkeAccelerator or nodeSelector for your GPU pool.
   # @schema
   vllm:
     # @schema
@@ -291,20 +292,26 @@ interrogation:
     # @schema
     enabled: false
     # @schema
-    # description: vLLM OpenAI-compatible server image.
+    # description: |-
+    #   Image for odigos-enterprise-vllm. Empty repository uses the same registry
+    #   resolution as other enterprise components (odigos-enterprise-vllm).
+    #   Override repository for local/dev pulls (e.g. depot or a private registry).
     # @schema
     image:
-      repository: vllm/vllm-openai
-      tag: "v0.8.5"
+      repository: ""
+      # @schema
+      # description: Image tag. Defaults to global image.tag / Chart.AppVersion. Bake builds often use v0.8.5-qwen2.5-7b.
+      # @schema
+      tag: ""
       pullPolicy: IfNotPresent
     # @schema
-    # description: Hugging Face model id to serve (also the LiteLLM upstream model name).
+    # description: Path to baked-in weights inside the image (must match llm/Dockerfile MODEL_DIR).
     # @schema
-    model: Qwen/Qwen2.5-7B-Instruct
+    modelPath: /models/interrogation
     # @schema
-    # description: Optional Hugging Face token for gated models. Stored in Secret odigos-vllm.
+    # description: OpenAI model id vLLM serves (--served-model-name). LiteLLM routes hosted_vllm/<name>.
     # @schema
-    hfToken: ""
+    servedModelName: interrogation
     # @schema
     # description: vLLM --max-model-len.
     # @schema
@@ -317,32 +324,27 @@ interrogation:
     # description: Number of GPUs to request (nvidia.com/gpu). This is the portable hard scheduling requirement.
     # @schema
     gpuCount: 1
+    # Sized for g2-standard-8 (~28Gi allocatable) with other Odigos pods on the node.
     resources:
       requests:
-        cpu: "4"
-        memory: 24Gi
+        cpu: "2"
+        memory: 16Gi
       limits:
-        cpu: "8"
-        memory: 32Gi
-    storage:
-      # @schema
-      # description: When false, use emptyDir for the HF cache (re-downloads on reschedule).
-      # @schema
-      persistence: true
-      # @schema
-      # description: PVC size for the Hugging Face model cache.
-      # @schema
-      size: 50Gi
-      # @schema
-      # description: StorageClass for the HF cache PVC. Empty uses the cluster default.
-      # @schema
-      # storageClassName: ''
+        cpu: "7"
+        memory: 26Gi
+    # @schema
+    # description: |-
+    #   Optional GKE accelerator type. When set, adds
+    #   nodeSelector cloud.google.com/gke-accelerator=<value>. Prefer this over
+    #   nodeSelector with dotted keys — Make/shell eat Helm --set escaping.
+    #   Example: nvidia-l4
+    # @schema
+    gkeAccelerator: ""
     # @schema
     # description: |-
     #   Optional nodeSelector for the GPU pool. Empty by default so the nvidia.com/gpu
-    #   resource request can schedule on any GPU node. Cloud-specific examples:
-    #   GKE: cloud.google.com/gke-accelerator: nvidia-l4
-    #   EKS: nvidia.com/gpu.product: NVIDIA-L4
+    #   resource request can schedule on any GPU node. Prefer gkeAccelerator on GKE.
+    #   For other clouds use a values file (-f), not --set with dotted keys.
     # @schema
     # nodeSelector: {}
     # @schema

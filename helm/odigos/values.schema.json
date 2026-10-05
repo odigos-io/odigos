@@ -667,7 +667,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights, enterprise-interrogation, enterprise-vllm",
       "required": [],
       "title": "images"
     },
@@ -1317,7 +1317,7 @@
         },
         "vllm": {
           "additionalProperties": false,
-          "description": "Bundled in-cluster vLLM. Hard requirement is nvidia.com/gpu via the NVIDIA device plugin; nodeSelector/tolerations are optional and cluster-specific.",
+          "description": "Bundled in-cluster vLLM with weights baked into odigos-enterprise-vllm (no Hugging Face at runtime). Requires nvidia.com/gpu.",
           "properties": {
             "affinity": {
               "additionalProperties": true,
@@ -1330,6 +1330,13 @@
               "required": [],
               "title": "enabled",
               "type": "boolean"
+            },
+            "gkeAccelerator": {
+              "default": "",
+              "description": "Optional GKE accelerator type (e.g. nvidia-l4). Sets nodeSelector cloud.google.com/gke-accelerator.",
+              "required": [],
+              "title": "gkeAccelerator",
+              "type": "string"
             },
             "gpuCount": {
               "default": 1,
@@ -1345,13 +1352,6 @@
               "title": "gpuMemoryUtilization",
               "type": "string"
             },
-            "hfToken": {
-              "default": "",
-              "description": "Optional Hugging Face token for gated models.",
-              "required": [],
-              "title": "hfToken",
-              "type": "string"
-            },
             "image": {
               "additionalProperties": false,
               "properties": {
@@ -1361,12 +1361,14 @@
                   "type": "string"
                 },
                 "repository": {
-                  "default": "vllm/vllm-openai",
+                  "default": "",
+                  "description": "Empty uses enterprise image resolution (odigos-enterprise-vllm).",
                   "title": "repository",
                   "type": "string"
                 },
                 "tag": {
-                  "default": "v0.8.5",
+                  "default": "",
+                  "description": "Defaults to global image.tag. Bake builds often use v0.8.5-qwen2.5-7b.",
                   "title": "tag",
                   "type": "string"
                 }
@@ -1382,11 +1384,11 @@
               "title": "maxModelLen",
               "type": "integer"
             },
-            "model": {
-              "default": "Qwen/Qwen2.5-7B-Instruct",
-              "description": "Hugging Face model id to serve.",
+            "modelPath": {
+              "default": "/models/interrogation",
+              "description": "Path to baked-in weights inside the image.",
               "required": [],
-              "title": "model",
+              "title": "modelPath",
               "type": "string"
             },
             "nodeSelector": {
@@ -1407,11 +1409,11 @@
                   "additionalProperties": false,
                   "properties": {
                     "cpu": {
-                      "default": "8",
+                      "default": "7",
                       "type": "string"
                     },
                     "memory": {
-                      "default": "32Gi",
+                      "default": "26Gi",
                       "type": "string"
                     }
                   },
@@ -1423,11 +1425,11 @@
                   "additionalProperties": false,
                   "properties": {
                     "cpu": {
-                      "default": "4",
+                      "default": "2",
                       "type": "string"
                     },
                     "memory": {
-                      "default": "24Gi",
+                      "default": "16Gi",
                       "type": "string"
                     }
                   },
@@ -1440,25 +1442,12 @@
               "title": "resources",
               "type": "object"
             },
-            "storage": {
-              "additionalProperties": false,
-              "properties": {
-                "persistence": {
-                  "default": true,
-                  "type": "boolean"
-                },
-                "size": {
-                  "default": "50Gi",
-                  "type": "string"
-                },
-                "storageClassName": {
-                  "default": "",
-                  "type": "string"
-                }
-              },
+            "servedModelName": {
+              "default": "interrogation",
+              "description": "OpenAI model id vLLM serves (--served-model-name).",
               "required": [],
-              "title": "storage",
-              "type": "object"
+              "title": "servedModelName",
+              "type": "string"
             },
             "tolerations": {
               "items": {
