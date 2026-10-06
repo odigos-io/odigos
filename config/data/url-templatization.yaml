@@ -1,0 +1,61 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Configuration
+metadata:
+  name: url-templatization
+  displayName: URL Templatization
+spec:
+  fields:
+    - displayName: Live Traffic Learning Enabled
+      componentType: toggle
+      isHelmOnly: true
+      isEnterpriseOnly: true
+      description: Learn URL templatization rules from unmatched HTTP paths in live traffic. Enabling this deploys the shared cache and must be set via Helm.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.enabled
+    - displayName: Max Example Paths Per Workload
+      componentType: input
+      isHelmOnly: false
+      isEnterpriseOnly: true
+      description: Maximum distinct unmatched HTTP paths stored per workload for live-traffic learning. A larger number can increase the accuracy and speed of automatic live-traffic rules, but requires more resources. Default is 5000 when unset.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.maxExamplePathsPerWorkload
+      renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
+      componentProps:
+        type: number
+    - displayName: Path Example Idle TTL
+      componentType: time
+      isHelmOnly: false
+      isEnterpriseOnly: true
+      description: How long an unmatched path example is kept after its last observation. Each new observation refreshes the TTL. Expired paths free quota for new examples. Default is 48h (2 days) when unset.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL
+      renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
+    - displayName: Learning Interval
+      componentType: time
+      isHelmOnly: false
+      isEnterpriseOnly: true
+      description: How often the instrumentor runs the live-traffic learning cycle — checking for new URL templatization rules and garbage-collecting path examples in the shared cache. Default is 30s when unset.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval
+      renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
+    - displayName: Min Observations for Rule
+      componentType: input
+      isHelmOnly: false
+      isEnterpriseOnly: true
+      description: Minimum path observations required before a rule is recommended or applied as a live-traffic automatic rule. Default is 100 when unset.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minObservationsForRule
+      renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
+      componentProps:
+        type: number
+    - displayName: Min Cardinality for Templating
+      componentType: input
+      isHelmOnly: false
+      isEnterpriseOnly: true
+      description: Minimum distinct child segment values before a path segment becomes a templated placeholder ({id}) instead of a wildcard (*). Additive with min observations for a rule and the remaining learning checks. Default is 20 when unset.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minCardinalityForTemplating
+      renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
+      componentProps:
+        type: number
+    - displayName: Live-traffic Automatic Rules
+      componentType: toggle
+      isHelmOnly: false
+      isEnterpriseOnly: true
+      description: Apply learned URL templatization rules automatically when they meet the rule-computation thresholds. When off, rules are only suggested.
+      helmValuePath: cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled
+      renderCondition: ["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled", "==", "true"]
