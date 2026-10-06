@@ -134,11 +134,28 @@ jobs:
           fi
 
       - name: Checkout repository
-        if: steps.meta.outputs.kind == 'feature'
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ needs.decide.outputs.tag }}
+
+      - name: Read rebuild_vllm from tag annotation (standard releases)
+        if: steps.meta.outputs.kind == 'standard'
+        id: standard-opts
+        env:
+          TAG: ${{ needs.decide.outputs.tag }}
+        run: |
+          MSG=$(git tag -l --format='%(contents)' "$TAG" || true)
+          REBUILD_VLLM="false"
+          while IFS= read -r line; do
+            if [[ "$line" == rebuild_vllm=* ]]; then
+              REBUILD_VLLM="${line#rebuild_vllm=}"
+            fi
+          done <<< "$MSG"
+          if [ "$REBUILD_VLLM" != "true" ]; then
+            REBUILD_VLLM="false"
+          fi
+          echo "rebuild_vllm=${REBUILD_VLLM}" >> "$GITHUB_OUTPUT"
 
       - name: Read enterprise branch from tag annotation
         if: steps.meta.outputs.kind == 'feature'
@@ -149,11 +166,14 @@ jobs:
           MSG=$(git tag -l --format='%(contents)' "$TAG")
           BRANCH=""
           OSS_BRANCH=""
+          REBUILD_VLLM="false"
           while IFS= read -r line; do
             if [[ "$line" == enterprise_branch=* ]]; then
               BRANCH="${line#enterprise_branch=}"
             elif [[ "$line" == oss_branch=* ]]; then
               OSS_BRANCH="${line#oss_branch=}"
+            elif [[ "$line" == rebuild_vllm=* ]]; then
+              REBUILD_VLLM="${line#rebuild_vllm=}"
             fi
           done <<< "$MSG"
           if [ -z "$BRANCH" ]; then
@@ -164,8 +184,12 @@ jobs:
             echo "ERROR: feature tag $TAG is missing oss_branch annotation"
             exit 1
           fi
+          if [ "$REBUILD_VLLM" != "true" ]; then
+            REBUILD_VLLM="false"
+          fi
           echo "enterprise_branch=${BRANCH}" >> "$GITHUB_OUTPUT"
           echo "oss_branch=${OSS_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "rebuild_vllm=${REBUILD_VLLM}" >> "$GITHUB_OUTPUT"
           echo "Tag annotation: '${MSG}'"
           echo "Enterprise branch: '${BRANCH}'"
           echo "OSS branch: '${OSS_BRANCH}'"
@@ -185,7 +209,7 @@ jobs:
           token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
           repository: odigos-io/odigos-enterprise
           event-type: create_release_pr
-          client-payload: '{"tag": "${{ needs.decide.outputs.tag }}"}'
+          client-payload: '{"tag": "${{ needs.decide.outputs.tag }}", "rebuild_vllm": "${{ steps.standard-opts.outputs.rebuild_vllm }}"}'
 
       - name: Trigger create feature-release PR workflow
         if: steps.meta.outputs.kind == 'feature'
@@ -194,7 +218,7 @@ jobs:
           token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
           repository: odigos-io/odigos-enterprise
           event-type: create_feature_release_pr
-          client-payload: '{"tag": "${{ needs.decide.outputs.tag }}", "branch": "${{ steps.branch.outputs.enterprise_branch }}", "oss_branch": "${{ steps.branch.outputs.oss_branch }}"}'
+          client-payload: '{"tag": "${{ needs.decide.outputs.tag }}", "branch": "${{ steps.branch.outputs.enterprise_branch }}", "oss_branch": "${{ steps.branch.outputs.oss_branch }}", "rebuild_vllm": "${{ steps.branch.outputs.rebuild_vllm }}"}'
 
       - name: Notify Slack
         if: always()

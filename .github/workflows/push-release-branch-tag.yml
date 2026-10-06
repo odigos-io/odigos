@@ -29,6 +29,11 @@ jobs:
           fetch-depth: 0  # Full history required to create tags
           token: ${{ steps.sts-this-repo.outputs.GH_TOKEN }}
 
+      - name: Configure Git for bot commits
+        run: |
+          git config user.email "bot@odigos.io"
+          git config user.name "Odigos Release Bot"
+
       - name: Extract tag from commit message
         id: extract_tag
         env:
@@ -51,11 +56,19 @@ jobs:
             exit 0
           fi
 
+          REBUILD_VLLM="false"
+          if echo "$COMMIT_MSG" | grep -Eqi 'Rebuild vLLM:\s*true'; then
+            REBUILD_VLLM="true"
+          fi
+
           echo "Found tag from pull request: $TAG"
           echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "rebuild_vllm=$REBUILD_VLLM" >> "$GITHUB_OUTPUT"
 
       - name: Push tag to upstream
         if: env.TAG != ''
+        env:
+          REBUILD_VLLM: ${{ steps.extract_tag.outputs.rebuild_vllm }}
         run: |
 
           TAG="${{ env.TAG }}"
@@ -66,8 +79,8 @@ jobs:
             exit 0
           fi
 
-          # Create and push the tag
-          git tag "$TAG"
+          # Annotated so publish-modules can pass rebuild_vllm through to enterprise.
+          git tag -a "$TAG" -m "rebuild_vllm=${REBUILD_VLLM}"
           git push origin "$TAG"
 
       - name: Notify Slack
