@@ -98,7 +98,7 @@ artifact is signed from lives in
 | Artifact | Release identity (regexp) |
 | --- | --- |
 | Component images (`odigos-*`) | `^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*$` |
-| CLI image + `odigos-victoria-metrics` | `^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$` |
+| CLI image + `odigos-victoria-metrics` + `odigos-cache` | `^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$` |
 | Enterprise images (`odigos-enterprise-*`) | `^https://github\.com/odigos-io/odigos-enterprise/\.github/workflows/release-images\.yml@refs/(tags/.*\|heads/.*)$` |
 | `odigos-cli-offsets` | `^https://github\.com/odigos-io/enterprise-go-instrumentation/\.github/workflows/offsets-push\.yml@refs/heads/.*$` |
 | `odigos-vmagent-instrumentations` | `^https://github\.com/odigos-io/vm-agent/\.github/workflows/publish-agents\.yml@refs/(heads/.*\|tags/agents/.*)$` |
@@ -122,7 +122,7 @@ version listed in [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/
 
 - **Odigos platform**: `odigos-autoscaler`, `odigos-instrumentor`,
   `odigos-collector`, `odigos-odiglet`, `odigos-ui`, `odigos-operator`, `odigos-agents`,
-  `odigos-cli`, `odigos-victoria-metrics`
+  `odigos-cli`, `odigos-victoria-metrics`, `odigos-cache`
 - **Odigos Enterprise**: `odigos-enterprise-odiglet`, `odigos-enterprise-instrumentor`,
   `odigos-enterprise-ui`, `odigos-enterprise-collector`, `odigos-enterprise-central-proxy`,
   `odigos-enterprise-central-backend`, `odigos-enterprise-central-ui`, `odigos-enterprise-agents`,

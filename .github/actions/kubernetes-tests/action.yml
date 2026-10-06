@@ -101,6 +101,7 @@ runs:
           odigos-images.tar
           cli-image.tar
           victoria-metrics-image.tar
+          cache-image.tar
         fail-on-cache-miss: true
         key: ${{ github.run_id }}-odigos-images
 
@@ -110,6 +111,7 @@ runs:
         kind load image-archive odigos-images.tar
         kind load image-archive cli-image.tar
         kind load image-archive victoria-metrics-image.tar
+        kind load image-archive cache-image.tar
 
     - name: Restore cached CLI binary
       uses: actions/cache/restore@v4

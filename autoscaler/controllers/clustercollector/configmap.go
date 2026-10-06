@@ -203,9 +203,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
 	var insightsCfg *odigoscommon.InsightsConfiguration
+	var cardinalityControlCfg *odigoscommon.CardinalityControlConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
 		insightsCfg = effectiveInsightsConfig(odigosCfg.Insights, tier)
+		cardinalityControlCfg = effectiveCardinalityControl(odigosCfg.CardinalityControl, tier)
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
@@ -247,6 +249,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				addEnterpriseAuthExtension(c)
 			}
 			if err := addInsightsGatewayExporter(c, env.GetCurrentNamespace(), insightsCfg); err != nil {
+				return err
+			}
+			if err := addUrlTemplatizationUnmatchedExporter(c, env.GetCurrentNamespace(), cardinalityControlCfg); err != nil {
 				return err
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}
