@@ -1,8 +1,10 @@
 package instrumentationrules
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // +kubebuilder:object:generate=true
@@ -84,10 +86,25 @@ type GolangCustomProbe struct {
 	// for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
 	// ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
 	ReceiverMethodName string `json:"receiverMethodName,omitempty" yaml:"receiverMethodName,omitempty"`
+	// Generation identifies one installation in emitted custom spans. Use a
+	// fresh nonzero 128-bit ID for a new installation; empty preserves legacy behavior.
+	// +kubebuilder:validation:Pattern=`^$|^[0-9a-f]{32}$`
+	// +kubebuilder:validation:MaxLength=32
+	// +kubebuilder:validation:XValidation:rule="self != '00000000000000000000000000000000'",message="generation must be nonzero"
+	Generation string `json:"generation,omitempty" yaml:"generation,omitempty"`
 }
 
 // For golang we require package name and either function name or receiver name + method name
 func (gcp *GolangCustomProbe) Verify() error {
+	if gcp.Generation != "" {
+		if len(gcp.Generation) != 32 || gcp.Generation != strings.ToLower(gcp.Generation) {
+			return errors.New("generation must be a nonzero 128-bit lowercase hex ID")
+		}
+		id, err := hex.DecodeString(gcp.Generation)
+		if err != nil || len(id) != 16 || gcp.Generation == strings.Repeat("0", 32) {
+			return errors.New("generation must be a nonzero 128-bit lowercase hex ID")
+		}
+	}
 	switch {
 	case gcp.PackageName == "":
 		return errors.New("package name is required")
