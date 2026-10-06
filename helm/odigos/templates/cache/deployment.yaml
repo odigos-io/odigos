@@ -1,0 +1,73 @@
+{{- if include "cacheDb.enabled" . | eq "true" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-cache
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-cache
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-cache
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-cache
+    spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      containers:
+        - name: cache
+          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "cache" "Tag" $imageTag) }}
+          command: ["redis-server"]
+          args:
+            - "--port"
+            - "6379"
+            - "--maxmemory"
+            - {{ include "cacheDb.resolvedMaxmemory" . | quote }}
+            - "--maxmemory-policy"
+            - "allkeys-lru"
+            - "--save"
+            - ""
+            - "--appendonly"
+            - "no"
+            - "--tcp-keepalive"
+            - "30"
+          ports:
+            - name: cache
+              containerPort: 6379
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "-p", "6379", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "-p", "6379", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- include "cacheDb.resolvedResources" . | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+{{- end }}
