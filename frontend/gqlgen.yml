@@ -195,6 +195,26 @@ models:
       sourcesScopes: { omittable: true }
       instrumentationLibraries: { omittable: true }
 
+  # Payload collection advanced options: an omitted field keeps the stored value
+  # (older payload editors send `{}` for an enabled section), while an explicit
+  # null clears it (null mimeTypes means all MIME types, null maxPayloadLength
+  # means no limit).
+  HttpPayloadCollectionInput:
+    fields:
+      mimeTypes: { omittable: true }
+      maxPayloadLength: { omittable: true }
+      dropPartialPayloads: { omittable: true }
+
+  DbQueryPayloadCollectionInput:
+    fields:
+      maxPayloadLength: { omittable: true }
+      dropPartialPayloads: { omittable: true }
+
+  MessagingPayloadCollectionInput:
+    fields:
+      maxPayloadLength: { omittable: true }
+      dropPartialPayloads: { omittable: true }
+
   K8sNamespace:
     fields:
       markedForInstrumentation:
