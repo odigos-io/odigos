@@ -54,6 +54,26 @@ func TestCustomInstrumentationsVerifyPhp(t *testing.T) {
 	}
 }
 
+func TestCustomInstrumentationsVerifyGolangSignatures(t *testing.T) {
+	t.Parallel()
+
+	probe := func(sig string) GolangCustomProbe {
+		return GolangCustomProbe{PackageName: "main", FunctionName: "computeScore", Signature: sig}
+	}
+
+	ci := &CustomInstrumentations{Golang: []GolangCustomProbe{probe("func(n int32) uint64"), probe("func(n int32) uint64")}}
+	if err := ci.Verify(); err != nil {
+		t.Fatalf("Verify() error = %v, want nil", err)
+	}
+
+	ci = &CustomInstrumentations{Golang: []GolangCustomProbe{probe("func(n int32) uint64"), probe("func(n int64) uint64")}}
+	err := ci.Verify()
+	want := `invalid configuration for golang custom instrumentation: {main computeScore   } declares signatures "func(n int32) uint64" and "func(n int64) uint64"`
+	if err == nil || err.Error() != want {
+		t.Fatalf("Verify() error = %v, want %s", err, want)
+	}
+}
+
 func TestPhpCustomProbeString(t *testing.T) {
 	t.Parallel()
 

@@ -54,6 +54,7 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
           functionName
           receiverName
           receiverMethodName
+          signature
         }
         java {
           methodName
@@ -123,6 +124,7 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
           functionName
           receiverName
           receiverMethodName
+          signature
         }
         java {
           methodName

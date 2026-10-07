@@ -51,8 +51,9 @@ Prefer to find hot functions visually instead of typing class and method names? 
         2. For **Java**: set `className` (fully qualified class name) and `methodName` (method name).
         3. For **Go function**: set `packageName` and `functionName`. Do not set `receiverName` or `receiverMethodName`.
         4. For **Go receiver method**: set `packageName`, `receiverName`, and `receiverMethodName`. Do not set `functionName`.
-        5. For **C++**: set `signature` (the function signature, for example `std::vector::push_back` or `SSL_write`).
-        6. When finished, press `Esc`, then type `:wq` to save and exit.
+        5. For **Go argument capture** (optional): set `signature` to the Go func type without the receiver, for example `func(orderID int64, retry bool) uint64`.
+        6. For **C++**: set `signature` (the function signature, for example `std::vector::push_back` or `SSL_write`).
+        7. When finished, press `Esc`, then type `:wq` to save and exit.
 
         **Examples**
 

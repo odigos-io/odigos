@@ -38,6 +38,10 @@ spec:
             label: Receiver method name
             placeholder: e.g. myMethod
             tooltip: The name of the method to be instrumented. Leave empty if instrumenting a standalone function.
+          - keyName: signature
+            label: Signature
+            placeholder: e.g. func(id int64, retry bool) uint64
+            tooltip: Go func type without the receiver; records scalar arguments and results as span attributes.
     - name: customInstrumentations
       displayName: Java custom probes
       componentType: multiTabledInput
