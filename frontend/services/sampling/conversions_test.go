@@ -120,6 +120,19 @@ func TestMergeNoisyOperationUpdatePreservesScopesAndOperationOnOmit(t *testing.T
 	require.Equal(t, "scoped drop", got.Notes)
 }
 
+func TestMergeNoisyOperationUpdateKeepsTheSurge(t *testing.T) {
+	surge := &v1alpha1.TraceSurgeSettings{Metric: v1alpha1.TraceSurgeMetricErrorRate, Threshold: 5, SustainedSeconds: 30, MinimumRequests: 100,
+		BoostPercent: 80, RecoveryThreshold: 2, RecoverySeconds: 60, MinimumBoostSeconds: 120}
+	existing := v1alpha1.NoisyOperation{Name: "payments", PercentageAtMost: float64Ptr(1), Surge: surge}
+
+	got := mergeNoisyOperationUpdate(existing, model.NoisyOperationRuleInput{
+		PercentageAtMost: graphql.OmittableOf(float64Ptr(5)),
+	})
+
+	require.Equal(t, 5.0, *got.PercentageAtMost)
+	require.Equal(t, surge, got.Surge)
+}
+
 func TestMergeNoisyOperationUpdateEmptyScopesClearsExplicitly(t *testing.T) {
 	existing := v1alpha1.NoisyOperation{
 		SourceScopes: &k8sconsts.SourcesScopes{
