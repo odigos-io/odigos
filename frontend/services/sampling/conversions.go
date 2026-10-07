@@ -68,6 +68,8 @@ func mergeNoisyOperationUpdate(existing v1alpha1.NoisyOperation, input model.Noi
 	if !input.Notes.IsSet() {
 		rule.Notes = existing.Notes
 	}
+	// the GraphQL input has no surge settings: an update keeps the rule's surge.
+	rule.Surge = existing.Surge
 	return rule
 }
 
