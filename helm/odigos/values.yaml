@@ -282,9 +282,9 @@ interrogation:
     affinity: {}
 
   # Bundled in-cluster vLLM (off by default). Uses odigos-enterprise-vllm with
-  # model weights baked into the image (no Hugging Face at runtime). Hard
-  # requirement: NVIDIA device plugin (nvidia.com/gpu). Do NOT hardcode cloud
-  # nodeSelectors — use gkeAccelerator or nodeSelector for your GPU pool.
+  # Qwen2.5-Coder-7B-Instruct-AWQ weights baked into the image (no Hugging Face
+  # at runtime). Hard requirement: NVIDIA device plugin (nvidia.com/gpu). Do NOT
+  # hardcode cloud nodeSelectors — use gkeAccelerator or nodeSelector for your GPU pool.
   # @schema
   vllm:
     # @schema
@@ -300,7 +300,7 @@ interrogation:
     image:
       repository: ""
       # @schema
-      # description: Image tag. Defaults to global image.tag / Chart.AppVersion. Bake builds often use v0.8.5-qwen2.5-7b.
+      # description: Image tag. Defaults to global image.tag / Chart.AppVersion.
       # @schema
       tag: ""
       pullPolicy: IfNotPresent
@@ -324,14 +324,14 @@ interrogation:
     # description: Number of GPUs to request (nvidia.com/gpu). This is the portable hard scheduling requirement.
     # @schema
     gpuCount: 1
-    # Sized for g2-standard-8 (~28Gi allocatable) with other Odigos pods on the node.
+    # Sized for AWQ 7B Coder on a single L4 / similar (~24Gi) with headroom for KV cache.
     resources:
       requests:
         cpu: "2"
-        memory: 16Gi
+        memory: 8Gi
       limits:
         cpu: "7"
-        memory: 26Gi
+        memory: 16Gi
     # @schema
     # description: |-
     #   Optional GKE accelerator type. When set, adds

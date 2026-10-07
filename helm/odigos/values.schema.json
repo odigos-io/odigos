@@ -1413,7 +1413,7 @@
                       "type": "string"
                     },
                     "memory": {
-                      "default": "26Gi",
+                      "default": "16Gi",
                       "type": "string"
                     }
                   },
@@ -1429,7 +1429,7 @@
                       "type": "string"
                     },
                     "memory": {
-                      "default": "16Gi",
+                      "default": "8Gi",
                       "type": "string"
                     }
                   },

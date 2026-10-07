@@ -18,7 +18,7 @@ on:
         type: string
         default: main
       rebuild_vllm:
-        description: "Rebuild odigos-enterprise-vllm (~31Gi). Default retags the previous release image."
+        description: "Rebuild odigos-enterprise-vllm (bake new Coder-AWQ weights). Default retags the previous release image."
         required: false
         type: boolean
         default: false
