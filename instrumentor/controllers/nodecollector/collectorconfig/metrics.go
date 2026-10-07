@@ -9,6 +9,7 @@ const (
 	kubeletstatsReceiverName  = "kubeletstats"
 	hostmetricsReceiverName   = "hostmetrics"
 	odigosMetricsPipelineName = "metrics"
+	dropAgentSpanMetricsName  = "filter/drop-agent-span-metrics"
 )
 
 func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.GenericMap, []string) {
@@ -89,6 +90,16 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	}
 	metricsPipelineProcessors := baseProcessors
 	metricsPipelineProcessors = append(metricsPipelineProcessors, opts.ManifestProcessorNames...)
+	// the span metrics agents record only for trace surges arrive with the agents' other telemetry:
+	// they go to odigos insights, not to the metrics destinations.
+	var processors config.GenericMap
+	if asm := opts.MetricsConfigSettings.AgentSpanMetrics; asm != nil && !asm.Destinations && opts.MetricsConfigSettings.AgentsTelemetry != nil {
+		processors = config.GenericMap{dropAgentSpanMetricsName: config.GenericMap{
+			"error_mode": "ignore",
+			"metrics":    config.GenericMap{"metric": []string{`IsMatch(name, "^traces\\.span\\.metrics\\.")`}},
+		}}
+		metricsPipelineProcessors = append(metricsPipelineProcessors, dropAgentSpanMetricsName)
+	}
 	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings)
@@ -98,7 +109,8 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	}
 
 	return config.Config{
-		Receivers: receivers,
+		Receivers:  receivers,
+		Processors: processors,
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				odigosMetricsPipelineName: {
