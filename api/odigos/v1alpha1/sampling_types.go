@@ -59,6 +59,63 @@ type NoisyOperation struct {
 	// for future context and maintenance.
 	// users can write why this rule was added, observations, document considerations, etc.
 	Notes string `json:"notes,omitempty"`
+
+	// raise this rule's percentage while a service its traces reach has a spike in a RED metric.
+	// the rule's percentage is restored once the metric recovers.
+	// each episode is recorded in the status of the Sampling, then in odigos insights once it ends.
+	Surge *TraceSurgeSettings `json:"surge,omitempty"`
+}
+
+// TraceSurgeMetric is the RED metric of a service's server spans that a trace surge watches.
+// +kubebuilder:validation:Enum=error_rate;latency_p95;request_rate
+type TraceSurgeMetric string
+
+const (
+	// percent of server calls whose span has an error status.
+	TraceSurgeMetricErrorRate TraceSurgeMetric = "error_rate"
+	// 95th percentile of server call duration, in milliseconds.
+	TraceSurgeMetricLatencyP95 TraceSurgeMetric = "latency_p95"
+	// server calls per second.
+	TraceSurgeMetricRequestRate TraceSurgeMetric = "request_rate"
+)
+
+// TraceSurgeSettings raise a noisy operation's percentage while a service has a spike.
+// every service the rule's traces reach is evaluated on its own, from span metrics recorded before sampling.
+// a spike in a service raises the percentage of the workloads in the rule's scope whose traces lead to it.
+type TraceSurgeSettings struct {
+	// changes on every edit of the settings, so that concurrent edits can be detected.
+	Version string `json:"version,omitempty"`
+
+	Metric TraceSurgeMetric `json:"metric"`
+
+	// the metric must exceed this value to start a surge:
+	// percent for error_rate, milliseconds for latency_p95, requests per second for request_rate.
+	// +kubebuilder:validation:Minimum=0
+	Threshold float64 `json:"threshold"`
+
+	// how long the metric must stay above the threshold before the percentage is raised.
+	// +kubebuilder:validation:Minimum=1
+	SustainedSeconds int `json:"sustainedSeconds"`
+
+	// a service with fewer server calls than this in the evaluation window is not evaluated.
+	// +kubebuilder:validation:Minimum=1
+	MinimumRequests int `json:"minimumRequests"`
+
+	// the percentage of new traces to sample during a surge.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	BoostPercent float64 `json:"boostPercent"`
+
+	// the surge ends once the metric stays at or below this value for recoverySeconds.
+	// +kubebuilder:validation:Minimum=0
+	RecoveryThreshold float64 `json:"recoveryThreshold"`
+
+	// +kubebuilder:validation:Minimum=1
+	RecoverySeconds int `json:"recoverySeconds"`
+
+	// the percentage stays raised at least this long, however soon the metric recovers.
+	// +kubebuilder:validation:Minimum=1
+	MinimumBoostSeconds int `json:"minimumBoostSeconds"`
 }
 
 // define operations (spans) with high observability value.
@@ -174,6 +231,12 @@ type SamplingStatus struct {
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+
+	// The trace surges of the rules that are open: limited, boosting or recovering. A surge that
+	// ended stays until its targets are confirmed back, or, when it ended at the maximum duration,
+	// until its service recovers. Odigos insights keeps the surges after that.
+	// +optional
+	TraceSurges []TraceSurge `json:"traceSurges,omitempty"`
 }
 
 //+genclient
