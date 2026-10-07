@@ -5,6 +5,7 @@ import (
 	odigospredicates "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -49,7 +50,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.Destination{}).
 		Named("nodecollectorgroup-destinations").
-		// we care if destinations are created or deleted, or enabled/disabled
+		// trace surge rules have the agents they cover record span metrics, which the node collector routes.
+		Watches(&odigosv1.Sampling{}, &handler.EnqueueRequestForObject{}).
+		// we care if destinations are created or deleted, or enabled/disabled, and of changed sampling rules.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&DestinationsReconciler{
 			Client: mgr.GetClient(),
