@@ -232,6 +232,22 @@ func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosCon
 	return noisyOperations
 }
 
+// TraceSurgeCoversContainer reports whether an enabled noisy operation rule with a trace surge
+// applies to the container.
+func TraceSurgeCoversContainer(samplingRules *[]odigosv1.Sampling, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) bool {
+	if samplingRules == nil {
+		return false
+	}
+	for _, samplingRule := range *samplingRules {
+		for _, noisyOp := range samplingRule.Spec.NoisyOperations {
+			if noisyOp.Surge != nil && !noisyOp.Disabled && scope.SourceScopeMatchesContainer(noisyOp.SourceScopes, pw, language) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func noisyOperationContainsHttpQueryParams(noisyOperation *commonapisampling.NoisyOperation) bool {
 	return noisyOperation != nil && noisyOperation.Operation != nil && noisyOperation.Operation.HttpServer != nil && len(noisyOperation.Operation.HttpServer.QueryParams) > 0
 }

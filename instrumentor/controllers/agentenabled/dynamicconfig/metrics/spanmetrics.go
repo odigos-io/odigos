@@ -40,7 +40,7 @@ func CalculateAgentSpanMetricsConfig(effectiveConfig *common.OdigosConfiguration
 	}
 	// default histogram buckets in ms
 	histogramBuckets := []int{2, 4, 6, 8, 10, 50, 100, 200, 400, 800, 1000, 1400, 2000, 5000, 10000, 15000}
-	if effectiveConfig.MetricsSources.SpanMetrics != nil {
+	if effectiveConfig.MetricsSources != nil && effectiveConfig.MetricsSources.SpanMetrics != nil {
 		if effectiveConfig.MetricsSources.SpanMetrics.Interval != "" {
 			interval, err := time.ParseDuration(effectiveConfig.MetricsSources.SpanMetrics.Interval)
 			if err != nil {
