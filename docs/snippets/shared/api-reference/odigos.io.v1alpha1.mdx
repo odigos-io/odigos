@@ -3728,8 +3728,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <p>TraceSurge records one surge of a sampling rule: a service's metric crossed the rule's threshold,
 the rule's percentage was raised for the workloads whose traces lead to the service, and
 restored once the metric recovered. It is kept in the status of the Sampling object that holds
-the rule while it is open, or until its service recovers when it ended at the maximum duration;
-odigos insights keeps it after that.</p>
+the rule while it is open and until its targets are confirmed back, or until its service
+recovers when it ended at the maximum duration; odigos insights keeps it after that.</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -3820,6 +3820,89 @@ odigos insights keeps it after that.</p>
 <tr>
 <td>
 <code>description</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurgeInstanceStatus` <a id="odigos-io-v1alpha1-TraceSurgeInstanceStatus"></a>
+
+
+**Appears in:**
+
+- [TraceSurgeTargetStatus](#odigos-io-v1alpha1-TraceSurgeTargetStatus)
+
+<p>what an instrumented process reports it applied.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>the InstrumentationInstance of the process.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>pod</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>state</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>appliedPercent</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>the rule's percentage the process reports, if any.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>at</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>message</code> <B>[Required]</B>
 </td>
 <td>
 <code>string</code>
@@ -4263,6 +4346,17 @@ below the recovery threshold, after which the service can surge again.</p>
 </tr>
 <tr>
 <td>
+<code>targets</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeTargetStatus"><code>[]TraceSurgeTargetStatus</code></a>
+</td>
+<td>
+   <p>the processes that apply the surge's percentage, for each target.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>timeline</code> <B>[Required]</B>
 </td>
 <td>
@@ -4311,6 +4405,76 @@ below the recovery threshold, after which the service can surge again.</p>
    <p>set when the target was chosen without evidence that its traces reach the service,
 e.g. when the service graph has no edge for it yet.</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurgeTargetStatus` <a id="odigos-io-v1alpha1-TraceSurgeTargetStatus"></a>
+
+
+**Appears in:**
+
+- [TraceSurgeStatus](#odigos-io-v1alpha1-TraceSurgeStatus)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>workload</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#PodWorkload"><code>k8sconsts.PodWorkload</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>confirmed</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>processes that report the percentage the surge requires.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>total</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>instrumented processes of the workload.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>confirmedAt</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>when every process first reported the required percentage.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instances</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeInstanceStatus"><code>[]TraceSurgeInstanceStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>

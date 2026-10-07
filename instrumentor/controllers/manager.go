@@ -115,6 +115,10 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			// but need to consider the RBAC and semantics of such a change.
 			Field: nsSelector,
 		},
+		&odigosv1.InstrumentationInstance{}: {
+			// read by the trace surge confirmations, on the leader only.
+			Transform: tracesurge.InstanceTransform,
+		},
 	}
 
 	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransformFunc(scheme, cacheByObjectConfig)
@@ -219,9 +223,10 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 	}
 	meterProvider := metricsdk.NewMeterProvider(metricsdk.WithReader(exporter))
 	err = mgr.Add(&tracesurge.Evaluator{
-		Client: mgr.GetClient(),
-		Logger: mgr.GetLogger().WithName("tracesurge"),
-		Meter:  meterProvider.Meter("github.com/odigos-io/odigos/instrumentor/controllers/tracesurge"),
+		Client:    mgr.GetClient(),
+		APIReader: mgr.GetAPIReader(),
+		Logger:    mgr.GetLogger().WithName("tracesurge"),
+		Meter:     meterProvider.Meter("github.com/odigos-io/odigos/instrumentor/controllers/tracesurge"),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to add trace surge evaluator: %w", err)

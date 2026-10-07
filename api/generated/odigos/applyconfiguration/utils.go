@@ -133,6 +133,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.TraceSurgeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeEvent"):
 		return &odigosv1alpha1.TraceSurgeEventApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeInstanceStatus"):
+		return &odigosv1alpha1.TraceSurgeInstanceStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeObservation"):
 		return &odigosv1alpha1.TraceSurgeObservationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeSettings"):
@@ -143,6 +145,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.TraceSurgeStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeTarget"):
 		return &odigosv1alpha1.TraceSurgeTargetApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeTargetStatus"):
+		return &odigosv1alpha1.TraceSurgeTargetStatusApplyConfiguration{}
 
 	}
 	return nil

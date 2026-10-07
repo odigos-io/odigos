@@ -62,6 +62,10 @@ type AgentTracesConfig struct {
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
 	HeadSampling *sampling.HeadSamplingConfig `json:"headSampling,omitempty"`
 
+	// Report the head sampling each process applied, on its InstrumentationInstance, so that a trace
+	// surge that raised it can confirm the change. Set only for containers a trace surge rule covers.
+	ReportHeadSampling bool `json:"reportHeadSampling,omitempty"`
+
 	// Configuration for span renamer.
 	SpanRenamer *actions.SpanRenamerConfig `json:"spanRenamer,omitempty"`
 

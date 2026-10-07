@@ -92,6 +92,8 @@ var objectTransformedAnnotation = "odigos.io/cache-transformed"
 var (
 	gvkPod        = k8sschema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"}
 	gvkDeployment = k8sschema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"}
+	// one per instrumented process: as many as the instrumented pods.
+	gvkInstrumentationInstance = k8sschema.GroupVersionKind{Group: "odigos.io", Version: "v1alpha1", Kind: "InstrumentationInstance"}
 )
 
 // Controller-Runtime framework uses the k8s client-go project for the objects cache.
@@ -163,8 +165,8 @@ func MarkObjectAsTransformed(obj metav1.Object) {
 func getListerWatcherForGvk(gvk k8sschema.GroupVersionKind,
 	originalListerWatcher cache.ListerWatcher,
 	transformFuncs gvkToTransformFunc) cache.ListerWatcher {
-	// only handle pods and deployments for now, as they are the ones with large number of objects
-	// and major memory spikes cause issues in the cache initialization process.
+	// only handle the kinds with a large number of objects (pods, deployments, instrumentation instances),
+	// as their major memory spikes cause issues in the cache initialization process.
 	if !isHighMemoryGvk(gvk) {
 		return originalListerWatcher
 	}
@@ -256,5 +258,5 @@ func objectsTransformFromControllerRuntimeCache(
 // only handle pods and deployments for now, as they are the ones with large number of objects.
 // other resources consumes few MBs of memory, so we can spare this overhead for them.
 func isHighMemoryGvk(gvk k8sschema.GroupVersionKind) bool {
-	return gvk == gvkPod || gvk == gvkDeployment
+	return gvk == gvkPod || gvk == gvkDeployment || gvk == gvkInstrumentationInstance
 }
