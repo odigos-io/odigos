@@ -237,7 +237,7 @@ func calculateCollectorConfigDomains(
 
 		// span metrics
 		if metricsConfigSettings.SpanMetrics != nil {
-			spanMetricsConfig, additionalSpanMetricsTraceExporters, _, spanMetricsPostProcessors := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
+			spanMetricsConfig, additionalSpanMetricsTraceExporters, _, spanMetricsPostProcessors := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics, metricsConfigSettings.AgentSpanMetrics != nil)
 			additionalTraceExporters = append(additionalTraceExporters, additionalSpanMetricsTraceExporters...)
 			postSpanMetricsProcessorNames = append(postSpanMetricsProcessorNames, spanMetricsPostProcessors...)
 			// NOTICE: temporarily bypass the normal metrics pipeline.
