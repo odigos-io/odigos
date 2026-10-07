@@ -32,6 +32,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type Instrumentor struct {
@@ -42,7 +43,17 @@ type Instrumentor struct {
 	k8sVersion         *version.Version
 }
 
-func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
+// Options configures a new Instrumentor.
+type Options struct {
+	ManagerOptions  controllers.KubeManagerOptions
+	DistrosProvider *distros.Provider
+	// Runnables are registered on the controller-runtime manager before it starts
+	// (e.g. enterprise periodic jobs). They participate in manager lifecycle and
+	// can opt into leader election via manager.LeaderElectionRunnable.
+	Runnables []manager.Runnable
+}
+
+func New(opts Options) (*Instrumentor, error) {
 	err := feature.Setup()
 	if err != nil {
 		return nil, err
@@ -53,15 +64,21 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return nil, fmt.Errorf("unable to load destinations data: %w", err)
 	}
 
-	mgr, err := controllers.CreateManager(opts)
+	mgr, err := controllers.CreateManager(opts.ManagerOptions)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, r := range opts.Runnables {
+		if err := mgr.Add(r); err != nil {
+			return nil, fmt.Errorf("unable to add runnable: %w", err)
+		}
 	}
 
 	odigosNs := env.GetCurrentNamespace()
 
 	// remove the deprecated webhook secret if it exists
-	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.ManagerOptions.Logger, Secret: types.NamespacedName{
 		Namespace: odigosNs,
 		Name:      k8sconsts.DeprecatedInstrumentorWebhookSecretName,
 	}})
@@ -77,7 +94,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 	}
 	err = clusterinfo.RecordClusterInfo(context.Background(), clientset, odigosNs)
 	if err != nil {
-		opts.Logger.Error(err, "unable to record cluster info, skipping")
+		opts.ManagerOptions.Logger.Error(err, "unable to record cluster info, skipping")
 	}
 
 	// setup the certificate rotator
@@ -131,7 +148,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		OdigosVersion: os.Getenv(consts.OdigosVersionEnvVarName),
 		DynamicClient: dynamicClient,
 	}
-	err = controllers.SetupWithManager(context.Background(), mgr, dp, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention, configOpts)
+	err = controllers.SetupWithManager(context.Background(), mgr, opts.DistrosProvider, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention, configOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +177,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 	return &Instrumentor{
 		mgr:                mgr,
 		certReady:          rotatorSetupFinished,
-		dp:                 dp,
+		dp:                 opts.DistrosProvider,
 		webhooksRegistered: webhooksRegistered,
 		k8sVersion:         k8sVersion,
 	}, nil

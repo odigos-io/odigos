@@ -145,7 +145,8 @@ rules:
       - get
       - list
       - watch
-{{- if ne .Values.goAutoOffsetsMode "off" }}
+# goAutoOffsetsMode and goAutoOffsetsCron are not helm-only: the UI and central remote config write
+# them into effective-config at runtime, so these permissions cannot be gated on the helm value.
   - apiGroups:
       - 'batch'
     resources:
@@ -166,4 +167,3 @@ rules:
       - 'jobs'
     verbs:
       - 'create'
-{{- end }}
