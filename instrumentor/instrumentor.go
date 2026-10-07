@@ -47,10 +47,11 @@ type Instrumentor struct {
 type Options struct {
 	ManagerOptions  controllers.KubeManagerOptions
 	DistrosProvider *distros.Provider
-	// Runnables are registered on the controller-runtime manager before it starts
-	// (e.g. enterprise periodic jobs). They participate in manager lifecycle and
-	// can opt into leader election via manager.LeaderElectionRunnable.
-	Runnables []manager.Runnable
+	// Runnables build runnables that are registered on the controller-runtime manager
+	// before it starts (e.g. enterprise periodic jobs). Each factory receives the manager
+	// so the runnable can use its cached client. Runnables participate in manager
+	// lifecycle and can opt into leader election via manager.LeaderElectionRunnable.
+	Runnables []func(mgr manager.Manager) manager.Runnable
 }
 
 func New(opts Options) (*Instrumentor, error) {
@@ -69,8 +70,8 @@ func New(opts Options) (*Instrumentor, error) {
 		return nil, err
 	}
 
-	for _, r := range opts.Runnables {
-		if err := mgr.Add(r); err != nil {
+	for _, newRunnable := range opts.Runnables {
+		if err := mgr.Add(newRunnable(mgr)); err != nil {
 			return nil, fmt.Errorf("unable to add runnable: %w", err)
 		}
 	}
