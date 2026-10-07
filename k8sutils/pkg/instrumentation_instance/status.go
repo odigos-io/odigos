@@ -54,6 +54,24 @@ func WithAttributes(identifying []odigosv1.Attribute, nonIdentifying []odigosv1.
 	})
 }
 
+// WithNonIdentifyingAttribute sets one non-identifying attribute, keeping the others.
+// An empty value removes the attribute.
+func WithNonIdentifyingAttribute(key string, value string) InstrumentationInstanceOption {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+		attrs := make([]odigosv1.Attribute, 0, len(s.NonIdentifyingAttributes)+1)
+		for _, attr := range s.NonIdentifyingAttributes {
+			if attr.Key != key {
+				attrs = append(attrs, attr)
+			}
+		}
+		if value != "" {
+			attrs = append(attrs, odigosv1.Attribute{Key: key, Value: value})
+		}
+		s.NonIdentifyingAttributes = attrs
+		return s
+	})
+}
+
 func WithComponents(components []odigosv1.InstrumentationLibraryStatus) InstrumentationInstanceOption {
 	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 		s.Components = components

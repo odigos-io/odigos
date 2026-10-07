@@ -27,8 +27,8 @@ import (
 // TraceSurge records one surge of a sampling rule: a service's metric crossed the rule's threshold,
 // the rule's percentage was raised for the workloads whose traces lead to the service, and
 // restored once the metric recovered. It is kept in the status of the Sampling object that holds
-// the rule while it is open, or until its service recovers when it ended at the maximum duration;
-// odigos insights keeps it after that.
+// the rule while it is open and until its targets are confirmed back, or until its service
+// recovers when it ended at the maximum duration; odigos insights keeps it after that.
 type TraceSurgeApplyConfiguration struct {
 	// identifies the surge, e.g. 44136fa3-payments-tmfoef.
 	Name *string `json:"name,omitempty"`

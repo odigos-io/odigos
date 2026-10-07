@@ -637,6 +637,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 
 	m.startTrackInstrumentation(ctx, pid, inst, genericInsts, pd, processGroup, configGroup, otelDistro)
 	m.logger.Info("instrumentation loaded", "pid", pid, "process group details", pd)
+	if settings.InitialConfig != nil {
+		m.reportConfig(ctx, pid, nil, pd, settings.InitialConfig)
+	}
 
 	go func() {
 		err := inst.Run(ctx)
@@ -762,6 +765,16 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) stopTrackInstrument
 	}
 }
 
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) reportConfig(ctx context.Context, pid int, applyErr error, pd ProcessDetails, config Config) {
+	reporter, ok := m.handler.Reporter.(ConfigReporter[ProcessGroup, ConfigGroup, ProcessDetails])
+	if !ok {
+		return
+	}
+	if err := reporter.OnConfig(ctx, pid, applyErr, pd, config); err != nil {
+		m.logger.Error("failed to report instrumentation config", "err", err, "applied", applyErr == nil, "pid", pid, "process group details", pd)
+	}
+}
+
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) applyInstrumentationConfigurationForSDK(ctx context.Context, configGroup ConfigGroup, config Config) error {
 	var err error
 
@@ -770,10 +783,12 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) applyInstrumentatio
 		return nil
 	}
 
-	for _, instDetails := range configGroupInstrumentations {
+	for pid, instDetails := range configGroupInstrumentations {
 		if instDetails.distroInst != nil {
 			m.logger.Info("applying configuration to instrumentation", "process group details", instDetails.pd, "configGroup", configGroup)
-			err = errors.Join(err, instDetails.distroInst.ApplyConfig(ctx, config))
+			applyErr := instDetails.distroInst.ApplyConfig(ctx, config)
+			m.reportConfig(ctx, pid, applyErr, instDetails.pd, config)
+			err = errors.Join(err, applyErr)
 		}
 		for _, inst := range instDetails.genericInsts {
 			err = errors.Join(err, inst.ApplyConfig(ctx, config))

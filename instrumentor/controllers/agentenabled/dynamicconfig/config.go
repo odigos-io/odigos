@@ -45,6 +45,7 @@ func calculateTracesConfig(
 	irls *[]odigosv1.InstrumentationRule,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 	agentRecordsSpanMetrics bool,
+	reportHeadSampling bool,
 ) (*agentsignalconfig.AgentTracesConfig, *commonapi.ContainerCollectorConfig, *odigosv1.AgentDisabledInfo) {
 	agentConfig := &agentsignalconfig.AgentTracesConfig{}
 	var collectorConfig *commonapi.ContainerCollectorConfig
@@ -171,6 +172,8 @@ func calculateTracesConfig(
 	// Custom Instrumentations - Agent only (not applicable to collector)
 	agentConfig.CustomInstrumentations = traces.CalculateCustomInstrumentationsConfig(d, irls)
 
+	// a trace surge confirms the processes it raised by the head sampling they report applying.
+	agentConfig.ReportHeadSampling = reportHeadSampling
 	return agentConfig, collectorConfig, nil
 }
 
@@ -225,15 +228,16 @@ func CalculateDynamicContainerConfig(
 
 	var collectorConfig *commonapi.ContainerCollectorConfig
 
-	// the agent records span metrics for trace surges: with insights on, for the containers a surge
-	// covers, whether or not the metrics signal is enabled.
-	recordsForSurges := common.InsightsPipelineActive(effectiveConfig.Insights) && metrics.DistroSupportsAgentSpanMetrics(d) &&
+	// with insights on, the agent of a container a trace surge covers reports the head sampling it
+	// applies, and records span metrics when its distro can, whether or not the metrics signal is enabled.
+	surgeCovers := common.InsightsPipelineActive(effectiveConfig.Insights) &&
 		runtimeDetails != nil && traces.TraceSurgeCoversContainer(samplingRules, runtimeDetails.Language, pw)
+	recordsForSurges := surgeCovers && metrics.DistroSupportsAgentSpanMetrics(d)
 
 	var tracesConfig *agentsignalconfig.AgentTracesConfig
 	if enabledSignals.TracesEnabled {
 		agentTracesConfig, collectorTracesConfig, err := calculateTracesConfig(agentLevelActions, containerName, runtimeDetails, pw, d, workloadObj, effectiveConfig, samplingRules, irls, nodeCollectorsGroup,
-			metrics.AgentSpanMetricsEnabled(effectiveConfig) || recordsForSurges)
+			metrics.AgentSpanMetricsEnabled(effectiveConfig) || recordsForSurges, surgeCovers)
 		if err != nil {
 			return nil, err
 		}

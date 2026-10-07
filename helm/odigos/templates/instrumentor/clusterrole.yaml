@@ -5,6 +5,14 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
+  # trace surges read which processes of their targets apply the surge's percentage
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationinstances
+    verbs:
+      - list
+      - watch
   - apiGroups:
       - ''
     resources:
