@@ -12,10 +12,7 @@ const (
 	OdigosCachePort = 6379
 
 	// UrlTemplatizationLiveTrafficLearningEnvVar enables the enterprise instrumentor
-	// live-traffic learning runnable (path-example GC today; rule learning later).
-	// Set by Helm when cardinalityControl.urlTemplatization.liveTrafficLearning.enabled
-	// is set (enterprise on-prem token required). Presence of this env var registers
-	// the job; the value is unused today (use "true").
+	// live-traffic learning.
 	UrlTemplatizationLiveTrafficLearningEnvVar = "ODIGOS_URL_TEMPLATIZATION_LIVE_TRAFFIC_LEARNING"
 )
 
