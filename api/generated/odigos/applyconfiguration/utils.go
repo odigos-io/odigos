@@ -37,6 +37,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ActionSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ActionStatus"):
 		return &odigosv1alpha1.ActionStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AgentSpanMetricsSettings"):
+		return &odigosv1alpha1.AgentSpanMetricsSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
@@ -127,6 +129,20 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SourceSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceStatus"):
 		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurge"):
+		return &odigosv1alpha1.TraceSurgeApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeEvent"):
+		return &odigosv1alpha1.TraceSurgeEventApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeObservation"):
+		return &odigosv1alpha1.TraceSurgeObservationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeSettings"):
+		return &odigosv1alpha1.TraceSurgeSettingsApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeSpec"):
+		return &odigosv1alpha1.TraceSurgeSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeStatus"):
+		return &odigosv1alpha1.TraceSurgeStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TraceSurgeTarget"):
+		return &odigosv1alpha1.TraceSurgeTargetApplyConfiguration{}
 
 	}
 	return nil

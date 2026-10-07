@@ -62,6 +62,10 @@ type NoisyOperationApplyConfiguration struct {
 	// for future context and maintenance.
 	// users can write why this rule was added, observations, document considerations, etc.
 	Notes *string `json:"notes,omitempty"`
+	// raise this rule's percentage while a service its traces reach has a spike in a RED metric.
+	// the rule's percentage is restored once the metric recovers.
+	// each episode is recorded in the status of the Sampling, then in odigos insights once it ends.
+	Surge *TraceSurgeSettingsApplyConfiguration `json:"surge,omitempty"`
 }
 
 // NoisyOperationApplyConfiguration constructs a declarative configuration of the NoisyOperation type for use with
@@ -115,5 +119,13 @@ func (b *NoisyOperationApplyConfiguration) WithPercentageAtMost(value float64) *
 // If called multiple times, the Notes field is set to the value of the last call.
 func (b *NoisyOperationApplyConfiguration) WithNotes(value string) *NoisyOperationApplyConfiguration {
 	b.Notes = &value
+	return b
+}
+
+// WithSurge sets the Surge field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Surge field is set to the value of the last call.
+func (b *NoisyOperationApplyConfiguration) WithSurge(value *TraceSurgeSettingsApplyConfiguration) *NoisyOperationApplyConfiguration {
+	b.Surge = value
 	return b
 }
