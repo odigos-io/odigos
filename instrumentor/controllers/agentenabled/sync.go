@@ -156,6 +156,9 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// error of fetching one of the resources, retry
 		return nil, err
 	}
+	if common.TraceSurgesEnabled(effectiveConfig.Sampling) {
+		samplingRules = withTraceSurgeBoosts(samplingRules, pw)
+	}
 
 	// Check for workloads that are in backoff state and not eligible for instrumentation.
 	backoffCondition, err := hasUninstrumentedPodsWithBackoff(ctx, c, pw, ic, logger)
