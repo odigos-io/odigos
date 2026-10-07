@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -98,6 +99,10 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		for signal := range signals {
 			processor.Spec.Signals = append(processor.Spec.Signals, signal)
 		}
+		// Sort so the Processor Spec is stable across reconciles. k8sAttributeConfig returns the
+		// signals as a set, and ranging a map is non-deterministic: the SSA patch below would keep
+		// rewriting the Spec and re-triggering this controller through Owns(Processor).
+		slices.Sort(processor.Spec.Signals)
 		return processor, nil
 	}
 
