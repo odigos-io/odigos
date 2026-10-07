@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -345,4 +346,59 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)
+}
+
+func TestAgentSpanMetricsGoToInsightsOnlyForTraceSurges(t *testing.T) {
+	domains := func(agentSpanMetrics *odigosv1.AgentSpanMetricsSettings, tier common.OdigosTier) map[string]config.Config {
+		t.Helper()
+		spec := odigosv1.CollectorsGroupSpec{CollectorOwnMetricsPort: 4317}
+		if agentSpanMetrics != nil {
+			spec.Metrics = &odigosv1.CollectorsGroupMetricsCollectionSettings{AgentSpanMetrics: agentSpanMetrics}
+		}
+		d, _, err := calculateCollectorConfigDomains(
+			context.Background(),
+			"odigos-system",
+			&odigosv1.CollectorsGroup{ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"}, Spec: spec},
+			&odigosv1.InstrumentationConfigList{},
+			[]common.ObservabilitySignal{common.TracesObservabilitySignal},
+			nil,   /* processors */
+			false, /* onGKE */
+			false, /* loadBalancingNeeded */
+			nil,   /* profiling */
+			tier,
+		)
+		assert.NoError(t, err)
+		return d
+	}
+
+	on := domains(&odigosv1.AgentSpanMetricsSettings{Insights: true}, common.OnPremOdigosTier)
+	pipeline, ok := on["agent_span_metrics_insights"].Service.Pipelines[collectorconfig.AgentSpanMetricsInsightsPipelineName]
+	assert.True(t, ok)
+	assert.Equal(t, []string{"otlp/in"}, pipeline.Receivers)
+	assert.Equal(t, []string{"filter/agent-span-metrics", "cumulativetodelta/agent-span-metrics", "filter/agent-span-metrics-idle", "transform/agent-span-metrics",
+		"batch/agent-span-metrics"}, pipeline.Processors)
+	exporter := on["agent_span_metrics_insights"].Exporters["otlp_grpc/agent-span-metrics-insights"].(config.GenericMap)
+	assert.Equal(t, "dns:///odigos-insights-headless.odigos-system:4317", exporter["endpoint"])
+	assert.Equal(t, "gzip", exporter["compression"])
+	batch := on["agent_span_metrics_insights"].Processors["batch/agent-span-metrics"].(config.GenericMap)
+	assert.Equal(t, 2000, batch["send_batch_max_size"], "an export stays under the 4 MiB of a gRPC message")
+	assert.Equal(t, 2000, batch["send_batch_size"], "the batch processor rejects a batch size above the max")
+
+	assert.NotContains(t, domains(nil, common.OnPremOdigosTier), "agent_span_metrics_insights", "no trace surge rule")
+	assert.NotContains(t, domains(&odigosv1.AgentSpanMetricsSettings{Destinations: true}, common.OnPremOdigosTier), "agent_span_metrics_insights")
+	assert.NotContains(t, domains(&odigosv1.AgentSpanMetricsSettings{Insights: true}, common.CommunityOdigosTier), "agent_span_metrics_insights", "insights is enterprise-only")
+}
+
+func TestTraceSurgeInsightsPipelineDoesNotEnableTheMetricsSignal(t *testing.T) {
+	signals, err := getSignalsFromOtelcolConfig(`
+service:
+  pipelines:
+    traces/in:
+      receivers: [otlp/in]
+    metrics/agent-span-metrics-insights:
+      receivers: [otlp/in]
+`)
+	assert.NoError(t, err)
+	assert.Equal(t, []common.ObservabilitySignal{common.TracesObservabilitySignal}, signals,
+		"agents a trace surge covers record span metrics without the metrics signal: the others stay as they are")
 }

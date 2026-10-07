@@ -297,6 +297,11 @@ func calculateCollectorConfigDomains(
 		configDomains["logs"] = logsConfig
 	}
 
+	// odigos insights is enterprise-only: helm deploys it only with an on-prem token.
+	if tier.IsEnterprise() && collectorconfig.AgentSpanMetricsToInsights(nodeCG) {
+		configDomains["agent_span_metrics_insights"] = collectorconfig.AgentSpanMetricsInsightsConfig(odigosNamespace)
+	}
+
 	// The profiling pipeline's receiver is enterprise-only, so community tier never gets one
 	// regardless of what OdigosConfiguration asks for.
 	if tier.IsEnterprise() && odigoscommon.ProfilingPipelineActive(profiling) {
@@ -371,6 +376,10 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 		// only consider pipelines with `otlp` receiver
 		// which are the ones that can actually receive data
 		if !slices.Contains(pipeline.Receivers, collectorconfig.OTLPInReceiverName) {
+			continue
+		}
+		// trace surge span metrics must not turn the metrics signal on for every agent.
+		if pipelineName == collectorconfig.AgentSpanMetricsInsightsPipelineName {
 			continue
 		}
 		if strings.HasPrefix(pipelineName, "traces") {
