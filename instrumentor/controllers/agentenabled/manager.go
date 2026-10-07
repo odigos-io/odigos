@@ -40,14 +40,15 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		Named("agentenabled-instrumentationconfig").
-		For(&odigosv1.InstrumentationConfig{}).
 		// When the runtime details change we need to potentially update the instrumentation config and roll out the workload.
 		// When the instrumentation config is deleted, we need to roll out the workload to un-instrument it.
-		WithEventFilter(predicate.Or(
+		For(&odigosv1.InstrumentationConfig{}, builder.WithPredicates(predicate.Or(
 			&instrumentorpredicate.RuntimeDetailsChangedPredicate{},
 			&instrumentorpredicate.ContainerOverridesChangedPredicate{},
 			&instrumentorpredicate.RecoveredFromRollbackAtChangedPredicate{},
-			odigospredicate.DeletionPredicate{})).
+			odigospredicate.DeletionPredicate{}))).
+		// When a trace surge raises or restores the sampling of a workload, it is recalculated.
+		Watches(&odigosv1.Sampling{}, traceSurgeBoostsHandler()).
 		Complete(&InstrumentationConfigReconciler{
 			Client:                    mgr.GetClient(),
 			DistrosProvider:           dp,
@@ -102,7 +103,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		ControllerManagedBy(mgr).
 		Named("agentenabled-sampling").
 		For(&odigosv1.Sampling{}).
-		// No event filtering, all sampling rules are always processed.
+		// a change of the rules recalculates every workload; the trace surges in the status are
+		// handled by agentenabled-instrumentationconfig, for the workloads they change.
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(&SamplingController{
 			Client:                    mgr.GetClient(),
 			DistrosProvider:           dp,

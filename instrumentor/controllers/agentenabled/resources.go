@@ -61,6 +61,8 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 		return nil, nil, nil, nil, nil, nil, err
 	}
 
+	samplings = withTraceSurgeBoosts(samplings, pw)
+
 	return nodeCollectorsGroup, gatewayCollectorsGroup, irls, actions, samplings, workloadObj, nil
 }
 
