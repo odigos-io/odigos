@@ -2522,6 +2522,49 @@
           },
           "required": [],
           "title": "tailSampling"
+        },
+        "traceSurge": {
+          "additionalProperties": false,
+          "description": "Limits on trace surges, which raise the sampling of a collection rule while a service's\nRED metrics spike (requires Odigos Insights). They bound how much more data surges can send\nto the destinations.",
+          "properties": {
+            "evaluationInterval": {
+              "default": "10s",
+              "description": "how often the rules are evaluated, and how often the agents of the workloads a surge rule covers\nreport their RED metrics. 2s to 1m. default 10s.",
+              "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$",
+              "title": "evaluationInterval",
+              "type": "string"
+            },
+            "evaluationWindow": {
+              "default": "60s",
+              "description": "each evaluation measures the RED metrics over this window. a shorter window reacts sooner to a spike,\nand is noisier. together with a rule's sustainedSeconds it sets how fast sampling is raised.\n10s to 1h. default 60s.",
+              "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$",
+              "title": "evaluationWindow",
+              "type": "string"
+            },
+            "maxActiveSurges": {
+              "default": 10,
+              "description": "at most this many surges raise sampling at the same time. a surge beyond it is Limited:\nit raises nothing until another surge ends, while its metric is still above the threshold. default 10.",
+              "minimum": 0,
+              "title": "maxActiveSurges",
+              "type": "integer"
+            },
+            "maxBoostedWorkloads": {
+              "default": 50,
+              "description": "at most this many workloads sample at a raised percentage at the same time, across all surges.\na surge that would raise more is Limited until enough workloads are restored. default 50.",
+              "minimum": 0,
+              "title": "maxBoostedWorkloads",
+              "type": "integer"
+            },
+            "maxDuration": {
+              "default": "30m",
+              "description": "a surge ends after this long even if its metric has not recovered, and its service must recover\nbefore it can surge again. format is duration string (30m, 1h, etc). default 30m.",
+              "pattern": "^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$",
+              "title": "maxDuration",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "traceSurge"
         }
       },
       "required": [],
