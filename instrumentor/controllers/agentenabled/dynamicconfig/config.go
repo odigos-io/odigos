@@ -178,10 +178,11 @@ func calculateMetricsConfig(
 	effectiveConfig *common.OdigosConfiguration,
 	d *distro.OtelDistro,
 	irls *[]odigosv1.InstrumentationRule,
+	recordsSpanMetricsForDestinations bool,
 ) (*agentsignalconfig.AgentMetricsConfig, *odigosv1.AgentDisabledInfo) {
 	metricsConfig := &agentsignalconfig.AgentMetricsConfig{}
 
-	if metrics.DistroSupportsAgentSpanMetrics(d) && metrics.AgentSpanMetricsEnabled(effectiveConfig) {
+	if recordsSpanMetricsForDestinations {
 		// for distros that supports recording span metrics directly in the agent.
 		// this is useful for acurate metrics collection, as it see the data as it is collected,
 		// before it has chance to be sampled out or dropped in the pipeline.
@@ -225,8 +226,10 @@ func CalculateDynamicContainerConfig(
 
 	var collectorConfig *commonapi.ContainerCollectorConfig
 
-	// the agent records span metrics for trace surges: with insights on, for the containers a surge
-	// covers, whether or not the metrics signal is enabled.
+	// the agent records span metrics for the metrics destinations when span metrics in the agents are
+	// enabled, and for trace surges: with insights on, for the containers a surge covers, whether or
+	// not the metrics signal is enabled.
+	recordsForDestinations := metrics.AgentRecordsSpanMetricsForDestinations(effectiveConfig, d, enabledSignals.MetricsEnabled)
 	recordsForSurges := common.InsightsPipelineActive(effectiveConfig.Insights) && metrics.DistroSupportsAgentSpanMetrics(d) &&
 		runtimeDetails != nil && traces.TraceSurgeCoversContainer(samplingRules, runtimeDetails.Language, pw)
 
@@ -243,7 +246,7 @@ func CalculateDynamicContainerConfig(
 
 	var metricsConfig *agentsignalconfig.AgentMetricsConfig
 	if enabledSignals.MetricsEnabled {
-		agentMetricsConfig, err := calculateMetricsConfig(effectiveConfig, d, irls)
+		agentMetricsConfig, err := calculateMetricsConfig(effectiveConfig, d, irls, recordsForDestinations)
 		if err != nil {
 			return nil, err
 		}
