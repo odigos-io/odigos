@@ -29,10 +29,17 @@ func PathMatchesAnyRule(path string, rulesBySegmentCount map[int][]PathRule) boo
 		return false
 	}
 	segments, _ := SplitPath(path)
-	for _, rule := range rulesBySegmentCount[len(segments)] {
-		if rule.IsPathSegmentsMatching(segments) {
-			return true
+	_, found := FindMatchingRule(segments, rulesBySegmentCount)
+	return found
+}
+
+// FindMatchingRule returns the first exact rule in rulesBySegmentCount that
+// matches pathSegments. Only the bucket for len(pathSegments) is checked.
+func FindMatchingRule(pathSegments []string, rulesBySegmentCount map[int][]PathRule) (PathRule, bool) {
+	for _, rule := range rulesBySegmentCount[len(pathSegments)] {
+		if rule.IsPathSegmentsMatching(pathSegments) {
+			return rule, true
 		}
 	}
-	return false
+	return PathRule{}, false
 }
