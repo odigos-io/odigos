@@ -15,6 +15,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	instance "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -85,6 +86,18 @@ func ic(pw k8sconsts.PodWorkload) *odigosv1.InstrumentationConfig {
 	}
 }
 
+func instrumentationInstance(pw k8sconsts.PodWorkload, pod string, applied string) *odigosv1.InstrumentationInstance {
+	return &odigosv1.InstrumentationInstance{
+		ObjectMeta: metav1.ObjectMeta{Name: pod + "-1", Namespace: pw.Namespace, Labels: map[string]string{
+			consts.InstrumentedAppNameLabel: "deployment-" + pw.Name,
+			odigosv1.OwnerPodNameLabel:      pod,
+		}},
+		Status: odigosv1.InstrumentationInstanceStatus{
+			NonIdentifyingAttributes: []odigosv1.Attribute{{Key: instance.HeadSamplingAppliedAttribute, Value: applied}},
+		},
+	}
+}
+
 func setup(t *testing.T) (*Evaluator, client.Client, *fakeMetrics, string) {
 	t.Helper()
 	scheme := runtime.NewScheme()
@@ -106,7 +119,7 @@ func setup(t *testing.T) (*Evaluator, client.Client, *fakeMetrics, string) {
 	require.NoError(t, corev1.AddToScheme(scheme))
 	writes := new(int)
 	c := fake.NewClientBuilder().WithScheme(scheme).
-		WithStatusSubresource(&odigosv1.Sampling{}).
+		WithStatusSubresource(&odigosv1.Sampling{}, &odigosv1.InstrumentationInstance{}).
 		WithObjects(sampling, ic(frontend), ic(payments), ic(other), effectiveConfig(true)).
 		WithInterceptorFuncs(interceptor.Funcs{
 			SubResourcePatch: func(ctx context.Context, c client.Client, subResource string, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
@@ -127,7 +140,7 @@ func setup(t *testing.T) (*Evaluator, client.Client, *fakeMetrics, string) {
 	}
 	reader := sdkmetric.NewManualReader()
 	readers[t.Name()] = reader
-	e := &Evaluator{Client: c, Logger: logr.Discard(), Meter: sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)).Meter("test")}
+	e := &Evaluator{Client: c, APIReader: c, Logger: logr.Discard(), Meter: sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)).Meter("test")}
 	archive := &fakeArchive{surges: map[string]odigosv1.TraceSurge{}}
 	archives[t.Name()] = archive
 	e.init(ns, metricsAdapter{m}, archive)
@@ -212,8 +225,17 @@ func TestSurgeLifecycle(t *testing.T) {
 	require.NotNil(t, surge.Status.Trigger)
 	assert.Equal(t, 50.0, surge.Status.Trigger.Value)
 	assert.Len(t, surge.Status.TriggerSamples, 3)
+	assert.Equal(t, 0, surge.Status.Targets[0].Total, "no processes reported yet")
 
+	// the processes of frontend report the boost; payments' process still the normal percentage.
+	require.NoError(t, c.Create(ctx, instrumentationInstance(frontend, "frontend-a", ruleID+"=80")))
+	require.NoError(t, c.Create(ctx, instrumentationInstance(frontend, "frontend-b", ruleID+"=80")))
+	require.NoError(t, c.Create(ctx, instrumentationInstance(payments, "payments-a", ruleID+"=1")))
 	tick(40 * time.Second)
+	surge = surges(t, c)[0]
+	assert.Equal(t, 2, surge.Status.Targets[0].Confirmed)
+	assert.Equal(t, 0, surge.Status.Targets[1].Confirmed)
+	assert.Equal(t, 1, surge.Status.Targets[1].Total)
 
 	// the metric recovers, but the boost holds for minimumBoostSeconds (120s since boosting at 30s).
 	m.paymentsErrorRate(1)
@@ -232,6 +254,10 @@ func TestSurgeLifecycle(t *testing.T) {
 	surge = surges(t, c)[0]
 	assert.Equal(t, odigosv1.TraceSurgePhaseRestored, surge.Status.Phase)
 	assert.NotEmpty(t, surge.Status.RestoreReason)
+
+	// after restoring, the targets are confirmed against the normal percentage.
+	assert.Equal(t, 0, surge.Status.Targets[0].Confirmed, "frontend still reports 80%")
+	assert.Equal(t, 1, surge.Status.Targets[1].Confirmed, "payments reports 1%")
 
 	// a restored surge no longer counts: a new breach starts a new surge.
 	m.paymentsErrorRate(50)
@@ -316,6 +342,65 @@ func TestMinimumRequests(t *testing.T) {
 	assert.Empty(t, surges(t, c), "50 calls is below minimumRequests")
 }
 
+func TestEndedSurgeConfirmsWhatTheWorkloadsShouldApplyNow(t *testing.T) {
+	ctx := context.Background()
+	e, c, m, ruleID := setup(t)
+	t0 := time.Unix(1_800_000_000, 0)
+	tick := func(at time.Duration) {
+		t.Helper()
+		require.NoError(t, e.evaluate(ctx, t0.Add(at)))
+	}
+	byService := func(service string) odigosv1.TraceSurge {
+		t.Helper()
+		for _, s := range surges(t, c) {
+			if s.Spec.Service.Name == service {
+				return s
+			}
+		}
+		t.Fatalf("no surge for %s", service)
+		return odigosv1.TraceSurge{}
+	}
+
+	// payments, then frontend, spike: two surges of the same rule.
+	m.paymentsErrorRate(50)
+	m.services[frontend] = &serviceMetrics{namespace: "shop", serviceName: "frontend", redMetrics: redMetrics{calls: 2000, errors: 1000, p95Ms: 12}}
+	tick(0)
+	tick(30 * time.Second)
+	require.Len(t, surges(t, c), 2)
+	assert.Equal(t, []odigosv1.TraceSurgeTarget{{Workload: frontend}}, byService("frontend").Spec.Targets, "nothing in scope calls frontend")
+
+	require.NoError(t, c.Create(ctx, instrumentationInstance(frontend, "frontend-a", ruleID+"=80")))
+	require.NoError(t, c.Create(ctx, instrumentationInstance(payments, "payments-a", ruleID+"=80")))
+
+	// payments recovers and its surge ends while frontend's continues.
+	m.paymentsErrorRate(0)
+	tick(40 * time.Second)
+	tick(160 * time.Second)
+	payments := byService("payments")
+	require.Equal(t, odigosv1.TraceSurgePhaseRestored, payments.Status.Phase)
+	require.Equal(t, odigosv1.TraceSurgePhaseBoosting, byService("frontend").Status.Phase)
+
+	// frontend stays at 80% for the active surge, payments goes back to 1%.
+	ii := &odigosv1.InstrumentationInstance{}
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Namespace: "shop", Name: "payments-a-1"}, ii))
+	ii.Status.NonIdentifyingAttributes = []odigosv1.Attribute{{Key: instance.HeadSamplingAppliedAttribute, Value: ruleID + "=1"}}
+	require.NoError(t, c.Status().Update(ctx, ii))
+	tick(170 * time.Second)
+	payments = byService("payments")
+	for _, target := range payments.Status.Targets {
+		assert.Equal(t, target.Total, target.Confirmed, "%s applies what it should now", target.Workload.Name)
+	}
+	last := payments.Status.Timeline[len(payments.Status.Timeline)-1]
+	assert.Equal(t, "All 2 processes apply the rule's current percentage", last.Title)
+
+	// once confirmed, the ended surge's record is final.
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Namespace: "shop", Name: "frontend-a-1"}, ii))
+	ii.Status.NonIdentifyingAttributes = []odigosv1.Attribute{{Key: instance.HeadSamplingAppliedAttribute, Value: ruleID + "=1"}}
+	require.NoError(t, c.Status().Update(ctx, ii))
+	tick(180 * time.Second)
+	assert.Equal(t, payments.Status.Targets, byService("payments").Status.Targets)
+}
+
 func TestSurgesEndWhenInsightsIsTurnedOff(t *testing.T) {
 	ctx := context.Background()
 	e, c, m, _ := setup(t)
@@ -374,7 +459,7 @@ func TestMaxDurationEndsSurgeAndWaitsForRecovery(t *testing.T) {
 	assert.Len(t, surges(t, c), 1)
 
 	// a restarted evaluator keeps waiting for the recovery too.
-	restarted := &Evaluator{Client: c, Logger: e.Logger}
+	restarted := &Evaluator{Client: c, APIReader: c, Logger: e.Logger}
 	restarted.init(ns, e.metrics, e.archive)
 	require.NoError(t, restarted.evaluate(ctx, t0.Add(410*time.Second)))
 	require.NoError(t, restarted.evaluate(ctx, t0.Add(450*time.Second)))
@@ -387,7 +472,7 @@ func TestMaxDurationEndsSurgeAndWaitsForRecovery(t *testing.T) {
 	assert.Equal(t, "Error rate back at 1%", surge.Status.Timeline[len(surge.Status.Timeline)-1].Title)
 
 	// an evaluator restarted after the recovery does not hold the service back again.
-	again := &Evaluator{Client: c, Logger: e.Logger}
+	again := &Evaluator{Client: c, APIReader: c, Logger: e.Logger}
 	again.init(ns, e.metrics, e.archive)
 	m.paymentsErrorRate(50)
 	require.NoError(t, again.evaluate(ctx, t0.Add(470*time.Second)))
@@ -488,6 +573,7 @@ func TestMaxBoostedWorkloads(t *testing.T) {
 	assert.Equal(t, odigosv1.TraceSurgePhaseRestored, surge.Status.Phase)
 	assert.Nil(t, surge.Status.BoostedAt)
 	assert.Equal(t, "Surge ended", surge.Status.Timeline[len(surge.Status.Timeline)-1].Title)
+	assert.Empty(t, surge.Status.Targets, "nothing to confirm")
 }
 
 // raised reports whether any surge raises the workload's sampling.
@@ -507,7 +593,7 @@ func raised(surges []odigosv1.TraceSurge, pw k8sconsts.PodWorkload) bool {
 
 func TestEndedSurgesMoveToInsights(t *testing.T) {
 	ctx := context.Background()
-	e, c, m, _ := setup(t)
+	e, c, m, ruleID := setup(t)
 	archive := archives[t.Name()]
 	t0 := time.Unix(1_800_000_000, 0)
 	tick := func(at time.Duration) {
@@ -524,24 +610,29 @@ func TestEndedSurgesMoveToInsights(t *testing.T) {
 	m.paymentsErrorRate(0)
 	tick(40 * time.Second)
 	tick(100 * time.Second)
-
-	// insights is down when the surge ends: it waits in the status.
-	archive.err = errors.New("insights unavailable")
 	tick(150 * time.Second)
-	require.Len(t, openSurges(t, c), 1)
-	assert.Equal(t, odigosv1.TraceSurgePhaseRestored, openSurges(t, c)[0].Status.Phase)
+	require.Equal(t, odigosv1.TraceSurgePhaseRestored, openSurges(t, c)[0].Status.Phase, "ended, waiting for its targets to be confirmed back")
+	assert.Empty(t, archive.surges)
+
+	// insights is down: the surge waits in the status.
+	archive.err = errors.New("insights unavailable")
+	require.NoError(t, c.Create(ctx, instrumentationInstance(frontend, "frontend-a", ruleID+"=1")))
+	require.NoError(t, c.Create(ctx, instrumentationInstance(payments, "payments-a", ruleID+"=1")))
+	tick(160 * time.Second)
+	assert.Len(t, openSurges(t, c), 1)
 	assert.Equal(t, 1, archive.puts)
 
 	archive.err = nil
-	tick(160 * time.Second)
+	tick(170 * time.Second)
 	assert.Len(t, openSurges(t, c), 1, "no put until the retry time, so insights being down doesn't slow each evaluation")
 	assert.Equal(t, 1, archive.puts)
-	tick(185 * time.Second)
-	assert.Empty(t, openSurges(t, c), "it moved to insights")
+	tick(190 * time.Second)
+	assert.Empty(t, openSurges(t, c), "confirmed back: it moved to insights")
 	require.Contains(t, archive.surges, name)
 	assert.Equal(t, odigosv1.TraceSurgePhaseRestored, archive.surges[name].Status.Phase)
-	assert.Equal(t, "Sampling restored to 1%", archive.surges[name].Status.Timeline[len(archive.surges[name].Status.Timeline)-1].Title)
+	assert.Equal(t, "All 2 processes back at 1%", archive.surges[name].Status.Timeline[len(archive.surges[name].Status.Timeline)-1].Title)
 }
+
 func TestMaxDurationSurgeStaysUntilItsServiceRecovers(t *testing.T) {
 	ctx := context.Background()
 	e, c, m, _ := setup(t)
@@ -558,7 +649,7 @@ func TestMaxDurationSurgeStaysUntilItsServiceRecovers(t *testing.T) {
 	tick(150 * time.Second)
 	require.Equal(t, odigosv1.TraceSurgePhaseRestored, openSurges(t, c)[0].Status.Phase)
 	tick(30 * time.Minute)
-	assert.Len(t, openSurges(t, c), 1, "it holds the service back, long after it ended")
+	assert.Len(t, openSurges(t, c), 1, "it holds the service back, long after its targets could be confirmed")
 	assert.Empty(t, archives[t.Name()].surges)
 
 	m.paymentsErrorRate(1)

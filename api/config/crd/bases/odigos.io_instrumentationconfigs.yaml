@@ -648,6 +648,11 @@ spec:
                                   type: integer
                               type: object
                           type: object
+                        reportHeadSampling:
+                          description: |-
+                            Report the head sampling each process applied, on its InstrumentationInstance, so that a trace
+                            surge that raised it can confirm the change. Set only for containers a trace surge rule covers.
+                          type: boolean
                         spanRenamer:
                           description: Configuration for span renamer.
                           properties:

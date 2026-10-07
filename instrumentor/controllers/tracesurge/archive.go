@@ -79,8 +79,8 @@ func (a *insightsArchive) put(ctx context.Context, surge *odigosv1.TraceSurge) e
 	return nil
 }
 
-// lastChange is when the surge last changed, usually when sampling was restored. Insights lists
-// surges by it.
+// lastChange is when the surge last changed: when sampling was restored, or, later, when its
+// targets were confirmed back. The telemetry activity lists surges by it.
 func lastChange(surge *odigosv1.TraceSurge) time.Time {
 	last := surge.StartedAt.Time
 	if surge.Status.RestoredAt != nil && surge.Status.RestoredAt.After(last) {

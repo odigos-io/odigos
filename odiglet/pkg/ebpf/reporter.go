@@ -121,3 +121,26 @@ func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, k
 		}, nil),
 	)
 }
+
+var _ instrumentation.ConfigReporter[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] = &k8sReporter{}
+
+// OnConfig records the head sampling a process applied, so that a trace surge that raised it can
+// confirm each process runs the percentage it requires. Only the containers a trace surge rule
+// covers ask for it.
+func (r *k8sReporter) OnConfig(ctx context.Context, pid int, err error, e *K8sProcessDetails, config instrumentation.Config) error {
+	containerConfig, ok := config.(*odigosv1.ContainerAgentConfig)
+	if !ok || containerConfig.Traces == nil || !containerConfig.Traces.ReportHeadSampling {
+		return nil
+	}
+	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(e.Pw.Name, e.Pw.Kind)
+	if err != nil {
+		return instance.UpdateInstrumentationInstanceStatus(ctx, e.Pod, e.ContainerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
+			instance.WithNonIdentifyingAttribute(instance.ConfigErrorAttribute, err.Error()),
+		)
+	}
+	applied := instance.FormatHeadSamplingApplied(containerConfig.Traces.HeadSampling)
+	return instance.UpdateInstrumentationInstanceStatus(ctx, e.Pod, e.ContainerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
+		instance.WithNonIdentifyingAttribute(instance.HeadSamplingAppliedAttribute, applied),
+		instance.WithNonIdentifyingAttribute(instance.ConfigErrorAttribute, ""),
+	)
+}
