@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/odigos-io/odigos/common"
@@ -71,4 +72,30 @@ func TestRenameAttributeConfig_ProfilesWithOtherSignals(t *testing.T) {
 	require.NotEmpty(t, cfg.TraceStatements)
 	require.NotEmpty(t, cfg.ProfileStatements)
 	assert.Equal(t, profilesCapableContexts, contexts(cfg.ProfileStatements))
+}
+
+func TestRenameAttributeConfig_StableStatementOrder(t *testing.T) {
+	renames := map[string]string{
+		"z.attr": "z.new",
+		"a.attr": "a.new",
+		"m.attr": "m.new",
+	}
+	signals := []common.ObservabilitySignal{common.TracesObservabilitySignal}
+
+	first, err := renameAttributeConfig(renames, signals)
+	require.NoError(t, err)
+	for i := 0; i < 50; i++ {
+		next, err := renameAttributeConfig(renames, signals)
+		require.NoError(t, err)
+		require.True(t, reflect.DeepEqual(first, next), "rename OTTL statements must be deterministic across calls")
+	}
+
+	require.Equal(t, []string{
+		`set(attributes["a.new"], attributes["a.attr"])`,
+		`delete_key(attributes, "a.attr")`,
+		`set(attributes["m.new"], attributes["m.attr"])`,
+		`delete_key(attributes, "m.attr")`,
+		`set(attributes["z.new"], attributes["z.attr"])`,
+		`delete_key(attributes, "z.attr")`,
+	}, first.TraceStatements[0].Statements)
 }
