@@ -515,6 +515,69 @@ spec:
                             type: object
                           type: array
                       type: object
+                    surge:
+                      description: |-
+                        raise this rule's percentage while a service its traces reach has a spike in a RED metric.
+                        the rule's percentage is restored once the metric recovers.
+                        each episode is recorded in the status of the Sampling, then in odigos insights once it ends.
+                      properties:
+                        boostPercent:
+                          description: the percentage of new traces to sample during
+                            a surge.
+                          maximum: 100
+                          minimum: 0
+                          type: number
+                        metric:
+                          description: TraceSurgeMetric is the RED metric of a service's
+                            server spans that a trace surge watches.
+                          enum:
+                          - error_rate
+                          - latency_p95
+                          - request_rate
+                          type: string
+                        minimumBoostSeconds:
+                          description: the percentage stays raised at least this long,
+                            however soon the metric recovers.
+                          minimum: 1
+                          type: integer
+                        minimumRequests:
+                          description: a service with fewer server calls than this
+                            in the evaluation window is not evaluated.
+                          minimum: 1
+                          type: integer
+                        recoverySeconds:
+                          minimum: 1
+                          type: integer
+                        recoveryThreshold:
+                          description: the surge ends once the metric stays at or
+                            below this value for recoverySeconds.
+                          minimum: 0
+                          type: number
+                        sustainedSeconds:
+                          description: how long the metric must stay above the threshold
+                            before the percentage is raised.
+                          minimum: 1
+                          type: integer
+                        threshold:
+                          description: |-
+                            the metric must exceed this value to start a surge:
+                            percent for error_rate, milliseconds for latency_p95, requests per second for request_rate.
+                          minimum: 0
+                          type: number
+                        version:
+                          description: changes on every edit of the settings, so that
+                            concurrent edits can be detected.
+                          type: string
+                      required:
+                      - boostPercent
+                      - metric
+                      - minimumBoostSeconds
+                      - minimumRequests
+                      - recoverySeconds
+                      - recoveryThreshold
+                      - sustainedSeconds
+                      - threshold
+                      type: object
                   type: object
                 type: array
               notes:
@@ -588,6 +651,306 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              traceSurges:
+                description: |-
+                  The trace surges of the rules that are open: limited, boosting or recovering. A surge that
+                  ended stays until its targets are confirmed back, or, when it ended at the maximum duration,
+                  until its service recovers. Odigos insights keeps the surges after that.
+                items:
+                  description: |-
+                    TraceSurge records one surge of a sampling rule: a service's metric crossed the rule's threshold,
+                    the rule's percentage was raised for the workloads whose traces lead to the service, and
+                    restored once the metric recovered. It is kept in the status of the Sampling object that holds
+                    the rule while it is open, or until its service recovers when it ended at the maximum duration;
+                    odigos insights keeps it after that.
+                  properties:
+                    name:
+                      description: identifies the surge, e.g. 44136fa3-payments-tmfoef.
+                      type: string
+                    spec:
+                      properties:
+                        normalPercent:
+                          description: the rule's percentage outside a surge.
+                          type: number
+                        ruleId:
+                          description: the id of the noisy operation rule (ComputeNoisyOperationHash).
+                          type: string
+                        ruleName:
+                          type: string
+                        samplingName:
+                          description: the Sampling object that holds the rule.
+                          type: string
+                        service:
+                          description: the service whose metric crossed the threshold.
+                          properties:
+                            kind:
+                              description: |-
+                                1. the pascal case representation of the workload kind
+                                it is used in k8s api objects as the `Kind` field.
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          required:
+                          - kind
+                          - name
+                          - namespace
+                          type: object
+                        settings:
+                          description: the rule's surge settings when the surge started.
+                          properties:
+                            boostPercent:
+                              description: the percentage of new traces to sample
+                                during a surge.
+                              maximum: 100
+                              minimum: 0
+                              type: number
+                            metric:
+                              description: TraceSurgeMetric is the RED metric of a
+                                service's server spans that a trace surge watches.
+                              enum:
+                              - error_rate
+                              - latency_p95
+                              - request_rate
+                              type: string
+                            minimumBoostSeconds:
+                              description: the percentage stays raised at least this
+                                long, however soon the metric recovers.
+                              minimum: 1
+                              type: integer
+                            minimumRequests:
+                              description: a service with fewer server calls than
+                                this in the evaluation window is not evaluated.
+                              minimum: 1
+                              type: integer
+                            recoverySeconds:
+                              minimum: 1
+                              type: integer
+                            recoveryThreshold:
+                              description: the surge ends once the metric stays at
+                                or below this value for recoverySeconds.
+                              minimum: 0
+                              type: number
+                            sustainedSeconds:
+                              description: how long the metric must stay above the
+                                threshold before the percentage is raised.
+                              minimum: 1
+                              type: integer
+                            threshold:
+                              description: |-
+                                the metric must exceed this value to start a surge:
+                                percent for error_rate, milliseconds for latency_p95, requests per second for request_rate.
+                              minimum: 0
+                              type: number
+                            version:
+                              description: changes on every edit of the settings,
+                                so that concurrent edits can be detected.
+                              type: string
+                          required:
+                          - boostPercent
+                          - metric
+                          - minimumBoostSeconds
+                          - minimumRequests
+                          - recoverySeconds
+                          - recoveryThreshold
+                          - sustainedSeconds
+                          - threshold
+                          type: object
+                        targets:
+                          description: the workloads in the rule's scope whose traces
+                            lead to the service.
+                          items:
+                            description: a workload whose sampling a trace surge raises.
+                            properties:
+                              broadScopeReason:
+                                description: |-
+                                  set when the target was chosen without evidence that its traces reach the service,
+                                  e.g. when the service graph has no edge for it yet.
+                                type: string
+                              workload:
+                                description: |-
+                                  PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                                  It contains essential details about the controller such as its Name, Namespace, and Kind.
+                                  'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                                  This struct is useful for identifying and interacting with the overarching entity
+                                  that governs the lifecycle and behavior of a Pod, especially in contexts where
+                                  understanding the relationship between a Pod and its controlling workload is crucial.
+                                properties:
+                                  kind:
+                                    description: |-
+                                      1. the pascal case representation of the workload kind
+                                      it is used in k8s api objects as the `Kind` field.
+                                    type: string
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                required:
+                                - kind
+                                - name
+                                - namespace
+                                type: object
+                            required:
+                            - workload
+                            type: object
+                          type: array
+                      required:
+                      - normalPercent
+                      - ruleId
+                      - samplingName
+                      - service
+                      - settings
+                      type: object
+                    startedAt:
+                      description: 'when the surge was recorded: its metric had crossed
+                        the threshold for the sustained window.'
+                      format: date-time
+                      type: string
+                    status:
+                      properties:
+                        boostedAt:
+                          format: date-time
+                          type: string
+                        lastObservation:
+                          description: the latest evaluation of the service's metric.
+                          properties:
+                            at:
+                              format: date-time
+                              type: string
+                            operation:
+                              description: |-
+                                the server operation (span name, e.g. "GET /checkout/{id}") whose value this is, when one
+                                operation's value is above the whole service's. Empty for all of the service's server spans.
+                              type: string
+                            requests:
+                              description: server calls in the evaluation window,
+                                of the operation if set.
+                              format: int64
+                              type: integer
+                            value:
+                              description: in the unit of the rule's metric.
+                              type: number
+                            windowSeconds:
+                              description: the length of the evaluation window the
+                                value was measured over.
+                              type: integer
+                          required:
+                          - at
+                          - requests
+                          - value
+                          type: object
+                        limitReason:
+                          description: which trace surge limit kept the surge from
+                            raising sampling, while it is or was Limited.
+                          type: string
+                        phase:
+                          enum:
+                          - Limited
+                          - Boosting
+                          - Recovering
+                          - Restored
+                          type: string
+                        recoveredAt:
+                          description: |-
+                            for a surge that ended at the maximum duration: when its service's metric went back to or
+                            below the recovery threshold, after which the service can surge again.
+                          format: date-time
+                          type: string
+                        recoveryStartedAt:
+                          description: when the metric last went to or below the recovery
+                            threshold, while the surge is recovering.
+                          format: date-time
+                          type: string
+                        restoreReason:
+                          description: why the normal percentage was restored, e.g.
+                            the metric recovered or the rule was removed.
+                          type: string
+                        restoredAt:
+                          format: date-time
+                          type: string
+                        timeline:
+                          items:
+                            properties:
+                              at:
+                                format: date-time
+                                type: string
+                              description:
+                                type: string
+                              title:
+                                type: string
+                            required:
+                            - at
+                            - title
+                            type: object
+                          type: array
+                        trigger:
+                          description: the observation that started the surge.
+                          properties:
+                            at:
+                              format: date-time
+                              type: string
+                            operation:
+                              description: |-
+                                the server operation (span name, e.g. "GET /checkout/{id}") whose value this is, when one
+                                operation's value is above the whole service's. Empty for all of the service's server spans.
+                              type: string
+                            requests:
+                              description: server calls in the evaluation window,
+                                of the operation if set.
+                              format: int64
+                              type: integer
+                            value:
+                              description: in the unit of the rule's metric.
+                              type: number
+                            windowSeconds:
+                              description: the length of the evaluation window the
+                                value was measured over.
+                              type: integer
+                          required:
+                          - at
+                          - requests
+                          - value
+                          type: object
+                        triggerSamples:
+                          description: the observations of the sustained window that
+                            led to the surge.
+                          items:
+                            description: one evaluation of a service's metric.
+                            properties:
+                              at:
+                                format: date-time
+                                type: string
+                              operation:
+                                description: |-
+                                  the server operation (span name, e.g. "GET /checkout/{id}") whose value this is, when one
+                                  operation's value is above the whole service's. Empty for all of the service's server spans.
+                                type: string
+                              requests:
+                                description: server calls in the evaluation window,
+                                  of the operation if set.
+                                format: int64
+                                type: integer
+                              value:
+                                description: in the unit of the rule's metric.
+                                type: number
+                              windowSeconds:
+                                description: the length of the evaluation window the
+                                  value was measured over.
+                                type: integer
+                            required:
+                            - at
+                            - requests
+                            - value
+                            type: object
+                          type: array
+                      type: object
+                  required:
+                  - name
+                  - spec
+                  - startedAt
+                  type: object
+                type: array
             type: object
         type: object
     served: true

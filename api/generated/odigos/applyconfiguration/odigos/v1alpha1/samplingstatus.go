@@ -29,6 +29,10 @@ type SamplingStatusApplyConfiguration struct {
 	// Represents the observations of a Sampling's current state.
 	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	// The trace surges of the rules that are open: limited, boosting or recovering. A surge that
+	// ended stays until its targets are confirmed back, or, when it ended at the maximum duration,
+	// until its service recovers. Odigos insights keeps the surges after that.
+	TraceSurges []TraceSurgeApplyConfiguration `json:"traceSurges,omitempty"`
 }
 
 // SamplingStatusApplyConfiguration constructs a declarative configuration of the SamplingStatus type for use with
@@ -46,6 +50,19 @@ func (b *SamplingStatusApplyConfiguration) WithConditions(values ...*v1.Conditio
 			panic("nil value passed to WithConditions")
 		}
 		b.Conditions = append(b.Conditions, *values[i])
+	}
+	return b
+}
+
+// WithTraceSurges adds the given value to the TraceSurges field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the TraceSurges field.
+func (b *SamplingStatusApplyConfiguration) WithTraceSurges(values ...*TraceSurgeApplyConfiguration) *SamplingStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithTraceSurges")
+		}
+		b.TraceSurges = append(b.TraceSurges, *values[i])
 	}
 	return b
 }
