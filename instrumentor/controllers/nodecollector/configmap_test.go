@@ -396,8 +396,10 @@ service:
       receivers: [otlp/in]
     metrics/agent-span-metrics-insights:
       receivers: [otlp/in]
+    metrics/agent-span-metrics:
+      receivers: [otlp/in]
 `)
 	assert.NoError(t, err)
 	assert.Equal(t, []common.ObservabilitySignal{common.TracesObservabilitySignal}, signals,
-		"agents a trace surge covers record span metrics without the metrics signal: the others stay as they are")
+		"agents that record span metrics send them without the metrics signal: the others stay as they are")
 }

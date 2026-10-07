@@ -170,10 +170,11 @@ func calculateMetricsConfig(
 	effectiveConfig *common.OdigosConfiguration,
 	d *distro.OtelDistro,
 	irls *[]odigosv1.InstrumentationRule,
+	recordsSpanMetricsForDestinations bool,
 ) (*agentsignalconfig.AgentMetricsConfig, *odigosv1.AgentDisabledInfo) {
 	metricsConfig := &agentsignalconfig.AgentMetricsConfig{}
 
-	if metrics.DistroSupportsAgentSpanMetrics(d) && metrics.AgentSpanMetricsEnabled(effectiveConfig) {
+	if recordsSpanMetricsForDestinations {
 		// for distros that supports recording span metrics directly in the agent.
 		// this is useful for acurate metrics collection, as it see the data as it is collected,
 		// before it has chance to be sampled out or dropped in the pipeline.
@@ -217,7 +218,9 @@ func CalculateDynamicContainerConfig(
 
 	var collectorConfig *commonapi.ContainerCollectorConfig
 
-	// trace surges need span metrics from the agents they cover, even with the metrics signal disabled.
+	// span metrics are recorded for the metrics destinations when span metrics in the agents are
+	// enabled, and for the trace surges that cover the container even with the metrics signal disabled.
+	recordsForDestinations := metrics.AgentRecordsSpanMetricsForDestinations(effectiveConfig, d, enabledSignals.MetricsEnabled, nodeCollectorsGroup)
 	recordsForSurges := common.TraceSurgesEnabled(effectiveConfig.Sampling) && common.InsightsPipelineActive(effectiveConfig.Insights) &&
 		metrics.DistroSupportsAgentSpanMetrics(d) &&
 		runtimeDetails != nil && traces.TraceSurgeCoversContainer(samplingRules, runtimeDetails.Language, pw)
@@ -235,31 +238,32 @@ func CalculateDynamicContainerConfig(
 
 	var metricsConfig *agentsignalconfig.AgentMetricsConfig
 	if enabledSignals.MetricsEnabled {
-		agentMetricsConfig, err := calculateMetricsConfig(effectiveConfig, d, irls)
+		agentMetricsConfig, err := calculateMetricsConfig(effectiveConfig, d, irls, recordsForDestinations)
 		if err != nil {
 			return nil, err
 		}
 		metricsConfig = agentMetricsConfig
 	}
 
-	if recordsForSurges {
-		if metricsConfig == nil || metricsConfig.SpanMetrics == nil {
-			spanMetricsConfig, err := metrics.CalculateAgentSpanMetricsConfig(effectiveConfig, d)
-			if err != nil {
-				return nil, err
-			}
-			if metricsConfig == nil {
-				// the metrics signal is disabled: record span metrics only, without runtime metrics.
-				disabled := true
-				metricsConfig = &agentsignalconfig.AgentMetricsConfig{
-					RuntimeMetrics: &common.MetricsSourceAgentRuntimeMetricsConfiguration{
-						Java: &common.MetricsSourceAgentJavaRuntimeMetricsConfiguration{Disabled: &disabled},
-					},
-				}
-			}
-			metricsConfig.SpanMetrics = spanMetricsConfig
+	if (recordsForDestinations || recordsForSurges) && (metricsConfig == nil || metricsConfig.SpanMetrics == nil) {
+		spanMetricsConfig, err := metrics.CalculateAgentSpanMetricsConfig(effectiveConfig, d)
+		if err != nil {
+			return nil, err
 		}
-		// report at least once per evaluation, so a spike is seen within one evaluation.
+		if metricsConfig == nil {
+			// the metrics signal is disabled: record span metrics only, without runtime metrics.
+			disabled := true
+			metricsConfig = &agentsignalconfig.AgentMetricsConfig{
+				RuntimeMetrics: &common.MetricsSourceAgentRuntimeMetricsConfiguration{
+					Java: &common.MetricsSourceAgentJavaRuntimeMetricsConfiguration{Disabled: &disabled},
+				},
+			}
+		}
+		metricsConfig.SpanMetrics = spanMetricsConfig
+	}
+	if recordsForSurges {
+		// report at least once per evaluation, so a spike is seen within one evaluation. the agent
+		// reports at one interval: the metrics destinations get these agents' span metrics at it too.
 		_, interval := common.TraceSurgeTiming(effectiveConfig.Sampling)
 		metricsConfig.SpanMetrics.IntervalMs = min(metricsConfig.SpanMetrics.IntervalMs, int(interval.Milliseconds()))
 	}

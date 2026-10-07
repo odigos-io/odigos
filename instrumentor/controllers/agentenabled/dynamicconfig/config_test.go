@@ -6,6 +6,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
 	"github.com/stretchr/testify/assert"
@@ -47,4 +48,58 @@ func TestTraceSurgeSpanMetricsInterval(t *testing.T) {
 		"without a surge rule nothing is recorded")
 	assert.Equal(t, 0, intervalMs(&common.OdigosConfiguration{Sampling: on}, surgeRules), "without insights nothing is recorded")
 	assert.Equal(t, 0, intervalMs(&common.OdigosConfiguration{Insights: insights}, surgeRules), "with trace surges off nothing is recorded")
+}
+
+func TestAgentRecordsSpanMetricsForDestinations(t *testing.T) {
+	pw := k8sconsts.PodWorkload{Namespace: "shop", Kind: k8sconsts.WorkloadKindDeployment, Name: "frontend"}
+	runtimeDetails := &odigosv1.RuntimeDetailsByContainer{ContainerName: "app", Language: common.JavaProgrammingLanguage}
+	recording := &distro.OtelDistro{
+		AgentMetrics: &distro.AgentMetrics{SpanMetrics: &distro.SpanMetrics{Supported: true}},
+		Traces:       &distro.Traces{HeadSampling: &distro.HeadSampling{Supported: true}},
+	}
+	wantsSpanMetrics := &odigosv1.CollectorsGroup{
+		Spec: odigosv1.CollectorsGroupSpec{Metrics: &odigosv1.CollectorsGroupMetricsCollectionSettings{
+			SpanMetrics: &common.MetricsSourceSpanMetricsConfiguration{Interval: "60s"},
+		}},
+		Status: odigosv1.CollectorsGroupStatus{ReceiverSignals: []common.ObservabilitySignal{common.MetricsObservabilitySignal}},
+	}
+	allSpans := commonapisampling.SpanMetricsModeAllSpans
+	conf := func(enabled bool) *common.OdigosConfiguration {
+		return &common.OdigosConfiguration{MetricsSources: &common.MetricsSourceConfiguration{
+			SpanMetrics:  &common.MetricsSourceSpanMetricsConfiguration{SpanMetricsMode: &allSpans},
+			AgentMetrics: &common.MetricsSourceAgentMetricsConfiguration{SpanMetrics: &common.MetricsSourceAgentSpanMetricsConfiguration{Enabled: enabled}},
+		}}
+	}
+	metricsSignal := true
+	run := func(c *common.OdigosConfiguration, d *distro.OtelDistro, nodeCG *odigosv1.CollectorsGroup) *DynamicContainerConfigs {
+		t.Helper()
+		configs, disabled := CalculateDynamicContainerConfig("app", &[]odigosv1.InstrumentationRule{}, c, runtimeDetails,
+			&[]odigosv1.Action{}, &[]odigosv1.Sampling{}, nil, pw, d, signals.EnabledSignals{TracesEnabled: true, MetricsEnabled: metricsSignal}, nodeCG, nil)
+		require.Nil(t, disabled)
+		return configs
+	}
+
+	configs := run(conf(false), recording, wantsSpanMetrics)
+	assert.Nil(t, configs.AgentMetricsConfig.SpanMetrics, "a destination wanting span metrics leaves them to the collectors, as before")
+	require.NotNil(t, configs.AgentTracesConfig.HeadSampling)
+	assert.Equal(t, commonapisampling.SpanMetricsModeAllSpans, configs.AgentTracesConfig.HeadSampling.SpanMetricsMode)
+
+	configs = run(conf(true), recording, wantsSpanMetrics)
+	require.NotNil(t, configs.AgentMetricsConfig.SpanMetrics, "span metrics in the agents are enabled: the agent records them")
+	assert.Equal(t, 60_000, configs.AgentMetricsConfig.SpanMetrics.IntervalMs)
+	assert.Equal(t, commonapisampling.SpanMetricsModeAllSpans, configs.AgentTracesConfig.HeadSampling.SpanMetricsMode,
+		"the span metrics mode is the configured one")
+
+	configs = run(conf(true), &distro.OtelDistro{Traces: &distro.Traces{HeadSampling: &distro.HeadSampling{Supported: true}}}, wantsSpanMetrics)
+	assert.Nil(t, configs.AgentMetricsConfig.SpanMetrics, "an agent that can't record leaves it to the collectors")
+
+	// the agents' other metrics don't go to the destinations: the node collector doesn't receive
+	// metrics from the agents, but for their span metrics, which it sends on their own.
+	metricsSignal = false
+	wantsSpanMetrics.Spec.Metrics.AgentSpanMetrics = &odigosv1.AgentSpanMetricsSettings{Destinations: true}
+	configs = run(conf(true), recording, wantsSpanMetrics)
+	require.NotNil(t, configs.AgentMetricsConfig)
+	require.NotNil(t, configs.AgentMetricsConfig.SpanMetrics, "the agent records span metrics only")
+	assert.True(t, *configs.AgentMetricsConfig.RuntimeMetrics.Java.Disabled)
+	assert.Nil(t, run(conf(false), recording, wantsSpanMetrics).AgentMetricsConfig, "span metrics in the agents are not enabled")
 }
