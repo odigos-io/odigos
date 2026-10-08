@@ -102,7 +102,7 @@ func calculateTracesConfig(
 	// we need to set the span metrics mode even if no noisy operations are present,
 	// since the decision can be made at other service and propagate to this one.
 	distroSupportsHeadSampling := traces.DistroSupportsHeadSampling(d)
-	alsoInTail := effectiveConfig.Sampling != nil &&
+	noisyOperationsAlsoInTail := effectiveConfig.Sampling != nil &&
 		effectiveConfig.Sampling.NoisyOperationsAlsoInTail != nil &&
 		*effectiveConfig.Sampling.NoisyOperationsAlsoInTail
 	if distroSupportsHeadSampling {
@@ -121,7 +121,7 @@ func calculateTracesConfig(
 			}
 		}
 	}
-	if len(noisyOps) > 0 && (!distroSupportsHeadSampling || alsoInTail) {
+	if len(noisyOps) > 0 && (!distroSupportsHeadSampling || noisyOperationsAlsoInTail) {
 		if collectorConfig == nil {
 			collectorConfig = &commonapi.ContainerCollectorConfig{}
 		}
