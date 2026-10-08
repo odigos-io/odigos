@@ -13,7 +13,6 @@ metadata:
   name: v1beta1.custom.metrics.k8s.io
   labels:
     app.kubernetes.io/name: odigos-custom-metrics
-    app.kubernetes.io/managed-by: Helm
     odigos.io/system-object: "true"
 spec:
   service:
