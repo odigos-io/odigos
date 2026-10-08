@@ -38,6 +38,7 @@ import type {
   Destination,
   EffectiveConfig,
   EnableProfilingResult,
+  DisableProfilingResult,
   ExtendedPodInfo,
   FetchedConfig,
   GatewayInfo,
@@ -159,6 +160,7 @@ import {
   DELETE_INSTRUMENTATION_RULE,
   DELETE_NOISY_OPERATION_RULE,
   ENABLE_SOURCE_PROFILING,
+  DISABLE_SOURCE_PROFILING,
   PERSIST_NAMESPACES,
   PERSIST_SOURCES,
   RECOVER_FROM_ROLLBACK,
@@ -417,6 +419,11 @@ const operations: OdigosApiOperations = {
   ENABLE_SOURCE_PROFILING: {
     document: ENABLE_SOURCE_PROFILING,
     transformResult: (raw: unknown) => (raw as { enableSourceProfiling?: EnableProfilingResult } | null | undefined)?.enableSourceProfiling,
+  },
+
+  DISABLE_SOURCE_PROFILING: {
+    document: DISABLE_SOURCE_PROFILING,
+    transformResult: (raw: unknown) => (raw as { disableSourceProfiling?: DisableProfilingResult } | null | undefined)?.disableSourceProfiling,
   },
 
   // instrumentation agents — bare-shape slots; flatten the per-field envelope.
