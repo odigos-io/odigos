@@ -90,12 +90,6 @@ func New(opts Options) (*Instrumentor, error) {
 
 	odigosNs := env.GetCurrentNamespace()
 
-	// remove the deprecated webhook secret if it exists
-	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.ManagerOptions.Logger, Secret: types.NamespacedName{
-		Namespace: odigosNs,
-		Name:      k8sconsts.DeprecatedInstrumentorWebhookSecretName,
-	}})
-
 	// One-shot upgrade cleanup after autoscaler merged into instrumentor:
 	// delete leftover autoscaler webhook cert Secrets and the custom-metrics
 	// APIService if Odigos still owns it but Helm does not, so the next helm

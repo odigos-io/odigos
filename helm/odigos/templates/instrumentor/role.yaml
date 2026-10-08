@@ -230,7 +230,6 @@ rules:
     resources:
       - secrets
     resourceNames:
-      - webhook-cert
       - autoscaler-webhook-cert
       - autoscaler-webhooks-cert
     verbs:
