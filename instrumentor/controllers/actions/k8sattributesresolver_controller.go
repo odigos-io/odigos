@@ -13,19 +13,9 @@ import (
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-	commonlogger "github.com/odigos-io/odigos/common/logger"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// DEPRECATED: Use odigosv1.Action instead
-type K8sAttributesResolverReconciler struct {
-	client.Client
-	Scheme *runtime.Scheme
-}
 
 /*
 An example configuration for the k8sattributes processor:
@@ -168,76 +158,6 @@ func sortByPrecedence(attrs map[string]k8sTagAttribute) []k8sTagAttribute {
 		return result[i].Key < result[j].Key
 	})
 	return result
-}
-
-func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
-	logger.Info("Reconciling K8sAttributes action")
-	logger.Info("WARNING: K8sAttributes action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
-
-	// Get the specific K8sAttributesResolver that triggered this reconcile
-	action := &actionv1.K8sAttributesResolver{}
-	err := r.Get(ctx, req.NamespacedName, action)
-	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// Migrate to odigosv1.Action
-	migratedActionName := odigosv1.ActionMigratedLegacyPrefix + action.Name
-	odigosAction := &odigosv1.Action{}
-	err = r.Get(ctx, client.ObjectKey{Name: migratedActionName, Namespace: action.Namespace}, odigosAction)
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
-		logger.Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
-		// Action doesn't exist, create new one
-		odigosAction = r.createMigratedAction(action, migratedActionName)
-		err = r.Create(ctx, odigosAction)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		action.OwnerReferences = append(action.OwnerReferences, metav1.OwnerReference{
-			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "Action",
-			Name:       odigosAction.Name,
-			UID:        odigosAction.UID,
-		})
-		err = r.Update(ctx, action)
-		return ctrl.Result{}, err
-	}
-
-	logger.Info("Migrated Action already exists, skipping update")
-	return ctrl.Result{}, nil
-}
-
-func (r *K8sAttributesResolverReconciler) createMigratedAction(action *actionv1.K8sAttributesResolver, migratedActionName string) *odigosv1.Action {
-	config := actionv1.K8sAttributesConfig{
-		CollectContainerAttributes: action.Spec.CollectContainerAttributes,
-		CollectClusterUID:          action.Spec.CollectClusterUID,
-		LabelsAttributes:           action.Spec.LabelsAttributes,
-		AnnotationsAttributes:      action.Spec.AnnotationsAttributes,
-	}
-
-	odigosAction := &odigosv1.Action{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "Action",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      migratedActionName,
-			Namespace: action.Namespace,
-		},
-		Spec: odigosv1.ActionSpec{
-			ActionName:    action.Spec.ActionName,
-			Notes:         action.Spec.Notes,
-			Disabled:      action.Spec.Disabled,
-			Signals:       action.Spec.Signals,
-			K8sAttributes: &config,
-		},
-	}
-
-	return odigosAction
 }
 
 // k8sAttributeConfig combines multiple k8sattributes configurations into a single unified processor config

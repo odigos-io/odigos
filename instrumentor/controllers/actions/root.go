@@ -5,7 +5,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	v1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
@@ -44,45 +43,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			&urlTemplateNodeCGSpanMetricsTogglePredicate{},
 		)).
 		Complete(&URLTemplateNodeCGReconciler{
-			Client: mgr.GetClient(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&v1.AddClusterInfo{}).
-		Complete(&AddClusterInfoReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&v1.DeleteAttribute{}).
-		Complete(&DeleteAttributeReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&v1.RenameAttribute{}).
-		Complete(&RenameAttributeReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&v1.K8sAttributesResolver{}).
-		Complete(&K8sAttributesResolverReconciler{
 			Client: mgr.GetClient(),
 		})
 	if err != nil {

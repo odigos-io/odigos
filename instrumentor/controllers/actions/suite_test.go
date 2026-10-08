@@ -107,46 +107,6 @@ var _ = AfterSuite(func() {
 })
 
 func cleanupResources() {
-	// Clean up all legacy K8sAttributesResolvers
-	k8sAttributesResolverList := &actionv1.K8sAttributesResolverList{}
-	k8sClient.List(testCtx, k8sAttributesResolverList)
-	for _, resolver := range k8sAttributesResolverList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &resolver)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
-	// Clean up all legacy AddClusterInfos
-	addClusterInfoList := &actionv1.AddClusterInfoList{}
-	k8sClient.List(testCtx, addClusterInfoList)
-	for _, action := range addClusterInfoList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &action)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
-	// Clean up all legacy DeleteAttributes
-	deleteAttributeList := &actionv1.DeleteAttributeList{}
-	k8sClient.List(testCtx, deleteAttributeList)
-	for _, action := range deleteAttributeList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &action)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
-	// Clean up all legacy RenameAttributes
-	renameAttributeList := &actionv1.RenameAttributeList{}
-	k8sClient.List(testCtx, renameAttributeList)
-	for _, action := range renameAttributeList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &action)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
 	// Clean up all Actions
 	actionList := &odigosv1.ActionList{}
 	k8sClient.List(testCtx, actionList)

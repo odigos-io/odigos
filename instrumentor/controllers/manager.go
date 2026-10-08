@@ -139,18 +139,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			// but need to consider the RBAC and semantics of such a change.
 			Field: nsSelector,
 		},
-		&apiactions.AddClusterInfo{}: {
-			Field: nsSelector,
-		},
-		&apiactions.DeleteAttribute{}: {
-			Field: nsSelector,
-		},
-		&apiactions.RenameAttribute{}: {
-			Field: nsSelector,
-		},
-		&apiactions.K8sAttributesResolver{}: {
-			Field: nsSelector,
-		},
 	}
 
 	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransformFunc(scheme, cacheByObjectConfig)
