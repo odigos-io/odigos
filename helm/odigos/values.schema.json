@@ -1317,7 +1317,7 @@
         },
         "vllm": {
           "additionalProperties": false,
-          "description": "Bundled in-cluster vLLM with weights baked into odigos-enterprise-vllm (no Hugging Face at runtime). Requires nvidia.com/gpu.",
+          "description": "Bundled in-cluster vLLM with weights baked into odigos-enterprise-vllm (no Hugging Face at runtime). Defaults request nvidia.com/gpu via resources.",
           "properties": {
             "affinity": {
               "additionalProperties": true,
@@ -1330,20 +1330,6 @@
               "required": [],
               "title": "enabled",
               "type": "boolean"
-            },
-            "gkeAccelerator": {
-              "default": "",
-              "description": "Optional GKE accelerator type (e.g. nvidia-l4). Sets nodeSelector cloud.google.com/gke-accelerator.",
-              "required": [],
-              "title": "gkeAccelerator",
-              "type": "string"
-            },
-            "gpuCount": {
-              "default": 1,
-              "description": "Number of GPUs to request (nvidia.com/gpu).",
-              "required": [],
-              "title": "gpuCount",
-              "type": "integer"
             },
             "gpuMemoryUtilization": {
               "default": "0.90",
@@ -1403,10 +1389,11 @@
               "title": "priorityClassName"
             },
             "resources": {
-              "additionalProperties": false,
+              "additionalProperties": true,
+              "description": "Pod resources for odigos-vllm (cpu, memory, and optional nvidia.com/gpu). Override via values file or --set-json.",
               "properties": {
                 "limits": {
-                  "additionalProperties": false,
+                  "additionalProperties": true,
                   "properties": {
                     "cpu": {
                       "default": "7",
@@ -1415,6 +1402,10 @@
                     "memory": {
                       "default": "16Gi",
                       "type": "string"
+                    },
+                    "nvidia.com/gpu": {
+                      "default": "1",
+                      "type": "string"
                     }
                   },
                   "required": [],
@@ -1422,7 +1413,7 @@
                   "type": "object"
                 },
                 "requests": {
-                  "additionalProperties": false,
+                  "additionalProperties": true,
                   "properties": {
                     "cpu": {
                       "default": "2",
@@ -1430,6 +1421,10 @@
                     },
                     "memory": {
                       "default": "8Gi",
+                      "type": "string"
+                    },
+                    "nvidia.com/gpu": {
+                      "default": "1",
                       "type": "string"
                     }
                   },

@@ -1,5 +1,4 @@
 {{- if and (include "odigos.vllmEnabled" .) (include "odigos.secretExists" .) }}
-{{- $gpuCount := .Values.interrogation.vllm.gpuCount | default 1 | toString }}
 {{- $imageTag := .Values.interrogation.vllm.image.tag | default .Values.image.tag | default .Chart.AppVersion }}
 {{- $modelPath := .Values.interrogation.vllm.modelPath | default "/models/interrogation" }}
 {{- $servedModelName := .Values.interrogation.vllm.servedModelName | default "interrogation" }}
@@ -21,20 +20,12 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-vllm
     spec:
-      {{- /* Do not inherit the global chart nodeSelector. GPU scheduling is
-           driven by nvidia.com/gpu; optional labels come from gkeAccelerator
-           and/or an explicit nodeSelector map (prefer gkeAccelerator / -f over
-           --set with dotted keys — Make strips Helm escapes). */}}
-      {{- $nodeSelector := dict }}
-      {{- range $k, $v := .Values.interrogation.vllm.nodeSelector }}
-      {{- $_ := set $nodeSelector $k $v }}
-      {{- end }}
-      {{- if .Values.interrogation.vllm.gkeAccelerator }}
-      {{- $_ := set $nodeSelector "cloud.google.com/gke-accelerator" .Values.interrogation.vllm.gkeAccelerator }}
-      {{- end }}
-      {{- if $nodeSelector }}
+      {{- /* Do not inherit the global chart nodeSelector. Pin with
+           interrogation.vllm.nodeSelector when needed (prefer -f / --set-json
+           for dotted label keys). */}}
+      {{- with .Values.interrogation.vllm.nodeSelector }}
       nodeSelector:
-        {{- toYaml $nodeSelector | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if .Values.interrogation.vllm.priorityClassName }}
       priorityClassName: {{ .Values.interrogation.vllm.priorityClassName }}
@@ -88,14 +79,7 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 5
           resources:
-            requests:
-              cpu: {{ .Values.interrogation.vllm.resources.requests.cpu | quote }}
-              memory: {{ .Values.interrogation.vllm.resources.requests.memory | quote }}
-              nvidia.com/gpu: {{ $gpuCount | quote }}
-            limits:
-              cpu: {{ .Values.interrogation.vllm.resources.limits.cpu | quote }}
-              memory: {{ .Values.interrogation.vllm.resources.limits.memory | quote }}
-              nvidia.com/gpu: {{ $gpuCount | quote }}
+            {{- toYaml .Values.interrogation.vllm.resources | nindent 12 }}
       {{- with .Values.interrogation.vllm.tolerations }}
       tolerations: {{ toYaml . | nindent 8 }}
       {{- end }}

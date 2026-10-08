@@ -283,8 +283,8 @@ interrogation:
 
   # Bundled in-cluster vLLM (off by default). Uses odigos-enterprise-vllm with
   # Qwen2.5-Coder-7B-Instruct-AWQ weights baked into the image (no Hugging Face
-  # at runtime). Hard requirement: NVIDIA device plugin (nvidia.com/gpu). Do NOT
-  # hardcode cloud nodeSelectors — use gkeAccelerator or nodeSelector for your GPU pool.
+  # at runtime). Defaults request nvidia.com/gpu via resources; override resources,
+  # nodeSelector, and tolerations for your cluster (cloud-agnostic).
   # @schema
   vllm:
     # @schema
@@ -321,36 +321,30 @@ interrogation:
     # @schema
     gpuMemoryUtilization: "0.90"
     # @schema
-    # description: Number of GPUs to request (nvidia.com/gpu). This is the portable hard scheduling requirement.
+    # description: Pod resources for odigos-vllm (cpu, memory, and optional nvidia.com/gpu). Override via values file or --set-json.
+    # additionalProperties: true
     # @schema
-    gpuCount: 1
-    # Sized for AWQ 7B Coder on a single L4 / similar (~24Gi) with headroom for KV cache.
     resources:
+      # @schema
+      # additionalProperties: true
+      # @schema
       requests:
         cpu: "2"
         memory: 8Gi
+        "nvidia.com/gpu": "1"
+      # @schema
+      # additionalProperties: true
+      # @schema
       limits:
         cpu: "7"
         memory: 16Gi
+        "nvidia.com/gpu": "1"
     # @schema
-    # description: |-
-    #   Optional GKE accelerator type. When set, adds
-    #   nodeSelector cloud.google.com/gke-accelerator=<value>. Prefer this over
-    #   nodeSelector with dotted keys — Make/shell eat Helm --set escaping.
-    #   Example: nvidia-l4
-    # @schema
-    gkeAccelerator: ""
-    # @schema
-    # description: |-
-    #   Optional nodeSelector for the GPU pool. Empty by default so the nvidia.com/gpu
-    #   resource request can schedule on any GPU node. Prefer gkeAccelerator on GKE.
-    #   For other clouds use a values file (-f), not --set with dotted keys.
+    # description: Optional nodeSelector for the GPU pool. Does not inherit the global chart nodeSelector. Prefer -f or --set-json for dotted labels.
     # @schema
     # nodeSelector: {}
     # @schema
-    # description: |-
-    #   Tolerations for GPU node taints. Many clusters taint GPU nodes; a common value is
-    #   key=nvidia.com/gpu, operator=Exists, effect=NoSchedule.
+    # description: Tolerations for GPU node taints (commonly nvidia.com/gpu Exists NoSchedule).
     # @schema
     tolerations: []
     # @schema
