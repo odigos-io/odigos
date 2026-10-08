@@ -369,6 +369,7 @@ func workloadTransformFunc(odigosNs string) func(obj interface{}) (interface{}, 
 			return clientObj, nil
 		}
 		clientObj.SetManagedFields(nil)
+		// Keep odigos-ns workloads full (gateway spec). Strip others to save cache memory.
 		if clientObj.GetNamespace() != odigosNs {
 			cacheutils.StripWorkloadSpecTemplate(clientObj)
 		}
