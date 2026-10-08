@@ -10,11 +10,6 @@ spec:
       isHelmOnly: false
       description: Run sampling logic without actually dropping traces, for evaluation purposes.
       helmValuePath: sampling.dryRun
-    - displayName: Noisy Operations Also In Tail
-      componentType: toggle
-      isHelmOnly: false
-      description: When enabled, noisy operations are applied via both head sampling (where supported) and collector tail sampling. Useful when applications already emit OpenTelemetry and head sampling may miss those spans.
-      helmValuePath: sampling.noisyOperationsAlsoInTail
     - displayName: Span Sampling Attributes Disabled
       componentType: toggle
       isHelmOnly: false
@@ -45,6 +40,15 @@ spec:
       isHelmOnly: false
       description: How long to wait for spans to arrive before making a tail sampling decision (e.g. 30s).
       helmValuePath: sampling.tailSampling.traceAggregationWaitDuration
+    - displayName: Noisy Operations Enforcement
+      componentType: dropdown
+      isHelmOnly: false
+      description: Controls when the collector enforces noisy-operations rules via tail sampling. auto (default) only for sources whose agent does not support head sampling; always for every source, including apps that emit OpenTelemetry themselves so Odigos head sampling never runs.
+      helmValuePath: sampling.tailSampling.noisyOperationsEnforcement
+      componentProps:
+        options:
+          - auto
+          - always
     - displayName: K8s Health Probes Sampling Enabled
       componentType: toggle
       isHelmOnly: false

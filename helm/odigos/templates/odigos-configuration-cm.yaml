@@ -355,13 +355,10 @@ data:
       - {{ include "odigos.enterpriseRegistryPullSecretName" . | quote }}
       {{- end }}
     {{- end }}
-    {{- if or .Values.sampling.dryRun .Values.sampling.noisyOperationsAlsoInTail .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
+    {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
     sampling:
       {{- if ne .Values.sampling.dryRun nil }}
       dryRun: {{ .Values.sampling.dryRun }}
-      {{- end }}
-      {{- if ne .Values.sampling.noisyOperationsAlsoInTail nil }}
-      noisyOperationsAlsoInTail: {{ .Values.sampling.noisyOperationsAlsoInTail }}
       {{- end }}
       {{- if .Values.sampling.spanSamplingAttributes }}
       spanSamplingAttributes:
@@ -385,6 +382,9 @@ data:
         {{- end }}
         {{- if .Values.sampling.tailSampling.traceAggregationWaitDuration }}
         traceAggregationWaitDuration: {{ .Values.sampling.tailSampling.traceAggregationWaitDuration | quote }}
+        {{- end }}
+        {{- if .Values.sampling.tailSampling.noisyOperationsEnforcement }}
+        noisyOperationsEnforcement: {{ .Values.sampling.tailSampling.noisyOperationsEnforcement }}
         {{- end }}
       {{- end }}
       {{- if .Values.sampling.k8sHealthProbesSampling }}

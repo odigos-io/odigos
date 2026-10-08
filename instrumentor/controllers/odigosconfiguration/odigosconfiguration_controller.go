@@ -273,9 +273,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		if addtionalConfig.Sampling.DryRun != nil {
 			baseConfig.Sampling.DryRun = addtionalConfig.Sampling.DryRun
 		}
-		if addtionalConfig.Sampling.NoisyOperationsAlsoInTail != nil {
-			baseConfig.Sampling.NoisyOperationsAlsoInTail = addtionalConfig.Sampling.NoisyOperationsAlsoInTail
-		}
 		if addtionalConfig.Sampling.SpanSamplingAttributes != nil {
 			if baseConfig.Sampling.SpanSamplingAttributes == nil {
 				baseConfig.Sampling.SpanSamplingAttributes = &sampling.SpanSamplingAttributesConfiguration{}
@@ -302,6 +299,9 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			}
 			if addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				baseConfig.Sampling.TailSampling.TraceAggregationWaitDuration = addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration
+			}
+			if addtionalConfig.Sampling.TailSampling.NoisyOperationsEnforcement != nil {
+				baseConfig.Sampling.TailSampling.NoisyOperationsEnforcement = addtionalConfig.Sampling.TailSampling.NoisyOperationsEnforcement
 			}
 		}
 		if addtionalConfig.Sampling.K8sHealthProbesSampling != nil {

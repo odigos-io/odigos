@@ -2386,11 +2386,10 @@ type LocalUIConfigRolloutInput struct {
 }
 
 type LocalUIConfigSamplingInput struct {
-	DryRun                    *bool                                     `json:"dryRun,omitempty"`
-	NoisyOperationsAlsoInTail *bool                                     `json:"noisyOperationsAlsoInTail,omitempty"`
-	SpanSamplingAttributes    *LocalUIConfigSpanSamplingAttributesInput `json:"spanSamplingAttributes,omitempty"`
-	TailSampling              *TailSamplingConfigInput                  `json:"tailSampling,omitempty"`
-	K8sHealthProbesSampling   *K8sHealthProbesSamplingConfigInput       `json:"k8sHealthProbesSampling,omitempty"`
+	DryRun                  *bool                                     `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *LocalUIConfigSpanSamplingAttributesInput `json:"spanSamplingAttributes,omitempty"`
+	TailSampling            *TailSamplingConfigInput                  `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfigInput       `json:"k8sHealthProbesSampling,omitempty"`
 }
 
 type LocalUIConfigSpanSamplingAttributesInput struct {
@@ -2791,11 +2790,10 @@ type Sampling struct {
 }
 
 type SamplingConfig struct {
-	DryRun                    *bool                          `json:"dryRun,omitempty"`
-	NoisyOperationsAlsoInTail *bool                          `json:"noisyOperationsAlsoInTail,omitempty"`
-	SpanSamplingAttributes    *SpanSamplingAttributesConfig  `json:"spanSamplingAttributes,omitempty"`
-	TailSampling              *TailSamplingConfig            `json:"tailSampling,omitempty"`
-	K8sHealthProbesSampling   *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
+	DryRun                  *bool                          `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *SpanSamplingAttributesConfig  `json:"spanSamplingAttributes,omitempty"`
+	TailSampling            *TailSamplingConfig            `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
 }
 
 type SamplingConfigInput struct {
@@ -2912,13 +2910,15 @@ type SupportedSignals struct {
 }
 
 type TailSamplingConfig struct {
-	Disabled                     *bool   `json:"disabled,omitempty"`
-	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+	Disabled                     *bool                       `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string                     `json:"traceAggregationWaitDuration,omitempty"`
+	NoisyOperationsEnforcement   *NoisyOperationsEnforcement `json:"noisyOperationsEnforcement,omitempty"`
 }
 
 type TailSamplingConfigInput struct {
-	Disabled                     *bool   `json:"disabled,omitempty"`
-	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+	Disabled                     *bool                       `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string                     `json:"traceAggregationWaitDuration,omitempty"`
+	NoisyOperationsEnforcement   *NoisyOperationsEnforcement `json:"noisyOperationsEnforcement,omitempty"`
 }
 
 type TailSamplingHTTPServerMatcher struct {
@@ -4893,6 +4893,47 @@ func (e *MountMethod) UnmarshalGQL(v any) error {
 }
 
 func (e MountMethod) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type NoisyOperationsEnforcement string
+
+const (
+	NoisyOperationsEnforcementAuto   NoisyOperationsEnforcement = "auto"
+	NoisyOperationsEnforcementAlways NoisyOperationsEnforcement = "always"
+)
+
+var AllNoisyOperationsEnforcement = []NoisyOperationsEnforcement{
+	NoisyOperationsEnforcementAuto,
+	NoisyOperationsEnforcementAlways,
+}
+
+func (e NoisyOperationsEnforcement) IsValid() bool {
+	switch e {
+	case NoisyOperationsEnforcementAuto, NoisyOperationsEnforcementAlways:
+		return true
+	}
+	return false
+}
+
+func (e NoisyOperationsEnforcement) String() string {
+	return string(e)
+}
+
+func (e *NoisyOperationsEnforcement) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = NoisyOperationsEnforcement(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid NoisyOperationsEnforcement", str)
+	}
+	return nil
+}
+
+func (e NoisyOperationsEnforcement) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

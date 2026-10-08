@@ -171,7 +171,6 @@ export const GET_EFFECTIVE_CONFIG = gql`
       }
       sampling {
         dryRun
-        noisyOperationsAlsoInTail
         spanSamplingAttributes {
           disabled
           samplingCategoryDisabled
@@ -181,6 +180,7 @@ export const GET_EFFECTIVE_CONFIG = gql`
         tailSampling {
           disabled
           traceAggregationWaitDuration
+          noisyOperationsEnforcement
         }
         k8sHealthProbesSampling {
           enabled

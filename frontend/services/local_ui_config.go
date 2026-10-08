@@ -274,9 +274,6 @@ func applySamplingInput(cfg *common.SamplingConfiguration, input *model.LocalUIC
 	if input.DryRun != nil {
 		cfg.DryRun = input.DryRun
 	}
-	if input.NoisyOperationsAlsoInTail != nil {
-		cfg.NoisyOperationsAlsoInTail = input.NoisyOperationsAlsoInTail
-	}
 	if input.SpanSamplingAttributes != nil {
 		if cfg.SpanSamplingAttributes == nil {
 			cfg.SpanSamplingAttributes = &sampling.SpanSamplingAttributesConfiguration{}
@@ -303,6 +300,10 @@ func applySamplingInput(cfg *common.SamplingConfiguration, input *model.LocalUIC
 		}
 		if input.TailSampling.TraceAggregationWaitDuration != nil {
 			cfg.TailSampling.TraceAggregationWaitDuration = input.TailSampling.TraceAggregationWaitDuration
+		}
+		if input.TailSampling.NoisyOperationsEnforcement != nil {
+			enforcement := sampling.NoisyOperationsEnforcement(*input.TailSampling.NoisyOperationsEnforcement)
+			cfg.TailSampling.NoisyOperationsEnforcement = &enforcement
 		}
 	}
 	if input.K8sHealthProbesSampling != nil {

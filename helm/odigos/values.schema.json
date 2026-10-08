@@ -2471,12 +2471,6 @@
           "required": [],
           "title": "k8sHealthProbesSampling"
         },
-        "noisyOperationsAlsoInTail": {
-          "default": "true",
-          "description": "When true, noisy operations are applied via both head sampling (where the agent supports it)\nand collector tail sampling. Useful when applications already emit OpenTelemetry and head\nsampling may miss those spans. Default is false (exclusive head-or-tail based on distro support).",
-          "required": [],
-          "title": "noisyOperationsAlsoInTail"
-        },
         "spanSamplingAttributes": {
           "additionalProperties": false,
           "description": "Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).\nThese attributes add context when viewing traces and inspecting costs, so you can understand\nhow sampling decisions were made for an individual span and apply changes to fine-tune rules.\nWhen dry run is enabled, each span includes the sampling decision (kept or dropped) as it\nwould apply once dry run is disabled.",
@@ -2518,6 +2512,16 @@
               "description": "if set to true, tail sampling will be disabled globally\nregardless of any other configurations or rules set.\ncan be used to reduce collectors resource usage, troubleshooting, etc,\nor when tail-sampling is not needed or desired and should be shut off.",
               "required": [],
               "title": "disabled"
+            },
+            "noisyOperationsEnforcement": {
+              "default": "auto",
+              "description": "Controls when the collector enforces noisy-operations rules via tail sampling.\nauto (default): only for sources whose agent does not support head sampling.\nalways: for every source, even when the agent already applied them at head.\nUse always when applications emit OpenTelemetry themselves so Odigos head sampling never runs on their spans.",
+              "enum": [
+                "auto",
+                "always"
+              ],
+              "required": [],
+              "title": "noisyOperationsEnforcement"
             },
             "traceAggregationWaitDuration": {
               "default": "30s",

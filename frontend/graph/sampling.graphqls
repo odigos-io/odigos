@@ -1,3 +1,11 @@
+# Controls when the collector enforces noisy-operations rules via tail sampling.
+# auto (default): only for sources whose agent does not support head sampling.
+# always: for every source, even when the agent already applied them at head.
+enum NoisyOperationsEnforcement {
+  auto
+  always
+}
+
 type TailSamplingConfig {
   # if set to true, tail sampling will be disabled globally
   # regardless of any other configurations or rules set.
@@ -12,6 +20,9 @@ type TailSamplingConfig {
   # setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
   # and broken traces due to sampling each trace in few pieces.
   traceAggregationWaitDuration: String
+
+  # controls when the collector enforces noisy-operations rules via tail sampling.
+  noisyOperationsEnforcement: NoisyOperationsEnforcement
 }
 
 type K8sHealthProbesSamplingConfig {
@@ -37,10 +48,6 @@ type SamplingConfig {
   # if true, odigos runs sampling logic but does not drop any traces.
   dryRun: Boolean
 
-  # when true, noisy operations are applied via both head sampling (where supported)
-  # and collector tail sampling.
-  noisyOperationsAlsoInTail: Boolean
-
   # configuration for span sampling attributes (category, deciding rules, etc.).
   spanSamplingAttributes: SpanSamplingAttributesConfig
 
@@ -55,6 +62,7 @@ type SamplingConfig {
 input TailSamplingConfigInput {
   disabled: Boolean
   traceAggregationWaitDuration: String
+  noisyOperationsEnforcement: NoisyOperationsEnforcement
 }
 
 input K8sHealthProbesSamplingConfigInput {

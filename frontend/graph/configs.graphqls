@@ -365,7 +365,6 @@ input LocalUiConfigSpanSamplingAttributesInput {
 
 input LocalUiConfigSamplingInput {
   dryRun: Boolean
-  noisyOperationsAlsoInTail: Boolean
   spanSamplingAttributes: LocalUiConfigSpanSamplingAttributesInput
   tailSampling: TailSamplingConfigInput
   k8sHealthProbesSampling: K8sHealthProbesSamplingConfigInput
