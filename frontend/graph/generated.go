@@ -140,6 +140,10 @@ type ComplexityRoot struct {
 		StabilityWindowTime func(childComplexity int) int
 	}
 
+	CardinalityControlConfig struct {
+		URLTemplatization func(childComplexity int) int
+	}
+
 	ClearProfilingBufferResult struct {
 		ActiveSlots func(childComplexity int) int
 		SourceKey   func(childComplexity int) int
@@ -443,6 +447,7 @@ type ComplexityRoot struct {
 		AllowConcurrentAgents            func(childComplexity int) int
 		AllowedTestConnectionHosts       func(childComplexity int) int
 		AutoRollback                     func(childComplexity int) int
+		CardinalityControl               func(childComplexity int) int
 		CentralBackendURL                func(childComplexity int) int
 		ClickhouseJSONTypeEnabled        func(childComplexity int) int
 		ClusterName                      func(childComplexity int) int
@@ -1715,6 +1720,24 @@ type ComplexityRoot struct {
 		EnvVars func(childComplexity int) int
 	}
 
+	LiveTrafficLearningAutomaticRulesConfig struct {
+		Enabled func(childComplexity int) int
+	}
+
+	LiveTrafficLearningConfig struct {
+		AutomaticRules             func(childComplexity int) int
+		Enabled                    func(childComplexity int) int
+		LearningInterval           func(childComplexity int) int
+		MaxExamplePathsPerWorkload func(childComplexity int) int
+		PathExampleIdleTTL         func(childComplexity int) int
+		RuleComputation            func(childComplexity int) int
+	}
+
+	LiveTrafficLearningRuleComputationConfig struct {
+		MinCardinalityForTemplating func(childComplexity int) int
+		MinObservationsForRule      func(childComplexity int) int
+	}
+
 	MessagingPayloadCollection struct {
 		DropPartialPayloads func(childComplexity int) int
 		MaxPayloadLength    func(childComplexity int) int
@@ -2314,6 +2337,10 @@ type ComplexityRoot struct {
 		Examples func(childComplexity int) int
 		Notes    func(childComplexity int) int
 		Template func(childComplexity int) int
+	}
+
+	UrlTemplatizationCardinalityControlConfig struct {
+		LiveTrafficLearning func(childComplexity int) int
 	}
 
 	UrlTemplatizationDefaultGroup struct {
@@ -2965,6 +2992,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AutoRollbackConfig.StabilityWindowTime(childComplexity), true
+
+	case "CardinalityControlConfig.urlTemplatization":
+		if e.complexity.CardinalityControlConfig.URLTemplatization == nil {
+			break
+		}
+
+		return e.complexity.CardinalityControlConfig.URLTemplatization(childComplexity), true
 
 	case "ClearProfilingBufferResult.activeSlots":
 		if e.complexity.ClearProfilingBufferResult.ActiveSlots == nil {
@@ -4354,6 +4388,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.AutoRollback(childComplexity), true
+
+	case "EffectiveConfig.cardinalityControl":
+		if e.complexity.EffectiveConfig.CardinalityControl == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.CardinalityControl(childComplexity), true
 
 	case "EffectiveConfig.centralBackendURL":
 		if e.complexity.EffectiveConfig.CentralBackendURL == nil {
@@ -10249,6 +10290,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LanguageConfig.EnvVars(childComplexity), true
 
+	case "LiveTrafficLearningAutomaticRulesConfig.enabled":
+		if e.complexity.LiveTrafficLearningAutomaticRulesConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningAutomaticRulesConfig.Enabled(childComplexity), true
+
+	case "LiveTrafficLearningConfig.automaticRules":
+		if e.complexity.LiveTrafficLearningConfig.AutomaticRules == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.AutomaticRules(childComplexity), true
+
+	case "LiveTrafficLearningConfig.enabled":
+		if e.complexity.LiveTrafficLearningConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.Enabled(childComplexity), true
+
+	case "LiveTrafficLearningConfig.learningInterval":
+		if e.complexity.LiveTrafficLearningConfig.LearningInterval == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.LearningInterval(childComplexity), true
+
+	case "LiveTrafficLearningConfig.maxExamplePathsPerWorkload":
+		if e.complexity.LiveTrafficLearningConfig.MaxExamplePathsPerWorkload == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.MaxExamplePathsPerWorkload(childComplexity), true
+
+	case "LiveTrafficLearningConfig.pathExampleIdleTTL":
+		if e.complexity.LiveTrafficLearningConfig.PathExampleIdleTTL == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.PathExampleIdleTTL(childComplexity), true
+
+	case "LiveTrafficLearningConfig.ruleComputation":
+		if e.complexity.LiveTrafficLearningConfig.RuleComputation == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.RuleComputation(childComplexity), true
+
+	case "LiveTrafficLearningRuleComputationConfig.minCardinalityForTemplating":
+		if e.complexity.LiveTrafficLearningRuleComputationConfig.MinCardinalityForTemplating == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRuleComputationConfig.MinCardinalityForTemplating(childComplexity), true
+
+	case "LiveTrafficLearningRuleComputationConfig.minObservationsForRule":
+		if e.complexity.LiveTrafficLearningRuleComputationConfig.MinObservationsForRule == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRuleComputationConfig.MinObservationsForRule(childComplexity), true
+
 	case "MessagingPayloadCollection.dropPartialPayloads":
 		if e.complexity.MessagingPayloadCollection.DropPartialPayloads == nil {
 			break
@@ -13255,6 +13359,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.URLTemplatizationRule.Template(childComplexity), true
 
+	case "UrlTemplatizationCardinalityControlConfig.liveTrafficLearning":
+		if e.complexity.UrlTemplatizationCardinalityControlConfig.LiveTrafficLearning == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationCardinalityControlConfig.LiveTrafficLearning(childComplexity), true
+
 	case "UrlTemplatizationDefaultGroup.disabled":
 		if e.complexity.UrlTemplatizationDefaultGroup.Disabled == nil {
 			break
@@ -13425,14 +13536,19 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputK8sWorkloadIdInput,
 		ec.unmarshalInputLocalUiConfigAllowConcurrentAgentsInput,
 		ec.unmarshalInputLocalUiConfigAutoRollbackInput,
+		ec.unmarshalInputLocalUiConfigCardinalityControlInput,
 		ec.unmarshalInputLocalUiConfigComponentLogLevelsInput,
 		ec.unmarshalInputLocalUiConfigInput,
 		ec.unmarshalInputLocalUiConfigInstrumentorInput,
+		ec.unmarshalInputLocalUiConfigLiveTrafficLearningAutomaticRulesInput,
+		ec.unmarshalInputLocalUiConfigLiveTrafficLearningInput,
+		ec.unmarshalInputLocalUiConfigLiveTrafficLearningRuleComputationInput,
 		ec.unmarshalInputLocalUiConfigRolloutInput,
 		ec.unmarshalInputLocalUiConfigSamplingInput,
 		ec.unmarshalInputLocalUiConfigSpanSamplingAttributesInput,
 		ec.unmarshalInputLocalUiConfigTraceCorrelationsInput,
 		ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput,
+		ec.unmarshalInputLocalUiConfigUrlTemplatizationCardinalityControlInput,
 		ec.unmarshalInputMessagingPayloadCollectionInput,
 		ec.unmarshalInputNoisyOperationRuleInput,
 		ec.unmarshalInputPatchSourceRequestInput,
@@ -20848,6 +20964,51 @@ func (ec *executionContext) fieldContext_AutoRollbackConfig_stabilityWindowTime(
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CardinalityControlConfig_urlTemplatization(ctx context.Context, field graphql.CollectedField, obj *model.CardinalityControlConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CardinalityControlConfig_urlTemplatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URLTemplatization, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.URLTemplatizationCardinalityControlConfig)
+	fc.Result = res
+	return ec.marshalOUrlTemplatizationCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationCardinalityControlConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CardinalityControlConfig_urlTemplatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CardinalityControlConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "liveTrafficLearning":
+				return ec.fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationCardinalityControlConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -31547,6 +31708,51 @@ func (ec *executionContext) fieldContext_EffectiveConfig_profiling(_ context.Con
 				return ec.fieldContext_ProfilingConfig_enabled(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProfilingConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_cardinalityControl(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_cardinalityControl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CardinalityControl, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CardinalityControlConfig)
+	fc.Result = res
+	return ec.marshalOCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCardinalityControlConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_cardinalityControl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "urlTemplatization":
+				return ec.fieldContext_CardinalityControlConfig_urlTemplatization(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CardinalityControlConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -68186,6 +68392,385 @@ func (ec *executionContext) fieldContext_LanguageConfig_envVars(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _LiveTrafficLearningAutomaticRulesConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningAutomaticRulesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningAutomaticRulesConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningAutomaticRulesConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningAutomaticRulesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxExamplePathsPerWorkload, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_maxExamplePathsPerWorkload(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_pathExampleIdleTTL(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_pathExampleIdleTTL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PathExampleIdleTTL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_pathExampleIdleTTL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_learningInterval(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_learningInterval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LearningInterval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_learningInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_ruleComputation(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_ruleComputation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuleComputation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningRuleComputationConfig)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningRuleComputationConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRuleComputationConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_ruleComputation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minObservationsForRule":
+				return ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx, field)
+			case "minCardinalityForTemplating":
+				return ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningRuleComputationConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_automaticRules(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_automaticRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AutomaticRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningAutomaticRulesConfig)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningAutomaticRulesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningAutomaticRulesConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_automaticRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_LiveTrafficLearningAutomaticRulesConfig_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningAutomaticRulesConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRuleComputationConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinObservationsForRule, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRuleComputationConfig_minObservationsForRule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRuleComputationConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRuleComputationConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinCardinalityForTemplating, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRuleComputationConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MessagingPayloadCollection_maxPayloadLength(ctx context.Context, field graphql.CollectedField, obj *model.MessagingPayloadCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MessagingPayloadCollection_maxPayloadLength(ctx, field)
 	if err != nil {
@@ -79005,6 +79590,8 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_sampling(ctx, field)
 			case "profiling":
 				return ec.fieldContext_EffectiveConfig_profiling(ctx, field)
+			case "cardinalityControl":
+				return ec.fieldContext_EffectiveConfig_cardinalityControl(ctx, field)
 			case "traceCorrelations":
 				return ec.fieldContext_EffectiveConfig_traceCorrelations(ctx, field)
 			case "provenance":
@@ -87198,6 +87785,61 @@ func (ec *executionContext) fieldContext_URLTemplatizationRule_examples(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationCardinalityControlConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveTrafficLearning, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningConfig)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationCardinalityControlConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_LiveTrafficLearningConfig_enabled(ctx, field)
+			case "maxExamplePathsPerWorkload":
+				return ec.fieldContext_LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx, field)
+			case "pathExampleIdleTTL":
+				return ec.fieldContext_LiveTrafficLearningConfig_pathExampleIdleTTL(ctx, field)
+			case "learningInterval":
+				return ec.fieldContext_LiveTrafficLearningConfig_learningInterval(ctx, field)
+			case "ruleComputation":
+				return ec.fieldContext_LiveTrafficLearningConfig_ruleComputation(ctx, field)
+			case "automaticRules":
+				return ec.fieldContext_LiveTrafficLearningConfig_automaticRules(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UrlTemplatizationDefaultGroup_scopes(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationDefaultGroup) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UrlTemplatizationDefaultGroup_scopes(ctx, field)
 	if err != nil {
@@ -90134,28 +90776,28 @@ func (ec *executionContext) unmarshalInputCostReductionRuleInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOTailSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTailSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtMost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtMost"))
 			data, err := ec.unmarshalNFloat2float64(ctx, v)
@@ -90169,7 +90811,7 @@ func (ec *executionContext) unmarshalInputCostReductionRuleInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-			it.Notes = data
+			it.Notes = graphql.OmittableOf(data)
 		}
 	}
 
@@ -90876,56 +91518,56 @@ func (ec *executionContext) unmarshalInputHighlyRelevantOperationRuleInput(ctx c
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "error":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("error"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Error = data
+			it.Error = graphql.OmittableOf(data)
 		case "durationAtLeastMs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("durationAtLeastMs"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DurationAtLeastMs = data
+			it.DurationAtLeastMs = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOTailSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTailSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtLeast":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtLeast"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.PercentageAtLeast = data
+			it.PercentageAtLeast = graphql.OmittableOf(data)
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Notes = data
+			it.Notes = graphql.OmittableOf(data)
 		}
 	}
 
@@ -91911,14 +92553,14 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
-			it.SourcesScopes = data
+			it.SourcesScopes = graphql.OmittableOf(data)
 		case "instrumentationLibraries":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentationLibraries"))
 			data, err := ec.unmarshalOInstrumentationLibraryGlobalIdInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationLibraryGlobalIDInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.InstrumentationLibraries = data
+			it.InstrumentationLibraries = graphql.OmittableOf(data)
 		case "codeAttributes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("codeAttributes"))
 			data, err := ec.unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributesInput(ctx, v)
@@ -92424,6 +93066,33 @@ func (ec *executionContext) unmarshalInputLocalUiConfigAutoRollbackInput(ctx con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputLocalUiConfigCardinalityControlInput(ctx context.Context, obj any) (model.LocalUIConfigCardinalityControlInput, error) {
+	var it model.LocalUIConfigCardinalityControlInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"urlTemplatization"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "urlTemplatization":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlTemplatization"))
+			data, err := ec.unmarshalOLocalUiConfigUrlTemplatizationCardinalityControlInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigURLTemplatizationCardinalityControlInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.URLTemplatization = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLocalUiConfigComponentLogLevelsInput(ctx context.Context, obj any) (model.LocalUIConfigComponentLogLevelsInput, error) {
 	var it model.LocalUIConfigComponentLogLevelsInput
 	asMap := map[string]any{}
@@ -92507,7 +93176,7 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "traceCorrelations"}
+	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "traceCorrelations", "cardinalityControl"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -92612,6 +93281,13 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 				return it, err
 			}
 			it.TraceCorrelations = data
+		case "cardinalityControl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardinalityControl"))
+			data, err := ec.unmarshalOLocalUiConfigCardinalityControlInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigCardinalityControlInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardinalityControl = data
 		}
 	}
 
@@ -92646,6 +93322,122 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInstrumentorInput(ctx con
 				return it, err
 			}
 			it.CheckDeviceHealthBeforeInjection = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigLiveTrafficLearningAutomaticRulesInput(ctx context.Context, obj any) (model.LocalUIConfigLiveTrafficLearningAutomaticRulesInput, error) {
+	var it model.LocalUIConfigLiveTrafficLearningAutomaticRulesInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigLiveTrafficLearningInput(ctx context.Context, obj any) (model.LocalUIConfigLiveTrafficLearningInput, error) {
+	var it model.LocalUIConfigLiveTrafficLearningInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"maxExamplePathsPerWorkload", "pathExampleIdleTTL", "learningInterval", "ruleComputation", "automaticRules"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "maxExamplePathsPerWorkload":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxExamplePathsPerWorkload"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxExamplePathsPerWorkload = data
+		case "pathExampleIdleTTL":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pathExampleIdleTTL"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PathExampleIdleTTL = data
+		case "learningInterval":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("learningInterval"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LearningInterval = data
+		case "ruleComputation":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleComputation"))
+			data, err := ec.unmarshalOLocalUiConfigLiveTrafficLearningRuleComputationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningRuleComputationInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleComputation = data
+		case "automaticRules":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("automaticRules"))
+			data, err := ec.unmarshalOLocalUiConfigLiveTrafficLearningAutomaticRulesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningAutomaticRulesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutomaticRules = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigLiveTrafficLearningRuleComputationInput(ctx context.Context, obj any) (model.LocalUIConfigLiveTrafficLearningRuleComputationInput, error) {
+	var it model.LocalUIConfigLiveTrafficLearningRuleComputationInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"minObservationsForRule", "minCardinalityForTemplating"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "minObservationsForRule":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minObservationsForRule"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinObservationsForRule = data
+		case "minCardinalityForTemplating":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minCardinalityForTemplating"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinCardinalityForTemplating = data
 		}
 	}
 
@@ -92857,6 +93649,33 @@ func (ec *executionContext) unmarshalInputLocalUiConfigTraceCorrelationsServiceI
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputLocalUiConfigUrlTemplatizationCardinalityControlInput(ctx context.Context, obj any) (model.LocalUIConfigURLTemplatizationCardinalityControlInput, error) {
+	var it model.LocalUIConfigURLTemplatizationCardinalityControlInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"liveTrafficLearning"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "liveTrafficLearning":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("liveTrafficLearning"))
+			data, err := ec.unmarshalOLocalUiConfigLiveTrafficLearningInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LiveTrafficLearning = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMessagingPayloadCollectionInput(ctx context.Context, obj any) (model.MessagingPayloadCollectionInput, error) {
 	var it model.MessagingPayloadCollectionInput
 	asMap := map[string]any{}
@@ -92911,42 +93730,42 @@ func (ec *executionContext) unmarshalInputNoisyOperationRuleInput(ctx context.Co
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOHeadSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtMost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtMost"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.PercentageAtMost = data
+			it.PercentageAtMost = graphql.OmittableOf(data)
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Notes = data
+			it.Notes = graphql.OmittableOf(data)
 		}
 	}
 
@@ -94277,6 +95096,42 @@ func (ec *executionContext) _AutoRollbackConfig(ctx context.Context, sel ast.Sel
 			out.Values[i] = ec._AutoRollbackConfig_graceTime(ctx, field, obj)
 		case "stabilityWindowTime":
 			out.Values[i] = ec._AutoRollbackConfig_stabilityWindowTime(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var cardinalityControlConfigImplementors = []string{"CardinalityControlConfig"}
+
+func (ec *executionContext) _CardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, obj *model.CardinalityControlConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, cardinalityControlConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CardinalityControlConfig")
+		case "urlTemplatization":
+			out.Values[i] = ec._CardinalityControlConfig_urlTemplatization(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -96624,6 +97479,8 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_sampling(ctx, field, obj)
 		case "profiling":
 			out.Values[i] = ec._EffectiveConfig_profiling(ctx, field, obj)
+		case "cardinalityControl":
+			out.Values[i] = ec._EffectiveConfig_cardinalityControl(ctx, field, obj)
 		case "traceCorrelations":
 			out.Values[i] = ec._EffectiveConfig_traceCorrelations(ctx, field, obj)
 		case "provenance":
@@ -106259,6 +107116,126 @@ func (ec *executionContext) _LanguageConfig(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var liveTrafficLearningAutomaticRulesConfigImplementors = []string{"LiveTrafficLearningAutomaticRulesConfig"}
+
+func (ec *executionContext) _LiveTrafficLearningAutomaticRulesConfig(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningAutomaticRulesConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningAutomaticRulesConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningAutomaticRulesConfig")
+		case "enabled":
+			out.Values[i] = ec._LiveTrafficLearningAutomaticRulesConfig_enabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningConfigImplementors = []string{"LiveTrafficLearningConfig"}
+
+func (ec *executionContext) _LiveTrafficLearningConfig(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningConfig")
+		case "enabled":
+			out.Values[i] = ec._LiveTrafficLearningConfig_enabled(ctx, field, obj)
+		case "maxExamplePathsPerWorkload":
+			out.Values[i] = ec._LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx, field, obj)
+		case "pathExampleIdleTTL":
+			out.Values[i] = ec._LiveTrafficLearningConfig_pathExampleIdleTTL(ctx, field, obj)
+		case "learningInterval":
+			out.Values[i] = ec._LiveTrafficLearningConfig_learningInterval(ctx, field, obj)
+		case "ruleComputation":
+			out.Values[i] = ec._LiveTrafficLearningConfig_ruleComputation(ctx, field, obj)
+		case "automaticRules":
+			out.Values[i] = ec._LiveTrafficLearningConfig_automaticRules(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningRuleComputationConfigImplementors = []string{"LiveTrafficLearningRuleComputationConfig"}
+
+func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningRuleComputationConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningRuleComputationConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningRuleComputationConfig")
+		case "minObservationsForRule":
+			out.Values[i] = ec._LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx, field, obj)
+		case "minCardinalityForTemplating":
+			out.Values[i] = ec._LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var messagingPayloadCollectionImplementors = []string{"MessagingPayloadCollection"}
 
 func (ec *executionContext) _MessagingPayloadCollection(ctx context.Context, sel ast.SelectionSet, obj *model.MessagingPayloadCollection) graphql.Marshaler {
@@ -111260,6 +112237,42 @@ func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.
 			out.Values[i] = ec._URLTemplatizationRule_notes(ctx, field, obj)
 		case "examples":
 			out.Values[i] = ec._URLTemplatizationRule_examples(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var urlTemplatizationCardinalityControlConfigImplementors = []string{"UrlTemplatizationCardinalityControlConfig"}
+
+func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationCardinalityControlConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, urlTemplatizationCardinalityControlConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UrlTemplatizationCardinalityControlConfig")
+		case "liveTrafficLearning":
+			out.Values[i] = ec._UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -119245,6 +120258,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, v *model.CardinalityControlConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CardinalityControlConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOClusterAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐClusterAttributeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterAttribute) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -121933,6 +122953,27 @@ func (ec *executionContext) marshalOKarpenterConfig2ᚖgithubᚗcomᚋodigosᚑi
 	return ec._KarpenterConfig(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOLiveTrafficLearningAutomaticRulesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningAutomaticRulesConfig(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningAutomaticRulesConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningAutomaticRulesConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningConfig(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningRuleComputationConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRuleComputationConfig(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningRuleComputationConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningRuleComputationConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOLocalUiConfigAllowConcurrentAgentsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigAllowConcurrentAgentsInput(ctx context.Context, v any) (*model.LocalUIConfigAllowConcurrentAgentsInput, error) {
 	if v == nil {
 		return nil, nil
@@ -121949,6 +122990,14 @@ func (ec *executionContext) unmarshalOLocalUiConfigAutoRollbackInput2ᚖgithub�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOLocalUiConfigCardinalityControlInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigCardinalityControlInput(ctx context.Context, v any) (*model.LocalUIConfigCardinalityControlInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigCardinalityControlInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOLocalUiConfigComponentLogLevelsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigComponentLogLevelsInput(ctx context.Context, v any) (*model.LocalUIConfigComponentLogLevelsInput, error) {
 	if v == nil {
 		return nil, nil
@@ -121962,6 +123011,30 @@ func (ec *executionContext) unmarshalOLocalUiConfigInstrumentorInput2ᚖgithub�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputLocalUiConfigInstrumentorInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigLiveTrafficLearningAutomaticRulesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningAutomaticRulesInput(ctx context.Context, v any) (*model.LocalUIConfigLiveTrafficLearningAutomaticRulesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigLiveTrafficLearningAutomaticRulesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigLiveTrafficLearningInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningInput(ctx context.Context, v any) (*model.LocalUIConfigLiveTrafficLearningInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigLiveTrafficLearningInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigLiveTrafficLearningRuleComputationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningRuleComputationInput(ctx context.Context, v any) (*model.LocalUIConfigLiveTrafficLearningRuleComputationInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigLiveTrafficLearningRuleComputationInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -122002,6 +123075,14 @@ func (ec *executionContext) unmarshalOLocalUiConfigTraceCorrelationsServiceIOInp
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigUrlTemplatizationCardinalityControlInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigURLTemplatizationCardinalityControlInput(ctx context.Context, v any) (*model.LocalUIConfigURLTemplatizationCardinalityControlInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigUrlTemplatizationCardinalityControlInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -122945,6 +124026,13 @@ func (ec *executionContext) marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigo
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOUrlTemplatizationCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationCardinalityControlConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UrlTemplatizationCardinalityControlConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOUrlTemplatizationDefaultGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroupᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationDefaultGroup) graphql.Marshaler {

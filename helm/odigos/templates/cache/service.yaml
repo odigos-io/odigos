@@ -1,0 +1,19 @@
+{{- if include "cacheDb.enabled" . | eq "true" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-cache
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-cache
+    odigos.io/system-object: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - name: cache
+      port: 6379
+      targetPort: cache
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: odigos-cache
+{{- end }}

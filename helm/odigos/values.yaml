@@ -31,7 +31,8 @@ imagePrefix:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,
-#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights
+#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents,
+#     enterprise-insights, victoria-metrics, cache
 # additionalProperties: true
 # @schema
 images: {}
@@ -83,6 +84,147 @@ clusterName: ''
 # @schema
 disableAutoRecommendations: false
 
+# @schema
+# description: |-
+#   Cardinality control settings. Configure how Odigos produces and maintains low-cardinality
+#   attributes and span names in telemetry, and discovers and removes high-cardinality ones
+#   (for example URL templatization, which sets http.route / url.template and rewrites
+#   HTTP span names to templated routes that must stay low-cardinality).
+# @schema
+cardinalityControl:
+  # @schema
+  # description: |-
+  #   URL templatization replaces variable parts of HTTP paths with placeholders
+  #   (e.g. /users/123 → /users/{id}) in span names and attributes (http.route / url.template).
+  # @schema
+  urlTemplatization:
+    # @schema
+    # description: |-
+    #   Learn URL templatization rules from live traffic based on path segment
+    #   occurrence counts. Enterprise-only — requires an on-prem token
+    #   (onPremToken / odigos-pro secret). Enabling this deploys the shared
+    #   cache under cacheDb.
+    # @schema
+    liveTrafficLearning:
+      # @schema
+      # description: |-
+      #   When true, enables live-traffic learning of URL templatization rules.
+      #   Opt-in; unset/empty keeps the feature off.
+      # @schema
+      enabled:
+
+      # @schema
+      # description: |-
+      #   Max example paths per workload: for each workload, Odigos keeps two
+      #   separate collections of unmatched HTTP path examples — one for
+      #   inbound (server) spans and one for outbound (client) spans. This
+      #   limit is the maximum distinct paths in each collection, not both
+      #   combined (so a workload can store up to this many server paths and
+      #   this many client paths). A larger number can increase the accuracy
+      #   and speed of automatic live-traffic rules, but requires more
+      #   resources. Default: 5000.
+      # @schema
+      maxExamplePathsPerWorkload: 5000
+
+      # @schema
+      # description: |-
+      #   Path example idle TTL: how long an unmatched path example is kept
+      #   after its last observation. Each new observation refreshes the TTL
+      #   (sliding window). Expired paths free quota for new examples. Must
+      #   stay well above the collector flush interval and the learning
+      #   interval. Default: 48h (2 days).
+      # @schema
+      pathExampleIdleTTL: 48h
+
+      # @schema
+      # description: |-
+      #   Learning interval: how often the instrumentor runs the live-traffic
+      #   learning cycle — checking for new URL templatization rules and
+      #   garbage-collecting path examples in the shared cache. Smaller
+      #   intervals react faster and reclaim quota sooner but use more
+      #   instrumentor resources. Default: 30s.
+      # @schema
+      learningInterval: 30s
+
+      # @schema
+      # description: |-
+      #   Thresholds used when computing URL templatization rules from live
+      #   traffic. They apply to both UI recommendations and live-traffic
+      #   automatic rules.
+      # @schema
+      ruleComputation:
+        # @schema
+        # description: |-
+        #   Min observations for a rule: minimum number of path observations
+        #   required before a rule is recommended in the UI, and before it is
+        #   applied as a live-traffic automatic rule when automaticRules.enabled
+        #   is true. Default: 100.
+        # @schema
+        minObservationsForRule: 100
+
+        # @schema
+        # description: |-
+        #   Min cardinality for templating: minimum number of distinct child
+        #   segment values required before a path segment is collapsed into a
+        #   templated placeholder ({id}) in recommended and live-traffic
+        #   automatic rules. Below this threshold, high-branching segments stay
+        #   as wildcards (*). Additive with minObservationsForRule and
+        #   the remaining learning checks. Default: 20.
+        # @schema
+        minCardinalityForTemplating: 20
+
+      # @schema
+      # description: |-
+      #   Live-traffic automatic rules: apply URL templatization rules learned
+      #   from live traffic when they meet the ruleComputation thresholds.
+      #   Opt-in; unset/empty keeps live-traffic automatic rules off (rules
+      #   are only suggested).
+      # @schema
+      automaticRules:
+        # @schema
+        # description: |-
+        #   When true, enables live-traffic automatic rules — learned URL
+        #   templatization rules that meet the ruleComputation thresholds are
+        #   applied for you. Requires liveTrafficLearning.enabled. Opt-in;
+        #   unset/empty keeps live-traffic automatic rules off.
+        # @schema
+        enabled:
+
+# @schema
+# description: |-
+#   Shared cache DB used by Odigos features that need a cluster-local cache
+#   (for example cardinality-control URL templatization rule computation).
+#   Deployed when a consuming feature is enabled (currently
+#   cardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is
+#   enterprise-only and requires an on-prem token).
+#   Backend is an implementation detail (Redis, published as odigos-cache with the
+#   Odigos release tag); values stay backend-agnostic so the chart can switch to
+#   another cache (e.g. Memcached) without renaming this section. Override the
+#   image via images.cache or imagePrefix like other Odigos components.
+# @schema
+cacheDb:
+  # @schema
+  # description: |-
+  #   Soft memory cap for the cache process when the backend supports it.
+  #   When unset, derived as ~85% of the effective memory limit (see resources).
+  # @schema
+  # maxmemory: 220mb
+
+  # @schema
+  # additionalProperties: true
+  # description: |-
+  #   Optional CPU/memory requests and limits for the shared cache pod.
+  #   When unset, defaults use Burstable QoS (requests below limits) since the
+  #   cache is usually idle. Set requests and/or limits to override; if only one
+  #   side is set, the other is mirrored from it.
+  # @schema
+  # resources:
+  #   requests:
+  #     cpu: 50m
+  #     memory: 64Mi
+  #   limits:
+  #     cpu: 200m
+  #     memory: 256Mi
 
 # @schema
 # description: |-
@@ -935,10 +1077,12 @@ odiglet:
     # description: |-
     #   seLinuxOptions for the data-collection container when running non-privileged.
     #   "spc_t" is the SELinux domain the container already gets when running privileged.
+    #   The level matches the odiglet container's, since containers sharing a volume must share its SELinux label.
     #   This is an advanced option and should only be changed if you know what you are doing.
     # @schema
     seLinuxOptions:
       type: "spc_t"
+      level: "s0"
 
   # @schema
   # description: Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -1147,8 +1291,9 @@ odiglet:
 
   # @schema
   # description: |-
-  #   extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.
+  #   extended controls whether to use the extended odiglet image variant which includes legacy .NET and Ruby 2.7 instrumentation.
   #   When true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).
+  #   Selecting those distros still requires the legacy-dotnet-instrumentation and legacy-ruby-instrumentation profiles.
   #   Default: false
   # @schema
   extended: false

@@ -1,6 +1,7 @@
 # CRC (OpenShift Local) lifecycle.
 #   make -f crc.mk            list targets
 #   make -f crc.mk doctor     check prerequisites
+#   make -f crc.mk start      resume cluster (enables certified-operators catalog)
 #   make -f crc.mk install    latest odigos from the helm cache (VERSION=, TAG=, CHART=./helm/odigos)
 
 PULL_SECRET ?= $(HOME)/pull-secret.txt
@@ -85,6 +86,12 @@ require-secret:
 	  echo ""; \
 	  exit 1; }
 
+.PHONY: require-oc
+require-oc: require-crc
+	@test -x "$(OC_BIN)" || { echo "Missing oc at $(OC_BIN) - run 'make -f $(THIS) setup'"; exit 1; }
+	@$(OC_BIN) --context $(CTX) cluster-info >/dev/null 2>&1 || { \
+	  echo "Cluster not reachable on context $(CTX) - run 'make -f $(THIS) start'"; exit 1; }
+
 
 ##@ First-time setup
 
@@ -111,6 +118,7 @@ setup: require-crc require-secret ## Configure CRC and boot the first cluster (~
 start: require-crc require-secret ## Resume the cluster.
 	crc start -p $(PULL_SECRET)
 	kubectl config use-context $(CTX)
+	$(MAKE) -f $(THIS) operatorhub-certified
 
 .PHONY: stop
 stop: require-crc ## Suspend the cluster (seconds). Frees RAM only.
@@ -136,6 +144,38 @@ recreate: delete ## DESTROY the VM and build a fresh cluster (~15 min, no downlo
 purge: delete ## DESTROY the VM and the cache. Frees it all.
 	rm -rf $(HOME)/.crc/cache
 	-@du -sh $(HOME)/.crc 2>/dev/null
+
+##@ Certified Operators catalog
+
+.PHONY: operatorhub-certified
+operatorhub-certified: enable-certified-catalog wait-certified-catalog ## Enable OperatorHub defaults and wait for certified-operators
+
+.PHONY: enable-certified-catalog
+enable-certified-catalog: require-oc ## Patch OperatorHub so default sources (incl. certified-operators) are enabled
+	$(OC_BIN) --context $(CTX) patch operatorhub cluster --type merge -p \
+	  '{"spec":{"disableAllDefaultSources":false,"sources":[{"name":"certified-operators","disabled":false}]}}'
+
+.PHONY: wait-certified-catalog
+wait-certified-catalog: require-oc ## Wait until certified-operators CatalogSource is READY
+	$(OC_BIN) --context $(CTX) wait catalogsource/certified-operators -n openshift-marketplace \
+	  --for=jsonpath='{.status.connectionState.lastObservedState}'=READY --timeout=600s
+
+.PHONY: verify-certified-catalog
+verify-certified-catalog: require-oc ## List CatalogSources and packages from certified-operators
+	@echo "=== CatalogSources (openshift-marketplace) ==="
+	@$(OC_BIN) --context $(CTX) get catalogsource -n openshift-marketplace
+	@echo ""
+	@state=$$($(OC_BIN) --context $(CTX) get catalogsource certified-operators -n openshift-marketplace \
+	  -o jsonpath='{.status.connectionState.lastObservedState}' 2>/dev/null); \
+	if [ "$$state" != READY ]; then \
+	  echo "certified-operators catalog is not READY (state=$$state)"; exit 1; fi; \
+	echo "certified-operators: READY"
+	@echo ""
+	@echo "=== Sample packages (certified-operators) ==="
+	@$(OC_BIN) --context $(CTX) get packagemanifest -n openshift-marketplace -o go-template='{{range .items}}{{if eq .status.catalogSource "certified-operators"}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' \
+	  | sort | head -20
+	@count=$$($(OC_BIN) --context $(CTX) get packagemanifest -n openshift-marketplace -o go-template='{{range .items}}{{if eq .status.catalogSource "certified-operators"}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | wc -l | tr -d ' '); \
+	echo ""; echo "$$count package(s) from certified-operators"
 
 ##@ Odigos
 

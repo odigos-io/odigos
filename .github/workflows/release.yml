@@ -18,6 +18,8 @@ permissions:
 env:
   DOCKERHUB_ORG: "keyval"
   VICTORIA_METRICS_VERSION: "v1.144.0"
+  # Upstream Redis tag re-hosted as odigos-cache:<odigos-tag> (same pattern as VictoriaMetrics).
+  REDIS_VERSION: "8.10.2"
 
 jobs:
   package-helm:
@@ -66,25 +68,34 @@ jobs:
   build-cli:
     needs: [package-helm]
     runs-on: depot-ubuntu-24.04-8
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      is_feature_release: ${{ steps.release_type.outputs.is_feature_release }}
+      start_sha: ${{ steps.release_notes.outputs.start_sha }}
     steps:
       - name: Determine Tag Value
+        id: tag
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+            echo "tag=${{ github.event.client_payload.tag }}" >> $GITHUB_OUTPUT
           else
             echo "Unknown event type"
             exit 1
           fi
 
       - name: Check Release Type
+        id: release_type
         run: |
           TAG="${{ env.TAG }}"
 
           if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-feat\. ]]; then
             echo "IS_PRERELEASE=true" >> $GITHUB_ENV
             echo "IS_FEATURE_RELEASE=true" >> $GITHUB_ENV
+            echo "is_feature_release=true" >> $GITHUB_OUTPUT
             echo "This is a feature release: $TAG"
           elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
             echo "IS_PRERELEASE=true" >> $GITHUB_ENV
@@ -287,6 +298,7 @@ jobs:
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
 
       - name: Generate and update release notes
+        id: release_notes
         if: env.IS_FEATURE_RELEASE != 'true'
         uses: odigos-io/ci-core/generate-release-notes@main
         continue-on-error: true
@@ -401,6 +413,45 @@ jobs:
             us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
           digest: ${{ steps.vm-copy.outputs.digest }}
 
+      - name: Copy Redis image to Docker Hub and GCR as odigos-cache
+        id: cache-copy
+        env:
+          SOURCE_IMAGE: docker.io/library/redis:${{ env.REDIS_VERSION }}
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cache
+          GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cache
+          GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cache
+        run: |
+          oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+
+          # REDIS_VERSION is pinned per branch, so :latest here tracks whichever
+          # release owns it rather than the last one to run.
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+          else
+            echo "Skipping :latest mirror for ${{ env.TAG }}"
+          fi
+
+          # The copy preserves the upstream digest; capture it so our copies
+          # can be signed by digest.
+          echo "digest=$(oras resolve ${SOURCE_IMAGE})" >> "$GITHUB_OUTPUT"
+
+      # Redis is a re-host of an upstream image under our name. The signature
+      # attests that WE published this exact digest in our registries — not that
+      # we built it. Signed at the destinations because there is no upstream
+      # cosign signature to carry over.
+      - name: Sign re-hosted odigos-cache image
+        uses: odigos-io/ci-core/sign-oci@main
+        with:
+          refs: |
+            docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cache
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cache
+            us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cache
+          digest: ${{ steps.cache-copy.outputs.digest }}
+
       - name: Set notification messages
         run: |
           if [ "${{ env.IS_FEATURE_RELEASE }}" = "true" ]; then
@@ -473,3 +524,66 @@ jobs:
           success-description: "Helm charts published successfully. new version is ready"
           failure-description: "ERROR: Failed to publish Helm charts"
           tag: ${{ env.TAG }}
+
+  # Mirrors the tag into the "odigos" release pipeline in Linear with the issues that
+  # shipped in it. Its own job, not a step on build-cli: that keeps the third-party CLI
+  # away from the goreleaser and STS tokens, and keeps remote-action resolution — which
+  # happens during job setup, before continue-on-error applies — out of the job that
+  # publishes the release.
+  linear-release:
+    needs: [build-cli]
+    if: needs.build-cli.outputs.is_feature_release != 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build-cli.outputs.tag }}
+          fetch-depth: 0 # the scan walks commit history
+          fetch-tags: true
+
+      - name: Fetch the GitHub release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build-cli.outputs.tag }}
+        run: |
+          set -uo pipefail
+          if ! gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+               --json body --jq .body > release-notes.md; then
+            echo "::warning::could not read the GitHub release notes for ${TAG}"
+          fi
+          # Whitespace-only is worse than nothing: an empty note still occupies the slot
+          # in Linear and suppresses its own generation.
+          grep -q '[^[:space:]]' release-notes.md 2>/dev/null || rm -f release-notes.md
+
+      # A sync lands in the pipeline's first started stage, PRE, so a -pre build needs no
+      # promotion. Only Released is a completed stage, so "done on release" style
+      # automation fires for stable builds alone.
+      - name: Decide the release stage
+        id: stage
+        env:
+          TAG: ${{ needs.build-cli.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "name=Released" >> "$GITHUB_OUTPUT"
+          elif [[ "${TAG}" =~ -rc\.?[0-9]+$ ]]; then
+            echo "name=RC" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: odigos-io/ci-core/linear-release@main
+        with:
+          access-key: ${{ secrets.LINEAR_RELEASE_ACCESS_KEY }}
+          name: ${{ needs.build-cli.outputs.tag }}
+          version: ${{ needs.build-cli.outputs.tag }}
+          # generate-release-notes already resolved the range for this tag; reusing it
+          # keeps the issues attached here and the notes on the release in step.
+          base-ref: ${{ needs.build-cli.outputs.start_sha }}
+          release-notes: release-notes.md
+          stage: ${{ steps.stage.outputs.name }}
+          links: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.build-cli.outputs.tag }}
+
