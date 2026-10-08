@@ -627,6 +627,81 @@ type InsightsConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+type LiveTrafficLearningAutomaticRulesConfiguration struct {
+	// Enabled, when true, turns on live-traffic automatic rules: learned URL
+	// templatization rules that meet the ruleComputation thresholds are applied
+	// for you. That includes static exact-path rules and dynamic rules whose
+	// templated segments have high certainty. Opt-in; nil or false keeps
+	// live-traffic automatic rules off (rules are only suggested).
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type LiveTrafficLearningRuleComputationConfiguration struct {
+	// MinObservationsForRule is the minimum number of path observations
+	// required before a rule is recommended in the UI, and before it is applied
+	// as a live-traffic automatic rule when AutomaticRules.Enabled. Defaults to
+	// 100 when unset.
+	MinObservationsForRule *int `json:"minObservationsForRule,omitempty" yaml:"minObservationsForRule,omitempty"`
+
+	// MinCardinalityForTemplating is the min cardinality for templating: minimum
+	// number of distinct child segment values required before a path segment is
+	// collapsed into a templated placeholder ({id}) in recommended and
+	// live-traffic automatic rules. Below this threshold, high-branching
+	// segments stay as wildcards (*). Additive with MinObservationsForRule
+	// and the remaining learning checks. Defaults to 20 when unset.
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty" yaml:"minCardinalityForTemplating,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type LiveTrafficLearningConfiguration struct {
+	// Enabled, when true, enables learning URL templatization rules from
+	// live traffic (HTTP spans with a path but no http.route / url.template).
+	// Enterprise-only; disabled unless explicitly true.
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	// MaxExamplePathsPerWorkload is the maximum number of distinct unmatched
+	// HTTP paths stored per workload for live-traffic learning. Each workload
+	// has separate server (inbound) and client (outbound) collections; this
+	// limit applies to each collection independently (not to their sum). A
+	// larger number can increase the accuracy and speed of automatic
+	// live-traffic rules, but requires more resources. Defaults to 5000 when
+	// unset.
+	MaxExamplePathsPerWorkload *int `json:"maxExamplePathsPerWorkload,omitempty" yaml:"maxExamplePathsPerWorkload,omitempty"`
+
+	// PathExampleIdleTTL is how long an unmatched path example is kept after
+	// its last observation (Go duration, e.g. "48h"). Each increment refreshes
+	// the TTL (sliding idle window). Expired paths free quota for new examples.
+	// Defaults to 48h (2 days) when unset.
+	PathExampleIdleTTL string `json:"pathExampleIdleTTL,omitempty" yaml:"pathExampleIdleTTL,omitempty"`
+
+	// LearningInterval is how often the instrumentor runs the live-traffic
+	// learning cycle (Go duration, e.g. "30s"): checking for new URL
+	// templatization rules and garbage-collecting path examples in the shared
+	// cache. Smaller intervals react faster and reclaim quota sooner but use
+	// more instrumentor resources. Defaults to 30s when unset.
+	LearningInterval string `json:"learningInterval,omitempty" yaml:"learningInterval,omitempty"`
+
+	// RuleComputation holds thresholds used when computing URL templatization
+	// rules from live traffic (recommendations and automatic apply).
+	RuleComputation *LiveTrafficLearningRuleComputationConfiguration `json:"ruleComputation,omitempty" yaml:"ruleComputation,omitempty"`
+
+	// AutomaticRules controls live-traffic automatic rules — whether learned
+	// rules are applied for you when they meet the ruleComputation thresholds.
+	AutomaticRules *LiveTrafficLearningAutomaticRulesConfiguration `json:"automaticRules,omitempty" yaml:"automaticRules,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type UrlTemplatizationCardinalityControlConfiguration struct {
+	LiveTrafficLearning *LiveTrafficLearningConfiguration `json:"liveTrafficLearning,omitempty" yaml:"liveTrafficLearning,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type CardinalityControlConfiguration struct {
+	UrlTemplatization *UrlTemplatizationCardinalityControlConfiguration `json:"urlTemplatization,omitempty" yaml:"urlTemplatization,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -697,6 +772,8 @@ type OdigosConfiguration struct {
 	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
 
 	Insights *InsightsConfiguration `json:"insights,omitempty" yaml:"insights,omitempty"`
+
+	CardinalityControl *CardinalityControlConfiguration `json:"cardinalityControl,omitempty" yaml:"cardinalityControl,omitempty"`
 }
 
 // ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
@@ -721,4 +798,20 @@ func InsightsPipelineActive(a *InsightsConfiguration) bool {
 // explicitly enabled on this configuration.
 func (o *OdigosConfiguration) InsightsEnabled() bool {
 	return o != nil && InsightsPipelineActive(o.Insights)
+}
+
+// UrlTemplatizationLiveTrafficLearningActive reports whether traffic-based URL
+// templatization rule learning is enabled. Opt-in: Enabled must be explicitly true.
+func UrlTemplatizationLiveTrafficLearningActive(c *CardinalityControlConfiguration) bool {
+	return c != nil &&
+		c.UrlTemplatization != nil &&
+		c.UrlTemplatization.LiveTrafficLearning != nil &&
+		c.UrlTemplatization.LiveTrafficLearning.Enabled != nil &&
+		*c.UrlTemplatization.LiveTrafficLearning.Enabled
+}
+
+// UrlTemplatizationLiveTrafficLearningEnabled reports whether traffic-based URL
+// templatization rule computation is explicitly enabled on this configuration.
+func (o *OdigosConfiguration) UrlTemplatizationLiveTrafficLearningEnabled() bool {
+	return o != nil && UrlTemplatizationLiveTrafficLearningActive(o.CardinalityControl)
 }

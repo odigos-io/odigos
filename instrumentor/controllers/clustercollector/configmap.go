@@ -10,13 +10,13 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/instrumentor/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
+	"github.com/odigos-io/odigos/instrumentor/controllers/common"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -203,9 +203,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
 	var insightsCfg *odigoscommon.InsightsConfiguration
+	var cardinalityControlCfg *odigoscommon.CardinalityControlConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
 		insightsCfg = effectiveInsightsConfig(odigosCfg.Insights, tier)
+		cardinalityControlCfg = effectiveCardinalityControl(odigosCfg.CardinalityControl, tier)
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
@@ -247,6 +249,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				addEnterpriseAuthExtension(c)
 			}
 			if err := addInsightsGatewayExporter(c, env.GetCurrentNamespace(), insightsCfg); err != nil {
+				return err
+			}
+			if err := addUrlTemplatizationUnmatchedExporter(c, env.GetCurrentNamespace(), cardinalityControlCfg); err != nil {
 				return err
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}

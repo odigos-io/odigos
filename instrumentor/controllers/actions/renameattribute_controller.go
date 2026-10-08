@@ -19,6 +19,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -85,13 +86,21 @@ func renameAttributeConfig(cfg map[string]string, signals []common.Observability
 		return TransformProcessorConfig{}, fmt.Errorf("Signals must be set")
 	}
 
-	// Every rename produces 2 OTTL statement
-	ottlStatements := make([]string, 2*len(cfg))
-	i := 0
-	for from, to := range cfg {
-		ottlStatements[i] = fmt.Sprintf("set(attributes[\"%s\"], attributes[\"%s\"])", to, from)
-		ottlStatements[i+1] = fmt.Sprintf("delete_key(attributes, \"%s\")", from)
-		i += 2
+	// Sort keys so Processor Spec is stable across reconciles. Ranging a map is
+	// non-deterministic and would keep SSA-patching the owned Processor forever.
+	keys := make([]string, 0, len(cfg))
+	for from := range cfg {
+		keys = append(keys, from)
+	}
+	slices.Sort(keys)
+
+	ottlStatements := make([]string, 0, 2*len(cfg))
+	for _, from := range keys {
+		to := cfg[from]
+		ottlStatements = append(ottlStatements,
+			fmt.Sprintf("set(attributes[\"%s\"], attributes[\"%s\"])", to, from),
+			fmt.Sprintf("delete_key(attributes, \"%s\")", from),
+		)
 	}
 
 	for _, signal := range signals {
