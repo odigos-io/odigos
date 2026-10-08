@@ -71,6 +71,12 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 	kubeVersion := commonconfig.ControllerConfig.K8sVersion
 	logger := commonlogger.FromContext(ctx)
 
+	// every comparison below dereferences kubeVersion, so a nil version would panic the
+	// whole cluster collector reconcile instead of surfacing the missing feature detection.
+	if kubeVersion == nil {
+		return fmt.Errorf("kubernetes version was not detected, cannot select an HorizontalPodAutoscaler API version")
+	}
+
 	useCustomMetric := false
 	apiSvc := &apiregv1.APIService{}
 	if err := c.Get(ctx, client.ObjectKey{Name: k8sconsts.CustomMetricsAPIServiceName}, apiSvc); err == nil {
