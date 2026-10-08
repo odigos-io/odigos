@@ -28,9 +28,9 @@ imagePrefix:
 #   This is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.
 #   Example:
 #     images:
-#       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
+#       instrumentor: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
-#   Supported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,
+#   Supported component names: collector, enterprise-collector, ui, enterprise-ui,
 #     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents,
 #     enterprise-insights, victoria-metrics, cache
 # additionalProperties: true
@@ -645,11 +645,6 @@ collectorNode:
       #   If set to 0, the retry will continue indefinitely until the data is sent successfully.
       # @schema
       maxElapsedTime: 300s
-
-# @schema
-# description: Compatibility stub for the autoscaler Deployment (replicas 0). Controllers now run in the instrumentor.
-# @schema
-autoscaler: {}
 
 # @schema
 # description: Configuration for the UI component.

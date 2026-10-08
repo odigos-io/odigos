@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-autoscaler
     odigos.io/system-object: "true"
-  name: {{ .Values.autoscaler.deploymentName | default "odigos-autoscaler" }}
+  name: odigos-autoscaler
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 0

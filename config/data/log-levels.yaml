@@ -16,28 +16,6 @@ spec:
           - warn
           - info
           - debug
-    - displayName: Autoscaler Log Level
-      componentType: dropdown
-      isHelmOnly: false
-      description: Set the log level for the autoscaler component.
-      helmValuePath: componentLogLevels.autoscaler
-      componentProps:
-        options:
-          - error
-          - warn
-          - info
-          - debug
-    - displayName: Scheduler Log Level
-      componentType: dropdown
-      isHelmOnly: false
-      description: Set the log level for the scheduler component.
-      helmValuePath: componentLogLevels.scheduler
-      componentProps:
-        options:
-          - error
-          - warn
-          - info
-          - debug
     - displayName: Instrumentor Log Level
       componentType: dropdown
       isHelmOnly: false
