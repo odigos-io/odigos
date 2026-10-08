@@ -355,7 +355,7 @@ data:
       - {{ include "odigos.enterpriseRegistryPullSecretName" . | quote }}
       {{- end }}
     {{- end }}
-    {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
+    {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling .Values.sampling.traceSurge }}
     sampling:
       {{- if ne .Values.sampling.dryRun nil }}
       dryRun: {{ .Values.sampling.dryRun }}
@@ -391,6 +391,24 @@ data:
         {{- end }}
         {{- if .Values.sampling.k8sHealthProbesSampling.keepPercentage }}
         keepPercentage: {{ .Values.sampling.k8sHealthProbesSampling.keepPercentage }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.sampling.traceSurge }}
+      traceSurge:
+        {{- if ne .Values.sampling.traceSurge.maxActiveSurges nil }}
+        maxActiveSurges: {{ .Values.sampling.traceSurge.maxActiveSurges }}
+        {{- end }}
+        {{- if ne .Values.sampling.traceSurge.maxBoostedWorkloads nil }}
+        maxBoostedWorkloads: {{ .Values.sampling.traceSurge.maxBoostedWorkloads }}
+        {{- end }}
+        {{- if .Values.sampling.traceSurge.maxDuration }}
+        maxDuration: {{ .Values.sampling.traceSurge.maxDuration | quote }}
+        {{- end }}
+        {{- if .Values.sampling.traceSurge.evaluationWindow }}
+        evaluationWindow: {{ .Values.sampling.traceSurge.evaluationWindow | quote }}
+        {{- end }}
+        {{- if .Values.sampling.traceSurge.evaluationInterval }}
+        evaluationInterval: {{ .Values.sampling.traceSurge.evaluationInterval | quote }}
         {{- end }}
       {{- end }}
     {{- end }}

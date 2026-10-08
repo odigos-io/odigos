@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
+	controllermetric "sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
@@ -17,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/odigospro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/podsmanifestinjectionstatus"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
+	"github.com/odigos-io/odigos/instrumentor/controllers/tracesurge"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -205,6 +209,22 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 	err = agentenabled.SetupWithManager(mgr, dp)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
+	}
+
+	// the trace surge evaluator's metrics, served on the controller-runtime metrics endpoint with the
+	// controllers' own metrics. it reports none until trace surge rules exist.
+	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(controllermetric.Registry), otelprometheus.WithoutTargetInfo())
+	if err != nil {
+		return fmt.Errorf("failed to create the trace surge metrics exporter: %w", err)
+	}
+	meterProvider := metricsdk.NewMeterProvider(metricsdk.WithReader(exporter))
+	err = mgr.Add(&tracesurge.Evaluator{
+		Client: mgr.GetClient(),
+		Logger: mgr.GetLogger().WithName("tracesurge"),
+		Meter:  meterProvider.Meter("github.com/odigos-io/odigos/instrumentor/controllers/tracesurge"),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to add trace surge evaluator: %w", err)
 	}
 
 	err = sourceinstrumentation.SetupWithManager(mgr, k8sVersion)
