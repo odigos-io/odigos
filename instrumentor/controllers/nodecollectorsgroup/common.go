@@ -3,6 +3,7 @@ package nodecollectorsgroup
 import (
 	"context"
 	"errors"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/metrics"
 	"slices"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -251,7 +252,30 @@ func getOwnMetricsSettings(odigosConfiguration *common.OdigosConfiguration) *odi
 	}
 }
 
-func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDestinations odigosv1.DestinationList) *odigosv1.CollectorsGroup {
+// agentSpanMetricsSettings says why agents record span metrics, or nil when none do: span metrics
+// in the agents are enabled for the metrics destinations, or trace surge rules have the agents they
+// cover record them for odigos insights.
+func agentSpanMetricsSettings(odigosConfiguration *common.OdigosConfiguration, metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, samplings *odigosv1.SamplingList) *odigosv1.AgentSpanMetricsSettings {
+	destinations := metricsConfig != nil && metrics.AgentSpanMetricsEnabled(odigosConfiguration)
+	insights := common.InsightsPipelineActive(odigosConfiguration.Insights) && hasTraceSurgeRule(samplings)
+	if !destinations && !insights {
+		return nil
+	}
+	return &odigosv1.AgentSpanMetricsSettings{Destinations: destinations, Insights: insights}
+}
+
+func hasTraceSurgeRule(samplings *odigosv1.SamplingList) bool {
+	for i := range samplings.Items {
+		for _, op := range samplings.Items[i].Spec.NoisyOperations {
+			if op.Surge != nil && !op.Disabled {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDestinations odigosv1.DestinationList, samplings *odigosv1.SamplingList) *odigosv1.CollectorsGroup {
 
 	var metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings
 
@@ -277,6 +301,13 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
 		}
 		updateMetricsSettingsForDestination(metricsConfig, &odigosConfiguration, destination, destinationTypeManifest)
+	}
+
+	if agentSpanMetrics := agentSpanMetricsSettings(&odigosConfiguration, metricsConfig, samplings); agentSpanMetrics != nil {
+		if metricsConfig == nil {
+			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
+		}
+		metricsConfig.AgentSpanMetrics = agentSpanMetrics
 	}
 
 	ownMetricsSettings := getOwnMetricsSettings(&odigosConfiguration)
@@ -358,7 +389,13 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 		return err // list will return empty list if no destinations are found and not error
 	}
 
-	nodeCollectorGroup := newNodeCollectorGroup(odigosConfiguration, allDestinations)
+	// the trace surge rules, which have the agents they cover record span metrics.
+	samplings := &odigosv1.SamplingList{}
+	if err := c.List(ctx, samplings, client.InNamespace(namespace)); err != nil {
+		return err
+	}
+
+	nodeCollectorGroup := newNodeCollectorGroup(odigosConfiguration, allDestinations, samplings)
 	err = utils.SetOwnerControllerToInstrumentorDeployment(ctx, c, nodeCollectorGroup, scheme)
 	if err != nil {
 		return err
