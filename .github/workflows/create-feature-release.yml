@@ -17,6 +17,11 @@ on:
         required: false
         type: string
         default: main
+      rebuild_vllm:
+        description: "Rebuild odigos-enterprise-vllm (bake new Coder-AWQ weights). Default retags the previous release image."
+        required: false
+        type: boolean
+        default: false
 
 permissions: read-all
 
@@ -76,6 +81,7 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
           ENTERPRISE_BRANCH: ${{ inputs.enterprise_branch || 'main' }}
           OSS_BRANCH: ${{ inputs.oss_branch || 'main' }}
+          REBUILD_VLLM: ${{ inputs.rebuild_vllm && 'true' || 'false' }}
         run: |
           if [[ -z "$ENTERPRISE_BRANCH" ]]; then
             echo "Error: enterprise_branch is required"
@@ -101,7 +107,8 @@ jobs:
 
           git tag -a "$TAG" \
             -m "enterprise_branch=${ENTERPRISE_BRANCH}" \
-            -m "oss_branch=${OSS_BRANCH}"
+            -m "oss_branch=${OSS_BRANCH}" \
+            -m "rebuild_vllm=${REBUILD_VLLM}"
           git push origin "$TAG"
           echo "Pushed tag $TAG (enterprise branch ${ENTERPRISE_BRANCH}, oss branch ${OSS_BRANCH}) to kick off the release process"
 

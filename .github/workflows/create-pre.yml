@@ -2,6 +2,12 @@ name: 'Create Pre Release'
 
 on:
   workflow_dispatch:
+    inputs:
+      rebuild_vllm:
+        description: "Rebuild odigos-enterprise-vllm (bake new Coder-AWQ weights). Default retags the previous release image."
+        required: false
+        type: boolean
+        default: false
 
 permissions: read-all
 
@@ -29,9 +35,15 @@ jobs:
         id: version
         uses: odigos-io/ci-core/semver-info@main
 
+      - name: Configure Git for bot commits
+        run: |
+          git config user.email "bot@odigos.io"
+          git config user.name "Odigos Release Bot"
+
       - name: Create and push pre-release tag
         env:
           TAG: ${{ steps.version.outputs.next_pre }}
+          REBUILD_VLLM: ${{ inputs.rebuild_vllm && 'true' || 'false' }}
         run: |
 
           if git rev-parse "$TAG" >/dev/null 2>&1; then
@@ -39,7 +51,7 @@ jobs:
             exit 1
           fi
 
-          git tag "$TAG"
+          git tag -a "$TAG" -m "rebuild_vllm=${REBUILD_VLLM}"
           git push origin "$TAG"
           echo "Pushed tag $TAG to kick off the release process"
 

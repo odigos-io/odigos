@@ -2,6 +2,12 @@ name: 'Create Release Candidate'
 
 on:
   workflow_dispatch:
+    inputs:
+      rebuild_vllm:
+        description: "Rebuild odigos-enterprise-vllm (bake new Coder-AWQ weights). Default retags the previous release image."
+        required: false
+        type: boolean
+        default: false
 
 permissions: read-all
 
@@ -175,9 +181,15 @@ jobs:
                 --head $PR_BRANCH \
                 --title "$PR_TITLE" \
                 --label "prerelease" \
-                --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
+                --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}
+
+                Rebuild vLLM: ${{ github.event.inputs.rebuild_vllm }}"
             else
               echo "PR for branch $PR_BRANCH already exists"
+              gh pr edit "$(gh pr list --head $PR_BRANCH --json number --jq '.[0].number')" \
+                --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}
+
+                Rebuild vLLM: ${{ github.event.inputs.rebuild_vllm }}"
             fi
           else
             echo "Creating new PR branch $PR_BRANCH..."
@@ -196,7 +208,9 @@ jobs:
               --head $PR_BRANCH \
               --title "$PR_TITLE" \
               --label "prerelease" \
-              --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
+              --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}
+
+              Rebuild vLLM: ${{ github.event.inputs.rebuild_vllm }}"
           fi
 
       - name: Notify Slack

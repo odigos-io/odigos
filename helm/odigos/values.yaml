@@ -31,7 +31,7 @@ imagePrefix:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,
-#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights, enterprise-interrogation
+#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights, enterprise-interrogation, enterprise-vllm
 # additionalProperties: true
 # @schema
 images: {}
@@ -183,8 +183,10 @@ transactionIdentity:
 #   When enabled, also deploys bundled ClickHouse (odigos-insights-clickhouse; shared with
 #   insights) in the Odigos namespace if not already present, deploys the
 #   odigos-interrogation control-loop service (enterprise; requires on-prem token),
-#   and deploys bundled LiteLLM (odigos-litellm). Configure provider, model
-#   name, and API key under interrogation.model.
+#   and deploys bundled LiteLLM (odigos-litellm). Configure a cloud provider under
+#   interrogation.model, or enable interrogation.vllm for odigos-enterprise-vllm
+#   (weights baked into the image; no Hugging Face at runtime). Optionally set
+#   model.apiBase to point LiteLLM at a BYO inference endpoint.
 # @schema
 interrogation:
   # @schema
@@ -228,29 +230,41 @@ interrogation:
   # @schema
   # logLevel: info
 
-  # User-facing LLM config: provider credentials and upstream model id for LiteLLM.
-  # The worker always calls in-cluster odigos-litellm with the fixed alias
-  # "interrogation" (see enterprise interrogation model client).
+  # @schema
+  # description: |-
+  #   User-facing LLM config (provider credentials and upstream model id for LiteLLM).
+  #   The worker always calls in-cluster odigos-litellm with the fixed alias
+  #   "interrogation" (see enterprise interrogation model client).
+  #   When interrogation.vllm.enabled is true, LiteLLM ignores provider/name/apiKey and
+  #   routes to the bundled odigos-vllm Service instead.
   # @schema
   model:
     # @schema
-    # description: LiteLLM provider prefix (openai, gemini, anthropic, etc.).
+    # description: LiteLLM provider prefix (openai, gemini, anthropic, hosted_vllm, etc.). Ignored when vllm.enabled.
     # @schema
     provider: openai
     # @schema
-    # description: Model name at that provider (e.g. gpt-4o-mini). Routed as provider/name.
+    # description: Model name at that provider (e.g. gpt-4o-mini). Ignored when vllm.enabled (uses vllm.model).
     # @schema
     name: gpt-4o-mini
     # @schema
-    # description: Provider API key. Stored in Secret odigos-litellm (upstream-api-key).
+    # description: Provider API key. Stored in Secret odigos-litellm (upstream-api-key). Not required when vllm.enabled.
     # @schema
     apiKey: ""
+    # @schema
+    # description: |-
+    #   Optional OpenAI-compatible api_base for LiteLLM (BYO inference). When set and
+    #   vllm.enabled is false, LiteLLM uses this endpoint with model.provider/name.
+    #   Example: http://my-vllm.ml.svc:8000/v1
+    # @schema
+    apiBase: ""
     # @schema
     # description: When true, apply parsed probes as InstrumentationRules. Default is dry-run.
     # @schema
     autoApply: false
 
-  # Internal LiteLLM deployment (image/resources/scheduling). Not user-facing except mirrors.
+  # @schema
+  # description: Internal LiteLLM deployment (image/resources/scheduling). Not user-facing except mirrors.
   # @schema
   litellm:
     # @schema
@@ -269,6 +283,80 @@ interrogation:
         memory: 512Mi
     tolerations: []
     affinity: {}
+
+  # @schema
+  # description: Bundled in-cluster vLLM (off by default). Uses odigos-enterprise-vllm with baked-in weights. Defaults request a GPU via resources; override resources and scheduling as needed.
+  # @schema
+  vllm:
+    # @schema
+    # description: When true, deploys odigos-vllm and points LiteLLM at it (hosted_vllm).
+    # @schema
+    enabled: false
+    # @schema
+    # description: |-
+    #   Image for odigos-enterprise-vllm. Empty repository uses the same registry
+    #   resolution as other enterprise components (odigos-enterprise-vllm).
+    #   Override repository for local/dev pulls (e.g. depot or a private registry).
+    # @schema
+    image:
+      repository: ""
+      # @schema
+      # description: Image tag. Defaults to global image.tag / Chart.AppVersion.
+      # @schema
+      tag: ""
+      pullPolicy: IfNotPresent
+    # @schema
+    # description: Path to baked-in weights inside the image (must match llm/Dockerfile MODEL_DIR).
+    # @schema
+    modelPath: /models/interrogation
+    # @schema
+    # description: OpenAI model id vLLM serves (--served-model-name). LiteLLM routes hosted_vllm/<name>.
+    # @schema
+    servedModelName: interrogation
+    # @schema
+    # description: vLLM --max-model-len.
+    # @schema
+    maxModelLen: 8192
+    # @schema
+    # description: vLLM --gpu-memory-utilization (0–1).
+    # @schema
+    gpuMemoryUtilization: "0.90"
+    # @schema
+    # description: Pod resources for odigos-vllm (cpu, memory, and optional nvidia.com/gpu). Override via values file or --set-json.
+    # additionalProperties: true
+    # @schema
+    resources:
+      # @schema
+      # additionalProperties: true
+      # @schema
+      requests:
+        cpu: "2"
+        memory: 8Gi
+        "nvidia.com/gpu": "1"
+      # @schema
+      # additionalProperties: true
+      # @schema
+      limits:
+        cpu: "7"
+        memory: 16Gi
+        "nvidia.com/gpu": "1"
+    # @schema
+    # additionalProperties: true
+    # description: Optional GPU-pool nodeSelector (does not inherit the global chart selector).
+    # @schema
+    nodeSelector: {}
+    # @schema
+    # description: Tolerations for GPU node taints (commonly Exists NoSchedule on the GPU resource).
+    # @schema
+    tolerations: []
+    # @schema
+    # additionalProperties: true
+    # @schema
+    affinity: {}
+    # @schema
+    # description: Priority class name for the vLLM pod.
+    # @schema
+    # priorityClassName: ''
 
 # @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
@@ -1444,13 +1532,13 @@ insights:
 
   # @schema
   # description: |-
-#   Bundled ClickHouse for insights and interrogation. Deployed when either
-#   insights.enabled or interrogation.enabled is true. Single replica, no
-#   replication, no backups. Data is on a PVC by default
-#   (insights.clickhouse.storage.persistence); set that to false for
-#   emptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at
-#   one replica. User and database name stay hardcoded (odigos_insights);
-#   image, resources, scheduling, and storage are tunable.
+  #   Bundled ClickHouse for insights and interrogation. Deployed when either
+  #   insights.enabled or interrogation.enabled is true. Single replica, no
+  #   replication, no backups. Data is on a PVC by default
+  #   (insights.clickhouse.storage.persistence); set that to false for
+  #   emptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at
+  #   one replica. User and database name stay hardcoded (odigos_insights);
+  #   image, resources, scheduling, and storage are tunable.
   # @schema
   clickhouse:
     # @schema
@@ -2004,7 +2092,7 @@ traceCorrelations:
       - rpc.method
       - http.route
       - http.status_code
-      - http.response.status_code	
+      - http.response.status_code
       - http.method
       - http.request.method
       - server.address

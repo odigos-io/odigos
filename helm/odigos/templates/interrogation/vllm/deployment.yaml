@@ -1,0 +1,94 @@
+{{- if and (include "odigos.vllmEnabled" .) (include "odigos.secretExists" .) }}
+{{- $imageTag := .Values.interrogation.vllm.image.tag | default .Values.image.tag | default .Chart.AppVersion }}
+{{- $modelPath := .Values.interrogation.vllm.modelPath | default "/models/interrogation" }}
+{{- $servedModelName := .Values.interrogation.vllm.servedModelName | default "interrogation" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-vllm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-vllm
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-vllm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-vllm
+    spec:
+      {{- /* Do not inherit the global chart nodeSelector. Pin with
+           interrogation.vllm.nodeSelector when needed (prefer -f / --set-json
+           for dotted label keys). */}}
+      {{- with .Values.interrogation.vllm.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.interrogation.vllm.priorityClassName }}
+      priorityClassName: {{ .Values.interrogation.vllm.priorityClassName }}
+      {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      containers:
+        - name: vllm
+          {{- if .Values.interrogation.vllm.image.repository }}
+          image: "{{ .Values.interrogation.vllm.image.repository }}:{{ $imageTag }}"
+          {{- else }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-vllm" "Tag" $imageTag) }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.interrogation.vllm.image.pullPolicy | default "IfNotPresent" }}
+          args:
+            - --model
+            - {{ $modelPath | quote }}
+            - --served-model-name
+            - {{ $servedModelName | quote }}
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8000"
+            - --max-model-len
+            - {{ .Values.interrogation.vllm.maxModelLen | default 8192 | quote }}
+            - --gpu-memory-utilization
+            - {{ .Values.interrogation.vllm.gpuMemoryUtilization | default "0.90" | quote }}
+            - --dtype
+            - auto
+          ports:
+            - name: http
+              containerPort: 8000
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.interrogation.vllm.resources | nindent 12 }}
+      {{- with .Values.interrogation.vllm.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.interrogation.vllm.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+{{- end }}

@@ -667,7 +667,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights, enterprise-interrogation, enterprise-vllm",
       "required": [],
       "title": "images"
     },
@@ -712,7 +712,7 @@
         },
         "clickhouse": {
           "additionalProperties": false,
-          "description": "Bundled ClickHouse for the insights service. Single replica, no\nreplication, no backups. Data is on a PVC by default\n(insights.clickhouse.storage.persistence); set that to false for\nemptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at\none replica. User and database name stay hardcoded (odigos_insights);\nimage, resources, scheduling, and storage are tunable.",
+          "description": "Bundled ClickHouse for insights and interrogation. Deployed when either\ninsights.enabled or interrogation.enabled is true. Single replica, no\nreplication, no backups. Data is on a PVC by default\n(insights.clickhouse.storage.persistence); set that to false for\nemptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at\none replica. User and database name stay hardcoded (odigos_insights);\nimage, resources, scheduling, and storage are tunable.",
           "properties": {
             "affinity": {
               "additionalProperties": true,
@@ -1158,7 +1158,7 @@
     },
     "interrogation": {
       "additionalProperties": false,
-      "description": "Interrogation loop (off by default): correlates traces and profiles in ClickHouse\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.\nWhen enabled, also deploys bundled ClickHouse, odigos-interrogation, and odigos-litellm.\nSet interrogation.model provider, name, and apiKey for the upstream LLM.",
+      "description": "Interrogation loop (off by default): correlates traces and profiles in ClickHouse\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.\nWhen enabled, also deploys bundled ClickHouse (odigos-insights-clickhouse; shared with\ninsights) in the Odigos namespace if not already present, deploys the\nodigos-interrogation control-loop service (enterprise; requires on-prem token),\nand deploys bundled LiteLLM (odigos-litellm). Configure a cloud provider under\ninterrogation.model, or enable interrogation.vllm for odigos-enterprise-vllm\n(weights baked into the image; no Hugging Face at runtime). Optionally set\nmodel.apiBase to point LiteLLM at a BYO inference endpoint.",
       "properties": {
         "affinity": {
           "additionalProperties": true,
@@ -1167,64 +1167,23 @@
         },
         "enabled": {
           "default": "false",
-          "description": "When true, enables the interrogation loop, bundled ClickHouse when needed, odigos-interrogation, and odigos-litellm.",
+          "description": "When true, enables the interrogation loop (trace–profile correlation) on the collector, deploys bundled ClickHouse when needed, deploys the interrogation service and odigos-litellm.",
           "required": [],
           "title": "enabled"
         },
-        "logLevel": {
-          "default": "info",
-          "description": "Log level for the interrogation service (falls back to global logLevel).",
-          "required": [],
-          "title": "logLevel"
-        },
-        "model": {
-          "additionalProperties": false,
-          "description": "Upstream LLM for interrogation analysis (routed via in-cluster odigos-litellm).",
-          "properties": {
-            "apiKey": {
-              "default": "",
-              "description": "Provider API key (OpenAI, Gemini, etc.). Stored in Secret odigos-litellm.",
-              "required": [],
-              "title": "apiKey",
-              "type": "string"
-            },
-            "autoApply": {
-              "default": false,
-              "description": "When true, apply parsed probes as InstrumentationRules.",
-              "required": [],
-              "title": "autoApply",
-              "type": "boolean"
-            },
-            "name": {
-              "default": "gpt-4o-mini",
-              "description": "Model name at the provider (combined with provider for LiteLLM).",
-              "required": [],
-              "title": "name",
-              "type": "string"
-            },
-            "provider": {
-              "default": "openai",
-              "description": "LiteLLM provider prefix (openai, gemini, anthropic, ...).",
-              "required": [],
-              "title": "provider",
-              "type": "string"
-            }
-          },
-          "required": [],
-          "title": "model",
-          "type": "object"
-        },
         "litellm": {
           "additionalProperties": false,
-          "description": "Internal odigos-litellm deployment (image and resources).",
+          "description": "Internal LiteLLM deployment (image/resources/scheduling). Not user-facing except mirrors.",
           "properties": {
             "affinity": {
-              "additionalProperties": true,
+              "additionalProperties": false,
               "required": [],
-              "title": "affinity"
+              "title": "affinity",
+              "type": "object"
             },
             "image": {
               "additionalProperties": false,
+              "description": "LiteLLM proxy image (third-party).",
               "properties": {
                 "pullPolicy": {
                   "default": "IfNotPresent",
@@ -1243,18 +1202,7 @@
                 }
               },
               "required": [],
-              "title": "image",
-              "type": "object"
-            },
-            "nodeSelector": {
-              "default": "",
-              "required": [],
-              "title": "nodeSelector"
-            },
-            "priorityClassName": {
-              "default": "",
-              "required": [],
-              "title": "priorityClassName"
+              "title": "image"
             },
             "resources": {
               "additionalProperties": false,
@@ -1264,10 +1212,12 @@
                   "properties": {
                     "cpu": {
                       "default": "500m",
+                      "title": "cpu",
                       "type": "string"
                     },
                     "memory": {
                       "default": "512Mi",
+                      "title": "memory",
                       "type": "string"
                     }
                   },
@@ -1280,10 +1230,12 @@
                   "properties": {
                     "cpu": {
                       "default": "50m",
+                      "title": "cpu",
                       "type": "string"
                     },
                     "memory": {
                       "default": "256Mi",
+                      "title": "memory",
                       "type": "string"
                     }
                   },
@@ -1298,15 +1250,58 @@
             },
             "tolerations": {
               "items": {
-                "type": "object"
+                "required": []
               },
-              "required": [],
-              "title": "tolerations"
+              "title": "tolerations",
+              "type": "array"
             }
           },
           "required": [],
-          "title": "litellm",
-          "type": "object"
+          "title": "litellm"
+        },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for the interrogation service (falls back to global logLevel).",
+          "required": [],
+          "title": "logLevel"
+        },
+        "model": {
+          "additionalProperties": false,
+          "description": "User-facing LLM config (provider credentials and upstream model id for LiteLLM).\nThe worker always calls in-cluster odigos-litellm with the fixed alias\n\"interrogation\" (see enterprise interrogation model client).\nWhen interrogation.vllm.enabled is true, LiteLLM ignores provider/name/apiKey and\nroutes to the bundled odigos-vllm Service instead.",
+          "properties": {
+            "apiBase": {
+              "default": "",
+              "description": "Optional OpenAI-compatible api_base for LiteLLM (BYO inference). When set and\nvllm.enabled is false, LiteLLM uses this endpoint with model.provider/name.\nExample: http://my-vllm.ml.svc:8000/v1",
+              "required": [],
+              "title": "apiBase"
+            },
+            "apiKey": {
+              "default": "",
+              "description": "Provider API key. Stored in Secret odigos-litellm (upstream-api-key). Not required when vllm.enabled.",
+              "required": [],
+              "title": "apiKey"
+            },
+            "autoApply": {
+              "default": "false",
+              "description": "When true, apply parsed probes as InstrumentationRules. Default is dry-run.",
+              "required": [],
+              "title": "autoApply"
+            },
+            "name": {
+              "default": "gpt-4o-mini",
+              "description": "Model name at that provider (e.g. gpt-4o-mini). Ignored when vllm.enabled (uses vllm.model).",
+              "required": [],
+              "title": "name"
+            },
+            "provider": {
+              "default": "openai",
+              "description": "LiteLLM provider prefix (openai, gemini, anthropic, hosted_vllm, etc.). Ignored when vllm.enabled.",
+              "required": [],
+              "title": "provider"
+            }
+          },
+          "required": [],
+          "title": "model"
         },
         "nodeSelector": {
           "default": "",
@@ -1367,25 +1362,150 @@
         "tolerations": {
           "items": {
             "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
-            "properties": {
-              "effect": {
-                "type": "string"
-              },
-              "key": {
-                "type": "string"
-              },
-              "operator": {
-                "type": "string"
-              },
-              "value": {
-                "type": "string"
-              }
-            },
             "required": [],
             "type": "object"
           },
           "required": [],
           "title": "tolerations"
+        },
+        "vllm": {
+          "additionalProperties": false,
+          "description": "Bundled in-cluster vLLM (off by default). Uses odigos-enterprise-vllm with baked-in weights. Defaults request a GPU via resources; override resources and scheduling as needed.",
+          "properties": {
+            "affinity": {
+              "additionalProperties": true,
+              "required": [],
+              "title": "affinity"
+            },
+            "enabled": {
+              "default": "false",
+              "description": "When true, deploys odigos-vllm and points LiteLLM at it (hosted_vllm).",
+              "required": [],
+              "title": "enabled"
+            },
+            "gpuMemoryUtilization": {
+              "default": "0.90",
+              "description": "vLLM --gpu-memory-utilization (0–1).",
+              "required": [],
+              "title": "gpuMemoryUtilization"
+            },
+            "image": {
+              "additionalProperties": false,
+              "description": "Image for odigos-enterprise-vllm. Empty repository uses the same registry\nresolution as other enterprise components (odigos-enterprise-vllm).\nOverride repository for local/dev pulls (e.g. depot or a private registry).",
+              "properties": {
+                "pullPolicy": {
+                  "default": "IfNotPresent",
+                  "title": "pullPolicy",
+                  "type": "string"
+                },
+                "repository": {
+                  "default": "",
+                  "title": "repository",
+                  "type": "string"
+                },
+                "tag": {
+                  "default": "",
+                  "description": "Image tag. Defaults to global image.tag / Chart.AppVersion.",
+                  "required": [],
+                  "title": "tag"
+                }
+              },
+              "required": [],
+              "title": "image"
+            },
+            "maxModelLen": {
+              "default": "8192",
+              "description": "vLLM --max-model-len.",
+              "required": [],
+              "title": "maxModelLen"
+            },
+            "modelPath": {
+              "default": "/models/interrogation",
+              "description": "Path to baked-in weights inside the image (must match llm/Dockerfile MODEL_DIR).",
+              "required": [],
+              "title": "modelPath"
+            },
+            "nodeSelector": {
+              "additionalProperties": true,
+              "description": "Optional GPU-pool nodeSelector (does not inherit the global chart selector).",
+              "required": [],
+              "title": "nodeSelector"
+            },
+            "priorityClassName": {
+              "default": "",
+              "description": "Priority class name for the vLLM pod.",
+              "required": [],
+              "title": "priorityClassName"
+            },
+            "resources": {
+              "additionalProperties": true,
+              "description": "Pod resources for odigos-vllm (cpu, memory, and optional nvidia.com/gpu). Override via values file or --set-json.",
+              "properties": {
+                "limits": {
+                  "additionalProperties": true,
+                  "properties": {
+                    "cpu": {
+                      "default": "7",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "16Gi",
+                      "title": "memory",
+                      "type": "string"
+                    },
+                    "nvidia.com/gpu": {
+                      "default": "1",
+                      "title": "nvidia.com/gpu",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits"
+                },
+                "requests": {
+                  "additionalProperties": true,
+                  "properties": {
+                    "cpu": {
+                      "default": "2",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "8Gi",
+                      "title": "memory",
+                      "type": "string"
+                    },
+                    "nvidia.com/gpu": {
+                      "default": "1",
+                      "title": "nvidia.com/gpu",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests"
+                }
+              },
+              "required": [],
+              "title": "resources"
+            },
+            "servedModelName": {
+              "default": "interrogation",
+              "description": "OpenAI model id vLLM serves (--served-model-name). LiteLLM routes hosted_vllm/\u003cname\u003e.",
+              "required": [],
+              "title": "servedModelName"
+            },
+            "tolerations": {
+              "description": "Tolerations for GPU node taints (commonly Exists NoSchedule on the GPU resource).",
+              "items": {
+                "required": []
+              },
+              "required": [],
+              "title": "tolerations"
+            }
+          },
+          "required": [],
+          "title": "vllm"
         }
       },
       "required": [],
@@ -1819,6 +1939,19 @@
           "additionalProperties": false,
           "description": "Configuration for the data-collection container.",
           "properties": {
+            "appArmorProfile": {
+              "additionalProperties": false,
+              "description": "AppArmor profile for data-collection when gke.enabled and the profiling\npipeline is on (profiling.enabled or interrogation.enabled).\nGKE's default profile denies mkdir /sys/fs/bpf/otel, which the eBPF\nprofiler needs to pin traces_ctx_v1 for profile↔span links.\nIgnored when privileged, or when gke.enabled is false.",
+              "properties": {
+                "type": {
+                  "default": "Unconfined",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "appArmorProfile"
+            },
             "capabilities": {
               "description": "capabilities to add to the data-collection container when running non-privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nSYSLOG, SYS_RESOURCE, SYS_PTRACE, DAC_READ_SEARCH and CHECKPOINT_RESTORE are added automatically when profiling.enabled is true.",
               "items": {
@@ -1846,19 +1979,6 @@
               "description": "Run the data-collection container as a privileged container.",
               "required": [],
               "title": "privileged"
-            },
-            "appArmorProfile": {
-              "additionalProperties": false,
-              "description": "AppArmor profile for data-collection when gke.enabled and the profiling pipeline is on (profiling.enabled or interrogation.enabled). GKE's default profile denies mkdir /sys/fs/bpf/otel. Ignored when privileged.",
-              "properties": {
-                "type": {
-                  "default": "Unconfined",
-                  "title": "type",
-                  "type": "string"
-                }
-              },
-              "required": [],
-              "title": "appArmorProfile"
             },
             "seLinuxOptions": {
               "additionalProperties": false,
