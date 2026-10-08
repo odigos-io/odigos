@@ -61,18 +61,16 @@ func FetchOdigosWorkloads(
 	} else {
 		for i := 0; i < len(deployments.Items); i++ {
 			d := &deployments.Items[i]
-			target := WorkloadTarget{
+			if isDeprecatedStubDeployment(d) {
+				continue
+			}
+			targets = append(targets, WorkloadTarget{
 				Namespace:   odigosNamespace,
 				Name:        d.Name,
 				Kind:        k8sconsts.WorkloadKindDeployment,
 				DirName:     fmt.Sprintf("deployment-%s", d.Name),
 				IncludeLogs: includeLogs,
-			}
-			if isDeprecatedStubDeployment(d) {
-				target.IncludeLogs = false
-				warnIfDeprecatedStubScaledUp(builder, path.Join(rootDir, odigosNamespace, target.DirName), d)
-			}
-			targets = append(targets, target)
+			})
 		}
 	}
 
@@ -106,29 +104,9 @@ func FetchOdigosWorkloads(
 	return nil
 }
 
-// Scheduler and autoscaler Deployments are kept at zero replicas since their controllers moved into the instrumentor.
-// They have no RBAC, so a scaled-up replica cannot do anything useful and only signals a misconfiguration.
 func isDeprecatedStubDeployment(d *appsv1.Deployment) bool {
 	name := d.Labels["app.kubernetes.io/name"]
 	return name == k8sconsts.SchedulerDeploymentName || name == k8sconsts.AutoScalerAppLabelValue
-}
-
-func warnIfDeprecatedStubScaledUp(builder Builder, workloadDir string, d *appsv1.Deployment) {
-	desired := int32(0)
-	if d.Spec.Replicas != nil {
-		desired = *d.Spec.Replicas
-	}
-	if desired == 0 && d.Status.Replicas == 0 {
-		return
-	}
-
-	msg := fmt.Sprintf("deployment %s/%s is deprecated and expected to have 0 replicas, but has spec.replicas=%d status.replicas=%d.\n"+
-		"Its controllers run inside the instrumentor. Scale it back to 0: kubectl -n %s scale deployment/%s --replicas=0\n",
-		d.Namespace, d.Name, desired, d.Status.Replicas, d.Namespace, d.Name)
-	klog.Warning(msg)
-	if err := builder.AddFile(workloadDir, "WARNING.txt", []byte(msg)); err != nil {
-		klog.V(1).ErrorS(err, "Failed to write stub deployment warning file")
-	}
 }
 
 func collectWorkload(

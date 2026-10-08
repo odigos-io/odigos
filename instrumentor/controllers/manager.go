@@ -32,9 +32,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/dynamic"
@@ -82,19 +80,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	podTransform := podTransformFunc(odigosNs)
 	workloadTransform := workloadTransformFunc(odigosNs)
 
-	collectorRoleReq, err := labels.NewRequirement(
-		k8sconsts.OdigosCollectorRoleLabel,
-		selection.In,
-		[]string{
-			string(k8sconsts.CollectorsRoleClusterGateway),
-			string(k8sconsts.CollectorsRoleNodeCollector),
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	collectorServiceLabelSelector := labels.NewSelector().Add(*collectorRoleReq)
-
 	cacheByObjectConfig := map[client.Object]cache.ByObject{
 		&corev1.Pod{}: {
 			// Odigos-ns pods stay full (gateway PodIP for custom metrics). Other namespaces stay stripped.
@@ -108,7 +93,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			Field: nsSelector,
 		},
 		&corev1.Service{}: {
-			Label: collectorServiceLabelSelector,
 			Field: nsSelector,
 		},
 		&appsv1.Deployment{}: {
