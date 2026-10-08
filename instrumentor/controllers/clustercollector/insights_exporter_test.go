@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +41,7 @@ func TestAddInsightsGatewayExporter_Disabled(t *testing.T) {
 		c := configWithTracesIn()
 		require.NoError(t, addInsightsGatewayExporter(c, "odigos-system", nil))
 
-		_, hasExp := c.Exporters[commonconf.InsightsGatewayExporter]
+		_, hasExp := c.Exporters[pipeline.InsightsGatewayExporter]
 		assert.False(t, hasExp, "exporter must not be registered when feature is off")
 
 		rootPipe := c.Service.Pipelines[pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal)]
@@ -54,7 +54,7 @@ func TestAddInsightsGatewayExporter_Disabled(t *testing.T) {
 		c := configWithTracesIn()
 		require.NoError(t, addInsightsGatewayExporter(c, "odigos-system", &common.InsightsConfiguration{Enabled: &off}))
 
-		_, hasExp := c.Exporters[commonconf.InsightsGatewayExporter]
+		_, hasExp := c.Exporters[pipeline.InsightsGatewayExporter]
 		assert.False(t, hasExp)
 	})
 }
@@ -64,7 +64,7 @@ func TestAddInsightsGatewayExporter_NoTracesInPipelineNoop(t *testing.T) {
 	c := &config.Config{Service: config.Service{Pipelines: map[string]config.Pipeline{}}}
 	require.NoError(t, addInsightsGatewayExporter(c, "odigos-system", &common.InsightsConfiguration{Enabled: &on}))
 
-	_, hasExp := c.Exporters[commonconf.InsightsGatewayExporter]
+	_, hasExp := c.Exporters[pipeline.InsightsGatewayExporter]
 	assert.False(t, hasExp, "exporter must not be registered when there is no root traces pipeline to tap")
 }
 
@@ -73,7 +73,7 @@ func TestAddInsightsGatewayExporter_EnabledAppendsExporterToRootPipeline(t *test
 	c := configWithTracesIn()
 	require.NoError(t, addInsightsGatewayExporter(c, "odigos-system", &common.InsightsConfiguration{Enabled: &on}))
 
-	exp, ok := c.Exporters[commonconf.InsightsGatewayExporter].(config.GenericMap)
+	exp, ok := c.Exporters[pipeline.InsightsGatewayExporter].(config.GenericMap)
 	require.True(t, ok, "exporter must be registered")
 	// Must target the headless Service via dns:/// with round_robin so the
 	// gateway load balances across insights replicas instead of pinning one pod.
@@ -89,7 +89,7 @@ func TestAddInsightsGatewayExporter_EnabledAppendsExporterToRootPipeline(t *test
 	rootPipe := c.Service.Pipelines[pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal)]
 	assert.Equal(t, []string{"resource/odigos-version", "transform/url-template"}, rootPipe.Processors,
 		"root pipeline processors must be preserved verbatim")
-	assert.Equal(t, []string{"odigosrouterconnector/traces", commonconf.InsightsGatewayExporter}, rootPipe.Exporters,
+	assert.Equal(t, []string{"odigosrouterconnector/traces", pipeline.InsightsGatewayExporter}, rootPipe.Exporters,
 		"side-channel exporter must be appended alongside the existing destination router exporter")
 }
 
@@ -175,7 +175,7 @@ func insightsGatewayConfig(t *testing.T, tier common.OdigosTier) *config.Config 
 func TestGatewayConfig_InsightsIgnoredOnCommunityTier(t *testing.T) {
 	cfg := insightsGatewayConfig(t, common.CommunityOdigosTier)
 
-	assert.NotContains(t, cfg.Exporters, commonconf.InsightsGatewayExporter)
+	assert.NotContains(t, cfg.Exporters, pipeline.InsightsGatewayExporter)
 	assert.NotContains(t, cfg.Exporters, odigosconsts.ServiceGraphInsightsExporterName)
 	assert.NotContains(t, cfg.Processors, odigosconsts.GroupByTraceProcessor)
 	assert.NotContains(t, cfg.Service.Pipelines, pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal))
@@ -184,12 +184,12 @@ func TestGatewayConfig_InsightsIgnoredOnCommunityTier(t *testing.T) {
 func TestGatewayConfig_InsightsWiredOnEnterpriseTier(t *testing.T) {
 	cfg := insightsGatewayConfig(t, common.OnPremOdigosTier)
 
-	assert.Contains(t, cfg.Exporters, commonconf.InsightsGatewayExporter)
+	assert.Contains(t, cfg.Exporters, pipeline.InsightsGatewayExporter)
 	assert.Contains(t, cfg.Exporters, odigosconsts.ServiceGraphInsightsExporterName)
 	assert.Contains(t, cfg.Processors, odigosconsts.GroupByTraceProcessor)
 
 	rootPipe := cfg.Service.Pipelines[pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal)]
-	assert.Contains(t, rootPipe.Exporters, commonconf.InsightsGatewayExporter)
+	assert.Contains(t, rootPipe.Exporters, pipeline.InsightsGatewayExporter)
 	// Every pipeline still needs an exporter or the collector refuses to start.
 	for name, pipeline := range cfg.Service.Pipelines {
 		assert.NotEmpty(t, pipeline.Exporters, "pipeline %q has no exporters", name)
@@ -207,7 +207,7 @@ func TestAddInsightsGatewayExporter_PreservesExistingDestinationConfig(t *testin
 	require.NoError(t, addInsightsGatewayExporter(c, "odigos-system", &common.InsightsConfiguration{Enabled: &on}))
 
 	_, dest := c.Exporters["otlp/dest1"]
-	_, ins := c.Exporters[commonconf.InsightsGatewayExporter]
+	_, ins := c.Exporters[pipeline.InsightsGatewayExporter]
 	assert.True(t, dest, "destination exporter must not be removed")
 	assert.True(t, ins, "side-channel exporter must be added")
 

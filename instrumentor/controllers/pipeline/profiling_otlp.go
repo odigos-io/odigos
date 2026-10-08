@@ -1,4 +1,4 @@
-package common
+package pipeline
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"

@@ -3,9 +3,9 @@ package clustercollector
 import (
 	"testing"
 
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,5 +33,5 @@ func TestAddProfilingGatewayPipeline_Enabled(t *testing.T) {
 	pl := c.Service.Pipelines["profiles"]
 	assert.Equal(t, []string{"otlp"}, pl.Receivers)
 	assert.Empty(t, pl.Processors)
-	assert.Equal(t, []string{commonconf.ProfilingGatewayToUIExporter}, pl.Exporters)
+	assert.Equal(t, []string{pipeline.ProfilingGatewayToUIExporter}, pl.Exporters)
 }

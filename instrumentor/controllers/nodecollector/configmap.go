@@ -11,11 +11,11 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
-	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,7 +32,7 @@ const DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = 10 * time.Second
 func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup) error {
 
-	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
+	processors := pipeline.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
 	if b.ownerDeployment == nil {
 		// we only need to get the instrumentor deployment once since it can't change while this code is running
@@ -55,7 +55,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		profilingCfg = cfg.Profiling
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.tier)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, pipeline.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.tier)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -205,7 +205,7 @@ func calculateCollectorConfigDomains(
 	}
 
 	// processors from k8s "Processor" custom resource
-	processorsResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
+	processorsResults := config.CrdProcessorToConfig(pipeline.ToProcessorConfigurerArray(processors))
 	for name, err := range processorsResults.Errs {
 		logger.Error(err, "failed to convert processor manifest to config", "processor", name)
 		return nil, "", err

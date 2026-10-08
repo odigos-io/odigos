@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,35 +26,35 @@ func TestProfilingPipelineConfig_Disabled(t *testing.T) {
 func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	on := true
 	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nil)
-	require.Contains(t, got.Receivers, commonconf.ProfilingReceiver)
-	require.Contains(t, got.Processors, commonconf.ProfilingNodeFilterProcessor)
-	require.Contains(t, got.Processors, commonconf.ProfilingNodeK8sAttributesProcessor)
-	require.Contains(t, got.Processors, commonconf.ProfilingNodeOdigosProfilesProcessor)
-	require.Contains(t, got.Processors, commonconf.ProfilingNodeServiceNameProcessor)
-	require.Contains(t, got.Exporters, commonconf.ProfilingNodeToGatewayExporter)
+	require.Contains(t, got.Receivers, pipeline.ProfilingReceiver)
+	require.Contains(t, got.Processors, pipeline.ProfilingNodeFilterProcessor)
+	require.Contains(t, got.Processors, pipeline.ProfilingNodeK8sAttributesProcessor)
+	require.Contains(t, got.Processors, pipeline.ProfilingNodeOdigosProfilesProcessor)
+	require.Contains(t, got.Processors, pipeline.ProfilingNodeServiceNameProcessor)
+	require.Contains(t, got.Exporters, pipeline.ProfilingNodeToGatewayExporter)
 
 	pl, ok := got.Service.Pipelines["profiles"]
 	require.True(t, ok)
-	assert.Equal(t, []string{commonconf.ProfilingReceiver}, pl.Receivers)
+	assert.Equal(t, []string{pipeline.ProfilingReceiver}, pl.Receivers)
 	// Native symbolization is ON by default when profiling is enabled.
-	require.Contains(t, got.Processors, commonconf.ProfilingNodeSymbolizeProcessor)
+	require.Contains(t, got.Processors, pipeline.ProfilingNodeSymbolizeProcessor)
 	assert.Equal(t, []string{
 		memoryLimiterProcessorName,
-		commonconf.ProfilingNodeFilterProcessor,
-		commonconf.ProfilingNodeK8sAttributesProcessor,
-		commonconf.ProfilingNodeOdigosProfilesProcessor,
-		commonconf.ProfilingNodeSymbolizeProcessor,
-		commonconf.ProfilingNodeServiceNameProcessor,
+		pipeline.ProfilingNodeFilterProcessor,
+		pipeline.ProfilingNodeK8sAttributesProcessor,
+		pipeline.ProfilingNodeOdigosProfilesProcessor,
+		pipeline.ProfilingNodeSymbolizeProcessor,
+		pipeline.ProfilingNodeServiceNameProcessor,
 		odigosTrafficMetricsProcessorName,
 	}, pl.Processors)
-	assert.Equal(t, []string{commonconf.ProfilingNodeToGatewayExporter}, pl.Exporters)
+	assert.Equal(t, []string{pipeline.ProfilingNodeToGatewayExporter}, pl.Exporters)
 
-	filterCfg, ok := got.Processors[commonconf.ProfilingNodeFilterProcessor].(config.GenericMap)
+	filterCfg, ok := got.Processors[pipeline.ProfilingNodeFilterProcessor].(config.GenericMap)
 	require.True(t, ok)
-	wantFilter := commonconf.ProfilingFilterProcessorConfig()
+	wantFilter := pipeline.ProfilingFilterProcessorConfig()
 	assert.Equal(t, wantFilter, filterCfg)
 
-	odigosProfilesCfg, ok := got.Processors[commonconf.ProfilingNodeOdigosProfilesProcessor].(config.GenericMap)
+	odigosProfilesCfg, ok := got.Processors[pipeline.ProfilingNodeOdigosProfilesProcessor].(config.GenericMap)
 	require.True(t, ok)
 	assert.Equal(t, k8sconsts.OdigosConfigK8sExtensionType, odigosProfilesCfg["odigos_config_extension"])
 }
@@ -70,11 +70,11 @@ func TestProfilingPipelineConfig_UserProcessorsAppended(t *testing.T) {
 	// default, so the symbolize processor is present) and before export.
 	assert.Equal(t, []string{
 		memoryLimiterProcessorName,
-		commonconf.ProfilingNodeFilterProcessor,
-		commonconf.ProfilingNodeK8sAttributesProcessor,
-		commonconf.ProfilingNodeOdigosProfilesProcessor,
-		commonconf.ProfilingNodeSymbolizeProcessor,
-		commonconf.ProfilingNodeServiceNameProcessor,
+		pipeline.ProfilingNodeFilterProcessor,
+		pipeline.ProfilingNodeK8sAttributesProcessor,
+		pipeline.ProfilingNodeOdigosProfilesProcessor,
+		pipeline.ProfilingNodeSymbolizeProcessor,
+		pipeline.ProfilingNodeServiceNameProcessor,
 		"resource/addclusterinfo",
 		"transform/rename",
 		odigosTrafficMetricsProcessorName,
@@ -89,15 +89,15 @@ func TestProfilingPipelineConfig_NativeSymbolizationDisabled(t *testing.T) {
 		Enabled:       &on,
 		Symbolization: &common.ProfilingSymbolizationConfiguration{Native: &off},
 	}, nil)
-	require.NotContains(t, got.Processors, commonconf.ProfilingNodeSymbolizeProcessor)
+	require.NotContains(t, got.Processors, pipeline.ProfilingNodeSymbolizeProcessor)
 
 	pl := got.Service.Pipelines["profiles"]
 	assert.Equal(t, []string{
 		memoryLimiterProcessorName,
-		commonconf.ProfilingNodeFilterProcessor,
-		commonconf.ProfilingNodeK8sAttributesProcessor,
-		commonconf.ProfilingNodeOdigosProfilesProcessor,
-		commonconf.ProfilingNodeServiceNameProcessor,
+		pipeline.ProfilingNodeFilterProcessor,
+		pipeline.ProfilingNodeK8sAttributesProcessor,
+		pipeline.ProfilingNodeOdigosProfilesProcessor,
+		pipeline.ProfilingNodeServiceNameProcessor,
 		odigosTrafficMetricsProcessorName,
 	}, pl.Processors)
 }

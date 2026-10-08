@@ -16,7 +16,7 @@ import (
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
-	"github.com/odigos-io/odigos/instrumentor/controllers/common"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -160,7 +160,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		return nil, err
 	}
 
-	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
+	processors := pipeline.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
 	odigosConfigExtensionName := k8sconsts.OdigosConfigK8sExtensionType
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
@@ -230,8 +230,8 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
-		common.ToExporterConfigurerArray(enabledDests),
-		common.ToProcessorConfigurerArray(processors),
+		pipeline.ToExporterConfigurerArray(enabledDests),
+		pipeline.ToProcessorConfigurerArray(processors),
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
 			// Normalize OBI metric names (obi.* -> odigos.*) once at the gateway, before metrics are
 			// routed to destinations. No-op when metrics are disabled or no obi.* metrics are present.

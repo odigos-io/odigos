@@ -1,4 +1,4 @@
-package common
+package pipeline
 
 // OpenTelemetry component instance names for continuous profiling pipelines. Keys must be unique
 // within each collector's merged config (node collector and cluster gateway are separate binaries).

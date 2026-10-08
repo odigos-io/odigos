@@ -2,10 +2,10 @@ package collectorconfig
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 )
 
 // ProfilingPipelineConfig builds the node collector profiles domain when profiling is enabled.
@@ -15,7 +15,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 	}
 
 	endpoint := k8sconsts.OtlpGrpcDNSEndpoint(k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace, odigosconsts.OTLPPort)
-	exp := commonconf.MergeProfilingOtlpExporter(config.GenericMap{
+	exp := pipeline.MergeProfilingOtlpExporter(config.GenericMap{
 		"endpoint":    endpoint,
 		"tls":         config.GenericMap{"insecure": true},
 		"compression": "none",
@@ -24,42 +24,42 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 	// memory_limiter itself is defined once, globally, by commonProcessors() (see
 	// common.go) — every pipeline just references its name, never redefines it.
 	processors := config.GenericMap{
-		commonconf.ProfilingNodeFilterProcessor:         commonconf.ProfilingFilterProcessorConfig(),
-		commonconf.ProfilingNodeK8sAttributesProcessor:  commonconf.K8sAttributesProfilesProcessorConfig(),
-		commonconf.ProfilingNodeOdigosProfilesProcessor: commonconf.OdigosProfilesProcessorConfig(),
-		commonconf.ProfilingNodeServiceNameProcessor:    commonconf.ProfilingServiceNameTransformConfig(),
+		pipeline.ProfilingNodeFilterProcessor:         pipeline.ProfilingFilterProcessorConfig(),
+		pipeline.ProfilingNodeK8sAttributesProcessor:  pipeline.K8sAttributesProfilesProcessorConfig(),
+		pipeline.ProfilingNodeOdigosProfilesProcessor: pipeline.OdigosProfilesProcessorConfig(),
+		pipeline.ProfilingNodeServiceNameProcessor:    pipeline.ProfilingServiceNameTransformConfig(),
 	}
 	pipelineProcessors := []string{
 		memoryLimiterProcessorName,
-		commonconf.ProfilingNodeFilterProcessor,
-		commonconf.ProfilingNodeK8sAttributesProcessor,
-		commonconf.ProfilingNodeOdigosProfilesProcessor,
+		pipeline.ProfilingNodeFilterProcessor,
+		pipeline.ProfilingNodeK8sAttributesProcessor,
+		pipeline.ProfilingNodeOdigosProfilesProcessor,
 	}
 	// Native symbolization is opt-in (profiling.symbolization.native). When on, the
 	// symbolize processor runs after the keep-filter (only retained profiles are
 	// symbolized) and before service-name enrichment.
 	if profiling.NativeSymbolizationEnabled() {
-		processors[commonconf.ProfilingNodeSymbolizeProcessor] = commonconf.OdigosSymbolizeProcessorConfig()
-		pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeSymbolizeProcessor)
+		processors[pipeline.ProfilingNodeSymbolizeProcessor] = pipeline.OdigosSymbolizeProcessorConfig()
+		pipelineProcessors = append(pipelineProcessors, pipeline.ProfilingNodeSymbolizeProcessor)
 	}
-	pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeServiceNameProcessor)
+	pipelineProcessors = append(pipelineProcessors, pipeline.ProfilingNodeServiceNameProcessor)
 	pipelineProcessors = append(pipelineProcessors, manifestProcessorNames...)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	return config.Config{
 		Receivers: config.GenericMap{
-			commonconf.ProfilingReceiver: config.GenericMap{},
+			pipeline.ProfilingReceiver: config.GenericMap{},
 		},
 		Processors: processors,
 		Exporters: config.GenericMap{
-			commonconf.ProfilingNodeToGatewayExporter: exp,
+			pipeline.ProfilingNodeToGatewayExporter: exp,
 		},
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				"profiles": {
-					Receivers:  []string{commonconf.ProfilingReceiver},
+					Receivers:  []string{pipeline.ProfilingReceiver},
 					Processors: pipelineProcessors,
-					Exporters:  []string{commonconf.ProfilingNodeToGatewayExporter},
+					Exporters:  []string{pipeline.ProfilingNodeToGatewayExporter},
 				},
 			},
 		},

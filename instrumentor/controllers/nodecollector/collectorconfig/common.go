@@ -6,7 +6,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
@@ -98,7 +97,7 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool, detec
 		allProcessors[k] = v
 	}
 
-	memoryLimiterConfig := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
+	memoryLimiterConfig := GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 	allProcessors[memoryLimiterProcessorName] = memoryLimiterConfig
 
 	if ResourceDetectionEnabled(detectors) {

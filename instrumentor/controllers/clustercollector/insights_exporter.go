@@ -2,10 +2,10 @@ package clustercollector
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 )
 
 // effectiveInsightsConfig returns the insights configuration the gateway should be
@@ -44,7 +44,7 @@ func addInsightsGatewayExporter(c *config.Config, odigosNs string, insights *com
 	// Target the headless insights Service via the dns:/// resolver and enable
 	// round_robin so the gateway's gRPC client fans out across every insights
 	// pod instead of pinning one behind the ClusterIP VIP.
-	c.Exporters[commonconf.InsightsGatewayExporter] = config.GenericMap{
+	c.Exporters[pipeline.InsightsGatewayExporter] = config.GenericMap{
 		"endpoint":      k8sconsts.InsightsOtlpGrpcDNSEndpoint(odigosNs),
 		"balancer_name": "round_robin",
 		"tls":           config.GenericMap{"insecure": true},
@@ -54,7 +54,7 @@ func addInsightsGatewayExporter(c *config.Config, odigosNs string, insights *com
 		},
 	}
 
-	rootPipeline.Exporters = append(rootPipeline.Exporters, commonconf.InsightsGatewayExporter)
+	rootPipeline.Exporters = append(rootPipeline.Exporters, pipeline.InsightsGatewayExporter)
 	c.Service.Pipelines[rootPipelineName] = rootPipeline
 
 	return nil

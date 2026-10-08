@@ -1,4 +1,4 @@
-package common
+package clustercollector
 
 import (
 	"crypto/sha256"

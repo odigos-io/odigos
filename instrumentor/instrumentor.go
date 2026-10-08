@@ -19,9 +19,9 @@ import (
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
-	commonconfig "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	controllerconfig "github.com/odigos-io/odigos/instrumentor/controllers/controller_config"
 	"github.com/odigos-io/odigos/instrumentor/controllers/metricshandler"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/instrumentor/internal/clusterinfo"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
@@ -175,7 +175,7 @@ func New(opts Options) (*Instrumentor, error) {
 	if onGKE {
 		opts.ManagerOptions.Logger.Info("Running on GKE")
 	}
-	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{
+	pipeline.ControllerConfig = &controllerconfig.ControllerConfig{
 		K8sVersion:     feature.K8sVersion(),
 		CollectorImage: collectorImage,
 		OnGKE:          onGKE,

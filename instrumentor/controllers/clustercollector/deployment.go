@@ -21,12 +21,12 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconfig "github.com/odigos-io/odigos/instrumentor/controllers/common"
-	"github.com/odigos-io/odigos/instrumentor/k8sconfig"
 	"github.com/odigos-io/odigos/common"
 	cfg "github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
+	"github.com/odigos-io/odigos/instrumentor/k8sconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
@@ -36,6 +36,13 @@ const (
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
 )
+
+func GetDeploymentName(gatewayCg *odigosv1.CollectorsGroup) string {
+	if gatewayCg.Spec.DeploymentName != "" {
+		return gatewayCg.Spec.DeploymentName
+	}
+	return k8sconsts.OdigosClusterCollectorDeploymentName
+}
 
 func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, odigosVersion string, tier common.OdigosTier) (*appsv1.Deployment, error) {
@@ -54,7 +61,7 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 	}
 
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
-	configDataHash := commonconfig.Sha256Hash(secretsVersionHash)
+	configDataHash := Sha256Hash(secretsVersionHash)
 	desiredDeployment, err := getDesiredDeployment(ctx, c, enabledDests, configDataHash, gateway,
 		scheme, odigosVersion, autoScalerTopologySpreadConstraints, tier)
 	if err != nil {
@@ -181,7 +188,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		})
 	}
 
-	deploymentName := commonconfig.GetDeploymentName(gateway)
+	deploymentName := GetDeploymentName(gateway)
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -213,7 +220,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 					Containers: []corev1.Container{
 						{
 							Name:    k8sconsts.OdigosClusterCollectorContainerName,
-							Image:   commonconfig.ControllerConfig.CollectorImage,
+							Image:   pipeline.ControllerConfig.CollectorImage,
 							Command: []string{containerCommand},
 							Args: []string{fmt.Sprintf("--config=%s:%s/%s/%s",
 								k8sconsts.OdigosCollectorConfigMapProviderScheme,

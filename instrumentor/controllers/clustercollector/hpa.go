@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonconfig "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/metricshandler"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/version"
@@ -68,7 +68,7 @@ var (
 // This hybrid HPA ensures rapid scale-out when gateways reject due to overload,
 // while avoiding aggressive scale-in that could cause instability.
 func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
-	kubeVersion := commonconfig.ControllerConfig.K8sVersion
+	kubeVersion := pipeline.ControllerConfig.K8sVersion
 	logger := commonlogger.FromContext(ctx)
 
 	useCustomMetric := false
@@ -97,7 +97,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 		maxReplicas = int32(*gateway.Spec.ResourcesSettings.MaxReplicas)
 	}
 
-	gatewayDeploymentName := commonconfig.GetDeploymentName(gateway)
+	gatewayDeploymentName := GetDeploymentName(gateway)
 
 	// ----------------------------------------------------------------------
 	// Version switch for Kubernetes compatibility

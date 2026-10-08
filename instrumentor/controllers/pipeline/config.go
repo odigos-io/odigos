@@ -1,9 +1,9 @@
-package common
+package pipeline
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	controllerconfig "github.com/odigos-io/odigos/instrumentor/controllers/controller_config"
 	"github.com/odigos-io/odigos/common/config"
+	controllerconfig "github.com/odigos-io/odigos/instrumentor/controllers/controller_config"
 )
 
 var ControllerConfig *controllerconfig.ControllerConfig

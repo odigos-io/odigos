@@ -7,9 +7,9 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/instrumentor/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,7 +53,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		defer dm.mu.Unlock()
 		defer dm.finishProgress()
 		defer func() {
-			statusPatchString := common.GetCollectorsGroupDeployedConditionsPatch(err, collection.Spec.Role)
+			statusPatchString := pipeline.GetCollectorsGroupDeployedConditionsPatch(err, collection.Spec.Role)
 			statusErr := c.Status().Patch(ctx, collection, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 			if statusErr != nil {
 				logger.Error(statusErr, "Failed to patch collectors group status")
@@ -92,7 +92,7 @@ func syncCollectorGroup(ctx context.Context, datacollection *odigosv1.Collectors
 		return err
 	}
 
-	err = common.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
+	err = pipeline.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
 	if err != nil {
 		logger.Error(err, "Failed to update node collectors group received signals")
 		return err

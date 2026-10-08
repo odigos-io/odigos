@@ -2,9 +2,9 @@ package clustercollector
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 )
 
 func addProfilingGatewayPipeline(c *config.Config, odigosNs string, profiling *common.ProfilingConfiguration) error {
@@ -22,18 +22,18 @@ func addProfilingGatewayPipeline(c *config.Config, odigosNs string, profiling *c
 
 	endpoint := k8sconsts.UiOtlpGrpcEndpoint(odigosNs)
 
-	exp := commonconf.MergeProfilingOtlpExporter(config.GenericMap{
+	exp := pipeline.MergeProfilingOtlpExporter(config.GenericMap{
 		"endpoint":    endpoint,
 		"tls":         config.GenericMap{"insecure": true},
 		"compression": "none",
 	}, profiling.Exporter)
 
-	c.Exporters[commonconf.ProfilingGatewayToUIExporter] = exp
+	c.Exporters[pipeline.ProfilingGatewayToUIExporter] = exp
 
 	c.Service.Pipelines["profiles"] = config.Pipeline{
 		Receivers:  []string{"otlp"},
 		Processors: nil,
-		Exporters:  []string{commonconf.ProfilingGatewayToUIExporter},
+		Exporters:  []string{pipeline.ProfilingGatewayToUIExporter},
 	}
 	return nil
 }

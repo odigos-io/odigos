@@ -4,8 +4,8 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,7 +27,7 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err == nil {
 		// TODO(remove by 2027-01): temporary cleanup of Processor CRs for actions migrated
 		// to odigosConfigExtension. Delete once leftover CRs from older versions are gone.
-		if commonconf.IsLegacyConfigExtensionProcessorType(processor.Spec.Type) {
+		if pipeline.IsLegacyConfigExtensionProcessorType(processor.Spec.Type) {
 			if delErr := r.Delete(ctx, &processor); delErr != nil {
 				return utils.K8SUpdateErrorHandler(delErr)
 			}
@@ -46,7 +46,7 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// sync the AddedToCollectorConfig condition for this processor after a successful
 	// cluster collector sync. usually a no-op when nothing changed.
-	return utils.K8SUpdateErrorHandler(commonconf.SyncProcessorAddedToCollectorConfig(
+	return utils.K8SUpdateErrorHandler(pipeline.SyncProcessorAddedToCollectorConfig(
 		ctx, r.Client, req.NamespacedName, odigosv1.CollectorsGroupRoleClusterGateway,
 	))
 }

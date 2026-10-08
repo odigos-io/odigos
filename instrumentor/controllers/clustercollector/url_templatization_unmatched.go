@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 	"github.com/odigos-io/odigos/common/urltemplate"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 )
 
 // effectiveCardinalityControl returns the cardinality-control config the gateway
@@ -42,14 +42,14 @@ func addUrlTemplatizationUnmatchedExporter(c *config.Config, odigosNs string, ca
 		c.Exporters = config.GenericMap{}
 	}
 
-	c.Exporters[commonconf.UrlTemplatizationExporter] = config.GenericMap{
+	c.Exporters[pipeline.UrlTemplatizationExporter] = config.GenericMap{
 		"odigos_config_extension": k8sconsts.OdigosConfigK8sExtensionType,
 		"endpoint":                k8sconsts.OdigosCacheEndpoint(odigosNs),
 		"max_paths_per_workload":  maxExamplePathsPerWorkload(cardinalityControl),
 		"path_idle_ttl":           pathExampleIdleTTL(cardinalityControl),
 	}
 
-	rootPipeline.Exporters = append(rootPipeline.Exporters, commonconf.UrlTemplatizationExporter)
+	rootPipeline.Exporters = append(rootPipeline.Exporters, pipeline.UrlTemplatizationExporter)
 	c.Service.Pipelines[rootPipelineName] = rootPipeline
 
 	return nil

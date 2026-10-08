@@ -1,4 +1,4 @@
-package common
+package collectorconfig
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"

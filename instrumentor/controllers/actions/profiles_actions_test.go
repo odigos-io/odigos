@@ -14,11 +14,11 @@ import (
 
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
-	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/pipelinegen"
+	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,14 +72,14 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 
 	// 2) Production filter+sort by OrderHint, per collector role. All three tier-1 actions declare
 	// only the ClusterGateway role, so the gateway gets all three (ordered) and the node gets none.
-	gwProcs := commonconf.FilterAndSortProcessorsByOrderHint(procList, odigosv1.CollectorsGroupRoleClusterGateway)
-	nodeProcs := commonconf.FilterAndSortProcessorsByOrderHint(procList, odigosv1.CollectorsGroupRoleNodeCollector)
+	gwProcs := pipeline.FilterAndSortProcessorsByOrderHint(procList, odigosv1.CollectorsGroupRoleClusterGateway)
+	nodeProcs := pipeline.FilterAndSortProcessorsByOrderHint(procList, odigosv1.CollectorsGroupRoleNodeCollector)
 	require.Len(t, gwProcs, 3)
 	require.Len(t, nodeProcs, 0)
 
 	// 3) Bucketing: all three are admitted to profiles, ordered by OrderHint (delete -100, rename -50,
 	// addclusterinfo 1), and also to traces — with no cross-contamination.
-	results := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(gwProcs))
+	results := config.CrdProcessorToConfig(pipeline.ToProcessorConfigurerArray(gwProcs))
 	require.Empty(t, results.Errs)
 	wantOrder := []string{"transform/delete-attr", "transform/rename-attr", "resource/add-cluster"}
 	assert.Equal(t, wantOrder, results.ProfilesProcessors)
@@ -89,7 +89,7 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 	gwOpts := pipelinegen.GatewayConfigOptions{OdigosNamespace: "odigos-system"}
 	gw, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		[]config.ExporterConfigurer{pyroscopeDest{id: "p1"}},
-		commonconf.ToProcessorConfigurerArray(gwProcs),
+		pipeline.ToProcessorConfigurerArray(gwProcs),
 		func(c *config.Config, _ []string, _ []string) error { return nil },
 		nil, &gwOpts)
 	require.NoError(t, err)
@@ -113,7 +113,7 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 
 	// --- NODE render --- gateway-scoped actions => node profiles pipeline is unchanged (built-in chain).
 	on := true
-	nodeResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(nodeProcs))
+	nodeResults := config.CrdProcessorToConfig(pipeline.ToProcessorConfigurerArray(nodeProcs))
 	require.Empty(t, nodeResults.ProfilesProcessors)
 	// Merge alongside common_application_telemetry (as calculateCollectorConfigDomains does in
 	// production) so a processor name collision between domains — e.g. profiling redefining
@@ -126,11 +126,11 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{
 		"memory_limiter",
-		commonconf.ProfilingNodeFilterProcessor,
-		commonconf.ProfilingNodeK8sAttributesProcessor,
-		commonconf.ProfilingNodeOdigosProfilesProcessor,
-		commonconf.ProfilingNodeSymbolizeProcessor,
-		commonconf.ProfilingNodeServiceNameProcessor,
+		pipeline.ProfilingNodeFilterProcessor,
+		pipeline.ProfilingNodeK8sAttributesProcessor,
+		pipeline.ProfilingNodeOdigosProfilesProcessor,
+		pipeline.ProfilingNodeSymbolizeProcessor,
+		pipeline.ProfilingNodeServiceNameProcessor,
 		"odigostrafficmetrics",
 	}, nodeCfg.Service.Pipelines["profiles"].Processors)
 }

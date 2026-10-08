@@ -7,9 +7,9 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/instrumentor/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -52,14 +52,14 @@ func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, sch
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	configExtProcessors := commonconf.ConvertActionsToConfigExtensionProcessors(actionList)
+	configExtProcessors := pipeline.ConvertActionsToConfigExtensionProcessors(actionList)
 
 	// Add the generic batch processor to the list of processors
-	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
+	processors.Items = append(processors.Items, pipeline.GetGenericBatchProcessor())
 	processors.Items = append(processors.Items, configExtProcessors...)
 
 	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, odigosVersion, tier)
-	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err, gatewayCollectorGroup.Spec.Role)
+	statusPatchString := pipeline.GetCollectorsGroupDeployedConditionsPatch(err, gatewayCollectorGroup.Spec.Role)
 	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 	if statusErr != nil {
 		logger.Error(statusErr, "Failed to patch collectors group status")
@@ -112,7 +112,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	err = commonconf.UpdateCollectorGroupReceiverSignals(ctx, c, gateway, signals)
+	err = pipeline.UpdateCollectorGroupReceiverSignals(ctx, c, gateway, signals)
 	if err != nil {
 		logger.Error(err, "Failed to update cluster collectors group received signals")
 		return err
