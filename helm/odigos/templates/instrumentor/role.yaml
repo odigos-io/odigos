@@ -249,6 +249,16 @@ rules:
       - deployments/finalizers
     verbs:
       - update
+  # OwnerReferencesPermissionEnforcement: SetControllerReference on collector
+  # objects (ConfigMap/Deployment/Service/HPA) needs finalizers on the owner.
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups/finalizers
+    verbs:
+      - get
+      - patch
+      - update
 {{- end }}
 # goAutoOffsetsMode and goAutoOffsetsCron are not helm-only: the UI and central remote config write
 # them into effective-config at runtime, so these permissions cannot be gated on the helm value.

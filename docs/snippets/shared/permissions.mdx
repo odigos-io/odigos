@@ -62,7 +62,6 @@ Below are the ClusterRoles used by Odigos components.
 | admissionregistration.k8s.io | validatingwebhookconfigurations | \* | get<br />list<br />watch |
 | admissionregistration.k8s.io | validatingwebhookconfigurations | odigos-source-validating-webhook-configuration<br />odigos-action-validating-webhook-configuration | update |
 | apiregistration.k8s.io | apiservices | \* | get<br />list<br />watch<br />update<br />patch<br />delete |
-| odigos.io | collectorsgroups/finalizers | \* | get<br />patch<br />update |
 
 ### odiglet
 
@@ -127,9 +126,9 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | \* | configmaps | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete |
-| \* | services | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete<br />deletecollection |
+| \* | services | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete |
 | \* | pods | \* | get<br />list<br />watch |
-| apps | deployments | \* | create<br />delete<br />deletecollection<br />get<br />list<br />patch<br />update<br />watch |
+| apps | deployments | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | apps | deployments/status | \* | get |
 | autoscaling | horizontalpodautoscalers | \* | create<br />patch<br />update<br />delete |
 | odigos.io | collectorsgroups | \* | get<br />list<br />create<br />patch<br />update<br />watch<br />delete |
@@ -152,6 +151,7 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | \* | secrets | autoscaler-webhook-cert<br />autoscaler-webhooks-cert | delete |
 | apps | daemonsets | odiglet | get<br />list<br />watch |
 | apps | deployments/finalizers | \* | update |
+| odigos.io | collectorsgroups/finalizers | \* | get<br />patch<br />update |
 | batch | cronjobs | odigos-go-offsets-updater | get<br />list<br />watch<br />create<br />update<br />patch<br />delete |
 | batch | jobs | \* | create |
 
