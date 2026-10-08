@@ -30,7 +30,6 @@ rules:
       - patch
       - update
       - delete
-      - deletecollection
   - apiGroups:
       - ''
     resources:
@@ -46,7 +45,6 @@ rules:
     verbs:
       - create
       - delete
-      - deletecollection
       - get
       - list
       - patch
