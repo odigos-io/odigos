@@ -327,8 +327,8 @@ func podTransformFunc(odigosNs string) func(obj interface{}) (interface{}, error
 			return pod, nil
 		}
 
+		pod.SetManagedFields(nil)
 		if pod.GetNamespace() == odigosNs {
-			pod.SetManagedFields(nil)
 			cacheutils.MarkObjectAsTransformed(pod)
 			return pod, nil
 		}
@@ -352,7 +352,6 @@ func podTransformFunc(odigosNs string) func(obj interface{}) (interface{}, error
 		if workload.IsStaticPod(pod) {
 			strippedPod.Spec = pod.Spec
 		}
-		strippedPod.SetManagedFields(nil) // don't store managed fields in the cache
 		// remove non relevant data such as un-relevant annotations and container statuses fields which are not used
 		cacheutils.StripPod(&strippedPod)
 		cacheutils.MarkObjectAsTransformed(&strippedPod)
