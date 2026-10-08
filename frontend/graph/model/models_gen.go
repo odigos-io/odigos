@@ -2386,10 +2386,11 @@ type LocalUIConfigRolloutInput struct {
 }
 
 type LocalUIConfigSamplingInput struct {
-	DryRun                  *bool                                     `json:"dryRun,omitempty"`
-	SpanSamplingAttributes  *LocalUIConfigSpanSamplingAttributesInput `json:"spanSamplingAttributes,omitempty"`
-	TailSampling            *TailSamplingConfigInput                  `json:"tailSampling,omitempty"`
-	K8sHealthProbesSampling *K8sHealthProbesSamplingConfigInput       `json:"k8sHealthProbesSampling,omitempty"`
+	DryRun                    *bool                                     `json:"dryRun,omitempty"`
+	NoisyOperationsAlsoInTail *bool                                     `json:"noisyOperationsAlsoInTail,omitempty"`
+	SpanSamplingAttributes    *LocalUIConfigSpanSamplingAttributesInput `json:"spanSamplingAttributes,omitempty"`
+	TailSampling              *TailSamplingConfigInput                  `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling   *K8sHealthProbesSamplingConfigInput       `json:"k8sHealthProbesSampling,omitempty"`
 }
 
 type LocalUIConfigSpanSamplingAttributesInput struct {
@@ -2790,10 +2791,11 @@ type Sampling struct {
 }
 
 type SamplingConfig struct {
-	DryRun                  *bool                          `json:"dryRun,omitempty"`
-	SpanSamplingAttributes  *SpanSamplingAttributesConfig  `json:"spanSamplingAttributes,omitempty"`
-	TailSampling            *TailSamplingConfig            `json:"tailSampling,omitempty"`
-	K8sHealthProbesSampling *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
+	DryRun                    *bool                          `json:"dryRun,omitempty"`
+	NoisyOperationsAlsoInTail *bool                          `json:"noisyOperationsAlsoInTail,omitempty"`
+	SpanSamplingAttributes    *SpanSamplingAttributesConfig  `json:"spanSamplingAttributes,omitempty"`
+	TailSampling              *TailSamplingConfig            `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling   *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
 }
 
 type SamplingConfigInput struct {

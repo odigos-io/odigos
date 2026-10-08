@@ -538,6 +538,9 @@ func recordSamplingProvenance(s *common.SamplingConfiguration, pc *provenanceCol
 	if s.DryRun != nil {
 		pc.record("sampling.dryRun")
 	}
+	if s.NoisyOperationsAlsoInTail != nil {
+		pc.record("sampling.noisyOperationsAlsoInTail")
+	}
 	if s.SpanSamplingAttributes != nil {
 		if s.SpanSamplingAttributes.Disabled != nil {
 			pc.record("sampling.spanSamplingAttributes.disabled")
@@ -777,7 +780,8 @@ func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *mo
 	}
 	s := config.Sampling
 	out := &model.SamplingConfig{
-		DryRun: s.DryRun,
+		DryRun:                    s.DryRun,
+		NoisyOperationsAlsoInTail: s.NoisyOperationsAlsoInTail,
 	}
 	if s.SpanSamplingAttributes != nil {
 		out.SpanSamplingAttributes = &model.SpanSamplingAttributesConfig{

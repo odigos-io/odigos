@@ -92,6 +92,9 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 		if config.Sampling.DryRun != nil {
 			provenance["sampling.dryRun"] = sourceName
 		}
+		if config.Sampling.NoisyOperationsAlsoInTail != nil {
+			provenance["sampling.noisyOperationsAlsoInTail"] = sourceName
+		}
 		if config.Sampling.SpanSamplingAttributes != nil {
 			if config.Sampling.SpanSamplingAttributes.Disabled != nil {
 				provenance["sampling.spanSamplingAttributes.disabled"] = sourceName

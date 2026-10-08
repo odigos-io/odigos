@@ -2471,6 +2471,12 @@
           "required": [],
           "title": "k8sHealthProbesSampling"
         },
+        "noisyOperationsAlsoInTail": {
+          "default": "true",
+          "description": "When true, noisy operations are applied via both head sampling (where the agent supports it)\nand collector tail sampling. Useful when applications already emit OpenTelemetry and head\nsampling may miss those spans. Default is false (exclusive head-or-tail based on distro support).",
+          "required": [],
+          "title": "noisyOperationsAlsoInTail"
+        },
         "spanSamplingAttributes": {
           "additionalProperties": false,
           "description": "Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).\nThese attributes add context when viewing traces and inspecting costs, so you can understand\nhow sampling decisions were made for an individual span and apply changes to fine-tune rules.\nWhen dry run is enabled, each span includes the sampling decision (kept or dropped) as it\nwould apply once dry run is disabled.",

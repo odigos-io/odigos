@@ -171,6 +171,7 @@ export const GET_EFFECTIVE_CONFIG = gql`
       }
       sampling {
         dryRun
+        noisyOperationsAlsoInTail
         spanSamplingAttributes {
           disabled
           samplingCategoryDisabled

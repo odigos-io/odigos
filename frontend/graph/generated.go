@@ -2152,10 +2152,11 @@ type ComplexityRoot struct {
 	}
 
 	SamplingConfig struct {
-		DryRun                  func(childComplexity int) int
-		K8sHealthProbesSampling func(childComplexity int) int
-		SpanSamplingAttributes  func(childComplexity int) int
-		TailSampling            func(childComplexity int) int
+		DryRun                    func(childComplexity int) int
+		K8sHealthProbesSampling   func(childComplexity int) int
+		NoisyOperationsAlsoInTail func(childComplexity int) int
+		SpanSamplingAttributes    func(childComplexity int) int
+		TailSampling              func(childComplexity int) int
 	}
 
 	SamplingConfigs struct {
@@ -12641,6 +12642,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SamplingConfig.K8sHealthProbesSampling(childComplexity), true
+
+	case "SamplingConfig.noisyOperationsAlsoInTail":
+		if e.complexity.SamplingConfig.NoisyOperationsAlsoInTail == nil {
+			break
+		}
+
+		return e.complexity.SamplingConfig.NoisyOperationsAlsoInTail(childComplexity), true
 
 	case "SamplingConfig.spanSamplingAttributes":
 		if e.complexity.SamplingConfig.SpanSamplingAttributes == nil {
@@ -31625,6 +31633,8 @@ func (ec *executionContext) fieldContext_EffectiveConfig_sampling(_ context.Cont
 			switch field.Name {
 			case "dryRun":
 				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "noisyOperationsAlsoInTail":
+				return ec.fieldContext_SamplingConfig_noisyOperationsAlsoInTail(ctx, field)
 			case "spanSamplingAttributes":
 				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
@@ -83036,6 +83046,47 @@ func (ec *executionContext) fieldContext_SamplingConfig_dryRun(_ context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _SamplingConfig_noisyOperationsAlsoInTail(ctx context.Context, field graphql.CollectedField, obj *model.SamplingConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SamplingConfig_noisyOperationsAlsoInTail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NoisyOperationsAlsoInTail, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SamplingConfig_noisyOperationsAlsoInTail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SamplingConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SamplingConfig_spanSamplingAttributes(ctx context.Context, field graphql.CollectedField, obj *model.SamplingConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 	if err != nil {
@@ -83219,6 +83270,8 @@ func (ec *executionContext) fieldContext_SamplingConfigs_effective(_ context.Con
 			switch field.Name {
 			case "dryRun":
 				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "noisyOperationsAlsoInTail":
+				return ec.fieldContext_SamplingConfig_noisyOperationsAlsoInTail(ctx, field)
 			case "spanSamplingAttributes":
 				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
@@ -83270,6 +83323,8 @@ func (ec *executionContext) fieldContext_SamplingConfigs_helmDeployment(_ contex
 			switch field.Name {
 			case "dryRun":
 				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "noisyOperationsAlsoInTail":
+				return ec.fieldContext_SamplingConfig_noisyOperationsAlsoInTail(ctx, field)
 			case "spanSamplingAttributes":
 				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
@@ -83321,6 +83376,8 @@ func (ec *executionContext) fieldContext_SamplingConfigs_remoteConfigFromCentral
 			switch field.Name {
 			case "dryRun":
 				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "noisyOperationsAlsoInTail":
+				return ec.fieldContext_SamplingConfig_noisyOperationsAlsoInTail(ctx, field)
 			case "spanSamplingAttributes":
 				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
@@ -83372,6 +83429,8 @@ func (ec *executionContext) fieldContext_SamplingConfigs_localUiConfig(_ context
 			switch field.Name {
 			case "dryRun":
 				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "noisyOperationsAlsoInTail":
+				return ec.fieldContext_SamplingConfig_noisyOperationsAlsoInTail(ctx, field)
 			case "spanSamplingAttributes":
 				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
@@ -93318,7 +93377,7 @@ func (ec *executionContext) unmarshalInputLocalUiConfigSamplingInput(ctx context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"dryRun", "spanSamplingAttributes", "tailSampling", "k8sHealthProbesSampling"}
+	fieldsInOrder := [...]string{"dryRun", "noisyOperationsAlsoInTail", "spanSamplingAttributes", "tailSampling", "k8sHealthProbesSampling"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -93332,6 +93391,13 @@ func (ec *executionContext) unmarshalInputLocalUiConfigSamplingInput(ctx context
 				return it, err
 			}
 			it.DryRun = data
+		case "noisyOperationsAlsoInTail":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("noisyOperationsAlsoInTail"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NoisyOperationsAlsoInTail = data
 		case "spanSamplingAttributes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("spanSamplingAttributes"))
 			data, err := ec.unmarshalOLocalUiConfigSpanSamplingAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigSpanSamplingAttributesInput(ctx, v)
@@ -110542,6 +110608,8 @@ func (ec *executionContext) _SamplingConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = graphql.MarshalString("SamplingConfig")
 		case "dryRun":
 			out.Values[i] = ec._SamplingConfig_dryRun(ctx, field, obj)
+		case "noisyOperationsAlsoInTail":
+			out.Values[i] = ec._SamplingConfig_noisyOperationsAlsoInTail(ctx, field, obj)
 		case "spanSamplingAttributes":
 			out.Values[i] = ec._SamplingConfig_spanSamplingAttributes(ctx, field, obj)
 		case "tailSampling":

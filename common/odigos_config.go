@@ -567,6 +567,11 @@ type SamplingConfiguration struct {
 	// When dry run is enabled, each span includes the sampling decision (kept or dropped) as it would apply once dry run is disabled.
 	SpanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
 
+	// When true, noisy operations are applied via both head sampling (where the agent supports it)
+	// and collector tail sampling. Useful when applications already emit OpenTelemetry and head
+	// sampling may miss those spans. Default is false (exclusive head-or-tail based on distro support).
+	NoisyOperationsAlsoInTail *bool `json:"noisyOperationsAlsoInTail,omitempty"`
+
 	// Configuration for tail sampling.
 	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
 

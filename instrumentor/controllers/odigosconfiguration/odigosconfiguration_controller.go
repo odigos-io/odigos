@@ -273,6 +273,9 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		if addtionalConfig.Sampling.DryRun != nil {
 			baseConfig.Sampling.DryRun = addtionalConfig.Sampling.DryRun
 		}
+		if addtionalConfig.Sampling.NoisyOperationsAlsoInTail != nil {
+			baseConfig.Sampling.NoisyOperationsAlsoInTail = addtionalConfig.Sampling.NoisyOperationsAlsoInTail
+		}
 		if addtionalConfig.Sampling.SpanSamplingAttributes != nil {
 			if baseConfig.Sampling.SpanSamplingAttributes == nil {
 				baseConfig.Sampling.SpanSamplingAttributes = &sampling.SpanSamplingAttributesConfiguration{}

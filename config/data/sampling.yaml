@@ -10,6 +10,11 @@ spec:
       isHelmOnly: false
       description: Run sampling logic without actually dropping traces, for evaluation purposes.
       helmValuePath: sampling.dryRun
+    - displayName: Noisy Operations Also In Tail
+      componentType: toggle
+      isHelmOnly: false
+      description: When enabled, noisy operations are applied via both head sampling (where supported) and collector tail sampling. Useful when applications already emit OpenTelemetry and head sampling may miss those spans.
+      helmValuePath: sampling.noisyOperationsAlsoInTail
     - displayName: Span Sampling Attributes Disabled
       componentType: toggle
       isHelmOnly: false

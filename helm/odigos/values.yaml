@@ -2105,6 +2105,14 @@ sampling:
 
   # @schema
   # description: |-
+  #   When true, noisy operations are applied via both head sampling (where the agent supports it)
+  #   and collector tail sampling. Useful when applications already emit OpenTelemetry and head
+  #   sampling may miss those spans. Default is false (exclusive head-or-tail based on distro support).
+  # @schema
+  # noisyOperationsAlsoInTail: true
+
+  # @schema
+  # description: |-
   #   Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
   #   These attributes add context when viewing traces and inspecting costs, so you can understand
   #   how sampling decisions were made for an individual span and apply changes to fine-tune rules.

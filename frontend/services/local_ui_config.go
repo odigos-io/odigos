@@ -274,6 +274,9 @@ func applySamplingInput(cfg *common.SamplingConfiguration, input *model.LocalUIC
 	if input.DryRun != nil {
 		cfg.DryRun = input.DryRun
 	}
+	if input.NoisyOperationsAlsoInTail != nil {
+		cfg.NoisyOperationsAlsoInTail = input.NoisyOperationsAlsoInTail
+	}
 	if input.SpanSamplingAttributes != nil {
 		if cfg.SpanSamplingAttributes == nil {
 			cfg.SpanSamplingAttributes = &sampling.SpanSamplingAttributesConfiguration{}

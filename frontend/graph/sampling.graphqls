@@ -37,6 +37,10 @@ type SamplingConfig {
   # if true, odigos runs sampling logic but does not drop any traces.
   dryRun: Boolean
 
+  # when true, noisy operations are applied via both head sampling (where supported)
+  # and collector tail sampling.
+  noisyOperationsAlsoInTail: Boolean
+
   # configuration for span sampling attributes (category, deciding rules, etc.).
   spanSamplingAttributes: SpanSamplingAttributesConfig
 
