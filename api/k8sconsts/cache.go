@@ -10,6 +10,10 @@ const (
 
 	// OdigosCachePort is the cache listen port (Redis default).
 	OdigosCachePort = 6379
+
+	// UrlTemplatizationLiveTrafficLearningEnvVar enables the enterprise instrumentor
+	// live-traffic learning.
+	UrlTemplatizationLiveTrafficLearningEnvVar = "ODIGOS_URL_TEMPLATIZATION_LIVE_TRAFFIC_LEARNING"
 )
 
 // OdigosCacheEndpoint returns the in-cluster host:port for odigos-cache.
