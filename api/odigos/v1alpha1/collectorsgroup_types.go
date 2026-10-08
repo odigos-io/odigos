@@ -150,6 +150,22 @@ type CollectorsGroupMetricsCollectionSettings struct {
 	// it is generally enabled when we want to record metrics, and listed here for completeness.
 	// any "otlp receiver" specific settings can go here
 	AgentsTelemetry *AgentsTelemetrySettings `json:"agentsTelemetry,omitempty"`
+
+	// if not nil for node collector, some agents record span metrics themselves: because span
+	// metrics in the agents are enabled, or a trace surge rule covers them. the node collector
+	// routes them, and its span metrics connector does not count the spans they counted.
+	AgentSpanMetrics *AgentSpanMetricsSettings `json:"agentSpanMetrics,omitempty"`
+}
+
+// AgentSpanMetricsSettings say why agents record span metrics, and where they go.
+type AgentSpanMetricsSettings struct {
+	// span metrics in the agents are enabled (metricsSources.agentMetrics.spanMetrics.enabled):
+	// they go to the metrics destinations.
+	Destinations bool `json:"destinations,omitempty"`
+
+	// trace surge rules exist and odigos insights is on: the agents the rules cover record span
+	// metrics, which go to odigos insights.
+	Insights bool `json:"insights,omitempty"`
 }
 
 // CollectorsGroupSpec defines the desired state of Collector

@@ -1,6 +1,8 @@
 package common
 
 import (
+	"time"
+
 	"github.com/odigos-io/odigos/common/api/sampling"
 )
 
@@ -572,6 +574,54 @@ type SamplingConfiguration struct {
 
 	// Configuration for Odigos auto-kubelet-probes detection and sampling.
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
+
+	// Limits on trace surges, which raise the sampling of noisy operation rules while a service's
+	// RED metrics spike. They bound how much more data surges can send to the destinations.
+	TraceSurge *TraceSurgeConfiguration `json:"traceSurge,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type TraceSurgeConfiguration struct {
+	// At most this many surges raise sampling at the same time. A surge beyond it is Limited: it
+	// raises nothing until another surge ends. 0 turns trace surges off. Default 10.
+	MaxActiveSurges *int `json:"maxActiveSurges,omitempty"`
+
+	// At most this many workloads sample at a raised percentage at the same time, across all
+	// surges. A surge that would raise more is Limited until enough workloads are restored. Default 50.
+	MaxBoostedWorkloads *int `json:"maxBoostedWorkloads,omitempty"`
+
+	// A surge ends after this long even if its metric has not recovered, and its service must
+	// recover before it can surge again. Duration string (e.g. 30m). Default 30m.
+	MaxDuration string `json:"maxDuration,omitempty"`
+
+	// Each evaluation measures the RED metrics over this window: a shorter one reacts sooner to a
+	// spike, and is noisier. Duration string, 10s to 1h. Default 60s.
+	EvaluationWindow string `json:"evaluationWindow,omitempty"`
+
+	// How often the rules are evaluated, and how often the agents of the workloads a surge rule
+	// covers report their span metrics. Duration string, 2s to 1m. Default 10s.
+	EvaluationInterval string `json:"evaluationInterval,omitempty"`
+}
+
+const (
+	DefaultTraceSurgeEvaluationWindow   = time.Minute
+	DefaultTraceSurgeEvaluationInterval = 10 * time.Second
+)
+
+// TraceSurgeTiming returns the window each trace surge evaluation measures and how often they
+// run, from the sampling configuration, or the defaults where it is unset or out of range.
+func TraceSurgeTiming(s *SamplingConfiguration) (window, interval time.Duration) {
+	window, interval = DefaultTraceSurgeEvaluationWindow, DefaultTraceSurgeEvaluationInterval
+	if s == nil || s.TraceSurge == nil {
+		return window, interval
+	}
+	if d, err := time.ParseDuration(s.TraceSurge.EvaluationWindow); err == nil && d >= 10*time.Second && d <= time.Hour {
+		window = d
+	}
+	if d, err := time.ParseDuration(s.TraceSurge.EvaluationInterval); err == nil && d >= 2*time.Second && d <= time.Minute {
+		interval = d
+	}
+	return window, interval
 }
 
 // +kubebuilder:object:generate=true

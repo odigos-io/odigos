@@ -714,6 +714,47 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 
 
+## `AgentSpanMetricsSettings` <a id="odigos-io-v1alpha1-AgentSpanMetricsSettings"></a>
+
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+<p>AgentSpanMetricsSettings say why agents record span metrics, and where they go.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>destinations</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>span metrics in the agents are enabled (metricsSources.agentMetrics.spanMetrics.enabled):
+they go to the metrics destinations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>insights</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>trace surge rules exist and odigos insights is on: the agents the rules cover record span
+metrics, which go to odigos insights.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `AgentsTelemetrySettings` <a id="odigos-io-v1alpha1-AgentsTelemetrySettings"></a>
 
 
@@ -855,6 +896,19 @@ create dashboards, alerting, and more.</p>
    <p>this part controls the metrics which are received from agents in the otlp receiver.
 it is generally enabled when we want to record metrics, and listed here for completeness.
 any &quot;otlp receiver&quot; specific settings can go here</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentSpanMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentSpanMetricsSettings"><code>AgentSpanMetricsSettings</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, some agents record span metrics themselves: because span
+metrics in the agents are enabled, or a trace surge rule covers them. the node collector
+routes them, and its span metrics connector does not count the spans they counted.</p>
 </td>
 </tr>
 </tbody>
@@ -2891,6 +2945,19 @@ for future context and maintenance.
 users can write why this rule was added, observations, document considerations, etc.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>surge</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeSettings"><code>TraceSurgeSettings</code></a>
+</td>
+<td>
+   <p>raise this rule's percentage while a service its traces reach has a spike in a RED metric.
+the rule's percentage is restored once the metric recovers.
+each episode is recorded in the status of the Sampling, then in odigos insights once it ends.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -3476,6 +3543,19 @@ Odigos does not use or assume any meaning from this field.</p>
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>traceSurges</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurge"><code>[]TraceSurge</code></a>
+</td>
+<td>
+   <p>The trace surges of the rules that are open: limited, boosting or recovering. A surge that
+ended stays until its targets are confirmed back, or, when it ended at the maximum duration,
+until its service recovers. Odigos insights keeps the surges after that.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -3633,6 +3713,603 @@ Not valid for namespace sources.</p>
 <td>
    <p>Represents the observations of a source's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurge` <a id="odigos-io-v1alpha1-TraceSurge"></a>
+
+
+**Appears in:**
+
+- [SamplingStatus](#odigos-io-v1alpha1-SamplingStatus)
+
+<p>TraceSurge records one surge of a sampling rule: a service's metric crossed the rule's threshold,
+the rule's percentage was raised for the workloads whose traces lead to the service, and
+restored once the metric recovered. It is kept in the status of the Sampling object that holds
+the rule while it is open, or until its service recovers when it ended at the maximum duration;
+odigos insights keeps it after that.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>identifies the surge, e.g. 44136fa3-payments-tmfoef.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>startedAt</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>when the surge was recorded: its metric had crossed the threshold for the sustained window.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeSpec"><code>TraceSurgeSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeStatus"><code>TraceSurgeStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurgeEvent` <a id="odigos-io-v1alpha1-TraceSurgeEvent"></a>
+
+
+**Appears in:**
+
+- [TraceSurgeStatus](#odigos-io-v1alpha1-TraceSurgeStatus)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>at</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>title</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>description</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurgeMetric` <a id="odigos-io-v1alpha1-TraceSurgeMetric"></a>
+
+(Alias of `string`)
+
+**Appears in:**
+
+- [TraceSurgeSettings](#odigos-io-v1alpha1-TraceSurgeSettings)
+
+<p>TraceSurgeMetric is the RED metric of a service's server spans that a trace surge watches.</p>
+
+
+
+## `TraceSurgeObservation` <a id="odigos-io-v1alpha1-TraceSurgeObservation"></a>
+
+
+**Appears in:**
+
+- [TraceSurgeStatus](#odigos-io-v1alpha1-TraceSurgeStatus)
+
+<p>one evaluation of a service's metric.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>at</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>value</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>in the unit of the rule's metric.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>requests</code> <B>[Required]</B>
+</td>
+<td>
+<code>int64</code>
+</td>
+<td>
+   <p>server calls in the evaluation window, of the operation if set.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>windowSeconds</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>the length of the evaluation window the value was measured over.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>the server operation (span name, e.g. &quot;GET /checkout/{id}&quot;) whose value this is, when one
+operation's value is above the whole service's. Empty for all of the service's server spans.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurgePhase` <a id="odigos-io-v1alpha1-TraceSurgePhase"></a>
+
+(Alias of `string`)
+
+**Appears in:**
+
+- [TraceSurgeStatus](#odigos-io-v1alpha1-TraceSurgeStatus)
+
+
+
+## `TraceSurgeSettings` <a id="odigos-io-v1alpha1-TraceSurgeSettings"></a>
+
+
+**Appears in:**
+
+- [NoisyOperation](#odigos-io-v1alpha1-NoisyOperation)
+- [TraceSurgeSpec](#odigos-io-v1alpha1-TraceSurgeSpec)
+
+<p>TraceSurgeSettings raise a noisy operation's percentage while a service has a spike.
+every service the rule's traces reach is evaluated on its own, from span metrics recorded before sampling.
+a spike in a service raises the percentage of the workloads in the rule's scope whose traces lead to it.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>version</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>changes on every edit of the settings, so that concurrent edits can be detected.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>metric</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeMetric"><code>TraceSurgeMetric</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>threshold</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>the metric must exceed this value to start a surge:
+percent for error_rate, milliseconds for latency_p95, requests per second for request_rate.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sustainedSeconds</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>how long the metric must stay above the threshold before the percentage is raised.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>minimumRequests</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>a service with fewer server calls than this in the evaluation window is not evaluated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>boostPercent</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>the percentage of new traces to sample during a surge.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>recoveryThreshold</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>the surge ends once the metric stays at or below this value for recoverySeconds.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>recoverySeconds</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>minimumBoostSeconds</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>the percentage stays raised at least this long, however soon the metric recovers.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurgeSpec` <a id="odigos-io-v1alpha1-TraceSurgeSpec"></a>
+
+
+**Appears in:**
+
+- [TraceSurge](#odigos-io-v1alpha1-TraceSurge)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>samplingName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>the Sampling object that holds the rule.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ruleId</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>the id of the noisy operation rule (ComputeNoisyOperationHash).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ruleName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>settings</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeSettings"><code>TraceSurgeSettings</code></a>
+</td>
+<td>
+   <p>the rule's surge settings when the surge started.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>normalPercent</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>the rule's percentage outside a surge.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>service</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#PodWorkload"><code>k8sconsts.PodWorkload</code></a>
+</td>
+<td>
+   <p>the service whose metric crossed the threshold.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>targets</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeTarget"><code>[]TraceSurgeTarget</code></a>
+</td>
+<td>
+   <p>the workloads in the rule's scope whose traces lead to the service.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurgeStatus` <a id="odigos-io-v1alpha1-TraceSurgeStatus"></a>
+
+
+**Appears in:**
+
+- [TraceSurge](#odigos-io-v1alpha1-TraceSurge)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>phase</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgePhase"><code>TraceSurgePhase</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>trigger</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeObservation"><code>TraceSurgeObservation</code></a>
+</td>
+<td>
+   <p>the observation that started the surge.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>triggerSamples</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeObservation"><code>[]TraceSurgeObservation</code></a>
+</td>
+<td>
+   <p>the observations of the sustained window that led to the surge.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastObservation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeObservation"><code>TraceSurgeObservation</code></a>
+</td>
+<td>
+   <p>the latest evaluation of the service's metric.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>boostedAt</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>recoveryStartedAt</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>when the metric last went to or below the recovery threshold, while the surge is recovering.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>restoredAt</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>restoreReason</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>why the normal percentage was restored, e.g. the metric recovered or the rule was removed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>limitReason</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>which trace surge limit kept the surge from raising sampling, while it is or was Limited.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>recoveredAt</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>for a surge that ended at the maximum duration: when its service's metric went back to or
+below the recovery threshold, after which the service can surge again.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>timeline</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TraceSurgeEvent"><code>[]TraceSurgeEvent</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `TraceSurgeTarget` <a id="odigos-io-v1alpha1-TraceSurgeTarget"></a>
+
+
+**Appears in:**
+
+- [TraceSurgeSpec](#odigos-io-v1alpha1-TraceSurgeSpec)
+
+<p>a workload whose sampling a trace surge raises.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>workload</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#PodWorkload"><code>k8sconsts.PodWorkload</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>broadScopeReason</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>set when the target was chosen without evidence that its traces reach the service,
+e.g. when the service graph has no edge for it yet.</p>
 </td>
 </tr>
 </tbody>
