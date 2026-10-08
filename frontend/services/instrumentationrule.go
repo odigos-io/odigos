@@ -433,6 +433,11 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 			} else {
 				apiProbe.ReceiverMethodName = ""
 			}
+			if probe.Signature != nil {
+				apiProbe.Signature = *probe.Signature
+			} else {
+				apiProbe.Signature = ""
+			}
 			customInstrumentations.Golang = append(customInstrumentations.Golang, apiProbe)
 		}
 	}
@@ -841,6 +846,7 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 				FunctionName:       &golangProbe.FunctionName,
 				ReceiverName:       &golangProbe.ReceiverName,
 				ReceiverMethodName: &golangProbe.ReceiverMethodName,
+				Signature:          &golangProbe.Signature,
 			})
 		}
 	}
