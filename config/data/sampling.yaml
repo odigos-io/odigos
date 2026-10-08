@@ -40,10 +40,10 @@ spec:
       isHelmOnly: false
       description: How long to wait for spans to arrive before making a tail sampling decision (e.g. 30s).
       helmValuePath: sampling.tailSampling.traceAggregationWaitDuration
-    - displayName: Noisy Operations Enforcement
+    - displayName: Tail Sampling Noisy Operations Enforcement
       componentType: dropdown
       isHelmOnly: false
-      description: Controls when the collector enforces noisy-operations rules via tail sampling. auto (default) only for sources whose agent does not support head sampling; always for every source, including apps that emit OpenTelemetry themselves so Odigos head sampling never runs.
+      description: By default (auto), noisy operations are sampled in head or tail depending on agent support. Set to always to also enforce with tail sampling — useful when the app is instrumented by another agent, so Odigos head sampling may not run.
       helmValuePath: sampling.tailSampling.noisyOperationsEnforcement
       componentProps:
         options:
