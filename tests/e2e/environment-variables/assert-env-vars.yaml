@@ -3,12 +3,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-nodejs-dockerfile-env
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'nodejs-dockerfile-env']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: nodejs-dockerfile-env
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: nodejs-dockerfile-env
@@ -22,12 +24,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-nodejs-manifest-env
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'nodejs-manifest-env']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: nodejs-manifest-env
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: nodejs-manifest-env
@@ -41,12 +45,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-java-supported-docker-env
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'java-supported-docker-env']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: java-supported-docker-env
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: java-supported-docker-env
@@ -60,12 +66,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-java-supported-manifest-env
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'java-supported-manifest-env']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: java-supported-manifest-env
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: java-supported-manifest-env
@@ -79,12 +87,14 @@ kind: InstrumentationConfig
 metadata:
   name: deployment-python-alpine
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Deployment' && name == 'python-alpine']):
     - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
       kind: Deployment
       name: python-alpine
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   runtimeDetailsByContainer:
     - containerName: python-alpine

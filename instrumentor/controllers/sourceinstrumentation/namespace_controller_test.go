@@ -12,6 +12,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Namespace controller", func() {
@@ -57,8 +58,8 @@ var _ = Describe("Namespace controller", func() {
 			})
 
 			It("should delete InstrumentationConfig", func() {
+				Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(sourceNamespace), sourceNamespace)).Should(Succeed())
 				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
 
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfigDeployment)
@@ -91,8 +92,8 @@ var _ = Describe("Namespace controller", func() {
 			})
 
 			It("should retain InstrumentationConfig", func() {
+				Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(sourceNamespace), sourceNamespace)).Should(Succeed())
 				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
 
 				testutil.AssertInstrumentationConfigRetained(ctx, k8sClient, instrumentationConfigDeployment)

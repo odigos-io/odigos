@@ -66,18 +66,9 @@ func (s *SourcesDefaulter) Default(ctx context.Context, source *v1alpha1.Source)
 		source.Labels[defaultDataStreamLabel] = "true"
 	}
 
-	// Remove old split finalizers
-	if controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
-		controllerutil.RemoveFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
-	}
-	if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) {
-		controllerutil.RemoveFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
-	}
-
-	if source.DeletionTimestamp.IsZero() {
-		if !controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
-			controllerutil.AddFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)
-		}
+	// SourceInstrumentationFinalizer is deprecated; never add it and strip any that remain.
+	if controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
+		controllerutil.RemoveFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)
 	}
 
 	return nil
@@ -181,15 +172,6 @@ func (s *SourcesValidator) ValidateDelete(ctx context.Context, source *v1alpha1.
 
 func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1alpha1.Source) field.ErrorList {
 	allErrs := make([]*field.Error, 0)
-
-	if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) &&
-		controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
-		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("metadata").Child("finalizers"),
-			source.Finalizers,
-			"Source may only have one finalizer",
-		))
-	}
 
 	// When MatchWorkloadNameAsRegex is true, the label should be a hash of the regex pattern
 	// (since Kubernetes labels cannot contain regex special characters like *)

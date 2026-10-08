@@ -83,16 +83,6 @@ func NewMockInstrumentationConfig(workloadObject client.Object) *odigosv1.Instru
 	}
 }
 
-func NewMockInstrumentationConfigWoOwner(workloadObject client.Object) *odigosv1.InstrumentationConfig {
-	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
-	return &odigosv1.InstrumentationConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
-			Namespace: workloadObject.GetNamespace(),
-		},
-	}
-}
-
 // Destination list must include a destination with LogsObservabilitySignal for the filelog to be configured
 func NewMockDestinationList() *odigosv1.DestinationList {
 	return &odigosv1.DestinationList{
@@ -126,7 +116,6 @@ func TestCalculateConfigMapData(t *testing.T) {
 		*NewMockInstrumentationConfig(NewMockTestDeployment(ns)),
 		*NewMockInstrumentationConfig(NewMockTestDaemonSet(ns)),
 		*NewMockInstrumentationConfig(NewMockTestStatefulSet(ns2)),
-		*NewMockInstrumentationConfigWoOwner(NewMockTestDeployment(ns2)),
 	}
 
 	trueVal := true
@@ -300,7 +289,6 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 		*NewMockInstrumentationConfig(NewMockTestDeployment(ns)),
 		*NewMockInstrumentationConfig(NewMockTestDaemonSet(ns)),
 		*NewMockInstrumentationConfig(NewMockTestStatefulSet(ns2)),
-		*NewMockInstrumentationConfigWoOwner(NewMockTestDeployment(ns2)),
 	}
 
 	trueVal2 := true

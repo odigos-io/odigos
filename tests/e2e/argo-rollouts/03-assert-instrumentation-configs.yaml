@@ -7,12 +7,14 @@ kind: InstrumentationConfig
 metadata:
   name: rollout-python-rollout
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Rollout' && name == 'python-rollout']):
     - apiVersion: argoproj.io/v1alpha1
-      blockOwnerDeletion: true
-      controller: true
       kind: Rollout
       name: python-rollout
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
@@ -44,12 +46,14 @@ kind: InstrumentationConfig
 metadata:
   name: rollout-nodejs-rollout
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Rollout' && name == 'nodejs-rollout']):
     - apiVersion: argoproj.io/v1alpha1
-      blockOwnerDeletion: true
-      controller: true
       kind: Rollout
       name: nodejs-rollout
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
@@ -81,12 +85,14 @@ kind: InstrumentationConfig
 metadata:
   name: rollout-java-rollout
   namespace: default
-  ownerReferences:
+  (ownerReferences[?kind == 'Rollout' && name == 'java-rollout']):
     - apiVersion: argoproj.io/v1alpha1
-      blockOwnerDeletion: true
-      controller: true
       kind: Rollout
       name: java-rollout
+  (ownerReferences[?kind == 'Source' && name == 'default']):
+    - apiVersion: odigos.io/v1alpha1
+      kind: Source
+      name: default
 status:
   (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
