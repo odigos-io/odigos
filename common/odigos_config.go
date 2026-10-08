@@ -628,6 +628,8 @@ type InsightsConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
+// LiveTrafficLearningAutomaticRulesConfiguration controls live-traffic automatic
+// rules — applying URL templatization rules learned from live traffic.
 type LiveTrafficLearningAutomaticRulesConfiguration struct {
 	// Enabled, when true, turns on live-traffic automatic rules: learned URL
 	// templatization rules that meet the ruleComputation thresholds are applied
@@ -638,6 +640,9 @@ type LiveTrafficLearningAutomaticRulesConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
+// LiveTrafficLearningRuleComputationConfiguration holds thresholds used when
+// computing URL templatization rules from live traffic. They apply to both
+// UI recommendations and live-traffic automatic rules.
 type LiveTrafficLearningRuleComputationConfiguration struct {
 	// MinObservationsForRule is the minimum number of path observations
 	// required before a rule is recommended in the UI, and before it is applied
@@ -655,6 +660,9 @@ type LiveTrafficLearningRuleComputationConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
+// LiveTrafficLearningConfiguration toggles learning URL templatization rules
+// from live traffic. Disabled unless Enabled is set; when on, Odigos records
+// unmatched HTTP paths and suggests templatization rules.
 type LiveTrafficLearningConfiguration struct {
 	// Enabled, when true, enables learning URL templatization rules from
 	// live traffic (HTTP spans with a path but no http.route / url.template).
@@ -693,11 +701,15 @@ type LiveTrafficLearningConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
+// UrlTemplatizationCardinalityControlConfiguration controls learning URL
+// templatization rules from live traffic.
 type UrlTemplatizationCardinalityControlConfiguration struct {
 	LiveTrafficLearning *LiveTrafficLearningConfiguration `json:"liveTrafficLearning,omitempty" yaml:"liveTrafficLearning,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
+// CardinalityControlConfiguration holds settings for producing and maintaining
+// low-cardinality attributes and span names.
 type CardinalityControlConfiguration struct {
 	UrlTemplatization *UrlTemplatizationCardinalityControlConfiguration `json:"urlTemplatization,omitempty" yaml:"urlTemplatization,omitempty"`
 }
@@ -760,7 +772,9 @@ type OdigosConfiguration struct {
 	// configuration for odigos own metrics store in the cluster.
 	OdigosOwnTelemetryStore *OdigosOwnTelemetryConfiguration `json:"odigosOwnTelemetryStore,omitempty" yaml:"odigosOwnTelemetryStore"`
 
-	// ImagePullSecrets to use for collectors and init container
+	// ImagePullSecrets to use for Odigos components and the agents init container.
+	// On Kubernetes 1.35+ the pod webhook injects these names onto init-container pods.
+	// The Secret objects must already exist in each instrumented namespace.
 	ImagePullSecrets []string `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets"`
 
 	// global configurations for sampling.

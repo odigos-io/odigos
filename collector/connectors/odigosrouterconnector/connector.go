@@ -273,7 +273,12 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 		for _, pipeline := range pipelines {
 			consumer, err := cfg.consumers.Consumer(collectorpipeline.NewIDWithName(collectorpipeline.SignalMetrics, pipeline))
 			if err != nil {
-				errs = errors.Join(errs, fmt.Errorf("failed to get metrics consumer for pipeline %s: %w", pipeline, err))
+				// A data stream with no metrics destination has no metrics/<stream> pipeline, so the
+				// router has no consumer for it. Skip the stream like the traces/logs/profiles paths
+				// do: returning an error here fails the whole incoming request, which rejects every
+				// other resource in the same batch and makes the sender retry and re-deliver them.
+				cfg.logger.Debug("no metrics consumer for data stream pipeline, skipping",
+					zap.String("data_stream", pipeline), zap.Error(err))
 				continue
 			}
 

@@ -34,6 +34,7 @@ var AllProfiles = []profile.Profile{
 	instrumentation.JavaEnterpriseProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
 	instrumentation.LegacyDotNetProfile,
+	instrumentation.LegacyRubyProfile,
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
 	instrumentation.PodManifestEnvVarInjection,

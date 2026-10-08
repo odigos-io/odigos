@@ -6,13 +6,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services"
 )
 
 func SecurityHeadersMiddleware(c *gin.Context) {
 	// Skip CSP for static files and playground to avoid blocking JavaScript resources
 	if !isStaticFile(c.Request.URL.Path) && c.Request.URL.Path != "/playground" {
-		c.Writer.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' ws: wss:;")
+		// connect-src allows the public Go offsets bucket: the browser downloads the
+		// manifest itself (the UI pod may have no outbound internet). @odigos/ui-kit
+		// fetches it from GO_OFFSETS_PUBLIC_URL, which must stay in this bucket.
+		c.Writer.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' ws: wss: "+consts.GoOffsetsPublicBucketURL+";")
 	}
 	c.Writer.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
 	c.Writer.Header().Set("X-Frame-Options", "DENY")

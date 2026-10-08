@@ -28,7 +28,10 @@ func HashForContainersConfig(containersConfig []odigosv1.ContainerAgentConfig) (
 	enc := gob.NewEncoder(&buf)
 	var err error
 
-	// take only the relevant fields for computing the hash
+	// take only the relevant fields for computing the hash.
+	// Trace features the agent applies at runtime (head sampling, payload
+	// collection) are delivered over OpAMP, so changing them must not roll the
+	// workload even when they are also injected as bootstrap env vars.
 	type configHashFields struct {
 		ContainerName  string
 		Instrumented   bool

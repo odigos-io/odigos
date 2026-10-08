@@ -71,6 +71,38 @@ func TestCalculateAutoRollbackStatus_NilInstrumentationConfig(t *testing.T) {
 	}
 }
 
+// The auto rollback config is nil whenever the odigos configuration could not be
+// loaded. Every instrumented workload reaches this function, so a nil config has
+// to be reported as unknown instead of panicking.
+func TestCalculateAutoRollbackStatus_NilConfig(t *testing.T) {
+	ic := &odigosv1alpha1.InstrumentationConfig{}
+	ic.Spec.AgentInjectionEnabled = true
+	instrumentationTime := metav1.NewTime(time.Now().Add(-2 * time.Hour))
+	ic.Status.InstrumentationTime = &instrumentationTime
+
+	if got := CalculateAutoRollbackStatus(ic, nil); got != nil {
+		t.Fatalf("expected nil when the auto rollback config is unavailable, got %+v", got)
+	}
+}
+
+// A source that already rolled back needs its recovery action surfaced even when
+// the auto rollback config is unavailable - RollbackOccurred is a fact about the
+// source, not about the configuration.
+func TestCalculateAutoRollbackStatus_NilConfig_RollbackOccurred(t *testing.T) {
+	ic := &odigosv1alpha1.InstrumentationConfig{}
+	ic.Spec.AgentInjectionEnabled = false
+	ic.Status.RollbackOccurred = true
+
+	got := CalculateAutoRollbackStatus(ic, nil)
+
+	if reasonOf(t, got) != string(AutoRollbackReasonRollbackOccurred) {
+		t.Fatalf("expected reason %q, got %q", AutoRollbackReasonRollbackOccurred, reasonOf(t, got))
+	}
+	if got.Status != model.DesiredStateProgressNotice {
+		t.Fatalf("expected status %q, got %q", model.DesiredStateProgressNotice, got.Status)
+	}
+}
+
 // Only RollbackOccurred is a user visible notice; every other outcome is either
 // informational or a transient wait. Anything else here would make the whole
 // workload's health drop for a source that is behaving normally.

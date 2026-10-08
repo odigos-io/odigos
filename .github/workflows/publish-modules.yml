@@ -114,7 +114,14 @@ jobs:
           tag: ${{ steps.extract_tag.outputs.tag }}
 
   trigger-enterprise-release-pr:
-    if: ${{ needs.decide.outputs.skip != 'true' }}
+    # Deliberately not gated on decide.skip. That guard exists to stop Go modules
+    # being republished when promote-rc-to-stable retags a vX.Y.0, but the enterprise
+    # release PR is a separate concern — and a first stable is exactly when enterprise
+    # needs to cut its matching release. v1.38.0 was promoted and never reached
+    # enterprise because this job inherited the module guard.
+    # tag-modules is skipped in that same case, so accept skipped as well as success.
+    if: ${{ !cancelled() && needs.decide.result == 'success'
+            && (needs['tag-modules'].result == 'success' || needs['tag-modules'].result == 'skipped') }}
     needs: [decide, tag-modules]
     runs-on: depot-ubuntu-latest
     permissions:

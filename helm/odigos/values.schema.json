@@ -50,6 +50,109 @@
       "required": [],
       "title": "autoscaler"
     },
+    "cacheDb": {
+      "additionalProperties": false,
+      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (Redis, published as odigos-cache with the\nOdigos release tag); values stay backend-agnostic so the chart can switch to\nanother cache (e.g. Memcached) without renaming this section. Override the\nimage via images.cache or imagePrefix like other Odigos components.",
+      "properties": {
+        "maxmemory": {
+          "default": "220mb",
+          "description": "Soft memory cap for the cache process when the backend supports it.\nWhen unset, derived as ~85% of the effective memory limit (see resources).",
+          "required": [],
+          "title": "maxmemory"
+        },
+        "resources": {
+          "additionalProperties": true,
+          "default": "",
+          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults use Burstable QoS (requests below limits) since the\ncache is usually idle. Set requests and/or limits to override; if only one\nside is set, the other is mirrored from it.",
+          "required": [],
+          "title": "resources"
+        }
+      },
+      "required": [],
+      "title": "cacheDb"
+    },
+    "cardinalityControl": {
+      "additionalProperties": false,
+      "description": "Cardinality control settings. Configure how Odigos produces and maintains low-cardinality\nattributes and span names in telemetry, and discovers and removes high-cardinality ones\n(for example URL templatization, which sets http.route / url.template and rewrites\nHTTP span names to templated routes that must stay low-cardinality).",
+      "properties": {
+        "urlTemplatization": {
+          "additionalProperties": false,
+          "description": "URL templatization replaces variable parts of HTTP paths with placeholders\n(e.g. /users/123 → /users/{id}) in span names and attributes (http.route / url.template).",
+          "properties": {
+            "liveTrafficLearning": {
+              "additionalProperties": false,
+              "description": "Learn URL templatization rules from live traffic based on path segment\noccurrence counts. Enterprise-only — requires an on-prem token\n(onPremToken / odigos-pro secret). Enabling this deploys the shared\ncache under cacheDb.",
+              "properties": {
+                "automaticRules": {
+                  "additionalProperties": false,
+                  "description": "Live-traffic automatic rules: apply URL templatization rules learned\nfrom live traffic when they meet the ruleComputation thresholds.\nOpt-in; unset/empty keeps live-traffic automatic rules off (rules\nare only suggested).",
+                  "properties": {
+                    "enabled": {
+                      "default": "",
+                      "description": "When true, enables live-traffic automatic rules — learned URL\ntemplatization rules that meet the ruleComputation thresholds are\napplied for you. Requires liveTrafficLearning.enabled. Opt-in;\nunset/empty keeps live-traffic automatic rules off.",
+                      "required": [],
+                      "title": "enabled"
+                    }
+                  },
+                  "required": [],
+                  "title": "automaticRules"
+                },
+                "enabled": {
+                  "default": "",
+                  "description": "When true, enables live-traffic learning of URL templatization rules.\nOpt-in; unset/empty keeps the feature off.",
+                  "required": [],
+                  "title": "enabled"
+                },
+                "learningInterval": {
+                  "default": "30s",
+                  "description": "Learning interval: how often the instrumentor runs the live-traffic\nlearning cycle — checking for new URL templatization rules and\ngarbage-collecting path examples in the shared cache. Smaller\nintervals react faster and reclaim quota sooner but use more\ninstrumentor resources. Default: 30s.",
+                  "required": [],
+                  "title": "learningInterval"
+                },
+                "maxExamplePathsPerWorkload": {
+                  "default": "5000",
+                  "description": "Max example paths per workload: for each workload, Odigos keeps two\nseparate collections of unmatched HTTP path examples — one for\ninbound (server) spans and one for outbound (client) spans. This\nlimit is the maximum distinct paths in each collection, not both\ncombined (so a workload can store up to this many server paths and\nthis many client paths). A larger number can increase the accuracy\nand speed of automatic live-traffic rules, but requires more\nresources. Default: 5000.",
+                  "required": [],
+                  "title": "maxExamplePathsPerWorkload"
+                },
+                "pathExampleIdleTTL": {
+                  "default": "48h",
+                  "description": "Path example idle TTL: how long an unmatched path example is kept\nafter its last observation. Each new observation refreshes the TTL\n(sliding window). Expired paths free quota for new examples. Must\nstay well above the collector flush interval and the learning\ninterval. Default: 48h (2 days).",
+                  "required": [],
+                  "title": "pathExampleIdleTTL"
+                },
+                "ruleComputation": {
+                  "additionalProperties": false,
+                  "description": "Thresholds used when computing URL templatization rules from live\ntraffic. They apply to both UI recommendations and live-traffic\nautomatic rules.",
+                  "properties": {
+                    "minCardinalityForTemplating": {
+                      "default": "20",
+                      "description": "Min cardinality for templating: minimum number of distinct child\nsegment values required before a path segment is collapsed into a\ntemplated placeholder ({id}) in recommended and live-traffic\nautomatic rules. Below this threshold, high-branching segments stay\nas wildcards (*). Additive with minObservationsForRule and\nthe remaining learning checks. Default: 20.",
+                      "required": [],
+                      "title": "minCardinalityForTemplating"
+                    },
+                    "minObservationsForRule": {
+                      "default": "100",
+                      "description": "Min observations for a rule: minimum number of path observations\nrequired before a rule is recommended in the UI, and before it is\napplied as a live-traffic automatic rule when automaticRules.enabled\nis true. Default: 100.",
+                      "required": [],
+                      "title": "minObservationsForRule"
+                    }
+                  },
+                  "required": [],
+                  "title": "ruleComputation"
+                }
+              },
+              "required": [],
+              "title": "liveTrafficLearning"
+            }
+          },
+          "required": [],
+          "title": "urlTemplatization"
+        }
+      },
+      "required": [],
+      "title": "cardinalityControl"
+    },
     "centralProxy": {
       "additionalProperties": false,
       "description": "Configuration for the central proxy component.",
@@ -568,7 +671,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents, enterprise-insights",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents,\n  enterprise-insights, victoria-metrics, cache",
       "required": [],
       "title": "images"
     },
@@ -1515,8 +1618,13 @@
             },
             "seLinuxOptions": {
               "additionalProperties": false,
-              "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThis is an advanced option and should only be changed if you know what you are doing.",
+              "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThe level matches the odiglet container's, since containers sharing a volume must share its SELinux label.\nThis is an advanced option and should only be changed if you know what you are doing.",
               "properties": {
+                "level": {
+                  "default": "s0",
+                  "title": "level",
+                  "type": "string"
+                },
                 "type": {
                   "default": "spc_t",
                   "title": "type",
@@ -1646,7 +1754,7 @@
         },
         "extended": {
           "default": "false",
-          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nDefault: false",
+          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET and Ruby 2.7 instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nSelecting those distros still requires the legacy-dotnet-instrumentation and legacy-ruby-instrumentation profiles.\nDefault: false",
           "required": [],
           "title": "extended"
         },
