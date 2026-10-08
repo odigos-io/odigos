@@ -83,10 +83,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		&corev1.Pod{}: {
 			// Odigos-ns pods stay full (gateway PodIP for custom metrics). Other namespaces stay stripped.
 			Transform: podTransform,
-			Namespaces: map[string]cache.Config{
-				odigosNs:            {},
-				cache.AllNamespaces: {},
-			},
 		},
 		&corev1.ConfigMap{}: {
 			Field: nsSelector,
@@ -97,10 +93,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		&appsv1.Deployment{}: {
 			// Odigos-ns deployments stay full (gateway spec). Other namespaces stay stripped.
 			Transform: workloadTransform,
-			Namespaces: map[string]cache.Config{
-				odigosNs:            {},
-				cache.AllNamespaces: {},
-			},
 		},
 		&appsv1.StatefulSet{}: {
 			Transform: workloadTransform,
