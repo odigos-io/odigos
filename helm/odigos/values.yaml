@@ -230,11 +230,13 @@ interrogation:
   # @schema
   # logLevel: info
 
-  # User-facing LLM config: provider credentials and upstream model id for LiteLLM.
-  # The worker always calls in-cluster odigos-litellm with the fixed alias
-  # "interrogation" (see enterprise interrogation model client).
-  # When interrogation.vllm.enabled is true, LiteLLM ignores provider/name/apiKey and
-  # routes to the bundled odigos-vllm Service instead.
+  # @schema
+  # description: |-
+  #   User-facing LLM config (provider credentials and upstream model id for LiteLLM).
+  #   The worker always calls in-cluster odigos-litellm with the fixed alias
+  #   "interrogation" (see enterprise interrogation model client).
+  #   When interrogation.vllm.enabled is true, LiteLLM ignores provider/name/apiKey and
+  #   routes to the bundled odigos-vllm Service instead.
   # @schema
   model:
     # @schema
@@ -261,7 +263,8 @@ interrogation:
     # @schema
     autoApply: false
 
-  # Internal LiteLLM deployment (image/resources/scheduling). Not user-facing except mirrors.
+  # @schema
+  # description: Internal LiteLLM deployment (image/resources/scheduling). Not user-facing except mirrors.
   # @schema
   litellm:
     # @schema
@@ -281,10 +284,8 @@ interrogation:
     tolerations: []
     affinity: {}
 
-  # Bundled in-cluster vLLM (off by default). Uses odigos-enterprise-vllm with
-  # Qwen2.5-Coder-7B-Instruct-AWQ weights baked into the image (no Hugging Face
-  # at runtime). Defaults request nvidia.com/gpu via resources; override resources,
-  # nodeSelector, and tolerations for your cluster (cloud-agnostic).
+  # @schema
+  # description: Bundled in-cluster vLLM (off by default). Uses odigos-enterprise-vllm with baked-in weights. Defaults request a GPU via resources; override resources and scheduling as needed.
   # @schema
   vllm:
     # @schema
@@ -340,11 +341,12 @@ interrogation:
         memory: 16Gi
         "nvidia.com/gpu": "1"
     # @schema
-    # description: Optional nodeSelector for the GPU pool. Does not inherit the global chart nodeSelector. Prefer -f or --set-json for dotted labels.
+    # additionalProperties: true
+    # description: Optional GPU-pool nodeSelector (does not inherit the global chart selector).
     # @schema
-    # nodeSelector: {}
+    nodeSelector: {}
     # @schema
-    # description: Tolerations for GPU node taints (commonly nvidia.com/gpu Exists NoSchedule).
+    # description: Tolerations for GPU node taints (commonly Exists NoSchedule on the GPU resource).
     # @schema
     tolerations: []
     # @schema
@@ -1530,13 +1532,13 @@ insights:
 
   # @schema
   # description: |-
-#   Bundled ClickHouse for insights and interrogation. Deployed when either
-#   insights.enabled or interrogation.enabled is true. Single replica, no
-#   replication, no backups. Data is on a PVC by default
-#   (insights.clickhouse.storage.persistence); set that to false for
-#   emptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at
-#   one replica. User and database name stay hardcoded (odigos_insights);
-#   image, resources, scheduling, and storage are tunable.
+  #   Bundled ClickHouse for insights and interrogation. Deployed when either
+  #   insights.enabled or interrogation.enabled is true. Single replica, no
+  #   replication, no backups. Data is on a PVC by default
+  #   (insights.clickhouse.storage.persistence); set that to false for
+  #   emptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at
+  #   one replica. User and database name stay hardcoded (odigos_insights);
+  #   image, resources, scheduling, and storage are tunable.
   # @schema
   clickhouse:
     # @schema
@@ -2090,7 +2092,7 @@ traceCorrelations:
       - rpc.method
       - http.route
       - http.status_code
-      - http.response.status_code	
+      - http.response.status_code
       - http.method
       - http.request.method
       - server.address
