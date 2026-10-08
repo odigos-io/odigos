@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -98,6 +99,11 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		for signal := range signals {
 			processor.Spec.Signals = append(processor.Spec.Signals, signal)
 		}
+		// signals is a map, so the iteration order is random on every reconcile.
+		// spec.signals is an atomic list, so an unstable order makes every apply below
+		// a real spec change, and this controller Owns() the processor - which would
+		// re-trigger this reconcile indefinitely.
+		slices.Sort(processor.Spec.Signals)
 		return processor, nil
 	}
 
