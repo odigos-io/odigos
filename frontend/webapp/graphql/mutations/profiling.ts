@@ -20,3 +20,17 @@ export const DISABLE_SOURCE_PROFILING = gql`
     }
   }
 `;
+
+export const CONFIGURE_PROFILING_CACHE = gql`
+  mutation ConfigureProfilingCache($slotTTLSeconds: Int!) {
+    configureProfilingCache(slotTTLSeconds: $slotTTLSeconds) {
+      activeKeys
+      keysWithData
+      totalBytesUsed
+      slotMaxBytes
+      maxSlots
+      maxTotalBytesBudget
+      slotTtlSeconds
+    }
+  }
+`;

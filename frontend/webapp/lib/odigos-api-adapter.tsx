@@ -161,6 +161,7 @@ import {
   DELETE_NOISY_OPERATION_RULE,
   ENABLE_SOURCE_PROFILING,
   DISABLE_SOURCE_PROFILING,
+  CONFIGURE_PROFILING_CACHE,
   PERSIST_NAMESPACES,
   PERSIST_SOURCES,
   RECOVER_FROM_ROLLBACK,
@@ -419,6 +420,11 @@ const operations: OdigosApiOperations = {
   ENABLE_SOURCE_PROFILING: {
     document: ENABLE_SOURCE_PROFILING,
     transformResult: (raw: unknown) => (raw as { enableSourceProfiling?: EnableProfilingResult } | null | undefined)?.enableSourceProfiling,
+  },
+
+  CONFIGURE_PROFILING_CACHE: {
+    document: CONFIGURE_PROFILING_CACHE,
+    transformResult: (raw: unknown) => (raw as { configureProfilingCache?: ProfilingSlots } | null | undefined)?.configureProfilingCache,
   },
 
   DISABLE_SOURCE_PROFILING: {
