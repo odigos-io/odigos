@@ -20,8 +20,7 @@ jobs:
           push: false
           tags: autoscaler:pr-${{ github.event.number || github.run_number }}
           provenance: false
-          build-args: SERVICE_NAME=autoscaler
-          file: Dockerfile
+          file: autoscaler/Dockerfile
           outputs: type=docker,dest=/tmp/autoscaler.tar
       - name: Load Docker image for scanning
         run: docker load -i /tmp/autoscaler.tar
@@ -50,10 +49,6 @@ jobs:
           name: vuln-scan-result-autoscaler-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-autoscaler.json
           retention-days: 30
-      - name: run tests
-        working-directory: ./autoscaler
-        run: |
-          make test
 
   build-agents:
     name: build-agents

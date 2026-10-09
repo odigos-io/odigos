@@ -3,11 +3,13 @@ module github.com/odigos-io/odigos/instrumentor
 go 1.26.4
 
 require (
+	cloud.google.com/go/compute/metadata v0.9.0
 	github.com/argoproj/argo-rollouts v1.9.1
 	github.com/go-logr/logr v1.4.4
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.9.0
+	github.com/jmespath/go-jmespath v0.4.0
 	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
@@ -15,6 +17,7 @@ require (
 	github.com/odigos-io/odigos/distros v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/profiles v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/recommendations v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/status v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.43.0
@@ -24,11 +27,11 @@ require (
 	k8s.io/api v0.35.4
 	k8s.io/apimachinery v0.35.4
 	k8s.io/client-go v0.35.4
+	k8s.io/kube-aggregator v0.35.2
 	sigs.k8s.io/controller-runtime v0.23.3
 )
 
 require (
-	github.com/evanphx/json-patch v5.9.11+incompatible // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-openapi/swag/cmdutils v0.25.4 // indirect
 	github.com/go-openapi/swag/conv v0.25.4 // indirect
@@ -80,17 +83,17 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.24.1 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.70.1 // indirect
+	github.com/prometheus/common v0.71.0
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
-	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
@@ -99,7 +102,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.35.2 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
-	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
+	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -114,6 +117,7 @@ replace (
 	// k8sutils requires this via its own local-only replace, which doesn't propagate to us.
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	github.com/odigos-io/odigos/profiles => ../profiles
+	github.com/odigos-io/odigos/recommendations => ../recommendations
 	github.com/odigos-io/odigos/status => ../status
 	// argo-rollouts@v1.9.1 requires this via its own internal-only replace, which doesn't propagate to us.
 	k8s.io/kubelet => k8s.io/kubelet v0.34.1
