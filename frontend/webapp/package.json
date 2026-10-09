@@ -34,7 +34,7 @@
     "autoprefixer": "^10.5.4",
     "check-peer-dependencies": "^4.3.4",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.3.4",
+    "eslint-config-next": "16.3.8",
     "postcss": "^8.5.27",
     "typescript": "5.9.3"
   },
