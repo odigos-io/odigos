@@ -769,6 +769,24 @@ ui:
   oidcClientSecret: ''
 
 # @schema
+# additionalProperties: true
+# description: |-
+#   Deprecated. Ignored after autoscaler merged into instrumentor.
+#   Kept so helm upgrade --reuse-values from older charts still validates.
+#   Remove after 8 April 2027.
+# @schema
+autoscaler: {}
+
+# @schema
+# additionalProperties: true
+# description: |-
+#   Deprecated. Ignored after scheduler merged into instrumentor.
+#   Kept so helm upgrade --reuse-values from older charts still validates.
+#   Remove after 8 April 2027.
+# @schema
+scheduler: {}
+
+# @schema
 # description: Configuration for the instrumentor component.
 # @schema
 instrumentor:

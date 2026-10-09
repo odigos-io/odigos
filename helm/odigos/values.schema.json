@@ -44,6 +44,12 @@
       "required": [],
       "title": "autoRollback"
     },
+    "autoscaler": {
+      "additionalProperties": true,
+      "description": "Deprecated. Ignored after autoscaler merged into instrumentor.\nKept so helm upgrade --reuse-values from older charts still validates.\nRemove after 8 April 2027.",
+      "required": [],
+      "title": "autoscaler"
+    },
     "cacheDb": {
       "additionalProperties": false,
       "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (Redis, published as odigos-cache with the\nOdigos release tag); values stay backend-agnostic so the chart can switch to\nanother cache (e.g. Memcached) without renaming this section. Override the\nimage via images.cache or imagePrefix like other Odigos components.",
@@ -2421,6 +2427,12 @@
       },
       "required": [],
       "title": "sampling"
+    },
+    "scheduler": {
+      "additionalProperties": true,
+      "description": "Deprecated. Ignored after scheduler merged into instrumentor.\nKept so helm upgrade --reuse-values from older charts still validates.\nRemove after 8 April 2027.",
+      "required": [],
+      "title": "scheduler"
     },
     "signals": {
       "description": "User should be specifying the signals they want to collect.",
