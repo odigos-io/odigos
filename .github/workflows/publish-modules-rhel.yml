@@ -83,7 +83,7 @@ jobs:
           # references for community agents (python, nodejs, php, ruby) are pulled with the
           # higher per-account rate limit instead of the anonymous one (which causes 429s).
           - name: Configure AWS credentials for ECR Public
-            uses: aws-actions/configure-aws-credentials@v5
+            uses: aws-actions/configure-aws-credentials@v6
             with:
               role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
               aws-region: us-east-1
