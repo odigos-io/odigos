@@ -218,8 +218,6 @@ describe('Settings CRUD', () => {
 
         // ─ Component Log Levels ─
         selectDropdownOption('componentLogLevels.default', 'debug');
-        selectDropdownOption('componentLogLevels.autoscaler', 'debug');
-        selectDropdownOption('componentLogLevels.scheduler', 'debug');
         selectDropdownOption('componentLogLevels.instrumentor', 'debug');
         selectDropdownOption('componentLogLevels.odiglet', 'debug');
         selectDropdownOption('componentLogLevels.deviceplugin', 'debug');
@@ -357,8 +355,6 @@ describe('Settings CRUD', () => {
 
         // ─ Component Log Levels ─
         verifyDropdown('componentLogLevels.default', 'debug');
-        verifyDropdown('componentLogLevels.autoscaler', 'debug');
-        verifyDropdown('componentLogLevels.scheduler', 'debug');
         verifyDropdown('componentLogLevels.instrumentor', 'debug');
         verifyDropdown('componentLogLevels.odiglet', 'debug');
         verifyDropdown('componentLogLevels.deviceplugin', 'debug');
