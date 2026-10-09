@@ -169,14 +169,14 @@ jobs:
           access_token_lifetime: 1200s
 
       - name: Login to Artifact Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: us-central1-docker.pkg.dev
           username: oauth2accesstoken
           password: ${{ steps.gcp-auth.outputs.access_token }}
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
