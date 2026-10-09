@@ -4,7 +4,7 @@ go 1.26.4
 
 require (
 	cloud.google.com/go/compute/metadata v0.9.0
-	github.com/argoproj/argo-rollouts v1.9.1
+	github.com/argoproj/argo-rollouts v1.10.0
 	github.com/go-logr/logr v1.4.4
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/uuid v1.6.0
