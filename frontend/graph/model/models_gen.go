@@ -2910,13 +2910,15 @@ type SupportedSignals struct {
 }
 
 type TailSamplingConfig struct {
-	Disabled                     *bool   `json:"disabled,omitempty"`
-	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+	Disabled                     *bool                       `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string                     `json:"traceAggregationWaitDuration,omitempty"`
+	NoisyOperationsEnforcement   *NoisyOperationsEnforcement `json:"noisyOperationsEnforcement,omitempty"`
 }
 
 type TailSamplingConfigInput struct {
-	Disabled                     *bool   `json:"disabled,omitempty"`
-	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+	Disabled                     *bool                       `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string                     `json:"traceAggregationWaitDuration,omitempty"`
+	NoisyOperationsEnforcement   *NoisyOperationsEnforcement `json:"noisyOperationsEnforcement,omitempty"`
 }
 
 type TailSamplingHTTPServerMatcher struct {
@@ -4891,6 +4893,47 @@ func (e *MountMethod) UnmarshalGQL(v any) error {
 }
 
 func (e MountMethod) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type NoisyOperationsEnforcement string
+
+const (
+	NoisyOperationsEnforcementAuto   NoisyOperationsEnforcement = "auto"
+	NoisyOperationsEnforcementAlways NoisyOperationsEnforcement = "always"
+)
+
+var AllNoisyOperationsEnforcement = []NoisyOperationsEnforcement{
+	NoisyOperationsEnforcementAuto,
+	NoisyOperationsEnforcementAlways,
+}
+
+func (e NoisyOperationsEnforcement) IsValid() bool {
+	switch e {
+	case NoisyOperationsEnforcementAuto, NoisyOperationsEnforcementAlways:
+		return true
+	}
+	return false
+}
+
+func (e NoisyOperationsEnforcement) String() string {
+	return string(e)
+}
+
+func (e *NoisyOperationsEnforcement) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = NoisyOperationsEnforcement(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid NoisyOperationsEnforcement", str)
+	}
+	return nil
+}
+
+func (e NoisyOperationsEnforcement) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

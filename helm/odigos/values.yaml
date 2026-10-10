@@ -2143,6 +2143,16 @@ sampling:
     # @schema
     # traceAggregationWaitDuration: '30s'
 
+    # @schema
+    # enum: [auto, always]
+    # description: |-
+    #   Controls when the collector enforces noisy-operations rules via tail sampling.
+    #   auto (default): only for sources whose agent does not support head sampling.
+    #   always: for every source, even when the agent already applied them at head.
+    #   Use always when applications emit OpenTelemetry themselves so Odigos head sampling never runs on their spans.
+    # @schema
+    # noisyOperationsEnforcement: auto
+
   # @schema
   # description: |-
   #   configuration for odigos auto-kubelet-probes detection and sampling.

@@ -2261,6 +2261,7 @@ type ComplexityRoot struct {
 
 	TailSamplingConfig struct {
 		Disabled                     func(childComplexity int) int
+		NoisyOperationsEnforcement   func(childComplexity int) int
 		TraceAggregationWaitDuration func(childComplexity int) int
 	}
 
@@ -13075,6 +13076,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TailSamplingConfig.Disabled(childComplexity), true
+
+	case "TailSamplingConfig.noisyOperationsEnforcement":
+		if e.complexity.TailSamplingConfig.NoisyOperationsEnforcement == nil {
+			break
+		}
+
+		return e.complexity.TailSamplingConfig.NoisyOperationsEnforcement(childComplexity), true
 
 	case "TailSamplingConfig.traceAggregationWaitDuration":
 		if e.complexity.TailSamplingConfig.TraceAggregationWaitDuration == nil {
@@ -83127,6 +83135,8 @@ func (ec *executionContext) fieldContext_SamplingConfig_tailSampling(_ context.C
 				return ec.fieldContext_TailSamplingConfig_disabled(ctx, field)
 			case "traceAggregationWaitDuration":
 				return ec.fieldContext_TailSamplingConfig_traceAggregationWaitDuration(ctx, field)
+			case "noisyOperationsEnforcement":
+				return ec.fieldContext_TailSamplingConfig_noisyOperationsEnforcement(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TailSamplingConfig", field.Name)
 		},
@@ -86039,6 +86049,47 @@ func (ec *executionContext) fieldContext_TailSamplingConfig_traceAggregationWait
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TailSamplingConfig_noisyOperationsEnforcement(ctx context.Context, field graphql.CollectedField, obj *model.TailSamplingConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TailSamplingConfig_noisyOperationsEnforcement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NoisyOperationsEnforcement, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.NoisyOperationsEnforcement)
+	fc.Result = res
+	return ec.marshalONoisyOperationsEnforcement2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationsEnforcement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TailSamplingConfig_noisyOperationsEnforcement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TailSamplingConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type NoisyOperationsEnforcement does not have child fields")
 		},
 	}
 	return fc, nil
@@ -94029,7 +94080,7 @@ func (ec *executionContext) unmarshalInputTailSamplingConfigInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"disabled", "traceAggregationWaitDuration"}
+	fieldsInOrder := [...]string{"disabled", "traceAggregationWaitDuration", "noisyOperationsEnforcement"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -94050,6 +94101,13 @@ func (ec *executionContext) unmarshalInputTailSamplingConfigInput(ctx context.Co
 				return it, err
 			}
 			it.TraceAggregationWaitDuration = data
+		case "noisyOperationsEnforcement":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("noisyOperationsEnforcement"))
+			data, err := ec.unmarshalONoisyOperationsEnforcement2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationsEnforcement(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NoisyOperationsEnforcement = data
 		}
 	}
 
@@ -111535,6 +111593,8 @@ func (ec *executionContext) _TailSamplingConfig(ctx context.Context, sel ast.Sel
 			out.Values[i] = ec._TailSamplingConfig_disabled(ctx, field, obj)
 		case "traceAggregationWaitDuration":
 			out.Values[i] = ec._TailSamplingConfig_traceAggregationWaitDuration(ctx, field, obj)
+		case "noisyOperationsEnforcement":
+			out.Values[i] = ec._TailSamplingConfig_noisyOperationsEnforcement(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -123029,6 +123089,22 @@ func (ec *executionContext) marshalOMetricsSourceSpanMetricsConfig2ᚖgithubᚗc
 		return graphql.Null
 	}
 	return ec._MetricsSourceSpanMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONoisyOperationsEnforcement2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationsEnforcement(ctx context.Context, v any) (*model.NoisyOperationsEnforcement, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.NoisyOperationsEnforcement)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalONoisyOperationsEnforcement2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationsEnforcement(ctx context.Context, sel ast.SelectionSet, v *model.NoisyOperationsEnforcement) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOOdigosComponent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosComponent(ctx context.Context, v any) (*model.OdigosComponent, error) {

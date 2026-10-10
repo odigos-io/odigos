@@ -40,6 +40,15 @@ spec:
       isHelmOnly: false
       description: How long to wait for spans to arrive before making a tail sampling decision (e.g. 30s).
       helmValuePath: sampling.tailSampling.traceAggregationWaitDuration
+    - displayName: Tail Sampling Noisy Operations Enforcement
+      componentType: dropdown
+      isHelmOnly: false
+      description: By default (auto), noisy operations are sampled in head or tail depending on agent support. Set to always to also enforce with tail sampling — useful when the app is instrumented by another agent, so Odigos head sampling may not run.
+      helmValuePath: sampling.tailSampling.noisyOperationsEnforcement
+      componentProps:
+        options:
+          - auto
+          - always
     - displayName: K8s Health Probes Sampling Enabled
       componentType: toggle
       isHelmOnly: false

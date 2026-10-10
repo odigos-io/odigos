@@ -466,6 +466,12 @@ spec:
                       Can be used to reduce collectors resource usage, troubleshooting, etc,
                       or when tail-sampling is not needed or desired and should be shut off.
                     type: boolean
+                  noisyOperationsEnforcement:
+                    description: |-
+                      Controls when the collector enforces noisy-operations rules via tail sampling.
+                      auto (default): only for sources whose agent does not support head sampling.
+                      always: for every source, including those that already apply noisy ops at head.
+                    type: string
                   traceAggregationWaitDuration:
                     description: |-
                       Time to wait from the first span of a trace until a trace is considered completed.

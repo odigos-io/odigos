@@ -2414,6 +2414,16 @@
               "required": [],
               "title": "disabled"
             },
+            "noisyOperationsEnforcement": {
+              "default": "auto",
+              "description": "Controls when the collector enforces noisy-operations rules via tail sampling.\nauto (default): only for sources whose agent does not support head sampling.\nalways: for every source, even when the agent already applied them at head.\nUse always when applications emit OpenTelemetry themselves so Odigos head sampling never runs on their spans.",
+              "enum": [
+                "auto",
+                "always"
+              ],
+              "required": [],
+              "title": "noisyOperationsEnforcement"
+            },
             "traceAggregationWaitDuration": {
               "default": "30s",
               "description": "time to wait from the first span of a trace until a trace is considered completed.\nat this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.\nintroduces this amount of latency in the pipeline and for trace to hit the destination.\nalso increases memory usage for keeping spans in memory until the wait duration time is reached.\nsetting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,\nand broken traces due to sampling each trace in few pieces.",

@@ -40,6 +40,20 @@ type SpanSamplingAttributesConfiguration struct {
 	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty" mapstructure:"span_decision_attributes_disabled"`
 }
 
+// NoisyOperationsEnforcement controls when the collector tail sampler enforces noisy-operations rules.
+type NoisyOperationsEnforcement string
+
+const (
+	// NoisyOperationsEnforcementAuto enforces noisy ops in tail only for sources whose agent
+	// does not support head sampling. This is the default.
+	NoisyOperationsEnforcementAuto NoisyOperationsEnforcement = "auto"
+
+	// NoisyOperationsEnforcementAlways enforces noisy ops in tail for every source, even when
+	// the agent already applied them at head. Covers apps that emit OpenTelemetry themselves,
+	// so Odigos head sampling never runs on their spans.
+	NoisyOperationsEnforcementAlways NoisyOperationsEnforcement = "always"
+)
+
 // TailSamplingConfiguration configures tail sampling behavior.
 // +kubebuilder:object:generate=true
 type TailSamplingConfiguration struct {
@@ -57,6 +71,11 @@ type TailSamplingConfiguration struct {
 	// Setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
 	// and broken traces due to sampling each trace in few pieces.
 	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty" mapstructure:"traceAggregationWaitDuration"`
+
+	// Controls when the collector enforces noisy-operations rules via tail sampling.
+	// auto (default): only for sources whose agent does not support head sampling.
+	// always: for every source, including those that already apply noisy ops at head.
+	NoisyOperationsEnforcement *NoisyOperationsEnforcement `json:"noisyOperationsEnforcement,omitempty" mapstructure:"noisyOperationsEnforcement"`
 }
 
 // SpanMetricsMode determines how span metrics are computed relative to head-sampling decisions.

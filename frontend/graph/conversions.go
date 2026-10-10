@@ -559,6 +559,9 @@ func recordSamplingProvenance(s *common.SamplingConfiguration, pc *provenanceCol
 		if s.TailSampling.TraceAggregationWaitDuration != nil {
 			pc.record("sampling.tailSampling.traceAggregationWaitDuration")
 		}
+		if s.TailSampling.NoisyOperationsEnforcement != nil {
+			pc.record("sampling.tailSampling.noisyOperationsEnforcement")
+		}
 	}
 	if s.K8sHealthProbesSampling != nil {
 		if s.K8sHealthProbesSampling.Enabled != nil {
@@ -792,6 +795,10 @@ func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *mo
 			Disabled:                     s.TailSampling.Disabled,
 			TraceAggregationWaitDuration: s.TailSampling.TraceAggregationWaitDuration,
 		}
+		if s.TailSampling.NoisyOperationsEnforcement != nil {
+			enforcement := noisyOperationsEnforcementToModel(*s.TailSampling.NoisyOperationsEnforcement)
+			out.TailSampling.NoisyOperationsEnforcement = &enforcement
+		}
 	}
 	if s.K8sHealthProbesSampling != nil {
 		out.K8sHealthProbesSampling = &model.K8sHealthProbesSamplingConfig{
@@ -800,6 +807,29 @@ func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *mo
 		}
 	}
 	return out
+}
+
+func noisyOperationsEnforcementToModel(enforcement sampling.NoisyOperationsEnforcement) model.NoisyOperationsEnforcement {
+	switch enforcement {
+	case sampling.NoisyOperationsEnforcementAlways:
+		return model.NoisyOperationsEnforcementAlways
+	default:
+		return model.NoisyOperationsEnforcementAuto
+	}
+}
+
+func noisyOperationsEnforcementFromModel(enforcement *model.NoisyOperationsEnforcement) *sampling.NoisyOperationsEnforcement {
+	if enforcement == nil {
+		return nil
+	}
+	var result sampling.NoisyOperationsEnforcement
+	switch *enforcement {
+	case model.NoisyOperationsEnforcementAlways:
+		result = sampling.NoisyOperationsEnforcementAlways
+	default:
+		result = sampling.NoisyOperationsEnforcementAuto
+	}
+	return &result
 }
 
 func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput) *common.SamplingConfiguration {
@@ -811,6 +841,7 @@ func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput)
 		result.TailSampling = &sampling.TailSamplingConfiguration{
 			Disabled:                     config.TailSampling.Disabled,
 			TraceAggregationWaitDuration: config.TailSampling.TraceAggregationWaitDuration,
+			NoisyOperationsEnforcement:   noisyOperationsEnforcementFromModel(config.TailSampling.NoisyOperationsEnforcement),
 		}
 	}
 	if config.K8sHealthProbesSampling != nil {
