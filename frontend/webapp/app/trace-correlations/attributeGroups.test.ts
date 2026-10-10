@@ -1,8 +1,10 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import { groupAttributesByPrefix } from './attributeGroups';
 
 describe('groupAttributesByPrefix', () => {
   it('groups attributes by namespace prefix', () => {
-    expect(
+    assert.deepEqual(
       groupAttributesByPrefix([
         'http.route',
         'rpc.service',
@@ -10,11 +12,12 @@ describe('groupAttributesByPrefix', () => {
         'http.method',
         'server.address',
       ]),
-    ).toEqual([
-      { prefix: 'db', label: 'db.', values: ['db.system'] },
-      { prefix: 'http', label: 'http.', values: ['http.method', 'http.route'] },
-      { prefix: 'rpc', label: 'rpc.', values: ['rpc.service'] },
-      { prefix: 'server', label: 'server.', values: ['server.address'] },
-    ]);
+      [
+        { prefix: 'db', label: 'db.', values: ['db.system'] },
+        { prefix: 'http', label: 'http.', values: ['http.method', 'http.route'] },
+        { prefix: 'rpc', label: 'rpc.', values: ['rpc.service'] },
+        { prefix: 'server', label: 'server.', values: ['server.address'] },
+      ],
+    );
   });
 });
