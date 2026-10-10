@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -184,34 +185,46 @@ func mergePayloadCollectionUpdate(existing *instrumentationrules.PayloadCollecti
 // fromHTTPPayloadInput copies the advanced HTTP payload options (mime types,
 // max length, drop-partial) from the GraphQL input into the CRD config. The
 // GraphQL layer uses `[]*string` / `*int`, the CRD uses `*[]string` / `*int64`.
+// Omitted and explicit-null fields both map to nil here; the update merge
+// decides whether an omitted field keeps the stored value.
 func fromHTTPPayloadInput(in *model.HTTPPayloadCollectionInput) *instrumentationrules.HttpPayloadCollection {
-	cfg := &instrumentationrules.HttpPayloadCollection{
-		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
-		DropPartialPayloads: in.DropPartialPayloads,
+	return &instrumentationrules.HttpPayloadCollection{
+		MimeTypes:           mimeTypesFromInput(in.MimeTypes.Value()),
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength.Value()),
+		DropPartialPayloads: in.DropPartialPayloads.Value(),
 	}
-	if in.MimeTypes != nil {
-		mimeTypes := make([]string, 0, len(in.MimeTypes))
-		for _, m := range in.MimeTypes {
-			if m != nil {
-				mimeTypes = append(mimeTypes, *m)
-			}
+}
+
+// mimeTypesFromInput drops null and blank entries. A list made only of blank
+// entries maps to nil (all MIME types) instead of an empty list, which would
+// silently stop HTTP payload collection. An explicit `[]` is kept as-is.
+func mimeTypesFromInput(in []*string) *[]string {
+	if in == nil {
+		return nil
+	}
+	mimeTypes := make([]string, 0, len(in))
+	for _, m := range in {
+		if m != nil && strings.TrimSpace(*m) != "" {
+			mimeTypes = append(mimeTypes, *m)
 		}
-		cfg.MimeTypes = &mimeTypes
 	}
-	return cfg
+	if len(in) > 0 && len(mimeTypes) == 0 {
+		return nil
+	}
+	return &mimeTypes
 }
 
 func fromDbQueryPayloadInput(in *model.DbQueryPayloadCollectionInput) *instrumentationrules.DbQueryPayloadCollection {
 	return &instrumentationrules.DbQueryPayloadCollection{
-		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
-		DropPartialPayloads: in.DropPartialPayloads,
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength.Value()),
+		DropPartialPayloads: in.DropPartialPayloads.Value(),
 	}
 }
 
 func fromMessagingPayloadInput(in *model.MessagingPayloadCollectionInput) *instrumentationrules.MessagingPayloadCollection {
 	return &instrumentationrules.MessagingPayloadCollection{
-		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
-		DropPartialPayloads: in.DropPartialPayloads,
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength.Value()),
+		DropPartialPayloads: in.DropPartialPayloads.Value(),
 	}
 }
 
@@ -223,14 +236,15 @@ func mergeHTTPPayloadUpdate(existing *instrumentationrules.HttpPayloadCollection
 
 	// Older UI payload editors send `{}` for an enabled section. Treat omitted
 	// advanced fields as "unchanged" during update so limits/filters are not
-	// silently erased when a rule is opened and saved through that path.
-	if in.MimeTypes == nil {
+	// silently erased when a rule is opened and saved through that path. An
+	// explicit null clears the field (all MIME types / no limit / default).
+	if !in.MimeTypes.IsSet() {
 		cfg.MimeTypes = cloneStringSlicePtr(existing.MimeTypes)
 	}
-	if in.MaxPayloadLength == nil {
+	if !in.MaxPayloadLength.IsSet() {
 		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
 	}
-	if in.DropPartialPayloads == nil {
+	if !in.DropPartialPayloads.IsSet() {
 		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
 	}
 	return cfg
@@ -241,10 +255,10 @@ func mergeDbQueryPayloadUpdate(existing *instrumentationrules.DbQueryPayloadColl
 	if existing == nil {
 		return cfg
 	}
-	if in.MaxPayloadLength == nil {
+	if !in.MaxPayloadLength.IsSet() {
 		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
 	}
-	if in.DropPartialPayloads == nil {
+	if !in.DropPartialPayloads.IsSet() {
 		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
 	}
 	return cfg
@@ -255,10 +269,10 @@ func mergeMessagingPayloadUpdate(existing *instrumentationrules.MessagingPayload
 	if existing == nil {
 		return cfg
 	}
-	if in.MaxPayloadLength == nil {
+	if !in.MaxPayloadLength.IsSet() {
 		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
 	}
-	if in.DropPartialPayloads == nil {
+	if !in.DropPartialPayloads.IsSet() {
 		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
 	}
 	return cfg

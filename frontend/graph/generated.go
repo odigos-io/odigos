@@ -90865,14 +90865,14 @@ func (ec *executionContext) unmarshalInputDbQueryPayloadCollectionInput(ctx cont
 			if err != nil {
 				return it, err
 			}
-			it.MaxPayloadLength = data
+			it.MaxPayloadLength = graphql.OmittableOf(data)
 		case "dropPartialPayloads":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dropPartialPayloads"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DropPartialPayloads = data
+			it.DropPartialPayloads = graphql.OmittableOf(data)
 		}
 	}
 
@@ -91485,21 +91485,21 @@ func (ec *executionContext) unmarshalInputHttpPayloadCollectionInput(ctx context
 			if err != nil {
 				return it, err
 			}
-			it.MimeTypes = data
+			it.MimeTypes = graphql.OmittableOf(data)
 		case "maxPayloadLength":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxPayloadLength"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.MaxPayloadLength = data
+			it.MaxPayloadLength = graphql.OmittableOf(data)
 		case "dropPartialPayloads":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dropPartialPayloads"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DropPartialPayloads = data
+			it.DropPartialPayloads = graphql.OmittableOf(data)
 		}
 	}
 
@@ -93580,14 +93580,14 @@ func (ec *executionContext) unmarshalInputMessagingPayloadCollectionInput(ctx co
 			if err != nil {
 				return it, err
 			}
-			it.MaxPayloadLength = data
+			it.MaxPayloadLength = graphql.OmittableOf(data)
 		case "dropPartialPayloads":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dropPartialPayloads"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DropPartialPayloads = data
+			it.DropPartialPayloads = graphql.OmittableOf(data)
 		}
 	}
 
