@@ -19,7 +19,6 @@ Start by pulling the required images from the default community registry (`docke
 ```bash
 docker pull docker.io/keyval/odigos-instrumentor:$VERSION
 docker pull docker.io/keyval/odigos-ui:$VERSION
-docker pull docker.io/keyval/odigos-autoscaler:$VERSION
 docker pull docker.io/keyval/odigos-odiglet:$VERSION
 docker pull docker.io/keyval/odigos-collector:$VERSION
 docker pull docker.io/keyval/odigos-victoria-metrics:$VERSION
@@ -50,7 +49,6 @@ Odigos component images are published in multi-arch for ARM64 and AMD64 architec
 ```bash
 docker pull --platform $PLATFORM docker.io/keyval/odigos-instrumentor:$VERSION
 docker pull --platform $PLATFORM docker.io/keyval/odigos-ui:$VERSION
-docker pull --platform $PLATFORM docker.io/keyval/odigos-autoscaler:$VERSION
 docker pull --platform $PLATFORM docker.io/keyval/odigos-odiglet:$VERSION
 docker pull --platform $PLATFORM docker.io/keyval/odigos-collector:$VERSION
 docker pull --platform $PLATFORM docker.io/keyval/odigos-victoria-metrics:$VERSION
@@ -63,7 +61,6 @@ Next, Tag each image with your custom Docker registry prefix:
 ```bash
 docker tag docker.io/keyval/odigos-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-instrumentor:$VERSION
 docker tag docker.io/keyval/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
-docker tag docker.io/keyval/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker tag docker.io/keyval/odigos-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION
 docker tag docker.io/keyval/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
 docker tag docker.io/keyval/odigos-victoria-metrics:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
@@ -78,7 +75,6 @@ Now, push the tagged images to your custom Docker registry:
 ```bash
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-instrumentor:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
-docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
@@ -100,8 +96,6 @@ Pass the secret name as `imagePullSecrets` at install time so Odigos components 
 > kubectl patch deployment odigos-ui -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > kubectl patch deployment odigos-instrumentor -n $ODIGOS_NAMESPACE \
-> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
-> kubectl patch deployment odigos-autoscaler -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > kubectl patch deployment odigos-gateway -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'

@@ -1,0 +1,33 @@
+{{- $existing := lookup "apiregistration.k8s.io/v1" "APIService" "" "v1beta1.custom.metrics.k8s.io" -}}
+{{- $shouldRender := true -}}
+{{- if $existing -}}
+  {{- $managedBy := dig "metadata" "labels" "app.kubernetes.io/managed-by" "" $existing -}}
+  {{- if ne $managedBy "Helm" -}}
+    {{- $shouldRender = false -}}
+  {{- end -}}
+{{- end -}}
+{{- if $shouldRender }}
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1beta1.custom.metrics.k8s.io
+  labels:
+    app.kubernetes.io/name: odigos-custom-metrics
+    odigos.io/system-object: "true"
+spec:
+  service:
+    name: odigos-instrumentor
+    namespace: {{ .Release.Namespace }}
+    port: 9443
+  group: custom.metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: false
+  groupPriorityMinimum: 100
+  versionPriority: 100
+  {{- if $existing }}
+    {{- $ca := dig "spec" "caBundle" "" $existing }}
+    {{- if $ca }}
+  caBundle: {{ $ca | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}

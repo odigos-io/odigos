@@ -18,14 +18,14 @@ kubectl get cm -n odigos-system -o yaml odigos-data-collection
 kubectl get cm -n odigos-system -o yaml odigos-gateway
 ```
 
-## View Autoscaler Logs
+## View Instrumentor Logs
 
-The `odigos-autoscaler` controller is the component that watches for changes in the action or processor CRD and generates the collector configuration.
+The `odigos-instrumentor` controller is the component that watches for changes in the action or processor CRD and generates the collector configuration.
 
-If you don't see your processor in the collector configuration, you can check the logs of the autoscaler for errors or clues:
+If you don't see your processor in the collector configuration, you can check the logs of the instrumentor for errors or clues:
 
 ```sh
-kubectl logs -n odigos-system deployments.apps/odigos-autoscaler
+kubectl logs -n odigos-system deployments.apps/odigos-instrumentor
 ```
 
 ## View Collector Logs

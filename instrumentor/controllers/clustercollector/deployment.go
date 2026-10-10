@@ -1,0 +1,407 @@
+package clustercollector
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"errors"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	cfg "github.com/odigos-io/odigos/common/config"
+	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
+	"github.com/odigos-io/odigos/instrumentor/k8sconfig"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+)
+
+const (
+	containerCommand     = "/odigosotelcol"
+	confDir              = "/conf"
+	configHashAnnotation = "odigos.io/config-hash"
+)
+
+func GetDeploymentName(gatewayCg *odigosv1.CollectorsGroup) string {
+	if gatewayCg.Spec.DeploymentName != "" {
+		return gatewayCg.Spec.DeploymentName
+	}
+	return k8sconsts.OdigosClusterCollectorDeploymentName
+}
+
+func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, odigosVersion string, tier common.OdigosTier) (*appsv1.Deployment, error) {
+	logger := commonlogger.FromContext(ctx)
+
+	instrumentorDeploymentName := env.GetComponentDeploymentNameOrDefault(k8sconsts.InstrumentorDeploymentName)
+	instrumentorDeployment := &appsv1.Deployment{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: instrumentorDeploymentName}, instrumentorDeployment); err != nil {
+		return nil, err
+	}
+	autoScalerTopologySpreadConstraints := instrumentorDeployment.Spec.Template.Spec.TopologySpreadConstraints
+
+	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, enabledDests)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to get secrets hash"))
+	}
+
+	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
+	configDataHash := Sha256Hash(secretsVersionHash)
+	desiredDeployment, err := getDesiredDeployment(ctx, c, enabledDests, configDataHash, gateway,
+		scheme, odigosVersion, autoScalerTopologySpreadConstraints, tier)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
+	}
+
+	existingDeployment := &appsv1.Deployment{}
+	getError := c.Get(ctx, client.ObjectKey{Name: desiredDeployment.Name, Namespace: desiredDeployment.Namespace}, existingDeployment)
+	if getError != nil && !apierrors.IsNotFound(getError) {
+		return nil, errors.Join(getError, errors.New("failed to get gateway deployment"))
+	}
+
+	err = deleteOldDeployments(ctx, c, gateway.Namespace, desiredDeployment.Name)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to delete old deployments"))
+	}
+
+	if apierrors.IsNotFound(getError) {
+		logger.Info("Creating new gateway deployment")
+		err := c.Create(ctx, desiredDeployment)
+		if err != nil {
+			return nil, errors.Join(err, errors.New("failed to create gateway deployment"))
+		}
+		return desiredDeployment, nil
+	} else {
+		logger.Info("Patching existing gateway deployment")
+		newDep, err := patchDeployment(existingDeployment, desiredDeployment, ctx, c)
+		if err != nil {
+			return nil, errors.Join(err, errors.New("failed to patch gateway deployment"))
+		}
+		return newDep, nil
+	}
+}
+
+// users can set the deploymentName of the gateway collector to a custom value.
+// if that happens, the old deployments stays around, so this function takes care of deleting them.
+func deleteOldDeployments(ctx context.Context, c client.Client, namespace string, deploymentName string) error {
+	var deployments appsv1.DeploymentList
+	err := c.List(ctx, &deployments, client.InNamespace(namespace), client.MatchingLabels(ClusterCollectorGateway))
+	if err != nil {
+		return err
+	}
+
+	if len(deployments.Items) == 1 && deployments.Items[0].Name == deploymentName {
+		return nil
+	}
+
+	logger := commonlogger.FromContext(ctx)
+	for _, deployment := range deployments.Items {
+		if deployment.Name != deploymentName {
+			logger.Info("Deleting old gateway deployment pre odigos cluster collector deployment rename", "deployment", deployment.Name)
+			err := c.Delete(ctx, &deployment)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ctx context.Context, c client.Client) (*appsv1.Deployment, error) {
+	logger := commonlogger.FromContext(ctx)
+	res, err := controllerutil.CreateOrPatch(ctx, c, existing, func() error {
+		existing.Spec.Template = desired.Spec.Template
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Info("Deployment patched", "result", res)
+	return existing, nil
+}
+
+func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *odigosv1.DestinationList, configDataHash string,
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, odigosVersion string, topologySpreadConstraints []corev1.TopologySpreadConstraint, tier common.OdigosTier) (*appsv1.Deployment, error) {
+
+	nodeSelector := gateway.Spec.NodeSelector
+	if nodeSelector == nil {
+		nodeSelector = &map[string]string{}
+	}
+
+	// request + limits for memory and cpu
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryRequestMiB))
+	limitMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryLimitMiB))
+
+	requestCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuRequestMillicores))
+	limitCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuLimitMillicores))
+
+	// deployment replicas
+	var gatewayReplicas int32 = 1
+	if gateway.Spec.ResourcesSettings.MinReplicas != nil {
+		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
+	}
+
+	extraEnvVars := []corev1.EnvVar{}
+	// The odigos_enterprise_auth extension verifies this token at startup and refuses to run
+	// without it. Community tier has neither the extension nor the odigos-pro secret.
+	if tier.IsEnterprise() {
+		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
+			Name: k8sconsts.OdigosOnpremTokenEnvName,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: k8sconsts.OdigosProSecretName,
+					},
+					Key: k8sconsts.OdigosOnpremTokenSecretKey,
+				},
+			},
+		})
+	}
+	if gateway.Spec.HttpsProxyAddress != nil {
+		odigosNs := env.GetCurrentNamespace()
+		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
+			Name:  "HTTPS_PROXY",
+			Value: *gateway.Spec.HttpsProxyAddress,
+		}, corev1.EnvVar{
+			// prevent the own telemetry metrics from using the https proxy if set.
+			// gRPC uses the HTTPS_PROXY even for non tls connections
+			// since it's always uses HTTP CONNECT, so we need to blacklist the ui service.
+			Name:  "NO_PROXY",
+			Value: fmt.Sprintf("%s.%s:%d", k8sconsts.UIServiceName, odigosNs, odigosconsts.OTLPPort),
+		})
+	}
+
+	deploymentName := GetDeploymentName(gateway)
+
+	desiredDeployment := &appsv1.Deployment{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      deploymentName,
+			Namespace: gateway.Namespace,
+			Labels:    ClusterCollectorGateway,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: intPtr(gatewayReplicas),
+			Selector: &v1.LabelSelector{
+				MatchLabels: ClusterCollectorGateway,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: v1.ObjectMeta{
+					Labels: ClusterCollectorGateway,
+					Annotations: map[string]string{
+						configHashAnnotation: configDataHash,
+					},
+				},
+				Spec: corev1.PodSpec{
+					NodeSelector:       *nodeSelector,
+					ServiceAccountName: k8sconsts.OdigosClusterCollectorServiceAccountName,
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsNonRoot: boolPtr(true),
+						RunAsUser:    int64Ptr(65534), // nobody user
+						RunAsGroup:   int64Ptr(65534), // nobody group
+						FSGroup:      int64Ptr(65534),
+					},
+					Containers: []corev1.Container{
+						{
+							Name:    k8sconsts.OdigosClusterCollectorContainerName,
+							Image:   pipeline.ControllerConfig.CollectorImage,
+							Command: []string{containerCommand},
+							Args: []string{fmt.Sprintf("--config=%s:%s/%s/%s",
+								k8sconsts.OdigosCollectorConfigMapProviderScheme,
+								gateway.Namespace,
+								k8sconsts.OdigosClusterCollectorConfigMapName,
+								k8sconsts.OdigosClusterCollectorConfigMapKey),
+							},
+							EnvFrom: getSecretsFromDests(enabledDests),
+							// Add the ODIGOS_VERSION environment variable from the ConfigMap
+							Env: append([]corev1.EnvVar{
+								{
+									Name: odigosconsts.OdigosVersionEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
+										},
+									},
+								},
+								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name:  "GOMEMLIMIT",
+									Value: fmt.Sprintf("%dMiB", gateway.Spec.ResourcesSettings.GomemlimitMiB),
+								},
+								{
+									// let the Go runtime know how many CPUs are available,
+									// without this, Go will assume all the cores are available.
+									Name: "GOMAXPROCS",
+									ValueFrom: &corev1.EnvVarSource{
+										ResourceFieldRef: &corev1.ResourceFieldSelector{
+											ContainerName: k8sconsts.OdigosClusterCollectorContainerName,
+											// limitCPU, Kubernetes automatically rounds up the value to an integer
+											// (700m -> 1, 1200m -> 2)
+											Resource: "limits.cpu",
+										},
+									},
+								},
+							}, extraEnvVars...),
+							SecurityContext: &corev1.SecurityContext{
+								AllowPrivilegeEscalation: boolPtr(false),
+							},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										Port: intstr.FromInt(13133),
+									},
+								},
+								FailureThreshold: 3,
+								PeriodSeconds:    10,
+								SuccessThreshold: 1,
+								TimeoutSeconds:   5,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										Port: intstr.FromInt(13133),
+									},
+								},
+								FailureThreshold: 3,
+								PeriodSeconds:    10,
+								SuccessThreshold: 1,
+								TimeoutSeconds:   5,
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceMemory: requestMemoryQuantity,
+									corev1.ResourceCPU:    requestCPU,
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceMemory: limitMemoryQuantity,
+									corev1.ResourceCPU:    limitCPU,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	k8sConfigers := k8sconfig.LoadK8sConfigers()
+	for _, dest := range enabledDests.Items {
+		if k8sConfiger, exists := k8sConfigers[dest.GetType()]; exists {
+			err := k8sConfiger.ModifyGatewayCollectorDeployment(ctx, c, dest, desiredDeployment)
+			if err != nil {
+				return nil, errors.Join(err, errors.New("failed to modify gateway collector deployment"))
+			}
+		}
+	}
+
+	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
+	}
+
+	if len(odigosConfiguration.ImagePullSecrets) > 0 {
+		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
+		for _, secret := range odigosConfiguration.ImagePullSecrets {
+			desiredDeployment.Spec.Template.Spec.ImagePullSecrets = append(desiredDeployment.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
+		}
+	}
+
+	if topologySpreadConstraints != nil && len(topologySpreadConstraints) > 0 {
+		adjusted := make([]corev1.TopologySpreadConstraint, 0, len(topologySpreadConstraints))
+		for _, c := range topologySpreadConstraints {
+			c.LabelSelector = &metav1.LabelSelector{
+				MatchLabels: ClusterCollectorGateway,
+			}
+			adjusted = append(adjusted, c)
+		}
+		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = adjusted
+	}
+
+	var featureGates []string
+	if common.ProfilingPipelineActive(odigosConfiguration.Profiling) {
+		featureGates = append(featureGates, "service.profilesSupport")
+	}
+	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
+		featureGates = append(featureGates, "clickhouse.json")
+	}
+	if len(featureGates) > 0 {
+		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
+			desiredDeployment.Spec.Template.Spec.Containers[0].Args,
+			fmt.Sprintf("--feature-gates=%s", strings.Join(featureGates, ",")),
+		)
+	}
+
+	err = ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
+	if err != nil {
+		return nil, err
+	}
+
+	return desiredDeployment, nil
+}
+
+func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSource {
+	var result []corev1.EnvFromSource
+	for _, dst := range destList.Items {
+		if dst.Spec.SecretRef == nil {
+			continue
+		}
+		src := corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: dst.Spec.SecretRef.Name,
+				},
+			},
+		}
+		// Managed destinations emit ${ODIGOS_DEST_<id>_<FIELD>} placeholders. Prefix
+		// envFrom so Secret keys (FIELD) become destination-scoped env vars and do
+		// not collide across destinations of the same type.
+		// Dynamic destinations keep unprefixed envFrom so user-authored ${ENV} names
+		// in raw exporter YAML continue to resolve.
+		if dst.Spec.Type != common.DynamicDestinationType {
+			src.Prefix = cfg.DestSecretEnvPrefix(dst.GetID())
+		}
+		result = append(result, src)
+	}
+
+	return result
+}
+
+func boolPtr(b bool) *bool {
+	return &b
+}
+
+func intPtr(n int32) *int32 {
+	return &n
+}
+
+func int64Ptr(n int64) *int64 {
+	return &n
+}

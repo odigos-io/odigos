@@ -196,5 +196,17 @@ rules:
       - validatingwebhookconfigurations
     resourceNames:
       - odigos-source-validating-webhook-configuration
+      - odigos-action-validating-webhook-configuration
     verbs:
       - update
+  - apiGroups:
+      - apiregistration.k8s.io
+    resources:
+      - apiservices
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete

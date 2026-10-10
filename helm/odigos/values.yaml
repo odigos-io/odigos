@@ -28,9 +28,9 @@ imagePrefix:
 #   This is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.
 #   Example:
 #     images:
-#       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
+#       instrumentor: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
-#   Supported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,
+#   Supported component names: collector, enterprise-collector, ui, enterprise-ui,
 #     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents,
 #     enterprise-insights, victoria-metrics, cache
 # additionalProperties: true
@@ -647,65 +647,6 @@ collectorNode:
       maxElapsedTime: 300s
 
 # @schema
-# description: Configuration for the autoscaler component.
-# @schema
-autoscaler:
-  # @schema
-  # description: Log level for autoscaler. Defaults to info.
-  # @schema
-  logLevel: "info"
-
-  # @schema
-  # description: Override the global nodeSelector (values.nodeSelector) for this component
-  # @schema
-  # nodeSelector:
-  #   kubernetes.io/os: linux
-
-  # @schema
-  # description: |-
-  #   tolerations for the autoscaler deployment.
-  # items:
-  #   description: |-
-  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-  #     Common fields: key, operator, value, effect, tolerationSeconds.
-  #   type: object
-  #   properties:
-  #     key:
-  #       type: string
-  #     operator:
-  #       type: string
-  #     value:
-  #       type: string
-  #     effect:
-  #       type: string
-  # @schema
-  tolerations: []
-  # @schema
-  # additionalProperties: true
-  # @schema
-  affinity: {}
-
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-
-  # @schema
-  # description: Priority class name. Set to use your existing cluster priority classes.
-  # @schema
-  # priorityClassName: ''
-
-  # @schema
-  # description: |-
-  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
-  #   default is 'odigos-autoscaler'
-  # @schema
-  # deploymentName: 'odigos-autoscaler'
-
-# @schema
 # description: Configuration for the UI component.
 # @schema
 ui:
@@ -826,6 +767,24 @@ ui:
   #    - If not set, the UI will not process OIDC authentication.
   # @schema
   oidcClientSecret: ''
+
+# @schema
+# additionalProperties: true
+# description: |-
+#   Deprecated. Ignored after autoscaler merged into instrumentor.
+#   Kept so helm upgrade --reuse-values from older charts still validates.
+#   Remove after 8 April 2027.
+# @schema
+autoscaler: {}
+
+# @schema
+# additionalProperties: true
+# description: |-
+#   Deprecated. Ignored after scheduler merged into instrumentor.
+#   Kept so helm upgrade --reuse-values from older charts still validates.
+#   Remove after 8 April 2027.
+# @schema
+scheduler: {}
 
 # @schema
 # description: Configuration for the instrumentor component.
