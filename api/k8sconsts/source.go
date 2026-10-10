@@ -15,6 +15,9 @@ const (
 	// it can be cleaned up.
 	SourceInstrumentationFinalizer = "odigos.io/source-instrumentation-finalizer"
 
+	// SourceCrdName is the CustomResourceDefinition name for Source resources.
+	SourceCrdName = "sources.odigos.io"
+
 	WorkloadNameLabel      = "odigos.io/workload-name"
 	WorkloadNamespaceLabel = "odigos.io/workload-namespace"
 	WorkloadKindLabel      = "odigos.io/workload-kind"
