@@ -1,7 +1,11 @@
 package mergeconfig
 
+import "slices"
+
 // merge 2 optional string arrays into a new array without duplicates.
 // if both are nil, returns nil.
+// the result is sorted, as it is persisted into the InstrumentationConfig spec
+// and an unstable order would rewrite the spec on every reconcile.
 func MergeStringArrays(a1 *[]string, a2 *[]string) *[]string {
 	if a1 == nil {
 		return a2
@@ -20,6 +24,7 @@ func MergeStringArrays(a1 *[]string, a2 *[]string) *[]string {
 	for mime := range allMimes {
 		mergedMimes = append(mergedMimes, mime)
 	}
+	slices.Sort(mergedMimes)
 	return &mergedMimes
 }
 
