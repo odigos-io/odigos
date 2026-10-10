@@ -40,9 +40,11 @@ func isStaticFile(path string) bool {
 
 func OidcMiddleware(ctx context.Context) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// every rejection below must abort: callers gate the protected handler on
+		// c.IsAborted(), and writing a response does not stop the chain on its own.
 		oauth2Config, err := services.GetOidcOauthConfig(ctx)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC OAuth2 config: %s", err.Error())})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC OAuth2 config: %s", err.Error())})
 			return
 		}
 
@@ -53,24 +55,25 @@ func OidcMiddleware(ctx context.Context) gin.HandlerFunc {
 			// If no token is present, redirect to OIDC auth
 			if token == "" {
 				services.RedirectToOidcAuth(c, oauth2Config)
+				c.Abort()
 				return
 			}
 
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC token from cookies: %s", err.Error())})
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC token from cookies: %s", err.Error())})
 				return
 			}
 
 			oidcTokenVerifier, err := services.GetOidcTokenVerifier(ctx)
 			if err != nil || oidcTokenVerifier == nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC token verifier: %s", err.Error())})
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC token verifier: %v", err)})
 				return
 			}
 
 			// Verify the OIDC token
 			idToken, err := oidcTokenVerifier.Verify(ctx, token)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error verifiying OIDC token: %s", err.Error())})
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error verifiying OIDC token: %s", err.Error())})
 				return
 			}
 
