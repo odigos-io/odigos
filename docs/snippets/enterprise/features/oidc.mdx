@@ -81,3 +81,28 @@ To get started with OIDC, you need to configure the Odigos UI to use an external
 
   </Step>
 </Steps>
+
+## Authentication behavior
+
+When OIDC is configured, both the UI pages and the GraphQL, REST, and event APIs
+require authentication. Browsers use the `id_token` cookie set by the login
+callback. API clients can send an OIDC **ID token** issued for the configured
+client as `Authorization: Bearer <id_token>`; an OAuth access token or the
+Odigos on-prem license token is not a substitute. Unauthenticated API requests
+return HTTP `401`, while unauthenticated UI page requests redirect to the IdP.
+Health probes, `/auth/csrf-token`, and `/auth/oidc-callback` remain public.
+
+For `odigos describe --remote`, remote source operations, and remote token
+updates on OIDC-enabled installations, set `ODIGOS_UI_ID_TOKEN` to a valid ID
+token in the CLI's environment. Remote token updates forward it as a cookie
+through the Kubernetes service proxy so Kubernetes authentication remains intact.
+
+An `oidc` configuration block enables authentication. Supply the tenant URL,
+client ID, and a nonempty `odigos-oidc` secret. Incomplete settings, missing
+credentials, and unavailable configuration or IdP discovery return HTTP `503`;
+they do not silently disable authentication. To disable OIDC intentionally,
+remove all three `ui.oidc*` values so the `oidc` block is absent.
+
+Authentication work is canceled when the client disconnects and has a ten-second
+limit. Each request uses one configuration snapshot for its OAuth settings and
+token verifier.

@@ -7,12 +7,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
-
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/odigos"
+	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
 )
 
 func DescribeOdigosEndpoint() string {
@@ -31,7 +32,7 @@ func GetNumberOfDestinations(ctx context.Context) (int, error) {
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := doUIRequest(req)
 	if err != nil {
 		return 0, err
 	}
@@ -63,7 +64,7 @@ func DescribeOdigos(ctx context.Context) (*odigos.OdigosAnalyze, error) {
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := doUIRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func DescribeSource(ctx context.Context, client *kube.Client, odigosNs string, w
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := doUIRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +133,7 @@ func CreateSource(ctx context.Context, client *kube.Client, odigosNs string, wor
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := doUIRequest(req)
 	if err != nil {
 		return err
 	}
@@ -144,4 +145,22 @@ func CreateSource(ctx context.Context, client *kube.Client, odigosNs string, wor
 	}
 
 	return nil
+}
+
+func doUIRequest(req *http.Request) (*http.Response, error) {
+	if token := os.Getenv(consts.UIIDTokenEnvVarName); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		_ = resp.Body.Close()
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, fmt.Errorf("UI authentication required: set %s to a valid OIDC ID token", consts.UIIDTokenEnvVarName)
+		}
+		return nil, fmt.Errorf("UI request failed with HTTP status %d", resp.StatusCode)
+	}
+	return resp, nil
 }

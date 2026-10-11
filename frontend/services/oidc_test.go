@@ -109,14 +109,13 @@ func TestGetOidcOauthConfig_SecretReadErrorIsReturned(t *testing.T) {
 	}
 }
 
-// An absent secret is a supported configuration, not a failure, and must stay
-// "OIDC is not configured" rather than becoming an error.
-func TestGetOidcOauthConfig_MissingSecretMeansNotConfigured(t *testing.T) {
+// A configured identity provider must not become anonymous when its secret is absent.
+func TestGetOidcOauthConfig_MissingSecretIsReturned(t *testing.T) {
 	setOidcTestClient(t, []runtime.Object{effectiveConfigCM(oidcConfigWithoutSecret)})
 
 	cfg, err := GetOidcOauthConfig(context.Background())
-	if err != nil {
-		t.Fatalf("expected no error when the oidc secret does not exist, got %v", err)
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected missing-secret error, got %v", err)
 	}
 	if cfg != nil {
 		t.Fatalf("expected no oauth2 config when oidc is not fully configured, got %#v", cfg)
