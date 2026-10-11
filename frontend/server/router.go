@@ -71,6 +71,10 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 	r.GET("/auth/csrf-token", middlewares.CSRFTokenHandler())
 	r.GET("/auth/oidc-callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
 
+	// All application routes, extra mounts, and the SPA require authentication.
+	// Public probes and authentication endpoints above remain reachable for login.
+	r.Use(middlewares.OidcMiddleware(ctx))
+
 	// GraphQL.
 	gqlSchema := graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
@@ -146,21 +150,15 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 	if err != nil {
 		return nil, fmt.Errorf("loading embedded webapp bundle: %w", err)
 	}
-	serveClientFiles(ctx, r, dist)
+	serveClientFiles(r, dist)
 
 	return r, nil
 }
 
 // serveClientFiles installs the NoRoute SPA fallback: tries the requested
 // path, then path+".html", finally "/" so client-side routes work.
-func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
+func serveClientFiles(r *gin.Engine, dist fs.FS) {
 	r.NoRoute(gzip.Gzip(gzip.DefaultCompression), func(c *gin.Context) {
-		// OIDC middleware applies only on UI-serving routes; GraphQL/Apollo cannot redirect.
-		middlewares.OidcMiddleware(ctx)(c)
-		if c.IsAborted() {
-			return
-		}
-
 		hfs := http.FS(dist)
 		path := c.Request.URL.Path
 
