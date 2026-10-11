@@ -201,12 +201,15 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 	gatewayOptions.TailSamplingEnabled = &tailSamplingEnabled
 
+	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, c)
+	if err != nil {
+		odigosConfiguration = odigoscommon.OdigosConfiguration{}
+	}
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
-	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil && odigosCfg.ComponentLogLevels != nil {
-		collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
+	if odigosConfiguration.ComponentLogLevels != nil {
+		collectorLogLevel = odigosConfiguration.ComponentLogLevels.Resolve("collector")
 	}
 
-	k8sClient := c
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		pipeline.ToExporterConfigurerArray(enabledDests),
 		pipeline.ToProcessorConfigurerArray(processors),
@@ -229,8 +232,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				}
 			}
 			in := collectorhooks.GatewayHookInput{
-				Ctx:                          ctx,
-				Client:                       k8sClient,
+				OdigosConfiguration:          odigosConfiguration,
 				OdigosNamespace:              env.GetCurrentNamespace(),
 				ServiceGraph:                 gatewayOptions.ServiceGraph,
 				TraceAggregationWaitDuration: waitDuration,

@@ -1,7 +1,6 @@
 package collectorhooks
 
 import (
-	"context"
 	"slices"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -11,15 +10,14 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CollectorHooks is the enterprise extension point for collector ConfigMaps
 // and the cluster-collector Deployment. Nil, or nil fields, means community.
 //
-// Inputs carry only what OSS already resolved for the community config
-// (sources, processors, gateway settings) plus Ctx/Client. Which features to
-// turn on, and the configuration they need, is the hook's own business.
+// Inputs carry what OSS already resolved for the community config (sources,
+// processors, gateway settings, the effective odigos configuration). Which
+// features to turn on is the hook's own business.
 type CollectorHooks struct {
 	NodeCollectorConfig    NodeCollectorConfig
 	ClusterCollectorConfig ClusterCollectorConfig
@@ -130,11 +128,10 @@ func (m *configMutator) setReceivers(pipelineName string, receivers []string) {
 // OSS merges the community node-collector config.
 type NodeCollectorHookInput struct {
 	configMutator
-	Ctx             context.Context
-	Client          client.Client
-	Sources         *odigosv1.InstrumentationConfigList
-	Processors      config.CrdProcessorResults
-	OdigosNamespace string
+	OdigosConfiguration common.OdigosConfiguration
+	Sources             *odigosv1.InstrumentationConfigList
+	Processors          config.CrdProcessorResults
+	OdigosNamespace     string
 }
 
 func (in *NodeCollectorHookInput) AppendReceiverToTraces(name string) {
@@ -149,9 +146,8 @@ func (in *NodeCollectorHookInput) SetLogsReceivers(names []string) {
 // pipelinegen and OSS self-telemetry.
 type GatewayHookInput struct {
 	configMutator
-	Ctx             context.Context
-	Client          client.Client
-	OdigosNamespace string
+	OdigosConfiguration common.OdigosConfiguration
+	OdigosNamespace     string
 	// Gateway settings OSS resolved from the CollectorsGroup, for hooks that
 	// extend the community traces pipeline (pipelinegen.Ensure* helpers).
 	ServiceGraph                 common.ServiceGraphOptions
@@ -174,10 +170,9 @@ func (in *GatewayHookInput) HasRootTracesPipeline() bool {
 // GatewayDeploymentHookInput is passed to ClusterCollectorConfig.MutateDeployment
 // after OSS builds the community cluster-collector Deployment.
 type GatewayDeploymentHookInput struct {
-	Ctx          context.Context
-	Client       client.Client
-	Deployment   *appsv1.Deployment
-	featureGates []string
+	OdigosConfiguration common.OdigosConfiguration
+	Deployment          *appsv1.Deployment
+	featureGates        []string
 }
 
 func (in *GatewayDeploymentHookInput) AddEnv(env corev1.EnvVar) {

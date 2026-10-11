@@ -238,9 +238,6 @@ func CalculateGatewayConfig(
 		}
 	}
 
-	// The callback may add root pipelines beyond the destinations (e.g. an
-	// enterprise tap on traces/in with no traces destination). ReceiverSignals
-	// must advertise those too, so derive the result from the pipelines present.
 	enabledSignals = signalsWithRootPipeline(currentConfig)
 	tracesEnabled = slices.Contains(enabledSignals, common.TracesObservabilitySignal)
 

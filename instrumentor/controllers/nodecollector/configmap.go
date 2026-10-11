@@ -18,6 +18,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -50,7 +51,12 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.Client, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, pipeline.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, b.hooks)
+	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, b.Client)
+	if err != nil {
+		odigosConfiguration = odigoscommon.OdigosConfiguration{}
+	}
+
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, pipeline.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, odigosConfiguration, b.hooks)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -164,7 +170,6 @@ func (b *nodeCollectorBaseReconciler) logConfigMapDataIfChanged(ctx context.Cont
 
 func calculateCollectorConfigDomains(
 	ctx context.Context,
-	k8sClient client.Client,
 	odigosNamespace string,
 	nodeCG *odigosv1.CollectorsGroup,
 	sources *odigosv1.InstrumentationConfigList,
@@ -172,6 +177,7 @@ func calculateCollectorConfigDomains(
 	processors []*odigosv1.Processor,
 	onGKE bool,
 	loadBalancingNeeded bool,
+	odigosConfiguration odigoscommon.OdigosConfiguration,
 	hooks *collectorhooks.CollectorHooks) (map[string]config.Config, string, error) {
 
 	logger := commonlogger.FromContext(ctx)
@@ -185,10 +191,9 @@ func calculateCollectorConfigDomains(
 	configDomains["own_metrics_ui"] = collectorconfig.OwnMetricsConfigUi(ownMetricsPort)
 
 	hookInput := collectorhooks.NodeCollectorHookInput{
-		Ctx:             ctx,
-		Client:          k8sClient,
-		Sources:         sources,
-		OdigosNamespace: odigosNamespace,
+		OdigosConfiguration: odigosConfiguration,
+		Sources:             sources,
+		OdigosNamespace:     odigosNamespace,
 	}
 
 	// all the rest of the config is only evaluated if the node collector group is not nil

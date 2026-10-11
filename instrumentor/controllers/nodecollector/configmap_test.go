@@ -137,7 +137,6 @@ func TestCalculateConfigMapData(t *testing.T) {
 
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
-		nil, /* client */
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -189,7 +188,8 @@ func TestCalculateConfigMapData(t *testing.T) {
 		},
 		false, /* onGKE */
 		true,  /* loadBalancingNeeded */
-		nil,   /* hooks */
+		common.OdigosConfiguration{},
+		nil, /* hooks */
 	)
 
 	assert.Equal(t, err, nil)
@@ -268,7 +268,6 @@ func TestNodeCollectorUsesLoadBalancingExporterForTailSampling(t *testing.T) {
 
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
-		nil, /* client */
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -283,7 +282,8 @@ func TestNodeCollectorUsesLoadBalancingExporterForTailSampling(t *testing.T) {
 		nil,                 /* processors */
 		false,               /* onGKE */
 		loadBalancingNeeded, /* loadBalancingNeeded */
-		nil,                 /* hooks */
+		common.OdigosConfiguration{},
+		nil, /* hooks */
 	)
 
 	assert.NoError(t, err)
@@ -311,7 +311,6 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
-		nil, /* client */
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -352,7 +351,8 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 		},
 		false, /* onGKE */
 		false, /* loadBalancingNeeded */
-		nil,   /* hooks */
+		common.OdigosConfiguration{},
+		nil, /* hooks */
 	)
 
 	assert.Equal(t, err, nil)
@@ -374,7 +374,6 @@ func nodeCollectorConfig(t *testing.T, signals []common.ObservabilitySignal, hoo
 	t.Helper()
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
-		nil, /* client */
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -389,6 +388,7 @@ func nodeCollectorConfig(t *testing.T, signals []common.ObservabilitySignal, hoo
 		nil,   /* processors */
 		false, /* onGKE */
 		false, /* loadBalancingNeeded */
+		common.OdigosConfiguration{},
 		hooks,
 	)
 	require.NoError(t, err)
