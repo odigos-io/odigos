@@ -2,9 +2,10 @@
 
 module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
-go 1.26.2
+go 1.26.4
 
 require (
+	github.com/observiq/bindplane-otel-contrib/exporter/chronicleexporter v1.13.0
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.159.0
 	github.com/odigos-io/odigos/collector/connectors/serviceioconnector v0.159.0
 	github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension v0.159.0
@@ -488,6 +489,8 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
+	github.com/observiq/bindplane-otel-contrib/pkg/expr v1.13.0 // indirect
+	github.com/observiq/bindplane-otel-contrib/pkg/osinfo v1.13.0 // indirect
 	github.com/odigos-io/go-rtml v0.0.1 // indirect
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
@@ -579,7 +582,7 @@ require (
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.5 // indirect
 	github.com/shirou/gopsutil/v4 v4.26.7 // indirect
-	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/shoenig/go-m1cpu v0.1.7 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/shurcooL/httpfs v0.0.0-20230704072500-f1e31cf0ba5c // indirect
 	github.com/signalfx/com_signalfx_metrics_protobuf v0.0.3 // indirect
