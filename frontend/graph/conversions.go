@@ -448,6 +448,57 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		}
 	}
 
+	if config.CardinalityControl != nil {
+		result.CardinalityControl = &model.CardinalityControlConfig{}
+		if config.CardinalityControl.UrlTemplatization != nil {
+			result.CardinalityControl.URLTemplatization = &model.URLTemplatizationCardinalityControlConfig{}
+			if config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
+				ltl := config.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+				ltlModel := &model.LiveTrafficLearningConfig{
+					Enabled:                    ltl.Enabled,
+					MaxExamplePathsPerWorkload: ltl.MaxExamplePathsPerWorkload,
+				}
+				if ltl.Enabled != nil {
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.enabled")
+				}
+				if ltl.MaxExamplePathsPerWorkload != nil {
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.maxExamplePathsPerWorkload")
+				}
+				if ltl.PathExampleIdleTTL != "" {
+					ttl := ltl.PathExampleIdleTTL
+					ltlModel.PathExampleIdleTTL = &ttl
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL")
+				}
+				if ltl.LearningInterval != "" {
+					interval := ltl.LearningInterval
+					ltlModel.LearningInterval = &interval
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval")
+				}
+				if ltl.RuleComputation != nil {
+					ltlModel.RuleComputation = &model.LiveTrafficLearningRuleComputationConfig{
+						MinObservationsForRule:      ltl.RuleComputation.MinObservationsForRule,
+						MinCardinalityForTemplating: ltl.RuleComputation.MinCardinalityForTemplating,
+					}
+					if ltl.RuleComputation.MinObservationsForRule != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minObservationsForRule")
+					}
+					if ltl.RuleComputation.MinCardinalityForTemplating != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minCardinalityForTemplating")
+					}
+				}
+				if ltl.AutomaticRules != nil {
+					ltlModel.AutomaticRules = &model.LiveTrafficLearningAutomaticRulesConfig{
+						Enabled: ltl.AutomaticRules.Enabled,
+					}
+					if ltl.AutomaticRules.Enabled != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled")
+					}
+				}
+				result.CardinalityControl.URLTemplatization.LiveTrafficLearning = ltlModel
+			}
+		}
+	}
+
 	if config.TraceCorrelations != nil {
 		result.TraceCorrelations = &model.TraceCorrelationsConfig{
 			ServiceIo: &model.TraceCorrelationsServiceIOConfig{},
@@ -507,6 +558,9 @@ func recordSamplingProvenance(s *common.SamplingConfiguration, pc *provenanceCol
 		}
 		if s.TailSampling.TraceAggregationWaitDuration != nil {
 			pc.record("sampling.tailSampling.traceAggregationWaitDuration")
+		}
+		if s.TailSampling.NoisyOperationsEnforcement != nil {
+			pc.record("sampling.tailSampling.noisyOperationsEnforcement")
 		}
 	}
 	if s.K8sHealthProbesSampling != nil {
@@ -741,6 +795,10 @@ func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *mo
 			Disabled:                     s.TailSampling.Disabled,
 			TraceAggregationWaitDuration: s.TailSampling.TraceAggregationWaitDuration,
 		}
+		if s.TailSampling.NoisyOperationsEnforcement != nil {
+			enforcement := noisyOperationsEnforcementToModel(*s.TailSampling.NoisyOperationsEnforcement)
+			out.TailSampling.NoisyOperationsEnforcement = &enforcement
+		}
 	}
 	if s.K8sHealthProbesSampling != nil {
 		out.K8sHealthProbesSampling = &model.K8sHealthProbesSamplingConfig{
@@ -749,6 +807,29 @@ func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *mo
 		}
 	}
 	return out
+}
+
+func noisyOperationsEnforcementToModel(enforcement sampling.NoisyOperationsEnforcement) model.NoisyOperationsEnforcement {
+	switch enforcement {
+	case sampling.NoisyOperationsEnforcementAlways:
+		return model.NoisyOperationsEnforcementAlways
+	default:
+		return model.NoisyOperationsEnforcementAuto
+	}
+}
+
+func noisyOperationsEnforcementFromModel(enforcement *model.NoisyOperationsEnforcement) *sampling.NoisyOperationsEnforcement {
+	if enforcement == nil {
+		return nil
+	}
+	var result sampling.NoisyOperationsEnforcement
+	switch *enforcement {
+	case model.NoisyOperationsEnforcementAlways:
+		result = sampling.NoisyOperationsEnforcementAlways
+	default:
+		result = sampling.NoisyOperationsEnforcementAuto
+	}
+	return &result
 }
 
 func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput) *common.SamplingConfiguration {
@@ -760,6 +841,7 @@ func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput)
 		result.TailSampling = &sampling.TailSamplingConfiguration{
 			Disabled:                     config.TailSampling.Disabled,
 			TraceAggregationWaitDuration: config.TailSampling.TraceAggregationWaitDuration,
+			NoisyOperationsEnforcement:   noisyOperationsEnforcementFromModel(config.TailSampling.NoisyOperationsEnforcement),
 		}
 	}
 	if config.K8sHealthProbesSampling != nil {

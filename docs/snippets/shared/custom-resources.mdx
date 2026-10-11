@@ -2,9 +2,9 @@ The different components of the Odigos observability control plane work together
 to achieve observability for the cluster. The interaction between the components
 is performed via the Kubernetes API server.
 
-The autoscaler and instrumentor are
-[Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
-They coordinate by writing and watching the odigos custom resources in the
+The instrumentor is a
+[Kubernetes Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+It coordinates by writing and watching the odigos custom resources in the
 Kubernetes API server.
 
 Odigos adds the following custom resources to the Kubernetes API server:

@@ -73,12 +73,8 @@ var (
 	replacementChar = regexp.MustCompile(`�`)
 )
 
-func attemptTemplateWithRule(pathSegments []string, rule urltemplate.PathRule) (string, bool) {
-	// already verified that the len of the lists match pre calling this function
-	if !rule.IsPathSegmentsMatching(pathSegments) {
-		return "", false
-	}
-
+// templateWithRule assumes rule already matches pathSegments.
+func templateWithRule(pathSegments []string, rule urltemplate.PathRule) string {
 	result := make([]string, 0, len(rule.Segments))
 	for i, segment := range rule.Segments {
 		if segment.TemplateName != "" {
@@ -91,7 +87,7 @@ func attemptTemplateWithRule(pathSegments []string, rule urltemplate.PathRule) (
 		}
 	}
 
-	return strings.Join(result, "/"), true
+	return strings.Join(result, "/")
 }
 
 // return the name to use for templatization "id" / "date" etc which will be embedded in the template
@@ -151,17 +147,13 @@ func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []internalC
 // if so, return the templated url and true
 // if not, return false
 func applyCustomRulesForTemplatization(pathSegments []string, rules map[int][]urltemplate.PathRule, hadLeadingSlash bool) (string, bool) {
-	ruleList, found := rules[len(pathSegments)]
+	rule, found := urltemplate.FindMatchingRule(pathSegments, rules)
 	if !found {
 		return "", false
 	}
-	for _, rule := range ruleList {
-		if templatedUrl, matched := attemptTemplateWithRule(pathSegments, rule); matched {
-			if hadLeadingSlash {
-				templatedUrl = "/" + templatedUrl
-			}
-			return templatedUrl, true
-		}
+	templatedUrl := templateWithRule(pathSegments, rule)
+	if hadLeadingSlash {
+		templatedUrl = "/" + templatedUrl
 	}
-	return "", false
+	return templatedUrl, true
 }

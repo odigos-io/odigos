@@ -180,6 +180,7 @@ export const GET_EFFECTIVE_CONFIG = gql`
         tailSampling {
           disabled
           traceAggregationWaitDuration
+          noisyOperationsEnforcement
         }
         k8sHealthProbesSampling {
           enabled
@@ -188,6 +189,23 @@ export const GET_EFFECTIVE_CONFIG = gql`
       }
       profiling {
         enabled
+      }
+      cardinalityControl {
+        urlTemplatization {
+          liveTrafficLearning {
+            enabled
+            maxExamplePathsPerWorkload
+            pathExampleIdleTTL
+            learningInterval
+            ruleComputation {
+              minObservationsForRule
+              minCardinalityForTemplating
+            }
+            automaticRules {
+              enabled
+            }
+          }
+        }
       }
       traceCorrelations {
         serviceIO {

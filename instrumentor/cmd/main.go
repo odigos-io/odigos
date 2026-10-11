@@ -70,7 +70,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	i, err := instrumentor.New(managerOptions, dp)
+	i, err := instrumentor.New(instrumentor.Options{
+		ManagerOptions:  managerOptions,
+		DistrosProvider: dp,
+	})
 	if err != nil {
 		logger.Error("Failed to initialize instrumentor", "err", err)
 		os.Exit(1)

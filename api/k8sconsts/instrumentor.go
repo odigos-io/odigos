@@ -23,8 +23,4 @@ const (
 
 	InstrumentorWebhookSecretName = "instrumentor-webhooks-cert"
 	InstrumentorWebhookVolumeName = "instrumentor-webhooks-cert"
-
-	// Deprecated: only use for migration purposes.
-	DeprecatedInstrumentorWebhookSecretName = "webhook-cert"
-	DeprecatedInstrumentorWebhookVolumeName = "webhook-cert"
 )

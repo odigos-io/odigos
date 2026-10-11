@@ -466,6 +466,10 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	urlTemplatizationDefaultGroups := convertUrlTemplatizationDefaultToModel(action.Spec.URLTemplatization)
 	extractAttribute := convertExtractAttributeToModel(action.Spec.ExtractAttribute)
 	scopes, templatizeLiterals, removePostgresCastOperator := convertDbActionFieldsToModel(action)
+	if action.Spec.PiiMasking != nil && scopes == nil {
+		// PII masking is scoped too; without it the UI reads a scoped action as applying to every source.
+		scopes = SourcesScopesCRDToModel(action.Spec.PiiMasking.Scopes)
+	}
 
 	responseFields := &model.ActionFields{
 		LabelsAttributes:               labelAttrs,
