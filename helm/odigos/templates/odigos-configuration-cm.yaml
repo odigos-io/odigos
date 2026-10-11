@@ -380,6 +380,9 @@ data:
         {{- if .Values.sampling.tailSampling.traceAggregationWaitDuration }}
         traceAggregationWaitDuration: {{ .Values.sampling.tailSampling.traceAggregationWaitDuration | quote }}
         {{- end }}
+        {{- if .Values.sampling.tailSampling.noisyOperationsEnforcement }}
+        noisyOperationsEnforcement: {{ .Values.sampling.tailSampling.noisyOperationsEnforcement }}
+        {{- end }}
       {{- end }}
       {{- if .Values.sampling.k8sHealthProbesSampling }}
       k8sHealthProbesSampling:

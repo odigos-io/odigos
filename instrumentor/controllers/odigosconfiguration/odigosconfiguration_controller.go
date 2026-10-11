@@ -300,6 +300,9 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			if addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				baseConfig.Sampling.TailSampling.TraceAggregationWaitDuration = addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration
 			}
+			if addtionalConfig.Sampling.TailSampling.NoisyOperationsEnforcement != nil {
+				baseConfig.Sampling.TailSampling.NoisyOperationsEnforcement = addtionalConfig.Sampling.TailSampling.NoisyOperationsEnforcement
+			}
 		}
 		if addtionalConfig.Sampling.K8sHealthProbesSampling != nil {
 			if baseConfig.Sampling.K8sHealthProbesSampling == nil {
