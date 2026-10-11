@@ -1,0 +1,74 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: skywalking
+  displayName: Apache SkyWalking
+  category: self hosted
+spec:
+  image: skywalking.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: SKYWALKING_ENDPOINT
+      displayName: OAP OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        required: true
+        placeholder: "skywalking-oap:11800"
+        tooltip: "OAP host:port. Port defaults to 11800. Enable the OTLP handlers for each selected signal. Traces require Zipkin query; metrics require matching MAL rules; logs require service.name."
+    - name: SKYWALKING_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: "Enable TLS when OAP or its proxy uses an encrypted gRPC endpoint."
+      customReadDataLabels:
+        - condition: "true"
+          title: TLS
+          value: Encrypted
+        - condition: "false"
+          title: TLS
+          value: Unencrypted
+    - name: SKYWALKING_CA_PEM
+      displayName: Certificate Authority
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "CA certificate in PEM format. If empty, use system root CAs."
+      renderCondition: ["SKYWALKING_TLS_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]
+    - name: SKYWALKING_AUTH_ENABLED
+      displayName: Enable Authentication
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: "Send the OAP authentication token as gRPC metadata. Use TLS to protect the token."
+    - name: SKYWALKING_TOKEN
+      displayName: Authentication Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: false
+        tooltip: "Token matching OAP SW_AUTHENTICATION when authentication is enabled."
+      renderCondition: ["SKYWALKING_AUTH_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]
+    - name: SKYWALKING_COMPRESSION
+      displayName: Compression
+      componentType: dropdown
+      initialValue: none
+      componentProps:
+        required: false
+        values: [none, gzip]
+        tooltip: "Compression supported by the OAP gRPC receiver."
+  testConnectionSupported: true
