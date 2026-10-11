@@ -1,6 +1,7 @@
 package collectorhooks
 
 import (
+	"context"
 	"slices"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -10,10 +11,15 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CollectorHooks is the enterprise extension point for collector ConfigMaps
 // and the cluster-collector Deployment. Nil, or nil fields, means community.
+//
+// Inputs carry only what OSS already resolved for the community config
+// (sources, processors, gateway settings) plus Ctx/Client. Which features to
+// turn on, and the configuration they need, is the hook's own business.
 type CollectorHooks struct {
 	NodeCollectorConfig    NodeCollectorConfig
 	ClusterCollectorConfig ClusterCollectorConfig
@@ -124,10 +130,11 @@ func (m *configMutator) setReceivers(pipelineName string, receivers []string) {
 // OSS merges the community node-collector config.
 type NodeCollectorHookInput struct {
 	configMutator
-	Sources            *odigosv1.InstrumentationConfigList
-	Profiling          *common.ProfilingConfiguration
-	ProfilesProcessors []string
-	OdigosNamespace    string
+	Ctx             context.Context
+	Client          client.Client
+	Sources         *odigosv1.InstrumentationConfigList
+	Processors      config.CrdProcessorResults
+	OdigosNamespace string
 }
 
 func (in *NodeCollectorHookInput) AppendReceiverToTraces(name string) {
@@ -142,10 +149,13 @@ func (in *NodeCollectorHookInput) SetLogsReceivers(names []string) {
 // pipelinegen and OSS self-telemetry.
 type GatewayHookInput struct {
 	configMutator
-	Profiling          *common.ProfilingConfiguration
-	Insights           *common.InsightsConfiguration
-	CardinalityControl *common.CardinalityControlConfiguration
-	OdigosNamespace    string
+	Ctx             context.Context
+	Client          client.Client
+	OdigosNamespace string
+	// Gateway settings OSS resolved from the CollectorsGroup, for hooks that
+	// extend the community traces pipeline (pipelinegen.Ensure* helpers).
+	ServiceGraph                 common.ServiceGraphOptions
+	TraceAggregationWaitDuration string
 }
 
 func (in *GatewayHookInput) AppendExporterToRootTraces(name string) {
@@ -164,8 +174,9 @@ func (in *GatewayHookInput) HasRootTracesPipeline() bool {
 // GatewayDeploymentHookInput is passed to ClusterCollectorConfig.MutateDeployment
 // after OSS builds the community cluster-collector Deployment.
 type GatewayDeploymentHookInput struct {
+	Ctx          context.Context
+	Client       client.Client
 	Deployment   *appsv1.Deployment
-	Profiling    *common.ProfilingConfiguration
 	featureGates []string
 }
 
@@ -193,21 +204,15 @@ func ApplyNodeConfig(hooks *CollectorHooks, in NodeCollectorHookInput) error {
 }
 
 func ApplyGatewayConfig(hooks *CollectorHooks, in GatewayHookInput) error {
-	if !HasClusterCollectorConfig(hooks) {
+	if hooks == nil || hooks.ClusterCollectorConfig == nil {
 		return nil
 	}
 	return hooks.ClusterCollectorConfig.MutateConfig(in)
 }
 
 func ApplyGatewayDeployment(hooks *CollectorHooks, in *GatewayDeploymentHookInput) {
-	if !HasClusterCollectorConfig(hooks) {
+	if hooks == nil || hooks.ClusterCollectorConfig == nil {
 		return
 	}
 	hooks.ClusterCollectorConfig.MutateDeployment(in)
-}
-
-// HasClusterCollectorConfig is true when enterprise will mutate the gateway.
-// OSS uses this to pass Insights into pipelinegen (groupbytrace) only then.
-func HasClusterCollectorConfig(hooks *CollectorHooks) bool {
-	return hooks != nil && hooks.ClusterCollectorConfig != nil
 }

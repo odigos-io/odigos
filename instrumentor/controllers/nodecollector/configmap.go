@@ -18,7 +18,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -51,12 +50,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
-	var profilingCfg *odigoscommon.ProfilingConfiguration
-	if cfg, err := utils.GetCurrentOdigosConfiguration(ctx, b.Client); err == nil {
-		profilingCfg = cfg.Profiling
-	}
-
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, pipeline.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.hooks)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.Client, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, pipeline.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, b.hooks)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -170,6 +164,7 @@ func (b *nodeCollectorBaseReconciler) logConfigMapDataIfChanged(ctx context.Cont
 
 func calculateCollectorConfigDomains(
 	ctx context.Context,
+	k8sClient client.Client,
 	odigosNamespace string,
 	nodeCG *odigosv1.CollectorsGroup,
 	sources *odigosv1.InstrumentationConfigList,
@@ -177,7 +172,6 @@ func calculateCollectorConfigDomains(
 	processors []*odigosv1.Processor,
 	onGKE bool,
 	loadBalancingNeeded bool,
-	profiling *odigoscommon.ProfilingConfiguration,
 	hooks *collectorhooks.CollectorHooks) (map[string]config.Config, string, error) {
 
 	logger := commonlogger.FromContext(ctx)
@@ -190,11 +184,18 @@ func calculateCollectorConfigDomains(
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
 	configDomains["own_metrics_ui"] = collectorconfig.OwnMetricsConfigUi(ownMetricsPort)
 
+	hookInput := collectorhooks.NodeCollectorHookInput{
+		Ctx:             ctx,
+		Client:          k8sClient,
+		Sources:         sources,
+		OdigosNamespace: odigosNamespace,
+	}
+
 	// all the rest of the config is only evaluated if the node collector group is not nil
 	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.
 	// this logic should be revisited in the future, but kept as is for now (nov 2025)
 	if nodeCG == nil {
-		return mergeNodeCollectorConfig(configDomains, hooks, sources, profiling, nil, odigosNamespace)
+		return mergeNodeCollectorConfig(configDomains, hooks, hookInput)
 	}
 
 	// processors from k8s "Processor" custom resource
@@ -204,6 +205,7 @@ func calculateCollectorConfigDomains(
 		return nil, "", err
 	}
 	configDomains["processors"] = processorsResults.ProcessorsConfig
+	hookInput.Processors = processorsResults
 
 	if collectorconfig.NodeNeedsOdigosConfigK8sExtension(processors) {
 		configDomains["odigos_config_extension"] = collectorconfig.NodeOdigosExtDomain()
@@ -289,26 +291,17 @@ func calculateCollectorConfigDomains(
 		configDomains["logs"] = logsConfig
 	}
 
-	return mergeNodeCollectorConfig(configDomains, hooks, sources, profiling, processorsResults.ProfilesProcessors, odigosNamespace)
+	return mergeNodeCollectorConfig(configDomains, hooks, hookInput)
 }
 
 func mergeNodeCollectorConfig(
 	configDomains map[string]config.Config,
 	hooks *collectorhooks.CollectorHooks,
-	sources *odigosv1.InstrumentationConfigList,
-	profiling *odigoscommon.ProfilingConfiguration,
-	profilesProcessors []string,
-	odigosNamespace string,
+	in collectorhooks.NodeCollectorHookInput,
 ) (map[string]config.Config, string, error) {
 	mergedConfig, err := config.MergeConfigs(configDomains)
 	if err != nil {
 		return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
-	}
-	in := collectorhooks.NodeCollectorHookInput{
-		Sources:            sources,
-		Profiling:          profiling,
-		ProfilesProcessors: profilesProcessors,
-		OdigosNamespace:    odigosNamespace,
 	}
 	in.Config = &mergedConfig
 	if err := collectorhooks.ApplyNodeConfig(hooks, in); err != nil {

@@ -137,6 +137,7 @@ func TestCalculateConfigMapData(t *testing.T) {
 
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
+		nil, /* client */
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -188,7 +189,6 @@ func TestCalculateConfigMapData(t *testing.T) {
 		},
 		false, /* onGKE */
 		true,  /* loadBalancingNeeded */
-		nil,   /* profiling */
 		nil,   /* hooks */
 	)
 
@@ -268,6 +268,7 @@ func TestNodeCollectorUsesLoadBalancingExporterForTailSampling(t *testing.T) {
 
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
+		nil, /* client */
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -282,7 +283,6 @@ func TestNodeCollectorUsesLoadBalancingExporterForTailSampling(t *testing.T) {
 		nil,                 /* processors */
 		false,               /* onGKE */
 		loadBalancingNeeded, /* loadBalancingNeeded */
-		nil,                 /* profiling */
 		nil,                 /* hooks */
 	)
 
@@ -311,6 +311,7 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
+		nil, /* client */
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -351,7 +352,6 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 		},
 		false, /* onGKE */
 		false, /* loadBalancingNeeded */
-		nil,   /* profiling */
 		nil,   /* hooks */
 	)
 
@@ -374,6 +374,7 @@ func nodeCollectorConfig(t *testing.T, signals []common.ObservabilitySignal, hoo
 	t.Helper()
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
+		nil, /* client */
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -388,7 +389,6 @@ func nodeCollectorConfig(t *testing.T, signals []common.ObservabilitySignal, hoo
 		nil,   /* processors */
 		false, /* onGKE */
 		false, /* loadBalancingNeeded */
-		nil,   /* profiling */
 		hooks,
 	)
 	require.NoError(t, err)

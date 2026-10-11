@@ -332,8 +332,9 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 	}
 
 	hookIn := &collectorhooks.GatewayDeploymentHookInput{
+		Ctx:        ctx,
+		Client:     c,
 		Deployment: desiredDeployment,
-		Profiling:  odigosConfiguration.Profiling,
 	}
 	collectorhooks.ApplyGatewayDeployment(hooks, hookIn)
 

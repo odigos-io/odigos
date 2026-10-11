@@ -202,39 +202,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	gatewayOptions.TailSamplingEnabled = &tailSamplingEnabled
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
-	var profilingCfg *odigoscommon.ProfilingConfiguration
-	var insightsCfg *odigoscommon.InsightsConfiguration
-	var cardinalityControlCfg *odigoscommon.CardinalityControlConfiguration
-	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
-		profilingCfg = odigosCfg.Profiling
-		// groupbytrace for insights lives in pipelinegen before MutateConfig.
-		// Only pass Insights when enterprise will mutate the gateway; otherwise
-		// community would buffer every span for a Service that was never deployed.
-		if collectorhooks.HasClusterCollectorConfig(hooks) {
-			insightsCfg = odigosCfg.Insights
-			cardinalityControlCfg = odigosCfg.CardinalityControl
-		}
-		if odigosCfg.ComponentLogLevels != nil {
-			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
-		}
-	}
-	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
-	gatewayOptions.Insights = insightsCfg
-	// Provide the insights OTLP endpoint so pipelinegen (in the common module, which
-	// cannot import api/k8sconsts) can add an OTLP exporter to metrics/servicegraph
-	// for the blast-radius topology. Target the headless Service via dns:/// so
-	// the gateway's gRPC client round_robins across insights replicas.
-	if odigoscommon.InsightsPipelineActive(insightsCfg) {
-		gatewayOptions.InsightsOtlpEndpoint = k8sconsts.InsightsOtlpGrpcDNSEndpoint(env.GetCurrentNamespace())
-	}
-	// Insights can trigger groupbytrace without tail sampling on, in which case
-	// the scheduler hasn't resolved TraceAggregationWaitDuration. Fall back to the
-	// canonical default so we never feed groupbytrace a nil wait_duration.
-	if gatewayOptions.TraceAggregationWaitDuration == nil && odigoscommon.InsightsPipelineActive(insightsCfg) {
-		def := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
-		gatewayOptions.TraceAggregationWaitDuration = &def
+	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil && odigosCfg.ComponentLogLevels != nil {
+		collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 	}
 
+	k8sClient := c
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		pipeline.ToExporterConfigurerArray(enabledDests),
 		pipeline.ToProcessorConfigurerArray(processors),
@@ -257,10 +229,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				}
 			}
 			in := collectorhooks.GatewayHookInput{
-				Profiling:          profilingCfg,
-				Insights:           insightsCfg,
-				CardinalityControl: cardinalityControlCfg,
-				OdigosNamespace:    env.GetCurrentNamespace(),
+				Ctx:                          ctx,
+				Client:                       k8sClient,
+				OdigosNamespace:              env.GetCurrentNamespace(),
+				ServiceGraph:                 gatewayOptions.ServiceGraph,
+				TraceAggregationWaitDuration: waitDuration,
 			}
 			in.Config = c
 			return collectorhooks.ApplyGatewayConfig(hooks, in)
