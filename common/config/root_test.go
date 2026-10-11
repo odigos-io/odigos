@@ -14,7 +14,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-
 type DummyProcessor struct {
 	ID        string
 	Type      string
@@ -404,7 +403,8 @@ func TestSignalsFollowRootPipelinesAddedByCallback(t *testing.T) {
 			if err := selfMetrics(c, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err
 			}
-			pipelinegen.EnsureRootTracesPipeline(c)
+			// CRD traces processors keep running on traces/in; exporting-side ones (tail sampling, batch) do not.
+			pipelinegen.EnsureRootTracesPipeline(c, []string{"attributes/pii-masking", consts.OdigosTailSamplingProcessorName, consts.GenericBatchProcessorConfigKey})
 			pipelinegen.EnsureGroupByTraceProcessor(c, "30s")
 			return nil
 		}, nil, &gatewayOptions,
@@ -414,7 +414,7 @@ func TestSignalsFollowRootPipelinesAddedByCallback(t *testing.T) {
 
 	tracesIn, ok := cfg.Service.Pipelines["traces/in"]
 	require.True(t, ok)
-	assert.Equal(t, []string{"resource/odigos-version", consts.GroupByTraceProcessor}, tracesIn.Processors)
+	assert.Equal(t, []string{"resource/odigos-version", consts.GroupByTraceProcessor, "attributes/pii-masking"}, tracesIn.Processors)
 	assert.Contains(t, tracesIn.Exporters, consts.ServiceGraphConnectorName)
 	_, hasServiceGraph := cfg.Service.Pipelines["metrics/servicegraph"]
 	assert.True(t, hasServiceGraph)

@@ -143,16 +143,40 @@ func (in *NodeCollectorHookInput) SetLogsReceivers(names []string) {
 	in.setReceivers(collectorconfig.LogsPipelineName, names)
 }
 
+// GatewayTracesConfig is what shapes traces/in itself, resolved while building
+// the base config. Consumed by the Ensure* methods on GatewayHookInput.
+type GatewayTracesConfig struct {
+	// groupbytrace wait duration for features that need fully assembled traces.
+	AggregationWaitDuration string
+	// CRD traces processors in pipeline order, as pipelinegen places them on
+	// traces/in.
+	Processors []string
+}
+
 // GatewayHookInput is passed to ClusterCollectorConfig.MutateConfig after
 // pipelinegen and OSS self-telemetry.
 type GatewayHookInput struct {
 	configMutator
 	OdigosConfiguration common.OdigosConfiguration
 	OdigosNamespace     string
-	// Gateway settings OSS resolved from the CollectorsGroup, for hooks that
-	// extend the community traces pipeline (pipelinegen.Ensure* helpers).
-	ServiceGraph                 common.ServiceGraphOptions
-	TraceAggregationWaitDuration string
+	// Service graph options resolved from the CollectorsGroup; the connector is
+	// fed from traces/in and emits metrics/servicegraph.
+	ServiceGraph common.ServiceGraphOptions
+	Traces       GatewayTracesConfig
+}
+
+// EnsureRootTracesPipeline creates traces/in (with the CRD traces processors)
+// when no destination created it, so hooks can attach exporters to it.
+func (in *GatewayHookInput) EnsureRootTracesPipeline() {
+	in.ensureConfig()
+	pipelinegen.EnsureRootTracesPipeline(in.Config, in.Traces.Processors)
+}
+
+// EnsureGroupByTraceProcessor runs groupbytrace first on traces/in using the
+// resolved aggregation wait duration. No-op without traces/in.
+func (in *GatewayHookInput) EnsureGroupByTraceProcessor() {
+	in.ensureConfig()
+	pipelinegen.EnsureGroupByTraceProcessor(in.Config, in.Traces.AggregationWaitDuration)
 }
 
 func (in *GatewayHookInput) AppendExporterToRootTraces(name string) {

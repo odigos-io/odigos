@@ -210,9 +210,12 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		collectorLogLevel = odigosConfiguration.ComponentLogLevels.Resolve("collector")
 	}
 
+	processorConfigurers := pipeline.ToProcessorConfigurerArray(processors)
+	tracesProcessors := config.CrdProcessorToConfig(processorConfigurers).TracesProcessors
+
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		pipeline.ToExporterConfigurerArray(enabledDests),
-		pipeline.ToProcessorConfigurerArray(processors),
+		processorConfigurers,
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
 			// Normalize OBI metric names (obi.* -> odigos.*) once at the gateway, before metrics are
 			// routed to destinations. No-op when metrics are disabled or no obi.* metrics are present.
@@ -232,10 +235,13 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				}
 			}
 			in := collectorhooks.GatewayHookInput{
-				OdigosConfiguration:          odigosConfiguration,
-				OdigosNamespace:              env.GetCurrentNamespace(),
-				ServiceGraph:                 gatewayOptions.ServiceGraph,
-				TraceAggregationWaitDuration: waitDuration,
+				OdigosConfiguration: odigosConfiguration,
+				OdigosNamespace:     env.GetCurrentNamespace(),
+				ServiceGraph:        gatewayOptions.ServiceGraph,
+				Traces: collectorhooks.GatewayTracesConfig{
+					AggregationWaitDuration: waitDuration,
+					Processors:              tracesProcessors,
+				},
 			}
 			in.Config = c
 			return collectorhooks.ApplyGatewayConfig(hooks, in)

@@ -395,14 +395,17 @@ func applyRootPipelineForSignal(currentConfig *config.Config, signal common.Obse
 
 // EnsureRootTracesPipeline creates traces/in with the otlp receiver when no
 // destination created it, so taps (service graph, side channels) can attach.
-func EnsureRootTracesPipeline(currentConfig *config.Config) {
+// tracesProcessors are the CRD traces processors; the same subset that runs on
+// traces/in in the split layout is applied here so taps see enriched spans.
+func EnsureRootTracesPipeline(currentConfig *config.Config, tracesProcessors []string) {
 	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
 	if _, exists := currentConfig.Service.Pipelines[rootPipelineName]; exists {
 		return
 	}
+	tracesInProcessors, _ := splitTracesProcessorsForPipelines(tracesProcessors, nil)
 	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
 		Receivers:  []string{"otlp"},
-		Processors: []string{"resource/odigos-version"},
+		Processors: append([]string{"resource/odigos-version"}, tracesInProcessors...),
 		Exporters:  []string{},
 	}
 }
