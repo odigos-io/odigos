@@ -12,6 +12,7 @@ import (
 
 	googlecloudmetadata "cloud.google.com/go/compute/metadata"
 
+	"github.com/odigos-io/odigos/actions"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -75,6 +76,10 @@ func New(opts Options) (*Instrumentor, error) {
 
 	if err := recommendations.Load(); err != nil {
 		return nil, fmt.Errorf("unable to load recommendations catalog: %w", err)
+	}
+
+	if err := actions.Load(); err != nil {
+		return nil, fmt.Errorf("unable to load actions catalog: %w", err)
 	}
 
 	mgr, err := controllers.CreateManager(opts.ManagerOptions)
