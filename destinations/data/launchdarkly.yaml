@@ -1,0 +1,33 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: launchdarkly
+  displayName: LaunchDarkly
+  category: managed
+spec:
+  image: launchdarkly.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: LAUNCHDARKLY_SDK_KEY
+      displayName: LaunchDarkly SDK Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        tooltip: The server-side SDK key for the LaunchDarkly environment receiving telemetry, available in Project settings > Environments.
+  note:
+    type: Check
+    content: |
+      Enable Observability in your LaunchDarkly account before adding this destination.
+      Use the server-side SDK key from the LaunchDarkly environment receiving telemetry.
+      Odigos sends OTLP over HTTPS to `https://otel.observability.app.launchdarkly.com` on port 443 and sets the `launchdarkly.project_id` resource attribute for you.
+      See [LaunchDarkly's OpenTelemetry configuration](https://launchdarkly.com/docs/sdk/features/opentelemetry-server-side#setting-resource-attributes).
