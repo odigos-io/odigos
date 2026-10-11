@@ -12,6 +12,8 @@ function ProfilingPage() {
   return (
     <Profiling
       className='min-w-0 flex-1'
+      unavailableSourceKey={searchParams.get('unavailableSource')}
+      onUnavailableSourceDismiss={() => router.replace(ROUTES.PROFILING)}
       selectedSourceKey={searchParams.get('source')}
       onSelectedSourceKeyChange={(key) => router.push(key ? `${ROUTES.PROFILING}?${new URLSearchParams({ source: key })}` : ROUTES.PROFILING)}
     />
