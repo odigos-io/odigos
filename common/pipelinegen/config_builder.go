@@ -141,10 +141,6 @@ func CalculateGatewayConfig(
 		currentConfig.Processors[processorKey] = processorCfg
 	}
 
-	if traceAggregationNeeded(gatewayOptions) {
-		ensureGroupByTraceProcessor(currentConfig, &processorsResults, gatewayOptions)
-	}
-
 	// If tail sampling v2 is enabled, add the tail sampling processor to the traces processors.
 	// Gated strictly on TailSamplingEnabled so insights/service-IO never start dropping spans.
 	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
@@ -253,6 +249,10 @@ func CalculateGatewayConfig(
 		hasTracesDestination,
 		gatewayOptions)
 
+	if traceAggregationNeeded(gatewayOptions) {
+		EnsureGroupByTraceProcessor(currentConfig, traceAggregationWaitDuration(gatewayOptions))
+	}
+
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
 		if err := applySelfTelemetry(currentConfig, unifiedDestinationPipelineNames, GetSignalsRootPipelineNames()); err != nil {
@@ -265,7 +265,10 @@ func CalculateGatewayConfig(
 	// - ServiceGraph.Disabled: assume false (enabled) if nil
 	// - ClusterMetricsEnabled: assume false (disabled) if nil
 	if tracesEnabled && (gatewayOptions.ServiceGraph.Disabled == nil || !*gatewayOptions.ServiceGraph.Disabled) {
-		insertServiceGraphPipeline(currentConfig, gatewayOptions)
+		EnsureServiceGraphPipeline(currentConfig, gatewayOptions.ServiceGraph)
+		if common.InsightsPipelineActive(gatewayOptions.Insights) && gatewayOptions.InsightsOtlpEndpoint != "" {
+			addServiceGraphInsightsExporter(currentConfig, gatewayOptions.InsightsOtlpEndpoint)
+		}
 	}
 	if tracesEnabled {
 		insertTraceCorrelationsServiceIOPipeline(currentConfig, gatewayOptions)
@@ -326,11 +329,10 @@ func applySplitTracesRootPipelines(
 
 	// shortcut - for example when only insights are enabled, no need to export traces to destinations
 	if !hasTracesDestination {
-		currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: append([]string{"resource/odigos-version"}, tracesInProcessors...),
-			Exporters:  []string{},
-		}
+		EnsureRootTracesPipeline(currentConfig)
+		pipeline := currentConfig.Service.Pipelines[rootPipelineName]
+		pipeline.Processors = append(pipeline.Processors, tracesInProcessors...)
+		currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 		return
 	}
 
@@ -425,10 +427,29 @@ func applyRootPipelineForSignal(currentConfig *config.Config, signal common.Obse
 	}
 }
 
-func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *GatewayConfigOptions) {
-	extraDimensions := gatewayOptions.ServiceGraph.ExtraDimensions
-	virtualNodePeerAttributes := gatewayOptions.ServiceGraph.VirtualNodePeerAttributes
-	insightsOn := common.InsightsPipelineActive(gatewayOptions.Insights) && gatewayOptions.InsightsOtlpEndpoint != ""
+// EnsureRootTracesPipeline creates traces/in with the otlp receiver when no
+// destination created it, so taps (service graph, side channels) can attach.
+func EnsureRootTracesPipeline(currentConfig *config.Config) {
+	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+	if _, exists := currentConfig.Service.Pipelines[rootPipelineName]; exists {
+		return
+	}
+	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
+		Receivers:  []string{"otlp"},
+		Processors: []string{"resource/odigos-version"},
+		Exporters:  []string{},
+	}
+}
+
+// EnsureServiceGraphPipeline wires the servicegraph connector off the traces
+// pipeline and exports its metrics to the local prometheus endpoint (scraped
+// back for the UI service map). No-op when metrics/servicegraph already exists.
+func EnsureServiceGraphPipeline(currentConfig *config.Config, serviceGraph common.ServiceGraphOptions) {
+	if _, exists := currentConfig.Service.Pipelines[consts.ServiceGraphMetricsPipelineName]; exists {
+		return
+	}
+	extraDimensions := serviceGraph.ExtraDimensions
+	virtualNodePeerAttributes := serviceGraph.VirtualNodePeerAttributes
 
 	// Add the service graph exporter to expose the service graph metrics to prometheus
 	currentConfig.Exporters["prometheus/servicegraph"] = config.GenericMap{
@@ -445,14 +466,6 @@ func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *Ga
 	// Build dimensions: always include service.name as the base, then append any extras
 	dimensions := []string{string(semconv.ServiceNameKey)}
 	dimensions = append(dimensions, extraDimensions...)
-
-	// When insights is active, the emitted edges must carry the namespace so the
-	// blast-radius topology can be joined to anomalies keyed by (namespace, service).
-	// service.name alone is ambiguous across namespaces, so force k8s.namespace.name
-	// into the connector dimensions (deduped against user-provided extras).
-	if insightsOn && !slices.Contains(dimensions, string(semconv.K8SNamespaceNameKey)) {
-		dimensions = append(dimensions, string(semconv.K8SNamespaceNameKey))
-	}
 
 	// Add the service graph connector to receive the service graph metrics from the root traces pipeline
 	// Retain incomplete edges for up to 15s to allow delayed span matching
@@ -481,47 +494,10 @@ func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *Ga
 
 	// metrics/servicegraph receives the connector's metrics and exports them to
 	// the local prometheus/servicegraph endpoint (scraped back for the UI
-	// service map). When insights is active, the same pipeline also fans out
-	// to odigos-insights over OTLP — one connector, one pipeline, two exporters.
-	exporters := []string{"prometheus/servicegraph"}
-	var processors []string
-	if insightsOn {
-		// Stamp the gateway pod name onto the metrics resource so Insights can
-		// key ClickHouse rows by (edge, collector_pod). The connector's counters
-		// are cumulative per pod, and trace load balancing spreads an edge's
-		// spans across gateway replicas; without this, ReplacingMergeTree
-		// last-write-wins across pods. Reuse the self-telemetry processor when
-		// present, otherwise define it here so the pipeline is valid even if
-		// self-telemetry wasn't applied. Harmless on the Prometheus path:
-		// resource_to_telemetry_conversion is off by default, so k8s.pod.name
-		// stays a resource attribute and never becomes a scrape label.
-		if _, ok := currentConfig.Processors["resource/pod-name"]; !ok {
-			currentConfig.Processors["resource/pod-name"] = config.GenericMap{
-				"attributes": []config.GenericMap{
-					{
-						"key":    string(semconv.K8SPodNameKey),
-						"value":  "${POD_NAME}",
-						"action": "upsert",
-					},
-				},
-			}
-		}
-		processors = []string{"resource/pod-name"}
-		currentConfig.Exporters[consts.ServiceGraphInsightsExporterName] = config.GenericMap{
-			"endpoint":      gatewayOptions.InsightsOtlpEndpoint,
-			"balancer_name": "round_robin",
-			"tls":           config.GenericMap{"insecure": true},
-			"compression":   "none",
-			"retry_on_failure": config.GenericMap{
-				"enabled": false,
-			},
-		}
-		exporters = append(exporters, consts.ServiceGraphInsightsExporterName)
-	}
-	currentConfig.Service.Pipelines["metrics/servicegraph"] = config.Pipeline{
-		Receivers:  []string{consts.ServiceGraphConnectorName},
-		Processors: processors,
-		Exporters:  exporters,
+	// service map).
+	currentConfig.Service.Pipelines[consts.ServiceGraphMetricsPipelineName] = config.Pipeline{
+		Receivers: []string{consts.ServiceGraphConnectorName},
+		Exporters: []string{"prometheus/servicegraph"},
 	}
 
 	// Add the service graph exporter to the traces pipeline that routes to destinations
@@ -533,6 +509,64 @@ func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *Ga
 	}
 	pipeline.Exporters = append(pipeline.Exporters, consts.ServiceGraphConnectorName)
 	currentConfig.Service.Pipelines[tracesPipelineName] = pipeline
+}
+
+// addServiceGraphInsightsExporter fans the existing metrics/servicegraph pipeline
+// out to odigos-insights over OTLP — one connector, one pipeline, two exporters.
+func addServiceGraphInsightsExporter(currentConfig *config.Config, insightsOtlpEndpoint string) {
+	pipeline, exists := currentConfig.Service.Pipelines[consts.ServiceGraphMetricsPipelineName]
+	if !exists {
+		return
+	}
+
+	// The emitted edges must carry the namespace so the blast-radius topology can
+	// be joined to anomalies keyed by (namespace, service). service.name alone is
+	// ambiguous across namespaces, so force k8s.namespace.name into the connector
+	// dimensions (deduped against user-provided extras).
+	if connectorCfg, ok := currentConfig.Connectors[consts.ServiceGraphConnectorName].(config.GenericMap); ok {
+		if dimensions, ok := connectorCfg["dimensions"].([]string); ok &&
+			!slices.Contains(dimensions, string(semconv.K8SNamespaceNameKey)) {
+			connectorCfg["dimensions"] = append(dimensions, string(semconv.K8SNamespaceNameKey))
+		}
+	}
+
+	// Stamp the gateway pod name onto the metrics resource so Insights can
+	// key ClickHouse rows by (edge, collector_pod). The connector's counters
+	// are cumulative per pod, and trace load balancing spreads an edge's
+	// spans across gateway replicas; without this, ReplacingMergeTree
+	// last-write-wins across pods. Reuse the self-telemetry processor when
+	// present, otherwise define it here so the pipeline is valid even if
+	// self-telemetry wasn't applied. Harmless on the Prometheus path:
+	// resource_to_telemetry_conversion is off by default, so k8s.pod.name
+	// stays a resource attribute and never becomes a scrape label.
+	if _, ok := currentConfig.Processors["resource/pod-name"]; !ok {
+		currentConfig.Processors["resource/pod-name"] = config.GenericMap{
+			"attributes": []config.GenericMap{
+				{
+					"key":    string(semconv.K8SPodNameKey),
+					"value":  "${POD_NAME}",
+					"action": "upsert",
+				},
+			},
+		}
+	}
+	if !slices.Contains(pipeline.Processors, "resource/pod-name") {
+		pipeline.Processors = append(pipeline.Processors, "resource/pod-name")
+	}
+
+	currentConfig.Exporters[consts.ServiceGraphInsightsExporterName] = config.GenericMap{
+		"endpoint":      insightsOtlpEndpoint,
+		"balancer_name": "round_robin",
+		"tls":           config.GenericMap{"insecure": true},
+		"compression":   "none",
+		"retry_on_failure": config.GenericMap{
+			"enabled": false,
+		},
+	}
+	if !slices.Contains(pipeline.Exporters, consts.ServiceGraphInsightsExporterName) {
+		pipeline.Exporters = append(pipeline.Exporters, consts.ServiceGraphInsightsExporterName)
+	}
+	currentConfig.Service.Pipelines[consts.ServiceGraphMetricsPipelineName] = pipeline
 }
 
 func insertTraceCorrelationsServiceIOPipeline(currentConfig *config.Config, gatewayOptions *GatewayConfigOptions) {
@@ -743,27 +777,36 @@ func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
 	return false
 }
 
-func ensureGroupByTraceProcessor(
-	currentConfig *config.Config,
-	processorsResults *config.CrdProcessorResults,
-	gatewayOptions *GatewayConfigOptions,
-) {
-	if slices.Contains(processorsResults.TracesProcessors, consts.GroupByTraceProcessor) {
-		return
-	}
-
-	waitDuration := defaultTraceAggregationWaitDuration
+func traceAggregationWaitDuration(gatewayOptions *GatewayConfigOptions) string {
 	if gatewayOptions.TraceAggregationWaitDuration != nil && *gatewayOptions.TraceAggregationWaitDuration != "" {
-		waitDuration = *gatewayOptions.TraceAggregationWaitDuration
+		return *gatewayOptions.TraceAggregationWaitDuration
+	}
+	return defaultTraceAggregationWaitDuration
+}
+
+// EnsureGroupByTraceProcessor defines groupbytrace and runs it first on traces/in
+// (right after resource/odigos-version) so every downstream consumer sees fully
+// assembled traces. No-op when traces/in already aggregates.
+func EnsureGroupByTraceProcessor(currentConfig *config.Config, waitDuration string) {
+	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+	pipeline, exists := currentConfig.Service.Pipelines[rootPipelineName]
+	if exists && slices.Contains(pipeline.Processors, consts.GroupByTraceProcessor) {
+		return
 	}
 
 	currentConfig.Processors[consts.GroupByTraceProcessor] = config.GenericMap{
 		"wait_duration": waitDuration,
 	}
-	processorsResults.TracesProcessors = append(
-		[]string{consts.GroupByTraceProcessor},
-		processorsResults.TracesProcessors...,
-	)
+	if !exists {
+		return
+	}
+
+	insertAt := 0
+	if len(pipeline.Processors) > 0 && pipeline.Processors[0] == "resource/odigos-version" {
+		insertAt = 1
+	}
+	pipeline.Processors = slices.Insert(slices.Clone(pipeline.Processors), insertAt, consts.GroupByTraceProcessor)
+	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
 
 func getTailSamplingProcessors(gatewayOptions *GatewayConfigOptions) ([]string, map[string]config.GenericMap) {
