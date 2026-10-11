@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	UIIDTokenEnvVarName                 = "ODIGOS_UI_ID_TOKEN"
 	CurrentNamespaceEnvVar              = "CURRENT_NS"
 	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
 	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"

@@ -11,11 +11,11 @@ import (
 // TestBuildRouterExtraMountsBeforeNoRoute asserts the load-bearing contract of
 // the extension seam: an ExtraMounts handler is reachable (i.e. registered
 // before the SPA NoRoute fallback), and the OSS health route is present. It uses
-// a minimal Deps (no kube client) so the readiness check returns 503 — that is
-// expected and still proves the route is wired.
+// a minimal Deps and a fake Kubernetes configuration with OIDC disabled.
 func TestBuildRouterExtraMountsBeforeNoRoute(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	setOidcRouterClient(t, "clusterName: test", false)
 	mounted := false
 	deps := &Deps{Flags: Flags{}}
 	r, err := BuildRouter(t.Context(), deps, RouterOpts{
