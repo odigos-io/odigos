@@ -14,7 +14,10 @@ var (
 	// separated by hyphens.
 	// this regexp will allow any prefix OR suffix of the UUID to be matched
 	// so for example: "PROCESS_123e4567-e89b-12d3-a456-426614174000" will also be matched
-	uuidRegex = regexp.MustCompile(`(^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})|([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)`)
+	uuidRegex = regexp.MustCompile(
+		`(^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})|` +
+			`([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)`,
+	)
 
 	// Covers hex encoded values like (for example) span/trace IDs.
 	// These are common as ids in cloud systems.
