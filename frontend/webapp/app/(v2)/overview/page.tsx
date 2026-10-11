@@ -16,5 +16,10 @@ export default function Page() {
   // open (via `useSamplingDrawerStore`); the page's only job is to navigate.
   const onRedirectToSampling = useCallback(() => router.push(ROUTES.SAMPLING), [router]);
 
-  return <Overview onRedirectToSampling={onRedirectToSampling} />;
+  const onRedirectToProfiling = useCallback((sourceKey: string | null, unavailableSourceKey?: string) => {
+    const params = new URLSearchParams({ ...(sourceKey ? { source: sourceKey } : {}), ...(unavailableSourceKey ? { unavailableSource: unavailableSourceKey } : {}) });
+    router.push(`${ROUTES.PROFILING}?${params}`);
+  }, [router]);
+
+  return <Overview onRedirectToProfiling={onRedirectToProfiling} onRedirectToSampling={onRedirectToSampling} />;
 }

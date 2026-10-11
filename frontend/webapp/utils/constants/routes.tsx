@@ -7,6 +7,7 @@ export const ROUTES = {
   COLLECTORS: '/collectors',
   SETTINGS: '/settings',
   SAMPLING: '/sampling',
+  PROFILING: '/profiling',
   URL_TEMPLATIZATION: '/url-templatization',
   TRACE_CORRELATIONS: '/trace-correlations',
   INSTRUMENTATION_AGENTS: '/instrumentation-agents',
