@@ -84,7 +84,7 @@ func (r *k8sReporter) OnRun(ctx context.Context, pid int, err error, e *K8sProce
 func (r *k8sReporter) OnExit(ctx context.Context, pid int, e *K8sProcessDetails) error {
 	if err := r.client.Delete(ctx, &odigosv1.InstrumentationInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.InstrumentationInstanceName(e.Pod.Name, pid),
+			Name:      instance.InstrumentationInstanceName(e.Pod.Name, e.ContainerName, pid),
 			Namespace: e.Pod.Namespace,
 		},
 	}); err != nil && !apierrors.IsNotFound(err) {
