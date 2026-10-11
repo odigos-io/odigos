@@ -16,6 +16,7 @@ import (
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -151,7 +152,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	return nil
 }
 
-func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, tier odigoscommon.OdigosTier) ([]odigoscommon.ObservabilitySignal, error) {
+func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, hooks *collectorhooks.CollectorHooks) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := commonlogger.FromContext(ctx)
 
 	dataStreams, err := calculateDataStreams(enabledDests)
@@ -206,8 +207,13 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	var cardinalityControlCfg *odigoscommon.CardinalityControlConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
-		insightsCfg = effectiveInsightsConfig(odigosCfg.Insights, tier)
-		cardinalityControlCfg = effectiveCardinalityControl(odigosCfg.CardinalityControl, tier)
+		// groupbytrace for insights lives in pipelinegen before MutateConfig.
+		// Only pass Insights when enterprise will mutate the gateway; otherwise
+		// community would buffer every span for a Service that was never deployed.
+		if collectorhooks.HasClusterCollectorConfig(hooks) {
+			insightsCfg = odigosCfg.Insights
+			cardinalityControlCfg = odigosCfg.CardinalityControl
+		}
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
@@ -240,20 +246,6 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err
 			}
-			// The gateway profiles pipeline receives over plain otlp so it would not crash an
-			// OSS collector, but community tier should have no profiling wiring at all.
-			if tier.IsEnterprise() {
-				if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
-					return err
-				}
-				addEnterpriseAuthExtension(c)
-			}
-			if err := addInsightsGatewayExporter(c, env.GetCurrentNamespace(), insightsCfg); err != nil {
-				return err
-			}
-			if err := addUrlTemplatizationUnmatchedExporter(c, env.GetCurrentNamespace(), cardinalityControlCfg); err != nil {
-				return err
-			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}
 			// Creating a metric pipeline for the incoming Odigos components metrics
 			if gateway.Spec.Metrics != nil && gateway.Spec.Metrics.OdigosOwnMetrics != nil {
@@ -264,7 +256,14 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 					}
 				}
 			}
-			return nil
+			in := collectorhooks.GatewayHookInput{
+				Profiling:          profilingCfg,
+				Insights:           insightsCfg,
+				CardinalityControl: cardinalityControlCfg,
+				OdigosNamespace:    env.GetCurrentNamespace(),
+			}
+			in.Config = c
+			return collectorhooks.ApplyGatewayConfig(hooks, in)
 		},
 		dataStreams, &gatewayOptions,
 	)

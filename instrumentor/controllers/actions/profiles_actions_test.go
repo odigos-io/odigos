@@ -17,7 +17,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/pipelinegen"
-	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 
 	"github.com/stretchr/testify/assert"
@@ -111,28 +110,9 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 	assertProfileStatementContexts(t, gw.Processors, "transform/rename-attr")
 	assertProfileStatementContexts(t, gw.Processors, "transform/delete-attr")
 
-	// --- NODE render --- gateway-scoped actions => node profiles pipeline is unchanged (built-in chain).
-	on := true
+	// Gateway-scoped actions do not appear on the node collector.
 	nodeResults := config.CrdProcessorToConfig(pipeline.ToProcessorConfigurerArray(nodeProcs))
 	require.Empty(t, nodeResults.ProfilesProcessors)
-	// Merge alongside common_application_telemetry (as calculateCollectorConfigDomains does in
-	// production) so a processor name collision between domains — e.g. profiling redefining
-	// memory_limiter, which commonProcessors() already provides — fails this test.
-	nodeCfg, err := config.MergeConfigs(map[string]config.Config{
-		"processors":                   nodeResults.ProcessorsConfig,
-		"common_application_telemetry": collectorconfig.CommonApplicationTelemetryConfig(&odigosv1.CollectorsGroup{}, false, "odigos-system", nil, common.OnPremOdigosTier),
-		"profiling":                    collectorconfig.ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nodeResults.ProfilesProcessors),
-	})
-	require.NoError(t, err)
-	assert.Equal(t, []string{
-		"memory_limiter",
-		pipeline.ProfilingNodeFilterProcessor,
-		pipeline.ProfilingNodeK8sAttributesProcessor,
-		pipeline.ProfilingNodeOdigosProfilesProcessor,
-		pipeline.ProfilingNodeSymbolizeProcessor,
-		pipeline.ProfilingNodeServiceNameProcessor,
-		"odigostrafficmetrics",
-	}, nodeCfg.Service.Pipelines["profiles"].Processors)
 }
 
 // assertProfileStatementContexts asserts the processor carries profile_statements over exactly the

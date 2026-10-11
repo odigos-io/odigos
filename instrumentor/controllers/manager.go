@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/clustercollector"
 	"github.com/odigos-io/odigos/instrumentor/controllers/clustercollectorsgroup"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentednodes"
 	"github.com/odigos-io/odigos/instrumentor/controllers/loglevel"
 	"github.com/odigos-io/odigos/instrumentor/controllers/metricshandler"
@@ -196,9 +197,10 @@ func durationPointer(d time.Duration) *time.Duration {
 }
 
 type OdigosConfigurationOptions struct {
-	Tier          common.OdigosTier
-	OdigosVersion string
-	DynamicClient *dynamic.DynamicClient
+	Tier           common.OdigosTier
+	OdigosVersion  string
+	DynamicClient  *dynamic.DynamicClient
+	CollectorHooks *collectorhooks.CollectorHooks
 }
 
 func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version, scheduleOdigletOnlyOnInstrumentedNodes bool, instrumentedPodsNodeLabelRetention time.Duration, configOpts OdigosConfigurationOptions) error {
@@ -244,12 +246,12 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 		}
 	}
 
-	err = nodecollector.SetupWithManager(mgr, configOpts.Tier)
+	err = nodecollector.SetupWithManager(mgr, configOpts.CollectorHooks)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for node collector: %w", err)
 	}
 
-	err = clustercollector.SetupWithManager(mgr, configOpts.OdigosVersion, configOpts.Tier)
+	err = clustercollector.SetupWithManager(mgr, configOpts.OdigosVersion, configOpts.CollectorHooks)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for cluster collector: %w", err)
 	}

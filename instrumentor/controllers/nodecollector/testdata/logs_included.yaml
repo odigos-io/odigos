@@ -37,7 +37,6 @@ extensions:
   health_check:
     endpoint: 0.0.0.0:13133
   odigos_capabilities: {}
-  odigos_enterprise_auth: {}
   pprof:
     endpoint: 0.0.0.0:1777
 processors:
@@ -129,7 +128,6 @@ receivers:
     collection_interval: 44s
     endpoint: https://${env:NODE_IP}:10250
     insecure_skip_verify: true
-  odigosebpf: {}
   otlp/in:
     protocols:
       grpc:
@@ -156,7 +154,6 @@ service:
   - health_check
   - pprof
   - odigos_capabilities
-  - odigos_enterprise_auth
   pipelines:
     logs:
       exporters:
@@ -204,7 +201,6 @@ service:
       - odigostrafficmetrics
       receivers:
       - otlp/in
-      - odigosebpf
   telemetry:
     logs:
       level: info

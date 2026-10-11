@@ -81,7 +81,7 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 
 	baseProcessors := []string{
 		batchProcessorName,         // always start with batch
-		memoryLimiterProcessorName, // consider removing this for metrics, as they have footprint anyway
+		MemoryLimiterProcessorName, // consider removing this for metrics, as they have footprint anyway
 		nodeNameProcessorName,
 	}
 	if opts.ResourceDetectionEnabled {
@@ -89,7 +89,7 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	}
 	metricsPipelineProcessors := baseProcessors
 	metricsPipelineProcessors = append(metricsPipelineProcessors, opts.ManifestProcessorNames...)
-	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
+	metricsPipelineProcessors = append(metricsPipelineProcessors, OdigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings)
 	if len(pipelineReceiverNames) == 0 {

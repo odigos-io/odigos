@@ -28,7 +28,6 @@ extensions:
   health_check:
     endpoint: 0.0.0.0:13133
   odigos_capabilities: {}
-  odigos_enterprise_auth: {}
   pprof:
     endpoint: 0.0.0.0:1777
 processors:
@@ -73,7 +72,6 @@ processors:
   test_type/test_processor:
     key: val
 receivers:
-  odigosebpf: {}
   otlp/in:
     protocols:
       grpc:
@@ -100,7 +98,6 @@ service:
   - health_check
   - pprof
   - odigos_capabilities
-  - odigos_enterprise_auth
   pipelines:
     metrics/own-metrics-ui:
       exporters:
@@ -122,7 +119,6 @@ service:
       - odigostrafficmetrics
       receivers:
       - otlp/in
-      - odigosebpf
   telemetry:
     logs:
       level: info

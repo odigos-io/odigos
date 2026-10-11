@@ -4,8 +4,14 @@ import (
 	"testing"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestAddSelfTelemetryPipeline(t *testing.T) {
@@ -155,4 +161,100 @@ func TestAddSelfTelemetryPipeline_ProfilesPipelineIncludesTrafficMetrics(t *test
 	err := addSelfTelemetryPipeline(c, k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault, []string{"profiles/generic-dest"}, []string{})
 	assert.NoError(t, err)
 	assert.Contains(t, c.Service.Pipelines["profiles/generic-dest"].Processors, "odigostrafficmetrics")
+}
+
+const hookExporterName = "test/hook-exporter"
+
+type clusterConfigHook struct{}
+
+func (clusterConfigHook) MutateConfig(in collectorhooks.GatewayHookInput) error {
+	in.AddExporter(hookExporterName, config.GenericMap{"endpoint": "x"})
+	in.AppendExporterToRootTraces(hookExporterName)
+	return nil
+}
+
+func (clusterConfigHook) MutateDeployment(in *collectorhooks.GatewayDeploymentHookInput) {
+	in.AddEnv(corev1.EnvVar{Name: "TEST_HOOK_ENV", Value: "1"})
+	in.AddFeatureGate("test.hookGate")
+}
+
+type debugMetricsDest struct{ id string }
+
+func (d debugMetricsDest) GetID() string                   { return d.id }
+func (d debugMetricsDest) GetType() common.DestinationType { return common.DebugDestinationType }
+func (d debugMetricsDest) GetConfig() map[string]string    { return map[string]string{} }
+func (d debugMetricsDest) GetSignals() []common.ObservabilitySignal {
+	return []common.ObservabilitySignal{common.MetricsObservabilitySignal}
+}
+
+func gatewayConfigWithHook(t *testing.T, dests []config.ExporterConfigurer, hooks *collectorhooks.CollectorHooks) *config.Config {
+	t.Helper()
+	ext := k8sconsts.OdigosConfigK8sExtensionType
+	off := false
+	opts := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:           "odigos-system",
+		OdigosConfigExtensionName: &ext,
+		TailSamplingEnabled:       &off,
+	}
+	cfg, err, _, _ := pipelinegen.CalculateGatewayConfig(dests, nil,
+		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
+			if err := addSelfTelemetryPipeline(c, 8888, destinationPipelineNames, signalsRootPipelines); err != nil {
+				return err
+			}
+			in := collectorhooks.GatewayHookInput{OdigosNamespace: "odigos-system"}
+			in.Config = c
+			return collectorhooks.ApplyGatewayConfig(hooks, in)
+		}, nil, &opts)
+	require.NoError(t, err)
+	return cfg
+}
+
+func anyPipelineHasExporter(cfg *config.Config, name string) bool {
+	for _, p := range cfg.Service.Pipelines {
+		for _, exp := range p.Exporters {
+			if exp == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func TestClusterCollectorHook_NilIsCommunity(t *testing.T) {
+	cfg := gatewayConfigWithHook(t, []config.ExporterConfigurer{healthyJaegerDest{id: "j1"}}, nil)
+	assert.NotContains(t, cfg.Exporters, hookExporterName)
+	assert.False(t, anyPipelineHasExporter(cfg, hookExporterName))
+}
+
+func TestClusterCollectorHook_AppendsExporterWhenTracesExist(t *testing.T) {
+	hooks := &collectorhooks.CollectorHooks{ClusterCollectorConfig: clusterConfigHook{}}
+	cfg := gatewayConfigWithHook(t, []config.ExporterConfigurer{healthyJaegerDest{id: "j1"}}, hooks)
+	assert.Contains(t, cfg.Exporters, hookExporterName)
+	assert.True(t, anyPipelineHasExporter(cfg, hookExporterName),
+		"hook exporter should be appended on the community root traces pipeline")
+}
+
+func TestClusterCollectorHook_MissingTracesPipelineIsNoop(t *testing.T) {
+	hooks := &collectorhooks.CollectorHooks{ClusterCollectorConfig: clusterConfigHook{}}
+	cfg := gatewayConfigWithHook(t, []config.ExporterConfigurer{debugMetricsDest{id: "m1"}}, hooks)
+	assert.Contains(t, cfg.Exporters, hookExporterName)
+	assert.False(t, anyPipelineHasExporter(cfg, hookExporterName),
+		"AppendExporterToRootTraces must not create a traces pipeline")
+}
+
+func TestClusterCollectorHook_MutateDeployment(t *testing.T) {
+	dep := &appsv1.Deployment{
+		Spec: appsv1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "col", Env: []corev1.EnvVar{{Name: "POD_NAME"}}}},
+				},
+			},
+		},
+	}
+	in := &collectorhooks.GatewayDeploymentHookInput{Deployment: dep}
+	collectorhooks.ApplyGatewayDeployment(&collectorhooks.CollectorHooks{ClusterCollectorConfig: clusterConfigHook{}}, in)
+	require.Len(t, dep.Spec.Template.Spec.Containers[0].Env, 2)
+	assert.Equal(t, "TEST_HOOK_ENV", dep.Spec.Template.Spec.Containers[0].Env[1].Name)
+	assert.Equal(t, []string{"test.hookGate"}, in.FeatureGates())
 }
