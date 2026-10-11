@@ -330,11 +330,13 @@ func StorageDiskStatusToModel(status StorageDiskStatus) model.InsightsStorageDis
 
 func ServiceStatToModel(stat ServiceStat) *model.InsightsServiceStat {
 	return &model.InsightsServiceStat{
-		Namespace:        stat.Namespace,
-		Service:          stat.Service,
-		TransactionCount: int64ToInt(stat.TransactionCount),
-		Volume:           int64ToInt(stat.Volume),
-		LastSeen:         stat.LastSeen,
+		Namespace:               stat.Namespace,
+		Service:                 stat.Service,
+		TransactionCount:        int64ToInt(stat.TransactionCount),
+		Volume:                  int64ToInt(stat.Volume),
+		LastSeen:                stat.LastSeen,
+		TransactionLimit:        int64ToInt(stat.TransactionLimit),
+		TransactionLimitReached: stat.TransactionLimitReached,
 	}
 }
 
@@ -404,6 +406,16 @@ func TransactionIdentityValuesToModel(dims []TransactionIdentityValue) []*model.
 	return out
 }
 
+// SaturatedClassesToModel never returns nil: insights omits saturated_classes
+// when no class saturated, and the GraphQL list is non-null.
+func SaturatedClassesToModel(classes []DeviationClass) []model.InsightsDeviationClass {
+	out := mapSlice(classes, DeviationClassToModel)
+	if out == nil {
+		return []model.InsightsDeviationClass{}
+	}
+	return out
+}
+
 func TransactionStatToModel(stat TransactionStat) *model.InsightsTransactionStat {
 	return &model.InsightsTransactionStat{
 		ID:                 FormatID(stat.ID),
@@ -417,6 +429,7 @@ func TransactionStatToModel(stat TransactionStat) *model.InsightsTransactionStat
 		LastSeen:           stat.LastSeen,
 		HasBaseline:        stat.HasBaseline,
 		Promoted:           stat.Promoted,
+		SaturatedClasses:   SaturatedClassesToModel(stat.SaturatedClasses),
 	}
 }
 
@@ -451,6 +464,7 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 		DataSchemaVersion:            baseline.DataSchemaVersion,
 		ObservationCount:             int64ToInt(baseline.ObservationCount),
 		Promoted:                     baseline.Promoted,
+		Saturated:                    baseline.Saturated,
 		LearningStartedAt:            baseline.LearningStartedAt,
 		LastChangedAt:                baseline.LastChangedAt,
 		ObservationCountAtLastChange: int64PtrToIntPtr(baseline.ObservationCountAtLastChange),
@@ -1066,8 +1080,9 @@ func SystemSettingsToModel(settings SystemSettings) *model.InsightsSystemSetting
 			ObservationRetentionDays: settings.Retention.ObservationRetentionDays,
 		},
 		Capacity: &model.InsightsSystemCapacitySettings{
-			MaxResidentTransactions: settings.Capacity.MaxResidentTransactions,
-			MaxBaselineSetMembers:   settings.Capacity.MaxBaselineSetMembers,
+			MaxResidentTransactions:   settings.Capacity.MaxResidentTransactions,
+			MaxBaselineSetMembers:     settings.Capacity.MaxBaselineSetMembers,
+			MaxTransactionsPerService: settings.Capacity.MaxTransactionsPerService,
 		},
 		Writeback: &model.InsightsSystemWritebackSettings{
 			FlushIntervalSeconds: settings.Writeback.FlushIntervalSeconds,
@@ -1305,6 +1320,11 @@ func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSet
 	if input.Sampling == nil || input.Retention == nil || input.Capacity == nil || input.Writeback == nil || input.Detection == nil || input.Identity == nil {
 		return SystemSettings{}, fmt.Errorf("%w: system settings input is incomplete", ErrBadRequest)
 	}
+	// Left at 0 when omitted, which drops it from the PUT body so insights applies its default.
+	maxTransactionsPerService := 0
+	if input.Capacity.MaxTransactionsPerService != nil {
+		maxTransactionsPerService = *input.Capacity.MaxTransactionsPerService
+	}
 	return SystemSettings{
 		Sampling: SystemSamplingSettings{
 			ExamplesPerTransaction:       input.Sampling.ExamplesPerTransaction,
@@ -1314,8 +1334,9 @@ func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSet
 			ObservationRetentionDays: input.Retention.ObservationRetentionDays,
 		},
 		Capacity: SystemCapacitySettings{
-			MaxResidentTransactions: input.Capacity.MaxResidentTransactions,
-			MaxBaselineSetMembers:   input.Capacity.MaxBaselineSetMembers,
+			MaxResidentTransactions:   input.Capacity.MaxResidentTransactions,
+			MaxBaselineSetMembers:     input.Capacity.MaxBaselineSetMembers,
+			MaxTransactionsPerService: maxTransactionsPerService,
 		},
 		Writeback: SystemWritebackSettings{
 			FlushIntervalSeconds: input.Writeback.FlushIntervalSeconds,

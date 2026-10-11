@@ -289,7 +289,7 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 	settings := SystemSettings{
 		Sampling:  SystemSamplingSettings{ExamplesPerTransaction: 3, ExampleSampleIntervalSeconds: 60},
 		Retention: SystemRetentionSettings{ObservationRetentionDays: 14},
-		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 1000, MaxBaselineSetMembers: 500},
+		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 1000, MaxBaselineSetMembers: 500, MaxTransactionsPerService: 250},
 		Writeback: SystemWritebackSettings{FlushIntervalSeconds: 30},
 		Detection: SystemDetectionSettings{AutoTransactionGuardrail: true},
 		Identity: SystemIdentitySettings{
@@ -303,7 +303,7 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 	back, err := SystemSettingsFromInput(model.InsightsSystemSettingsInput{
 		Sampling:  &model.InsightsSystemSamplingSettingsInput{ExamplesPerTransaction: gql.Sampling.ExamplesPerTransaction, ExampleSampleIntervalSeconds: gql.Sampling.ExampleSampleIntervalSeconds},
 		Retention: &model.InsightsSystemRetentionSettingsInput{ObservationRetentionDays: gql.Retention.ObservationRetentionDays},
-		Capacity:  &model.InsightsSystemCapacitySettingsInput{MaxResidentTransactions: gql.Capacity.MaxResidentTransactions, MaxBaselineSetMembers: gql.Capacity.MaxBaselineSetMembers},
+		Capacity:  &model.InsightsSystemCapacitySettingsInput{MaxResidentTransactions: gql.Capacity.MaxResidentTransactions, MaxBaselineSetMembers: gql.Capacity.MaxBaselineSetMembers, MaxTransactionsPerService: &gql.Capacity.MaxTransactionsPerService},
 		Writeback: &model.InsightsSystemWritebackSettingsInput{FlushIntervalSeconds: gql.Writeback.FlushIntervalSeconds},
 		Detection: &model.InsightsSystemDetectionSettingsInput{AutoTransactionGuardrail: gql.Detection.AutoTransactionGuardrail},
 		Identity: &model.InsightsSystemIdentitySettingsInput{
@@ -324,6 +324,25 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "prod/checkout", seed.ScopeKey)
 	assert.Equal(t, []string{"db:5432"}, seed.Items["allowed_egress"])
+}
+
+// A client built before maxTransactionsPerService existed omits it; the PUT
+// body must then leave it out too so insights applies its default instead of
+// rejecting (or storing) 0.
+func TestSystemSettingsOmittedMaxTransactionsPerServiceIsLeftOutOfPut(t *testing.T) {
+	settings, err := SystemSettingsFromInput(model.InsightsSystemSettingsInput{
+		Sampling:  &model.InsightsSystemSamplingSettingsInput{},
+		Retention: &model.InsightsSystemRetentionSettingsInput{},
+		Capacity:  &model.InsightsSystemCapacitySettingsInput{MaxResidentTransactions: 1000, MaxBaselineSetMembers: 500},
+		Writeback: &model.InsightsSystemWritebackSettingsInput{},
+		Detection: &model.InsightsSystemDetectionSettingsInput{},
+		Identity:  &model.InsightsSystemIdentitySettingsInput{},
+	})
+	require.NoError(t, err)
+
+	body, err := json.Marshal(settings.Capacity)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"max_resident_transactions":1000,"max_baseline_set_members":500}`, string(body))
 }
 
 func TestBulkAnomalyRequestConvertsTransactionIDs(t *testing.T) {

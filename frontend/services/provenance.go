@@ -113,6 +113,9 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 			if config.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				provenance["sampling.tailSampling.traceAggregationWaitDuration"] = sourceName
 			}
+			if config.Sampling.TailSampling.NoisyOperationsEnforcement != nil {
+				provenance["sampling.tailSampling.noisyOperationsEnforcement"] = sourceName
+			}
 		}
 		if config.Sampling.K8sHealthProbesSampling != nil {
 			if config.Sampling.K8sHealthProbesSampling.Enabled != nil {
@@ -165,6 +168,37 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 		}
 		if serviceIO.MetricsFlushInterval != "" {
 			provenance["traceCorrelations.serviceIO.metricsFlushInterval"] = sourceName
+		}
+	}
+
+	if config.CardinalityControl != nil &&
+		config.CardinalityControl.UrlTemplatization != nil &&
+		config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
+		ltl := config.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+		if ltl.Enabled != nil {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled"] = sourceName
+		}
+		if ltl.MaxExamplePathsPerWorkload != nil {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.maxExamplePathsPerWorkload"] = sourceName
+		}
+		if ltl.PathExampleIdleTTL != "" {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL"] = sourceName
+		}
+		if ltl.LearningInterval != "" {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval"] = sourceName
+		}
+		if ltl.RuleComputation != nil {
+			if ltl.RuleComputation.MinObservationsForRule != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minObservationsForRule"] = sourceName
+			}
+			if ltl.RuleComputation.MinCardinalityForTemplating != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minCardinalityForTemplating"] = sourceName
+			}
+		}
+		if ltl.AutomaticRules != nil {
+			if ltl.AutomaticRules.Enabled != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled"] = sourceName
+			}
 		}
 	}
 }

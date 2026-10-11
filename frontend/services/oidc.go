@@ -63,8 +63,10 @@ func GetOidcSecret(ctx context.Context) (string, error) {
 	return string(secret.Data[consts.OidcClientSecretProperty]), nil
 }
 
-// gets the OIDC configuration values from the odigos-configuration ConfigMap
-func getOidcValuesFromConfig(ctx context.Context) (string, string, string, string, bool) {
+// gets the OIDC configuration values from the odigos-configuration ConfigMap.
+// this runs on every request that reaches the OIDC middleware, so failures are
+// returned to the caller and must never terminate the process.
+func getOidcValuesFromConfig(ctx context.Context) (string, string, string, string, bool, error) {
 	var odigosConfiguration common.OdigosConfiguration
 	odigosns := env.GetCurrentNamespace()
 
@@ -86,14 +88,14 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 		return e
 	})
 	if err != nil {
-		log.Fatalf("Error getting effective config CM: %v\n", err)
+		return "", "", "", "", false, fmt.Errorf("error getting effective config CM: %w", err)
 	}
 	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
-		log.Fatalf("Error parsing YAML: %v\n", err)
+		return "", "", "", "", false, fmt.Errorf("error parsing effective config YAML: %w", err)
 	}
 	if odigosConfiguration.Oidc == nil {
-		return "", "", "", "", false
+		return "", "", "", "", false, nil
 	}
 
 	// UI values
@@ -106,9 +108,15 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 	}
 
 	// OIDC values
+	// helm renders the oidc config block when any of tenantUrl/clientId/clientSecret is set,
+	// but only creates the secret when a client secret is set, so a missing secret means
+	// OIDC is not fully configured. Any other read failure must not silently disable it.
 	oidcClientSecret, err := GetOidcSecret(ctx)
+	if apierrors.IsNotFound(err) {
+		return "", "", "", "", false, nil
+	}
 	if err != nil {
-		return "", "", "", "", false
+		return "", "", "", "", false, fmt.Errorf("error getting OIDC client secret: %w", err)
 	}
 	oidcClientId := odigosConfiguration.Oidc.ClientId
 	oidcTenantUrl := odigosConfiguration.Oidc.TenantUrl
@@ -118,11 +126,14 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 
 	shouldProcessOidc := oidcTenantUrl != "" && oidcClientId != "" && oidcClientSecret != ""
 
-	return uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc
+	return uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc, nil
 }
 
 func getOidcProvider(ctx context.Context) (string, string, string, string, *oidc.Provider, error) {
-	uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc := getOidcValuesFromConfig(ctx)
+	uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc, err := getOidcValuesFromConfig(ctx)
+	if err != nil {
+		return "", "", "", "", nil, err
+	}
 	if !shouldProcessOidc {
 		return "", "", "", "", nil, nil
 	}
@@ -199,11 +210,13 @@ func OidcAuthCallback(ctx context.Context, c *gin.Context) {
 	// Initialize OIDC & OAuth2
 	oidcTokenVerifier, err := GetOidcTokenVerifier(ctx)
 	if err != nil {
-		log.Fatalf("Error initializing OIDC verifier: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"oidc verifier": err.Error()})
+		return
 	}
 	oauth2Config, err := GetOidcOauthConfig(ctx)
 	if err != nil {
-		log.Fatalf("Error initializing OAuth2 config: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"oauth2 config": err.Error()})
+		return
 	}
 	// We're in a callback (after being redirected from auth),
 	// so we should always have OIDC & OAuth2 configured here.

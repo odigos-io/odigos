@@ -109,6 +109,17 @@ This approach is ideal for users who prioritize avoiding hostPath or virtual dev
 
 Works with [Karpenter](../../setup/odigos-with-karpenter) out of the box. No additional Karpenter configuration is required.
 
+#### Init container image pull secrets
+
+Kubernetes 1.35+ enables [`KubeletEnsureSecretPulledImages`](https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/) by default. The kubelet [re-verifies pull credentials](https://kubernetes.io/docs/concepts/containers/images/#ensure-image-pull-credential-verification) even when the agents image is already cached on the node. The injected `odigos-agents` init container therefore needs the same pull secret in the **application** namespace, not only in the Odigos namespace.
+
+This applies when you use `k8s-init-container` with a private registry:
+
+- the enterprise registry (`registry.odigos.io` via `odigos-enterprise-registry`, including `externalOnpremPullSecret` / `externalOnpremTokenSecret`)
+- a private mirrored registry (`imagePrefix` + `imagePullSecrets`)
+
+On Kubernetes 1.35+, the pod webhook adds those secret **names** to instrumented pods. You must create the same-named dockerconfig secret in every instrumented namespace yourself (External Secrets, Reflector, or a GitOps manifest). Below 1.35, odiglet pre-pulls the agents image onto each node and kubelet will use that cache without per-pod credentials.
+
 ### 4. CSI Driver
 
 This is an opt-in configuration method that uses the Container Storage Interface (CSI) standard for mounting instrumentation files. It provides improved user experience over the VirtualDevice method by ensuring pods wait gracefully when the mount system isn't ready.

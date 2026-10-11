@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: legacy-ruby-instrumentation
+spec:
+  ruleName: "legacy ruby instrumentation"
+  notes: "Auto generated rule from legacy-ruby-instrumentation profile. Do not edit."
+  otelDistros:
+    otelDistroNames:
+    - "ruby-community-legacy"

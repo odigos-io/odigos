@@ -9,6 +9,7 @@ spec:
   supportedLanguages:
     - go
     - javascript
+    - ruby
   fields:
     # Persisted as `payloadCollection: { httpRequest, httpResponse, dbQuery,
     # messaging }`. `checkedValue: emptyObject` writes `{}` per checked option;

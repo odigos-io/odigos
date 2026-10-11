@@ -125,6 +125,74 @@ func TestResolveDistroForContainer_unsupportedRubyVersionResolvesToUnsupportedVe
 	require.Equal(t, obiDistroName, d.Name)
 }
 
+func TestResolveDistroForContainer_ruby27ResolvesToOBIWithoutProfile(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	rt := &odigosv1.RuntimeDetailsByContainer{
+		Language:       common.RubyProgrammingLanguage,
+		RuntimeVersion: "2.7.8",
+	}
+	dpl := map[common.ProgrammingLanguage]string{
+		common.RubyProgrammingLanguage: "ruby-community",
+	}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, obiDistroName, d.Name)
+}
+
+func TestResolveDistroForContainer_ruby33KeepsNativeDistro(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	rt := &odigosv1.RuntimeDetailsByContainer{
+		Language:       common.RubyProgrammingLanguage,
+		RuntimeVersion: "3.3.0",
+	}
+	dpl := map[common.ProgrammingLanguage]string{
+		common.RubyProgrammingLanguage: "ruby-community",
+	}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, "ruby-community", d.Name)
+}
+
+func TestResolveDistroForContainer_ruby30FallsThroughToOBI(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	rt := &odigosv1.RuntimeDetailsByContainer{
+		Language:       common.RubyProgrammingLanguage,
+		RuntimeVersion: "3.0.7",
+	}
+	dpl := map[common.ProgrammingLanguage]string{
+		common.RubyProgrammingLanguage: "ruby-community",
+	}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, obiDistroName, d.Name)
+}
+
+func TestResolveDistroForContainer_ruby26FallsThroughToOBI(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	rt := &odigosv1.RuntimeDetailsByContainer{
+		Language:       common.RubyProgrammingLanguage,
+		RuntimeVersion: "2.6.10",
+	}
+	dpl := map[common.ProgrammingLanguage]string{
+		common.RubyProgrammingLanguage: "ruby-community",
+	}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, obiDistroName, d.Name)
+}
+
 func TestResolveDistroForContainer_supportedRubyVersionKeepsNativeDistro(t *testing.T) {
 	g := mustNewCommunityGetter(t)
 	config := &common.OdigosConfiguration{}

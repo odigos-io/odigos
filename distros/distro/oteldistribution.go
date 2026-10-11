@@ -214,13 +214,13 @@ type TraceVerbosity struct {
 	DisablingAnyScopeSupported bool `yaml:"disablingAnyScopeSupported,omitempty"`
 }
 
+// eBPF log capture itself works for every distro; this only documents what it adds per distro.
 type EbpfLogCapture struct {
-	// if true, the distro supports eBPF-based log capture.
-	Supported bool `yaml:"supported,omitempty"`
+	// if true, logs captured via eBPF carry the trace and span ids of the active span.
+	TraceCorrelation bool `yaml:"traceCorrelation,omitempty"`
 }
 
 type Logs struct {
-	// if set, the distro supports eBPF-based log capture instead of filelog.
 	EbpfLogCapture *EbpfLogCapture `yaml:"ebpfLogCapture,omitempty"`
 }
 

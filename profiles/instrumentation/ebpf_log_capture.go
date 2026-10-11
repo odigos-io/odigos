@@ -8,5 +8,5 @@ import (
 var EbpfLogCaptureProfile = profile.Profile{
 	ProfileName:      common.ProfileName("ebpf-log-capture"),
 	MinimumTier:      common.OnPremOdigosTier,
-	ShortDescription: "Capture stdout/stderr via eBPF and correlate logs with active spans",
+	ShortDescription: "Capture stdout/stderr via eBPF for all languages, correlating logs with active spans where supported (Go, Java)",
 }

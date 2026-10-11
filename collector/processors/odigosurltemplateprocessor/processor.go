@@ -67,11 +67,7 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 		if err != nil {
 			return nil, err
 		}
-		parsedRuleNumSegments := len(parsedRule.Segments)
-		if _, ok := parsedRules[parsedRuleNumSegments]; !ok {
-			parsedRules[parsedRuleNumSegments] = []urltemplate.PathRule{}
-		}
-		parsedRules[parsedRuleNumSegments] = append(parsedRules[parsedRuleNumSegments], parsedRule)
+		urltemplate.AppendRuleBySegmentCount(parsedRules, parsedRule)
 	}
 
 	customIdsRegexp := make([]internalCustomIdConfig, 0, len(config.CustomIds))
@@ -170,8 +166,7 @@ func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]
 			p.logger.Warn("invalid templatization rule; skipping", zap.String("rule", rule), zap.Error(err))
 			continue
 		}
-		n := len(parsedRule.Segments)
-		parsed[n] = append(parsed[n], parsedRule)
+		urltemplate.AppendRuleBySegmentCount(parsed, parsedRule)
 	}
 	return parsed
 }

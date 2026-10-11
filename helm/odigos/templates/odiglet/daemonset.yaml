@@ -147,7 +147,7 @@ spec:
       {{- end }}
       {{- if eq .Values.instrumentor.mountMethod "k8s-init-container" }}
         # This init container pre-pulls the odigos-agents image to the node
-        # so it's available in the image cache when user pods need it
+        # so it's available in the image cache when user pods need it.
         - name: odigos-agents-image-pull
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-agents" "Tag" $odigletImageTag) }}
@@ -155,7 +155,7 @@ spec:
           image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "agents" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
-          # # it does not run any actual code, just pulls the image
+          # it does not run any actual code, just pulls the image
           # we add the resources here to make sure any policy that may validate resources exist
           # is satisfied, there should be no need to configure this as this is not running anything.
           # NOTE: memory limit is set to 12Mi which is the OpenShift minimum
@@ -427,12 +427,11 @@ spec:
               mountPath: /hostfs
               readOnly: true
             {{- end }}
+            {{- if .Values.profiling.enabled }}
+            # the eBPF profiler attaches to tracepoints, which needs the host tracefs
             - name: sys-kernel
               mountPath: /sys/kernel
               readOnly: true
-            {{- if and .Values.profiling.enabled (not .Values.odiglet.noHostPathMounts) }}
-            - name: host-bpffs
-              mountPath: /sys/fs/bpf
             {{- end }}
             - name: exchange-dir
               mountPath: /var/exchange

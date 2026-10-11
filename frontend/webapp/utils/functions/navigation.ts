@@ -26,7 +26,7 @@ export const getNavbarIcons = (router: AppRouterInstance, currentPath: string, i
   }
 
   navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.SERVICE_MAP, 'Service Map', ServiceMapIcon));
-  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.PIPELINE_COLLECTORS, 'Collectors Pipeline', PipelineCollectorIcon));
+  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.COLLECTORS, 'Collectors', PipelineCollectorIcon));
   navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.SAMPLING, 'Sampling Rules', SamplingIcon));
   navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.URL_TEMPLATIZATION, 'URL Templatization', UrlTemplatizationIcon));
   navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.INSTRUMENTATION_AGENTS, 'Instrumentation Agents', CodeIcon));

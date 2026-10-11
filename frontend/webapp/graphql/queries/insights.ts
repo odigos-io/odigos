@@ -6,6 +6,8 @@ const SERVICE_STAT_FIELDS = `
   transactionCount
   volume
   lastSeen
+  transactionLimit
+  transactionLimitReached
 `;
 
 const TRANSACTION_STAT_FIELDS = `
@@ -23,6 +25,7 @@ const TRANSACTION_STAT_FIELDS = `
   lastSeen
   hasBaseline
   promoted
+  saturatedClasses
 `;
 
 const TRANSACTION_FIELDS = `
@@ -61,6 +64,7 @@ const BASELINE_CLASS_FIELDS = `
   dataSchemaVersion
   observationCount
   promoted
+  saturated
   learningStartedAt
   lastChangedAt
   observationCountAtLastChange
@@ -368,6 +372,7 @@ const SYSTEM_SETTINGS_FIELDS = `
   capacity {
     maxResidentTransactions
     maxBaselineSetMembers
+    maxTransactionsPerService
   }
   writeback {
     flushIntervalSeconds

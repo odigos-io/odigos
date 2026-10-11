@@ -180,7 +180,8 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 }
 
 // isTailSamplingEnabled returns true if tail sampling is not globally disabled
-// and at least one Sampling CR exists.
+// and either at least one Sampling CR exists or k8s health-probes sampling is enabled
+// (health-probe noisy ops may be applied via collector tail sampling).
 func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *common.OdigosConfiguration) bool {
 	logger := commonlogger.FromContext(ctx)
 
@@ -189,6 +190,13 @@ func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *c
 		odigosConfig.Sampling.TailSampling.Disabled != nil &&
 		*odigosConfig.Sampling.TailSampling.Disabled {
 		return false
+	}
+
+	if odigosConfig.Sampling != nil &&
+		odigosConfig.Sampling.K8sHealthProbesSampling != nil &&
+		odigosConfig.Sampling.K8sHealthProbesSampling.Enabled != nil &&
+		*odigosConfig.Sampling.K8sHealthProbesSampling.Enabled {
+		return true
 	}
 
 	samplingList := &odigosv1.SamplingList{}

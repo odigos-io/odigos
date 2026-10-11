@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/99designs/gqlgen/graphql"
 	odigosfake "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/fake"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -201,7 +202,7 @@ func TestUpdateInstrumentationRuleClearsScopesOnExplicitEmpty(t *testing.T) {
 		RuleName:      &ruleName,
 		Notes:         &notes,
 		Disabled:      &disabled,
-		SourcesScopes: []*model.InstrumentationRuleSourcesScopeInput{},
+		SourcesScopes: graphql.OmittableOf([]*model.InstrumentationRuleSourcesScopeInput{}),
 	})
 	require.NoError(t, err)
 
@@ -242,8 +243,8 @@ func TestUpdateInstrumentationRuleAllowsExplicitClearingScopesAndLibraries(t *te
 		RuleName:                 &ruleName,
 		Notes:                    &notes,
 		Disabled:                 &disabled,
-		SourcesScopes:            []*model.InstrumentationRuleSourcesScopeInput{},
-		InstrumentationLibraries: []*model.InstrumentationLibraryGlobalIDInput{},
+		SourcesScopes:            graphql.OmittableOf([]*model.InstrumentationRuleSourcesScopeInput{}),
+		InstrumentationLibraries: graphql.OmittableOf([]*model.InstrumentationLibraryGlobalIDInput{}),
 	})
 	require.NoError(t, err)
 
@@ -252,4 +253,50 @@ func TestUpdateInstrumentationRuleAllowsExplicitClearingScopesAndLibraries(t *te
 	require.Nil(t, updatedRule.Spec.Scopes)
 	require.NotNil(t, updatedRule.Spec.InstrumentationLibraries)
 	require.Empty(t, *updatedRule.Spec.InstrumentationLibraries)
+}
+
+func TestUpdateInstrumentationRuleExplicitNullWidensSelectors(t *testing.T) {
+	ctx := context.Background()
+	ruleID := "scoped-rule"
+	ruleName := "rule"
+	notes := "notes"
+	disabled := false
+
+	libraries := []v1alpha1.InstrumentationLibraryGlobalId{{
+		Name:     "spring-webmvc",
+		SpanKind: common.ServerSpanKind,
+		Language: common.JavaProgrammingLanguage,
+	}}
+
+	setFakeOdigosInstrumentationRuleClient(t, &v1alpha1.InstrumentationRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ruleID,
+			Namespace: consts.DefaultOdigosNamespace,
+		},
+		Spec: v1alpha1.InstrumentationRuleSpec{
+			RuleName: "rule",
+			Scopes: &k8sconsts.SourcesScopes{
+				Namespaces: []string{"payments"},
+			},
+			InstrumentationLibraries: &libraries,
+			HeadersCollection:        &apirules.HttpHeadersCollection{HeaderKeys: []string{"Authorization"}},
+		},
+	})
+
+	// The edit form sends null for "Entire Cluster", and null type payloads that don't apply to the rule.
+	_, err := UpdateInstrumentationRule(ctx, ruleID, model.InstrumentationRuleInput{
+		RuleName:                 &ruleName,
+		Notes:                    &notes,
+		Disabled:                 &disabled,
+		SourcesScopes:            graphql.OmittableOf[[]*model.InstrumentationRuleSourcesScopeInput](nil),
+		InstrumentationLibraries: graphql.OmittableOf[[]*model.InstrumentationLibraryGlobalIDInput](nil),
+		HeadersCollection:        nil,
+	})
+	require.NoError(t, err)
+
+	updated, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).Get(ctx, ruleID, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Nil(t, updated.Spec.Scopes)
+	require.Nil(t, updated.Spec.InstrumentationLibraries)
+	require.Equal(t, []string{"Authorization"}, updated.Spec.HeadersCollection.HeaderKeys)
 }

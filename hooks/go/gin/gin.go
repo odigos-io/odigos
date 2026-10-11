@@ -21,13 +21,25 @@ func OdigosGinMiddleware(middlewares ...gin.HandlerFunc) []gin.HandlerFunc {
 		wrappedMiddlewares[i] = func(c *gin.Context) {
 			done := make(chan bool)
 			reqCtx, cancel := context.WithCancel(c.Request.Context())
+			var recovered any
 			go func(ctx context.Context) {
+				// The middleware chain runs on this goroutine, so a panic in it
+				// is out of reach of gin's Recovery middleware, which is deferred
+				// on the request goroutine. Left unhandled it would take down the
+				// whole process and leave the receive below blocked forever, so
+				// carry the panic value back and re-raise it on the caller.
+				defer func() {
+					recovered = recover()
+					done <- true
+				}()
 				middlewareName := runtime.FuncForPC(reflect.ValueOf(middlewareCopy).Pointer()).Name()
 				executeMiddleware(ctx, c, middlewareName, middlewareCopy)
-				done <- true
 			}(reqCtx)
 			<-done
 			cancel()
+			if recovered != nil {
+				panic(recovered)
+			}
 		}
 	}
 

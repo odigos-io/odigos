@@ -8,6 +8,7 @@ const (
 	CustomContainerRuntimeSocketEnvVar         = "CONTAINER_RUNTIME_SOCK"
 	OtelResourceAttributesEnvVar               = "OTEL_RESOURCE_ATTRIBUTES"
 	OdigosPhpAgentCustomInstrumentationsEnvVar = "ODIGOS_PHP_AGENT_CUSTOM_INSTRUMENTATIONS"
+	OdigosAgentPayloadCollectionEnvVar         = "ODIGOS_AGENT_PAYLOAD_COLLECTION"
 )
 
 func OdigosInjectedEnvVars() []string {

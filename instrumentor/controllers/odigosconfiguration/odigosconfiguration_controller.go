@@ -300,6 +300,9 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			if addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				baseConfig.Sampling.TailSampling.TraceAggregationWaitDuration = addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration
 			}
+			if addtionalConfig.Sampling.TailSampling.NoisyOperationsEnforcement != nil {
+				baseConfig.Sampling.TailSampling.NoisyOperationsEnforcement = addtionalConfig.Sampling.TailSampling.NoisyOperationsEnforcement
+			}
 		}
 		if addtionalConfig.Sampling.K8sHealthProbesSampling != nil {
 			if baseConfig.Sampling.K8sHealthProbesSampling == nil {
@@ -393,6 +396,53 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 		if overlay.MetricsFlushInterval != "" {
 			dst.MetricsFlushInterval = overlay.MetricsFlushInterval
+		}
+	}
+
+	// liveTrafficLearning.enabled is deliberately not merged: it is isHelmOnly in the config catalog
+	// because turning it on renders the odigos-cache workload, which only helm can do at install time.
+	// An overlay that enabled it would point the gateway exporter at a Service that was never created.
+	if addtionalConfig.CardinalityControl != nil &&
+		addtionalConfig.CardinalityControl.UrlTemplatization != nil &&
+		addtionalConfig.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
+		if baseConfig.CardinalityControl == nil {
+			baseConfig.CardinalityControl = &common.CardinalityControlConfiguration{}
+		}
+		if baseConfig.CardinalityControl.UrlTemplatization == nil {
+			baseConfig.CardinalityControl.UrlTemplatization = &common.UrlTemplatizationCardinalityControlConfiguration{}
+		}
+		if baseConfig.CardinalityControl.UrlTemplatization.LiveTrafficLearning == nil {
+			baseConfig.CardinalityControl.UrlTemplatization.LiveTrafficLearning = &common.LiveTrafficLearningConfiguration{}
+		}
+		overlay := addtionalConfig.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+		dst := baseConfig.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+		if overlay.MaxExamplePathsPerWorkload != nil {
+			dst.MaxExamplePathsPerWorkload = overlay.MaxExamplePathsPerWorkload
+		}
+		if overlay.PathExampleIdleTTL != "" {
+			dst.PathExampleIdleTTL = overlay.PathExampleIdleTTL
+		}
+		if overlay.LearningInterval != "" {
+			dst.LearningInterval = overlay.LearningInterval
+		}
+		if overlay.RuleComputation != nil {
+			if dst.RuleComputation == nil {
+				dst.RuleComputation = &common.LiveTrafficLearningRuleComputationConfiguration{}
+			}
+			if overlay.RuleComputation.MinObservationsForRule != nil {
+				dst.RuleComputation.MinObservationsForRule = overlay.RuleComputation.MinObservationsForRule
+			}
+			if overlay.RuleComputation.MinCardinalityForTemplating != nil {
+				dst.RuleComputation.MinCardinalityForTemplating = overlay.RuleComputation.MinCardinalityForTemplating
+			}
+		}
+		if overlay.AutomaticRules != nil {
+			if dst.AutomaticRules == nil {
+				dst.AutomaticRules = &common.LiveTrafficLearningAutomaticRulesConfiguration{}
+			}
+			if overlay.AutomaticRules.Enabled != nil {
+				dst.AutomaticRules.Enabled = overlay.AutomaticRules.Enabled
+			}
 		}
 	}
 

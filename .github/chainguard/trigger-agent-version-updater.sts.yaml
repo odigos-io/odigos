@@ -1,5 +1,6 @@
 issuer: https://token.actions.githubusercontent.com
-subject_pattern: repo:odigos-io/(opentelemetry-node|opentelemetry-ruby|opentelemetry-php|odigos-opentelemetry-python):ref:(refs/tags/.*|refs/heads/main|refs/heads/releases/v[0-9]+\.[0-9]+\.x$)
+# Repos created after 2026-07-15 use the immutable OIDC subject (repo:<org>@<org-id>/<repo>@<repo-id>:...).
+subject_pattern: 'repo:odigos-io(@84347062)?/(opentelemetry-node(@809655741)?|opentelemetry-ruby(@1002387561)?|opentelemetry-php(@968087568)?|odigos-opentelemetry-python(@842850155)?|opentelemetry-ruby-legacy(@1381766721)?):ref:(refs/tags/.*|refs/heads/main|refs/heads/releases/v[0-9]+\.[0-9]+\.x$)'
 
 permissions:
 
