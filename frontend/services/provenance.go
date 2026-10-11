@@ -113,6 +113,9 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 			if config.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				provenance["sampling.tailSampling.traceAggregationWaitDuration"] = sourceName
 			}
+			if config.Sampling.TailSampling.NoisyOperationsEnforcement != nil {
+				provenance["sampling.tailSampling.noisyOperationsEnforcement"] = sourceName
+			}
 		}
 		if config.Sampling.K8sHealthProbesSampling != nil {
 			if config.Sampling.K8sHealthProbesSampling.Enabled != nil {

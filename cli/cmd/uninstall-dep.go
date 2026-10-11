@@ -21,6 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -185,6 +187,9 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 
 	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallCRDs)
+
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos APIService",
+		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallCustomMetricsAPIService)
 
 }
 
@@ -448,6 +453,28 @@ func uninstallValidatingWebhookConfigs(ctx context.Context, client *kube.Client,
 	}
 
 	return nil
+}
+
+func uninstallCustomMetricsAPIService(ctx context.Context, client *kube.Client, ns, _ string) error {
+	gvr := schema.GroupVersionResource{
+		Group:    "apiregistration.k8s.io",
+		Version:  "v1",
+		Resource: "apiservices",
+	}
+	obj, err := client.Dynamic.Resource(gvr).Get(ctx, k8sconsts.CustomMetricsAPIServiceName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	serviceName, _, _ := unstructured.NestedString(obj.Object, "spec", "service", "name")
+	if serviceName != k8sconsts.AutoScalerWebhookServiceName && serviceName != k8sconsts.InstrumentorServiceName {
+		return nil
+	}
+
+	return client.Dynamic.Resource(gvr).Delete(ctx, k8sconsts.CustomMetricsAPIServiceName, metav1.DeleteOptions{})
 }
 
 func uninstallRBAC(ctx context.Context, client *kube.Client, ns, _ string) error {

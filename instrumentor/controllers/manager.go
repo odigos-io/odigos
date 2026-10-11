@@ -9,16 +9,23 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/actions"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
+	"github.com/odigos-io/odigos/instrumentor/controllers/clustercollector"
 	"github.com/odigos-io/odigos/instrumentor/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentednodes"
+	"github.com/odigos-io/odigos/instrumentor/controllers/loglevel"
+	"github.com/odigos-io/odigos/instrumentor/controllers/metricshandler"
+	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector"
 	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollectorsgroup"
 	"github.com/odigos-io/odigos/instrumentor/controllers/odigosconfiguration"
 	"github.com/odigos-io/odigos/instrumentor/controllers/odigospro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/podsmanifestinjectionstatus"
+	"github.com/odigos-io/odigos/instrumentor/controllers/recommendations"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	cacheutils "github.com/odigos-io/odigos/k8sutils/pkg/cache"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -28,6 +35,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/dynamic"
+	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -50,6 +58,8 @@ var scheme = runtime.NewScheme()
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
+	utilruntime.Must(apiactions.AddToScheme(scheme))
+	utilruntime.Must(apiregv1.AddToScheme(scheme))
 	utilruntime.Must(openshiftappsv1.AddToScheme(scheme))
 	utilruntime.Must(argorolloutsv1alpha1.AddToScheme(scheme))
 }
@@ -66,22 +76,29 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
+	podTransform := podTransformFunc(odigosNs)
+	workloadTransform := workloadTransformFunc(odigosNs)
 
 	cacheByObjectConfig := map[client.Object]cache.ByObject{
 		&corev1.Pod{}: {
-			Transform: podTransformFunc,
+			// Odigos-ns pods stay full (gateway PodIP for custom metrics). Other namespaces stay stripped.
+			Transform: podTransform,
 		},
 		&corev1.ConfigMap{}: {
 			Field: nsSelector,
 		},
+		&corev1.Service{}: {
+			Field: nsSelector,
+		},
 		&appsv1.Deployment{}: {
-			Transform: workloadTransformFunc,
+			// Odigos-ns deployments stay full (gateway spec). Other namespaces stay stripped.
+			Transform: workloadTransform,
 		},
 		&appsv1.StatefulSet{}: {
-			Transform: workloadTransformFunc,
+			Transform: workloadTransform,
 		},
 		&appsv1.DaemonSet{}: {
-			Transform: workloadTransformFunc,
+			Transform: workloadTransform,
 		},
 		&odigosv1.CollectorsGroup{}: {
 			Field: nsSelector,
@@ -96,6 +113,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			Field: nsSelector,
 		},
 		&odigosv1.Action{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.Recommendation{}: {
 			Field: nsSelector,
 		},
 		&odigosv1.InstrumentationConfig{}: {
@@ -224,6 +244,32 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 		}
 	}
 
+	err = nodecollector.SetupWithManager(mgr, configOpts.Tier)
+	if err != nil {
+		return fmt.Errorf("failed to create controller for node collector: %w", err)
+	}
+
+	err = clustercollector.SetupWithManager(mgr, configOpts.OdigosVersion, configOpts.Tier)
+	if err != nil {
+		return fmt.Errorf("failed to create controller for cluster collector: %w", err)
+	}
+
+	if err = actions.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create controller for actions: %w", err)
+	}
+
+	if err = metricshandler.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create controller for metrics handler: %w", err)
+	}
+
+	if err = loglevel.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create log level controller: %w", err)
+	}
+
+	if err = recommendations.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create recommendations controller: %w", err)
+	}
+
 	return nil
 }
 
@@ -263,55 +309,71 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 		&admission.Webhook{Handler: webhook},
 	)
 
+	if err := actions.RegisterWebhooks(mgr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func podTransformFunc(obj interface{}) (interface{}, error) {
-	pod, ok := obj.(*corev1.Pod)
-	if !ok {
-		return nil, fmt.Errorf("expected a Pod, got %T", obj)
-	}
+func podTransformFunc(odigosNs string) func(obj interface{}) (interface{}, error) {
+	return func(obj interface{}) (interface{}, error) {
+		pod, ok := obj.(*corev1.Pod)
+		if !ok {
+			return nil, fmt.Errorf("expected a Pod, got %T", obj)
+		}
 
-	if cacheutils.IsObjectTransformed(pod) {
-		return pod, nil
-	}
+		if cacheutils.IsObjectTransformed(pod) {
+			return pod, nil
+		}
 
-	stripedStatus := corev1.PodStatus{
-		Phase:                 pod.Status.Phase,
-		ContainerStatuses:     pod.Status.ContainerStatuses,
-		InitContainerStatuses: pod.Status.InitContainerStatuses, // needed for backoff detection
-		Message:               pod.Status.Message,
-		Reason:                pod.Status.Reason,
-		StartTime:             pod.Status.StartTime,
+		pod.SetManagedFields(nil)
+		if pod.GetNamespace() == odigosNs {
+			cacheutils.MarkObjectAsTransformed(pod)
+			return pod, nil
+		}
+
+		stripedStatus := corev1.PodStatus{
+			Phase:                 pod.Status.Phase,
+			ContainerStatuses:     pod.Status.ContainerStatuses,
+			InitContainerStatuses: pod.Status.InitContainerStatuses, // needed for backoff detection
+			Message:               pod.Status.Message,
+			Reason:                pod.Status.Reason,
+			StartTime:             pod.Status.StartTime,
+		}
+		strippedPod := corev1.Pod{
+			ObjectMeta: pod.ObjectMeta,
+			Status:     stripedStatus,
+			// Keep NodeName so pods can be listed by node via a field index.
+			Spec: corev1.PodSpec{
+				NodeName: pod.Spec.NodeName,
+			},
+		}
+		if workload.IsStaticPod(pod) {
+			strippedPod.Spec = pod.Spec
+		}
+		// remove non relevant data such as un-relevant annotations and container statuses fields which are not used
+		cacheutils.StripPod(&strippedPod)
+		cacheutils.MarkObjectAsTransformed(&strippedPod)
+		return &strippedPod, nil
 	}
-	strippedPod := corev1.Pod{
-		ObjectMeta: pod.ObjectMeta,
-		Status:     stripedStatus,
-		// Keep NodeName so pods can be listed by node via a field index.
-		Spec: corev1.PodSpec{
-			NodeName: pod.Spec.NodeName,
-		},
-	}
-	if workload.IsStaticPod(pod) {
-		strippedPod.Spec = pod.Spec
-	}
-	strippedPod.SetManagedFields(nil) // don't store managed fields in the cache
-	// remove non relevant data such as un-relevant annotations and container statuses fields which are not used
-	cacheutils.StripPod(&strippedPod)
-	cacheutils.MarkObjectAsTransformed(&strippedPod)
-	return &strippedPod, nil
 }
 
-func workloadTransformFunc(obj interface{}) (interface{}, error) {
-	clientObj, ok := obj.(client.Object)
-	if !ok {
-		return nil, fmt.Errorf("expected a client.Object, got %T", obj)
-	}
-	if cacheutils.IsObjectTransformed(clientObj) {
+func workloadTransformFunc(odigosNs string) func(obj interface{}) (interface{}, error) {
+	return func(obj interface{}) (interface{}, error) {
+		clientObj, ok := obj.(client.Object)
+		if !ok {
+			return nil, fmt.Errorf("expected a client.Object, got %T", obj)
+		}
+		if cacheutils.IsObjectTransformed(clientObj) {
+			return clientObj, nil
+		}
+		clientObj.SetManagedFields(nil)
+		// Keep odigos-ns workloads full (gateway spec). Strip others to save cache memory.
+		if clientObj.GetNamespace() != odigosNs {
+			cacheutils.StripWorkloadSpecTemplate(clientObj)
+		}
+		cacheutils.MarkObjectAsTransformed(clientObj)
 		return clientObj, nil
 	}
-	clientObj.SetManagedFields(nil)
-	cacheutils.StripWorkloadSpecTemplate(clientObj)
-	cacheutils.MarkObjectAsTransformed(clientObj)
-	return clientObj, nil
 }

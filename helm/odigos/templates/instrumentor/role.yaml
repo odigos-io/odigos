@@ -14,18 +14,57 @@ rules:
       - get
       - list
       - watch
+      - create
+      - patch
+      - update
+      - delete
   - apiGroups:
       - ''
     resources:
-      - configmaps
-    resourceNames:
-      - effective-config
-      - odigos-deployment
-      - odigos-go-offsets
+      - services
     verbs:
-      - patch
+      - get
+      - list
+      - watch
       - create
+      - patch
       - update
+      - delete
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/status
+    verbs:
+      - get
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - create
+      - patch
+      - update
+      - delete
   - apiGroups:
       - odigos.io
     resources:
@@ -46,6 +85,8 @@ rules:
       - get
       - list
       - watch
+      - patch
+      - update
   - apiGroups:
       - odigos.io
     resources:
@@ -57,6 +98,14 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
+      - destinations/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
       - instrumentationrules
       - processors
     verbs:
@@ -64,8 +113,17 @@ rules:
       - list
       - watch
       - patch
+      - update
       - delete
       - create
+  - apiGroups:
+      - odigos.io
+    resources:
+      - processors/status
+    verbs:
+      - get
+      - patch
+      - update
   - apiGroups:
       - odigos.io
     resources:
@@ -83,6 +141,7 @@ rules:
       - list
       - watch
       - patch
+      - update
       - delete
       - create
   - apiGroups:
@@ -97,6 +156,43 @@ rules:
       - odigos.io
     resources:
       - actions/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - recommendations
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - patch
+      - update
+      - delete
+  - apiGroups:
+      - odigos.io
+    resources:
+      - recommendations/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - actions.odigos.io
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  - apiGroups:
+      - actions.odigos.io
+    resources:
+      - '*/status'
     verbs:
       - get
       - patch
@@ -132,7 +228,8 @@ rules:
     resources:
       - secrets
     resourceNames:
-      - webhook-cert
+      - autoscaler-webhook-cert
+      - autoscaler-webhooks-cert
     verbs:
       - delete
   - apiGroups:
@@ -145,6 +242,24 @@ rules:
       - get
       - list
       - watch
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - 'apps'
+    resources:
+      - deployments/finalizers
+    verbs:
+      - update
+  # OwnerReferencesPermissionEnforcement: SetControllerReference on collector
+  # objects (ConfigMap/Deployment/Service/HPA) needs finalizers on the owner.
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups/finalizers
+    verbs:
+      - get
+      - patch
+      - update
+{{- end }}
 # goAutoOffsetsMode and goAutoOffsetsCron are not helm-only: the UI and central remote config write
 # them into effective-config at runtime, so these permissions cannot be gated on the helm value.
   - apiGroups:

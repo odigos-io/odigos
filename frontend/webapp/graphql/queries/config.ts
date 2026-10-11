@@ -180,6 +180,7 @@ export const GET_EFFECTIVE_CONFIG = gql`
         tailSampling {
           disabled
           traceAggregationWaitDuration
+          noisyOperationsEnforcement
         }
         k8sHealthProbesSampling {
           enabled
