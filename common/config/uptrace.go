@@ -31,7 +31,7 @@ func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	}
 
 	isHttpEndpoint := strings.HasPrefix(endpoint, "http://")
-	exporterName := "otlp/uptrace-" + dest.GetID()
+	exporterName := "otlp_grpc/uptrace-" + dest.GetID()
 
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,

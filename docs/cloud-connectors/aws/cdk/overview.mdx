@@ -1,0 +1,136 @@
+---
+title: 'Odigos AWS CDK'
+description: 'What the Odigos AWS CDK package is, when to use it, and how Odigos recognizes instrumented workloads.'
+sidebarTitle: 'Overview'
+---
+
+The Odigos AWS CDK package adds OpenTelemetry instrumentation to your AWS workloads from inside your own
+[AWS CDK](https://aws.amazon.com/cdk/) application — so instrumentation ships through the same pipeline as
+the rest of your infrastructure, reviewed in a pull request and applied by `cdk deploy`.
+
+<Info>
+  **New to this?** AWS CDK is a tool for describing cloud infrastructure in a
+  programming language instead of a YAML template. If your team doesn't use CDK,
+  you don't need this section — use the CloudFormation instructions on
+  [Instrument Lambda](/cloud-connectors/aws/workloads/lambda/instrument) or
+  [Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument), or let
+  Odigos apply instrumentation for you.
+</Info>
+
+## When you'd use this
+
+Odigos can instrument your workloads two ways, and the CDK package is for the second one:
+
+| | Odigos-managed | Self-managed, with this package |
+| --- | --- | --- |
+| Who changes the workload | Odigos, automatically | Your CDK app, on `cdk deploy` |
+| Where instrumentation is defined | In Odigos | In your own source code |
+| What Odigos does | Applies and maintains it | Watches and reports |
+
+Pick self-managed when your infrastructure code should stay the single source of truth for what's deployed.
+Pick Odigos-managed when you'd rather not touch your infrastructure code at all. Full comparison:
+[Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation).
+
+<Warning>
+  Don't do both to the same workload. If a function or service is instrumented by
+  your CDK app **and** also enabled as an Odigos-managed source, each side keeps
+  reasserting its own configuration — every deploy fights every reconcile, and each
+  round trip creates a new Lambda version or ECS task revision. Pick one per
+  workload.
+</Warning>
+
+## Install
+
+```bash
+npm install @odigos/aws-cdk
+```
+
+<Info>
+  **TypeScript and JavaScript only, for now.** A Python distribution
+  (`odigos-aws-cdk`) is built but not yet published — it's waiting on package-index
+  approval. Until it's out, Python CDK apps should use the
+  [CloudFormation instructions](/cloud-connectors/aws/workloads/lambda/instrument#using-cloudformation-directly)
+  instead.
+</Info>
+
+Pin an exact version. **The package version *is* the instrumentation version** — `@odigos/aws-cdk@0.0.15`
+installs the OpenTelemetry layer and agents bundle built by Odigos release `v0.0.15`, and nothing resolves
+or moves at deploy time. Upgrading is a deliberate `npm update` followed by a `cdk diff` that shows you
+exactly what changes. An instrumentation agent that silently updated itself under a deployment that changed
+nothing is not a property you want.
+
+## The two constructs
+
+| | Lambda | ECS Fargate |
+| --- | --- | --- |
+| Construct | `OdigosLambdaInstrumentation` | `OdigosFargateInstrumentation` |
+| How the agent gets there | A Lambda layer attached to the function | Copied into the task by an extra short-lived container |
+| Languages | Python, Node.js, Java, Ruby | Java, Python, Node.js, .NET, PHP, Ruby |
+| Where telemetry goes | To a collector inside the same Lambda sandbox, which forwards it on after your handler returns | Straight from your application to your destination |
+| How the language is determined | Automatically, from the function's runtime | You state it explicitly |
+
+<CardGroup cols={2}>
+  <Card title="Lambda construct" icon="bolt" href="/cloud-connectors/aws/cdk/lambda">
+    Every option for instrumenting Lambda functions.
+  </Card>
+
+  <Card title="Fargate construct" icon="cubes" href="/cloud-connectors/aws/cdk/fargate">
+    Every option for instrumenting ECS Fargate services.
+  </Card>
+</CardGroup>
+
+Configure where telemetry goes and which signals to enable on
+[CDK: Destinations](/cloud-connectors/aws/cdk/destinations) — both constructs share the same `destination`
+options.
+
+## How Odigos recognizes your workload
+
+Both constructs write an environment variable called **`ODIGOS_IAC`** onto everything they instrument. This
+is the one thing that tells Odigos "this workload is instrumented, and here's what with."
+
+<Warning>
+  Without that marker, Odigos reports the workload as **awaiting your deployment** —
+  no matter how completely everything else was applied. The constructs write it for
+  you, so there's nothing to switch on; it matters mainly because you'll see it in
+  a `cdk diff`, and because hand-written instrumentation has to include it too.
+</Warning>
+
+The marker also records *which version* of instrumentation you deployed — the layer ARN on Lambda, the
+agents image on Fargate. That's what lets you pin a version and have Odigos respect it, rather than
+reporting your deliberately-pinned workload as out of date the day Odigos publishes something newer.
+
+<Warning>
+  There's a second marker, **`ODIGOS_MANAGED`**, that these constructs never write —
+  and neither should you. That one is Odigos' own record of a change *it* made,
+  including the snapshot it would undo that change with. Writing it by hand claims a
+  rollback point that doesn't exist.
+</Warning>
+
+## Turning on debug logging
+
+<ParamField path="debug" type="boolean" default="false">
+  Makes the OpenTelemetry agent log verbosely, which helps when telemetry isn't arriving and you need to
+  see why. Available on both constructs.
+
+  <Warning>
+    Leave it off once you're done. It's expensive at volume, and Odigos expects it
+    **off** unless debug telemetry is also enabled on the connector — so leaving it
+    on can itself be reported as drift.
+  </Warning>
+</ParamField>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Destinations" icon="tower-broadcast" href="/cloud-connectors/aws/cdk/destinations">
+    Endpoint formats, credentials, and which signals to enable.
+  </Card>
+
+  <Card title="Lambda construct" icon="bolt" href="/cloud-connectors/aws/cdk/lambda">
+    Layer sources, web-server mode, Java handler interfaces.
+  </Card>
+
+  <Card title="Fargate construct" icon="cubes" href="/cloud-connectors/aws/cdk/fargate">
+    Languages, service naming, the agents image.
+  </Card>
+</CardGroup>

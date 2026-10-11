@@ -3,35 +3,45 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "postinstall": "check-peer-dependencies --runOnlyOnRootDependencies",
+    "dev": "next dev --turbopack",
+    "prebuild": "rm -rf out .next",
+    "build": "next build --turbopack",
+    "build:analyze": "ANALYZE=true next build --turbopack",
+    "postbuild": "mkdir -p out && touch out/.keep",
     "back:build": "cd .. && go build -o odigos-backend",
     "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
-    "cy:run": "cypress run --e2e -q",
-    "cy:open": "cypress open --e2e -b electron",
+    "lint": "next lint",
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.8",
-    "@apollo/experimental-nextjs-app-support": "^0.12.2",
-    "@odigos/ui-kit": "^0.0.47",
-    "graphql": "^16.11.0",
-    "next": "15.3.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-error-boundary": "^6.0.0",
-    "styled-components": "6.1.19",
-    "zustand": "^5.0.5"
+    "@apollo/client": "^4.2.12",
+    "@odigos/ui-kit": "0.0.312",
+    "graphql": "^16.14.2",
+    "next": "15.5.21",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-error-boundary": "^6.1.4",
+    "rxjs": "^7.8.2",
+    "styled-components": "6.5.3",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@types/node": "24.0.4",
-    "@types/react": "19.1.8",
-    "@types/react-dom": "19.1.6",
-    "autoprefixer": "^10.4.21",
-    "cypress": "^14.5.0",
-    "eslint": "9.29.0",
-    "eslint-config-next": "15.3.4",
-    "postcss": "^8.5.6",
-    "typescript": "5.8.3"
+    "@next/bundle-analyzer": "^16.3.4",
+    "@types/node": "26.4.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "autoprefixer": "^10.5.4",
+    "check-peer-dependencies": "^4.3.4",
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.3.4",
+    "postcss": "^8.5.27",
+    "typescript": "5.9.3"
+  },
+  "resolutions": {
+    "flatted": "3.4.2",
+    "js-yaml": "4.3.0",
+    "sharp": "0.35.3",
+    "postcss": "^8.5.18"
   }
 }

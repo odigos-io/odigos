@@ -1,0 +1,20 @@
+# =====================
+# Tokens
+# The on-prem/API token surfaced on the ComputePlatform.
+# =====================
+
+type ApiToken {
+  token: String!
+  name: String!
+  issuedAt: Int!
+  expiresAt: Int!
+  message: String
+}
+
+extend type ComputePlatform {
+  apiTokens: [ApiToken]!
+}
+
+extend type Mutation {
+  updateApiToken(token: String!): Boolean!
+}

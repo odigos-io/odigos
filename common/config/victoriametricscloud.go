@@ -31,11 +31,11 @@ func (j *VictoriaMetricsCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config
 
 	authExtensionName := "bearertokenauth/" + uniqueUri
 	cfg.Extensions[authExtensionName] = GenericMap{
-		"token": "${VICTORIA_METRICS_CLOUD_TOKEN}",
+		"token": SecretEnvPlaceholder("VICTORIA_METRICS_CLOUD_TOKEN", dest),
 	}
 	cfg.Service.Extensions = append(cfg.Service.Extensions, authExtensionName)
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"auth": GenericMap{
@@ -43,13 +43,9 @@ func (j *VictoriaMetricsCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config
 		},
 	}
 
-	spanMetricNames := applySpanMetricsConnector(cfg, uniqueUri)
-	pipelineNames = append(pipelineNames, spanMetricNames.TracesPipeline)
-
 	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
-			Receivers: []string{spanMetricNames.SpanMetricsConnector},
 			Exporters: []string{exporterName},
 		}
 		pipelineNames = append(pipelineNames, pipeName)

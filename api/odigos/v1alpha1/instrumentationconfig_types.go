@@ -1,8 +1,11 @@
 package v1alpha1
 
 import (
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,27 +30,10 @@ const (
 	MarkedForInstrumentationStatusConditionType = "MarkedForInstrumentation"
 	// Describe the runtime detection status of this workload.
 	RuntimeDetectionStatusConditionType = "RuntimeDetection"
-	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
-	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
 )
-
-func StatusConditionTypeLogicalOrder(condType string) int {
-	switch condType {
-	case MarkedForInstrumentationStatusConditionType:
-		return 1
-	case RuntimeDetectionStatusConditionType:
-		return 2
-	case AgentEnabledStatusConditionType:
-		return 3
-	case WorkloadRolloutStatusConditionType:
-		return 4
-	default:
-		return 5
-	}
-}
 
 // +kubebuilder:validation:Enum=WorkloadSource;NamespaceSource;WorkloadSourceDisabled;NoSource;RetirableError
 type MarkedForInstrumentationReason string
@@ -71,12 +57,16 @@ const (
 	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
 )
 
-// +kubebuilder:validation:Enum=DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
+// +kubebuilder:validation:Enum=DetectedSuccessfully;ResolvedFromMultipleLanguages;UnresolvedMultipleLanguages;WaitingForDetection;NoRunningPods;Error
 type RuntimeDetectionReason string
 
 const (
 	// when the runtime detection process is successful and runtime details are available for instrumentation.
 	RuntimeDetectionReasonDetectedSuccessfully RuntimeDetectionReason = "DetectedSuccessfully"
+	// when multiple languages were detected and one was successfully selected by heuristic rules.
+	RuntimeDetectionReasonResolvedFromMultipleLanguages RuntimeDetectionReason = "ResolvedFromMultipleLanguages"
+	// when multiple languages were detected but none could be selected as the main language.
+	RuntimeDetectionReasonUnresolvedMultipleLanguages RuntimeDetectionReason = "UnresolvedMultipleLanguages"
 	// when the runtime detection process is still ongoing and the runtime details are not yet available.
 	// this status should be visible only for a short period of time until the detection process is completed by one odiglet.
 	RuntimeDetectionReasonWaitingForDetection RuntimeDetectionReason = "WaitingForDetection"
@@ -87,16 +77,19 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;CrashLoopBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;EnabledWithOtherAgents;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
 type AgentEnabledReason string
 
 const (
 	AgentEnabledReasonEnabledSuccessfully            AgentEnabledReason = "EnabledSuccessfully"
+	AgentEnabledReasonEnabledWithOtherAgents         AgentEnabledReason = "EnabledWithOtherAgents"
 	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
 	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
+	AgentEnabledReasonNoCollectedSignals             AgentEnabledReason = "NoCollectedSignals"
 	AgentEnabledReasonUnsupportedProgrammingLanguage AgentEnabledReason = "UnsupportedProgrammingLanguage"
 	AgentEnabledReasonNoAvailableAgent               AgentEnabledReason = "NoAvailableAgent"
+	AgentEnabledReasonInjectionConflict              AgentEnabledReason = "InjectionConflict"
 	AgentEnabledReasonUnsupportedRuntimeVersion      AgentEnabledReason = "UnsupportedRuntimeVersion"
 	AgentEnabledReasonMissingDistroParameter         AgentEnabledReason = "MissingDistroParameter"
 	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
@@ -106,17 +99,31 @@ const (
 	// used for the rollback feature, when an application was instrumented and it caused a CrashLoopBackOff
 	// We're marking it as that and rolling back the instrumentation
 	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
+	// used for the rollback feature, when an application was instrumented and it caused an ImagePullBackOff
+	// We're marking it as that and rolling back the instrumentation
+	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
+// Used to return that an agent should be disabled for a container.
+// the reason and message contains the details to be written to the condition status.
+type AgentDisabledInfo struct {
+	AgentEnabledReason  AgentEnabledReason
+	AgentEnabledMessage string
+}
+
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart;WorkloadNotSupporting;NotRequired;WaitingInQueue;RolloutFinished
 type WorkloadRolloutReason string
 
 const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+	WorkloadRolloutReasonRolloutFinished        WorkloadRolloutReason = "RolloutFinished"
 	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonNotRequired            WorkloadRolloutReason = "NotRequired"
 	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
+	WorkloadRolloutReasonWorkloadNotSupporting  WorkloadRolloutReason = "WorkloadNotSupporting"
+	WorkloadRolloutReasonWaitingInQueue         WorkloadRolloutReason = "WaitingInQueue"
 )
 
 const (
@@ -130,6 +137,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 	switch reason {
 	case AgentEnabledReasonEnabledSuccessfully:
 		return 0
+	case AgentEnabledReasonEnabledWithOtherAgents:
+		return 5
 	case AgentEnabledReasonRuntimeDetailsUnavailable:
 		return 10
 	case AgentEnabledReasonWaitingForRuntimeInspection:
@@ -138,6 +147,10 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 30
 	case AgentEnabledReasonIgnoredContainer:
 		return 40
+	case AgentEnabledReasonNoCollectedSignals:
+		return 45
+	case AgentEnabledReasonInjectionConflict:
+		return 48
 	case AgentEnabledReasonUnsupportedProgrammingLanguage:
 		return 50
 	case AgentEnabledReasonUnsupportedRuntimeVersion:
@@ -148,7 +161,7 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 80
 	case AgentEnabledReasonOtherAgentDetected:
 		return 90
-	case AgentEnabledReasonCrashLoopBackOff:
+	case AgentEnabledReasonCrashLoopBackOff, AgentEnabledReasonImagePullBackOff:
 		return 95
 	default:
 		return 100
@@ -160,15 +173,7 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 func IsReasonStatusDisabled(reason string) bool {
 	switch reason {
 	// Agent-related reasons
-	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
-		string(AgentEnabledReasonUnsupportedRuntimeVersion),
-		string(RuntimeDetectionReasonNoRunningPods),
-		string(AgentEnabledReasonIgnoredContainer),
-		string(AgentEnabledReasonNoAvailableAgent),
-		string(AgentEnabledReasonOtherAgentDetected),
-		string(AgentEnabledReasonCrashLoopBackOff),
-		string(AgentEnabledReasonRuntimeDetailsUnavailable):
-
+	case string(RuntimeDetectionReasonNoRunningPods):
 		return true
 
 	// rollout-related reasons
@@ -191,32 +196,43 @@ type EnvVar struct {
 	Value string `json:"value"`
 }
 
-type ProcessingState string
-
-const (
-	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime envs
-	ProcessingStateSucceeded ProcessingState = "Succeeded" // Indicates that CRI successfully processed the runtime environments, even if no environments were detected.
-	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
-)
-
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
 	ContainerName  string                     `json:"containerName"`
 	Language       common.ProgrammingLanguage `json:"language"`
 	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
 	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	// OtherAgents lists other instrumentation agents detected in the container
+	// (a process can carry more than one); empty when none.
+	OtherAgents []OtherAgent     `json:"otherAgents,omitempty"`
+	LibCType    *common.LibCType `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
-	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
+	// CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+	// Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+	// Thus, this field is set only when there is:
+	// - Actual CRI check failed
+	// - The observed environment variables might come from container runtime
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
 	// Holds the environment variables retrieved from the container runtime.
 	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
-	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
-	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
+}
+
+// represents the status of odigos MANIFEST injection to existing pods template.
+// each pod can be in one of 3 states: injected and up-to-date, injected and out-of-date, or not injected.
+// actual agent in pod container can be injected or not regardless of the pod manifest injection status.
+// status only shows if pods exists from each category and not count, to avoid frequent (noisy/expensive) updates in steady state
+type PodsManifestInjectionStatus struct {
+	// if the source has any pods which are using the latest agent deployment setup.
+	HasInjectedUpToDatePods bool `json:"hasInjectedUpToDatePods,omitempty"`
+
+	// if the source has any pods which are using an outdated agent deployment setup.
+	HasInjectedOutOfDatePods bool `json:"hasInjectedOutOfDatePods,omitempty"`
+
+	// if the source has any pods which do not have the odigos agent injected.
+	HasUninjectedPods bool `json:"hasUninjectedPods,omitempty"`
 }
 
 type InstrumentationConfigStatus struct {
@@ -236,6 +252,9 @@ type InstrumentationConfigStatus struct {
 	// This time recorded only after the rollout took place.
 	// This allows us to determine whether a crashing application should be rolled back or not
 	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
+
+	// Represents the status of odigos MANIFEST injection to existing pods template.
+	PodsManifestInjectionStatus *PodsManifestInjectionStatus `json:"podsManifestInjectionStatus,omitempty"`
 }
 
 func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {
@@ -246,18 +265,6 @@ func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v
 	}
 	return nil
 }
-
-// all "traces" related configuration for an agent running on any process in a specific container.
-// The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
-type AgentTracesConfig struct{}
-
-// all "metrics" related configuration for an agent running on any process in a specific container.
-// The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
-type AgentMetricsConfig struct{}
-
-// all "logs" related configuration for an agent running on any process in a specific container.
-// The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
-type AgentLogsConfig struct{}
 
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {
@@ -274,6 +281,9 @@ type ContainerAgentConfig struct {
 	// can be left empty if reason is self-explanatory.
 	AgentEnabledMessage string `json:"agentEnabledMessage,omitempty"`
 
+	// set to true if the agent used in this container can be injected without pod manifest changes.
+	PodManifestInjectionOptional bool `json:"podManifestInjectionOptional,omitempty"`
+
 	// The name of the otel distribution to use for this container.
 	// if the name is empty, this container should not be instrumented.
 	OtelDistroName string `json:"otelDistroName,omitempty"`
@@ -282,11 +292,20 @@ type ContainerAgentConfig struct {
 	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
 	DistroParams map[string]string `json:"distroParams,omitempty"`
 
+	// What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+	// Can be either "loader" or "pod-manifest".
+	// The injection should still check the actual values in the container manifest before injecting.
+	// Nil means that this container should not have env injection (agent should not be injected, or distro does not specify "loader" injection envs).
+	EnvInjectionMethod *common.EnvInjectionDecision `json:"envInjectionMethod,omitempty"`
+
 	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
 	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
-	Traces  *AgentTracesConfig  `json:"traces,omitempty"`
-	Metrics *AgentMetricsConfig `json:"metrics,omitempty"`
-	Logs    *AgentLogsConfig    `json:"logs,omitempty"`
+	Traces  *agentsignalconfig.AgentTracesConfig  `json:"traces,omitempty"`
+	Metrics *agentsignalconfig.AgentMetricsConfig `json:"metrics,omitempty"`
+	Logs    *agentsignalconfig.AgentLogsConfig    `json:"logs,omitempty"`
+
+	// Configure the log level for the agent itselg
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
@@ -298,8 +317,15 @@ type InstrumentationConfigSpec struct {
 	// determines if odigos should inject agents to pods of this workload.
 	AgentInjectionEnabled bool `json:"agentInjectionEnabled"`
 
+	// true if all containers with agent injection enabled in this source
+	// can be enabled without pod manifest changes.
+	// if false, at least one container requires pod manifest changes to enable agent injection.
+	PodManifestInjectionOptional bool `json:"podManifestInjectionOptional,omitempty"`
+
 	// configuration for each instrumented container in the workload
 	Containers []ContainerAgentConfig `json:"containers,omitempty"`
+
+	WorkloadCollectorConfig []commonapi.ContainerCollectorConfig `json:"workloadCollectorConfig,omitempty"`
 
 	// will always list all containers of this workload by name,
 	// and override data in case it is configured on the source.
@@ -315,10 +341,10 @@ type InstrumentationConfigSpec struct {
 	// if the hash is empty, it means that no agent should be enabled in any pod container.
 	AgentsMetaHash string `json:"agentsMetaHash,omitempty"`
 
-	// Configuration for the OpenTelemetry SDKs that this workload should use.
-	// The SDKs are identified by the programming language they are written in.
-	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
-	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
+	// The last time at which the agents meta hash value was changed.
+	// Pods created before this time may not be in alignment with the AgentsMetaHash.
+	// e.g. can lack the odigos label, or have a different value.
+	AgentsMetaHashChangedTime *metav1.Time `json:"agentsMetaHashChangedTime,omitempty"`
 }
 
 func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {
@@ -328,83 +354,6 @@ func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName strin
 		}
 	}
 	return nil
-}
-
-type SdkConfig struct {
-
-	// The language of the SDK being configured
-	Language common.ProgrammingLanguage `json:"language"`
-
-	// configurations for the instrumentation libraries the the SDK should use
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs,omitempty"`
-
-	// HeadSamplingConfig is a set sampling rules.
-	// This config currently only applies to root spans.
-	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
-	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
-
-	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
-
-	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
-	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
-
-	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
-	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
-
-	// default configuration for library tracing.
-	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
-}
-
-// 'Operand' represents the attributes and values that an operator acts upon in an expression
-type AttributeCondition struct {
-	// attribute key (e.g. "url.path")
-	Key string `json:"key"`
-	// currently only string values are supported.
-	Val string `json:"val"`
-	// The operator to use to compare the attribute value.
-	Operator Operator `json:"operator,omitempty"`
-}
-
-// +kubebuilder:validation:Enum=equals;notEquals;endWith;startWith
-// +kubebuilder:default:=equals
-type Operator string
-
-const (
-	Equals    Operator = "equals"
-	NotEquals Operator = "notEquals"
-	EndWith   Operator = "endWith"
-	StartWith Operator = "startWith"
-)
-
-// AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
-// If all attribute conditions evaluate to true, the AND sampler evaluates to true,
-// and the fraction is used to determine the sampling decision.
-// If any of the attribute compare samplers evaluate to false,
-// the fraction is not used and the rule is skipped.
-// An "empty" AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
-// and the fraction is used to determine the sampling decision.
-// This entity is refered to a rule in Odigos terminology for head-sampling.
-type AttributesAndSamplerRule struct {
-	AttributeConditions []AttributeCondition `json:"attributeConditions"`
-	// The fraction of spans to sample, in the range [0, 1].
-	// If the fraction is 0, no spans are sampled.
-	// If the fraction is 1, all spans are sampled.
-	// +kubebuilder:default:=1
-	Fraction float64 `json:"fraction"`
-}
-
-// HeadSamplingConfig is a set of attribute rules.
-// The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
-//
-// If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.
-type HeadSamplingConfig struct {
-	AttributesAndSamplerRules []AttributesAndSamplerRule `json:"attributesAndSamplerRules"`
-	// Used as a fallback if all rules evaluate to false,
-	// it may be empty - in this case the default value will be 1 - all spans are sampled.
-	// it should be a float value in the range [0, 1] - the fraction of spans to sample.
-	// a value of 0 means no spans are sampled if none of the rules evaluate to true.
-	// +kubebuilder:default:=1
-	FallbackFraction float64 `json:"fallbackFraction"`
 }
 
 type InstrumentationLibraryConfig struct {
@@ -452,11 +401,41 @@ func init() {
 	SchemeBuilder.Register(&InstrumentationConfig{}, &InstrumentationConfigList{})
 }
 
-// Languages returns the set of languages that this configuration applies to
-func (ic *InstrumentationConfig) Languages() map[common.ProgrammingLanguage]struct{} {
-	langs := make(map[common.ProgrammingLanguage]struct{})
-	for _, sdkConfig := range ic.Spec.SdkConfigs {
-		langs[sdkConfig.Language] = struct{}{}
+// RuntimeDetailsByContainer will return a map containing runtime details for each container name present in the instrumented workload.
+// The keys are container names. Each value can be nil in case we have no runtime details for this container
+// from automatic runtime detection or overrides.
+// For each container, if an override is present, it will be taken into account before the automatic detection results.
+func (ic *InstrumentationConfig) RuntimeDetailsByContainer() map[string]*RuntimeDetailsByContainer {
+	detailsByContainer := make(map[string]*RuntimeDetailsByContainer)
+
+	// ContainersOverrides will always list all containers of the workloads, so we can use it to iterate.
+	for i := range ic.Spec.ContainersOverrides {
+		containerName := ic.Spec.ContainersOverrides[i].ContainerName
+		var containerRuntimeDetails *RuntimeDetailsByContainer
+		// always take the override if it exists, before taking the automatic runtime detection.
+		if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
+			containerRuntimeDetails = ic.Spec.ContainersOverrides[i].RuntimeInfo
+		} else {
+			// find this container by name in the automatic runtime detection
+			for j := range ic.Status.RuntimeDetailsByContainer {
+				if ic.Status.RuntimeDetailsByContainer[j].ContainerName == containerName {
+					containerRuntimeDetails = &ic.Status.RuntimeDetailsByContainer[j]
+					break
+				}
+			}
+		}
+		detailsByContainer[containerName] = containerRuntimeDetails
 	}
-	return langs
+
+	return detailsByContainer
+}
+
+func (ic *InstrumentationConfig) GetOverridesForContainer(containerName string) *ContainerOverride {
+	// list of containers is short (usually one, but can realistically be as much as 5) so linear search is fine.
+	for i := range ic.Spec.ContainersOverrides {
+		if ic.Spec.ContainersOverrides[i].ContainerName == containerName {
+			return &ic.Spec.ContainersOverrides[i]
+		}
+	}
+	return nil
 }

@@ -1,0 +1,75 @@
+## What is sampling
+
+**Sampling** is how you choose which traces are **kept** in the pipeline and which are **dropped** before they reach backends and UIs. It trims volume so ingest, storage, and search stay manageable, while policies still aim to leave enough signal for debugging and reliability work.
+
+In Odigos, sampling is **per trace**: the entire trace is either retained end to end or not exported, so parent–child structure and timing stay coherent when something is kept. How and when that choice is made—early in the agent at the time of creation (**head** sampling), or at the **Odigos Gateway** after spans are assembled (**tail** sampling)—is covered on [Head and tail sampling](./head-and-tail-sampling).
+
+## Core motivations and definitions
+
+### Primary driver: cost reduction
+
+The main reason for sampling is **cost reduction**. Unsampled traces can flood collectors, backends, and analysis tools with volume that drives up ingest fees, storage, and compute. Sampling also helps prevent the observability stack from being overwhelmed by **redundant or low-value (“uninteresting”) data**, so capacity stays available for signals that support debugging and understanding production behavior.
+
+### Reducing noise from uninteresting traces
+
+Sampling is also commonly used as a **sanitation layer** to drop traces that add little debugging value. Typical examples include:
+
+- **Health-check probes** and readiness/liveness endpoints
+- **Metrics scraping** requests (for example, `/metrics` endpoints polled by Prometheus)
+- **Infrastructure traffic** such as service-mesh sidecar chatter, internal control-plane calls, and routine background jobs
+
+Removing this noise keeps the observability stack focused on application behavior and prevents redundant data from drowning out meaningful signals.
+
+### Ambiguity of terminology
+
+In many systems, “sampling” is described either as **what is dropped** or **what is kept**. Those views are equivalent mathematically, but they express different policy intent—retention versus reduction. Odigos is oriented around **prioritized signal**: defining and keeping **important** traces so that critical evidence remains available for investigation and problem-solving.
+
+<Info>
+  Phrasings such as “drop 90%” and “keep 10%” describe the same outcome. Odigos emphasizes **prioritization** and **clear intent** rather than opaque drop semantics alone.
+</Info>
+
+## Introduction to sampling
+
+### Why use sampling? Cost versus visibility
+
+<Tabs>
+  <Tab title="Without sampling">
+    Visibility is maximized—every trace is available for analysis—but that comes with cost, infrastructure load, and noise. At high volume, the stack and ingest budget become the limiting factors.
+  </Tab>
+  <Tab title="With sampling">
+    Not every trace is stored; the aim is still to preserve enough signal to detect errors, latency regressions, and dependency issues. The balance is deliberate: invest ingest and storage in traces that matter instead of exhaustive duplication of routine, successful traffic.
+  </Tab>
+</Tabs>
+
+### The Odigos philosophy
+
+Traditional framing often starts from dropping data to save money. Odigos shifts the emphasis to **prioritizing what matters**: configuration expresses what should be treated as important (errors, slow paths, specific services or attributes, and so on), and the pipeline retains those traces preferentially. Cost control follows from that prioritization rather than from arbitrary bulk deletion alone.
+
+<Tip>
+  When designing sampling policies, **define “important” first** (failures, SLO risks, critical services), then set fallbacks or rates for everything else. That mirrors how Odigos surfaces configuration and avoids tuning only by a global drop percentage.
+</Tip>
+
+### Sampling level
+
+Sampling in Odigos is per trace: a single keep-or-drop decision is applied to every span. That decision is made at the root span for head sampling, or at the Odigos Gateway for tail sampling. Partial retention would break parent–child links, timing, and attributes that span the whole request, so a kept trace is always **complete** from the root span through its children.
+
+### Key terminology
+
+These terms describe how traces are classified in the sampling model:
+
+<CardGroup cols={2}>
+  <Card title="Important traces" icon="star">
+    Traces that match configured rules for high value—for example, failures, high latency, or explicitly selected attributes. The system is designed to **keep** these preferentially so they remain available for investigation.
+  </Card>
+  <Card title="Regular traces" icon="chart-line">
+    Typical traffic that does not match those priority rules. These may be **sampled at a lower rate** (or dropped according to configuration) while still allowing a statistical view of normal behavior where policies allow it.
+  </Card>
+    <Card title="Noisy traces" icon="broom">
+    Low-value traffic such as **health checks, readiness/liveness probes, metrics scraping, and routine infrastructure calls**. These are typically **dropped on sight** as a sanitation step, since they add volume without aiding investigation.
+  </Card>
+  <Card title="Dropped traces" icon="filter-circle-xmark">
+        Traces that are **not retained** for export to destinations after sampling decisions—whether classified as noisy, deprioritized as regular, or excluded by rate limits. They are not available in the backend for that retention window; this is how volume and cost are reduced.
+  </Card>
+</CardGroup>
+
+Together, this vocabulary ties configuration to outcomes: policies define what is important, drop what is noisy, treat everything else as regular unless additional rules apply, and dropped traces represent the tradeoff for sustainable cost and signal-to-noise ratio.

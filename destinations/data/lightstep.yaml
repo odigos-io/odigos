@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: LIGHTSTEP_ACCESS_TOKEN
       displayName: Access Token

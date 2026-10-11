@@ -1,0 +1,83 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-tail-sampling-errors
+  namespace: default
+  ownerReferences:
+    - kind: Deployment
+      name: tail-sampling-errors
+spec:
+  workloadCollectorConfig:
+    - containerName: tail-sampling-errors
+      samplingCollectorConfig:
+        (costReductionRules[?name == 'cost-reduction-ok-baseline']):
+          - name: cost-reduction-ok-baseline
+            operation:
+              httpServer:
+                route: /ok
+            percentageAtMost: 10
+        (highlyRelevantOperations[?name == 'high-relevance-error']):
+          - error: true
+            name: high-relevance-error
+            percentageAtLeast: 100
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-tail-sampling-duration
+  namespace: default
+  ownerReferences:
+    - kind: Deployment
+      name: tail-sampling-duration
+spec:
+  workloadCollectorConfig:
+    - containerName: tail-sampling-duration
+      samplingCollectorConfig:
+        (costReductionRules[?name == 'cost-reduction-rest']):
+          - name: cost-reduction-rest
+            percentageAtMost: 10
+        (highlyRelevantOperations[?name == 'duration-above-500ms']):
+          - durationAtLeastMs: 500
+            name: duration-above-500ms
+            percentageAtLeast: 50
+        (highlyRelevantOperations[?name == 'high-relevance-duration-above-1000ms']):
+          - durationAtLeastMs: 1000
+            name: high-relevance-duration-above-1000ms
+            percentageAtLeast: 100
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-tail-sampling-http-server
+  namespace: default
+  ownerReferences:
+    - kind: Deployment
+      name: tail-sampling-http-server
+spec:
+  workloadCollectorConfig:
+    - containerName: tail-sampling-http-server
+      samplingCollectorConfig:
+        (highlyRelevantOperations[?name == 'high-relevance-http-server-templated']):
+          - name: high-relevance-http-server-templated
+            operation:
+              httpServer:
+                route: /http-server/templated/{id}/users/*/orders/*
+            percentageAtLeast: 100
+        (highlyRelevantOperations[?name == 'high-relevance-http-server-templated-prefix']):
+          - name: high-relevance-http-server-templated-prefix
+            operation:
+              httpServer:
+                routePrefix: /http-server/prefix/{id}/*
+            percentageAtLeast: 100
+        (highlyRelevantOperations[?name == 'high-relevance-http-server-static-leading-slash']):
+          - name: high-relevance-http-server-static-leading-slash
+            operation:
+              httpServer:
+                route: /http-server/static/leading-slash
+            percentageAtLeast: 100
+        (highlyRelevantOperations[?name == 'high-relevance-http-server-static-no-leading-slash']):
+          - name: high-relevance-http-server-static-no-leading-slash
+            operation:
+              httpServer:
+                route: http-server/static/no-leading-slash
+            percentageAtLeast: 100

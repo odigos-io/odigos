@@ -1,65 +1,15 @@
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.21
+
+
 ######### python Native Community Agent #########
-
-FROM python:3.11.9 AS python-builder
-ARG ODIGOS_VERSION
-WORKDIR /python-instrumentation
-COPY agents/python ./agents/configurator
-RUN pip install ./agents/configurator/  --target workspace
-RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
-
-######### Node.js Native Community Agent #########
-#
-# The Node.js agent is built in multiple stages so it can be built with either upstream
-# @odigos/opentelemetry-node or with a local clone to test changes during development.
-# The implemntation is based on the following blog post:
-# https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
-
-# The first build stage 'nodejs-agent-clone' clones the agent sources from github main branch.
-FROM alpine AS nodejs-agent-clone
-RUN apk add git
-WORKDIR /src
-ARG NODEJS_AGENT_VERSION=main
-RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
-
-# The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-src' stage, but one can override it by setting the 
-# --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
-# This allows us to nobe the agent sources and test changes during development.
-# The output of this stage is the resolved source code to be used in the next stage.
-FROM scratch AS nodejs-agent-src
-COPY --from=nodejs-agent-clone /src/opentelemetry-node /
-
-# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
-# being dependency of the native-community agent.
-FROM node:18 AS nodejs-agent-build
-ARG ODIGOS_VERSION
-WORKDIR /opentelemetry-node
-COPY --from=nodejs-agent-src package.json yarn.lock ./
-# install dependencies with dev so we can build the agent
-RUN yarn --frozen-lockfile
-COPY --from=nodejs-agent-src / .
-RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN yarn compile
-
-# The fourth step 'nodejs-agent-native-community-src' prepares the agent sources for the native-community agent.
-# it COPY the nodejs agent source from 'nodejs-agent-build' stage and then build the agent in the 'agents/nodejs-native-community' directory.
-# The output of this stage is the compiled agent code in:
-#    - package source code in '/nodejs-instrumentation/build/src' directory.
-#    - all required dependencies in '/nodejs-instrumentation/prod_node_modules' directory.
-# These artifacts are later copied into the odiglet final image to be mounted into auto-instrumented pods at runtime.
-FROM node:18 AS nodejs-agent-native-community-builder
-ARG ODIGOS_VERSION
-WORKDIR /repos
-COPY ./agents/nodejs-native-community ./odigos/agents/nodejs-native-community
-COPY --from=nodejs-agent-build /opentelemetry-node opentelemetry-node
-# prepare the production node_modules content in a separate directory
-RUN yarn --cwd ./odigos/agents/nodejs-native-community --production --frozen-lockfile
-
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
 ARG TARGETARCH
+# SHA256 pins for the artifacts fetched in this stage. Verification runs between the
+# download and the unpack, so nothing unverified is ever extracted. Refresh these
+# together with DOTNET_OTEL_VERSION — a mismatched download fails the build.
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
     echo "arm64" > /tmp/arch_suffix; \
     else \
@@ -68,62 +18,40 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
+    case "$ARCH_SUFFIX" in \
+      x64) echo "58b6a7e5282ffba6d2f8e09c69e412711050e49a36c82d31edfd84cad3afac49  opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" | sha256sum -c - ;; \
+      arm64) echo "7600d3e1f57d06995d637c95650d9ee28b6e32cf2aa362fdb1a988267425191f  opentelemetry-dotnet-instrumentation-linux-glibc-arm64.zip" | sha256sum -c - ;; \
+      *) echo "no checksum pinned for arch $ARCH_SUFFIX" && exit 1 ;; \
+    esac && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
-    mv linux-$ARCH_SUFFIX linux-glibc-$ARCH_SUFFIX && \
+    mv linux-$ARCH_SUFFIX linux-glibc
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
-    unzip opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip "linux-musl-$ARCH_SUFFIX/*" -d . && \
-    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip
+    case "$ARCH_SUFFIX" in \
+      x64) echo "c0bc22bac5b5aa8b345cb995e87c39e080025ed5923a01d45f9d61d49c60b301  opentelemetry-dotnet-instrumentation-linux-musl-x64.zip" | sha256sum -c - ;; \
+      arm64) echo "a5494eaeeab99f298b3c875dfbac648c0e56c7f04ebc062800904cbb18251229  opentelemetry-dotnet-instrumentation-linux-musl-arm64.zip" | sha256sum -c - ;; \
+      *) echo "no checksum pinned for arch $ARCH_SUFFIX" && exit 1 ;; \
+    esac && \
+    unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    mv linux-musl-$ARCH_SUFFIX linux-musl
 
 # TODO(edenfed): Currently .NET Automatic instrumentation does not work on dotnet 6.0 with glibc,
 # This is due to compilation of the .so file on a newer version of glibc than the one used by the dotnet runtime.
 # The following override the .so file with our own which is compiled on the same glibc version as the dotnet runtime.
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
-    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
-
-
-# PHP
-FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
-WORKDIR /php-agents
-ARG TARGETARCH
-ARG PHP_AGENT_VERSION="v0.1.21"
-ARG PHP_VERSIONS="8.0 8.1 8.2 8.3 8.4"
-ENV PHP_VERSIONS=${PHP_VERSIONS}
-# Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each PHP version)
-RUN git clone https://github.com/odigos-io/opentelemetry-php \
-    && cd opentelemetry-php \
-    && git checkout tags/${PHP_AGENT_VERSION}
-# Move the pre-compiled binaries to the correct directories
-RUN for v in ${PHP_VERSIONS}; do \
-    mv opentelemetry-php/$v/bin/${TARGETARCH}/* opentelemetry-php/$v/; \
-    rm -rf opentelemetry-php/$v/bin; \
-    done
-
-
-# Ruby
-FROM --platform=$BUILDPLATFORM maniator/gh AS ruby-agents
-WORKDIR /ruby-agents
-ARG TARGETARCH
-ARG RUBY_AGENT_VERSION="v0.0.4"
-ARG RUBY_VERSIONS="3.1 3.2 3.3 3.4"
-ENV RUBY_VERSIONS=${RUBY_VERSIONS}
-# Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each Ruby version)
-RUN git clone https://github.com/odigos-io/opentelemetry-ruby \
-    && cd opentelemetry-ruby \
-    && git checkout tags/${RUBY_AGENT_VERSION}
-# Move the gems & binaries to the correct directories
-RUN for v in ${RUBY_VERSIONS}; do \
-    mv opentelemetry-ruby/$v/${TARGETARCH}/* opentelemetry-ruby/$v/; \
-    cp opentelemetry-ruby/Gemfile opentelemetry-ruby/$v/Gemfile; \
-    cp opentelemetry-ruby/index.rb opentelemetry-ruby/$v/index.rb; \
-    rm -rf opentelemetry-ruby/$v/amd64; \
-    rm -rf opentelemetry-ruby/$v/arm64; \
-    done
+    case "$ARCH_SUFFIX" in \
+      x64) echo "1a2964dd0ac92c29d5265ffd0093cb7d69605cdd3e98374e9cf25dbfb619855c  OpenTelemetry.AutoInstrumentation.Native-x64.so" | sha256sum -c - ;; \
+      arm64) echo "06c6191aa282c1a605d919d3057b1f5ce3d1e5ada7b9804295b30bf2288976ab  OpenTelemetry.AutoInstrumentation.Native-arm64.so" | sha256sum -c - ;; \
+      *) echo "no checksum pinned for arch $ARCH_SUFFIX" && exit 1 ;; \
+    esac && \
+    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so
 
 
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -146,40 +74,42 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 WORKDIR /instrumentations
 
-# Java
-ARG JAVA_OTEL_VERSION=v2.10.0
+# java-community
+ARG JAVA_OTEL_VERSION=v2.20.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
-# Python
-COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
+# python-community/python-community3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8@sha256:661308cb08d293f4ff3e1823cc7ebc0537ba53dd1fff72f61b411637d62ec3d4 /instrumentations/python3.8 /instrumentations/python3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.90@sha256:26be5a681e6cde7585f0bff6714fd74dbc90515a239d4759f5b6225591a78185 /instrumentations/python /instrumentations/python
 
-# NodeJS
-COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-native-community /instrumentations/nodejs
+# nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.16.0@sha256:46f225a7041046b141a1804f5f812ac2842b96a30b3f25e4368c4bf670bf1058 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.16.0@sha256:46f225a7041046b141a1804f5f812ac2842b96a30b3f25e4368c4bf670bf1058 /instrumentations/nodejs-community /instrumentations/nodejs-community
+# nodejs-community-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198ee74c61539f39614ec96b4ef9c7069140079e121541231f11f8b13863283 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198ee74c61539f39614ec96b4ef9c7069140079e121541231f11f8b13863283 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
 
-# .NET
+# dotnet-community
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
-# PHP
-COPY --from=php-agents /php-agents/opentelemetry-php/8.0 /instrumentations/php/8.0
-COPY --from=php-agents /php-agents/opentelemetry-php/8.1 /instrumentations/php/8.1
-COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8.2
-COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
-COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
+# php-community
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.8.0@sha256:0489f13aadab0ca3f9fe2d435a91a023fa7d5dde5ef0fe638b69d9a78a7f8ed4 /instrumentations/php /instrumentations/php
 
-# Ruby
-COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.1 /instrumentations/ruby/3.1
-COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.2 /instrumentations/ruby/3.2
-COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.3 /instrumentations/ruby/3.3
-COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ruby/3.4
+# ruby-community
+COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.9@sha256:5177737aba83e507ee968223fbd821d76e2df4e74bd1711e2d49e8d59f671d8c /instrumentations/ruby /instrumentations/ruby
 
 # loader
-ARG ODIGOS_LOADER_VERSION=v0.0.3
+ARG ODIGOS_LOADER_VERSION=v0.0.8
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
+
+FROM ${ODIGLET_BASE_IMAGE} AS rsync-base
 
 FROM registry.fedoraproject.org/fedora-minimal:38
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/bin/dlv /root/dlv
+# Copy statically compiled rsync (no shared libraries needed)
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 

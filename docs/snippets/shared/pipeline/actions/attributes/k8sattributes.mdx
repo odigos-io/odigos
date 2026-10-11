@@ -1,0 +1,184 @@
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+## Overview
+
+By adding Kubernetes-specific attributes to telemetry signals, you can gain better visibility into workloads running in the cluster.
+
+Helps in correlating traces, logs and metrics with specific Kubernetes resources, such as pods, deployments, nodes and clusters.
+
+Adding resource attributes based on custom kubernetes annotations/labels can enrich the data with user defined aggregations and metadata corresponding to the originating pod that produced the telemetry.
+
+## Configuration Options
+
+The K8sAttributes action is configured using the `odigos.io/v1alpha1.Action` CRD with the `k8sAttributes` configuration section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the action will operate on.
+    - This field is *required*
+    - Supported values: `TRACES, LOGS, METRICS`
+  </Accordion>
+  <Accordion title="k8sAttributes *">
+    **k8sAttributes** `object` : Configuration for the K8sAttributes action.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="collectContainerAttributes">
+        **collectContainerAttributes** `boolean` : Collect the following container related attributes:
+            * `k8s.container.name`
+            * `container.id`
+            * `container.image.name`
+            * `container.image.tag`
+
+        This field is *optional* and defaults to `false`
+      </Accordion>
+      <Accordion title="collectReplicaSetAttributes">
+        **collectReplicaSetAttributes** `boolean` : Collect the following replica set related attributes:
+            * `k8s.replicaset.name`
+        if CollectWorkloadUID is set to true, the following attribute will be collected as well:
+            * `k8s.replicaset.uid`
+            
+        This field is *optional* and defaults to `false`
+      </Accordion>
+      <Accordion title="CollectWorkloadUID">
+        **CollectWorkloadUID** `boolean` : Collect the workload UID:
+            * `k8s.deployment.uid`
+            * `k8s.daemonset.uid`
+            * `k8s.statefulset.uid`
+
+        Only one of these attributes can appear for a given span/log/metric - based on the workload it originated from.
+        This field is *optional* and defaults to `false`
+      </Accordion>
+      <Accordion title="CollectClusterUID">
+        **CollectClusterUID** `boolean` : Collect the `k8s.cluster.uid` attribute, which is set to the uid of the namespace "kube-system". This allows aggregating observability based on the cluster it originated from.
+
+        This field is *optional* and defaults to `false`
+      </Accordion>
+      <Accordion title="labelsAttributes">
+        **labelsAttributes** `K8sLabelAttribute[]` : Collect resource attributes based on the specified labels.
+
+        Each label attribute can specify:
+        - `labelKey`: The Kubernetes label key to extract
+        - `attributeKey`: The OpenTelemetry attribute key to create
+        - `from` (deprecated): Single source - "pod" or "namespace"
+        - `fromSources`: Array of sources to extract from, with precedence (pod > namespace > node)
+
+        When using `fromSources` with multiple sources, if the same label exists in multiple sources, the most specific source (e.g., pod) takes precedence over less specific sources (e.g., namespace).
+
+        This field is *optional* and can remain empty.
+      </Accordion>
+      <Accordion title="annotationsAttributes">
+        **annotationsAttributes** `K8sAnnotationAttribute[]` : Collect resource attributes based on the specified annotations.
+
+        Each annotation attribute can specify:
+        - `annotationKey`: The Kubernetes annotation key to extract
+        - `attributeKey`: The OpenTelemetry attribute key to create
+        - `from` (deprecated): Single source - "pod" or "namespace"
+        - `fromSources`: Array of sources to extract from, with precedence (pod > namespace > node)
+
+        When using `fromSources` with multiple sources, if the same annotation exists in multiple sources, the most specific source (e.g., pod) takes precedence.
+
+        This field is *optional* and can remain empty.
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example demonstrates how to collect Kubernetes attributes, including labels and annotations, and attach them to telemetry signals using the new Action CRD.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml k8s-attributes.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: collect-k8s-attributes
+      namespace: odigos-system
+    spec:
+      actionName: "Collect Kubernetes Attributes"
+      signals:
+        - TRACES
+        - METRICS
+        - LOGS
+      k8sAttributes:
+        collectContainerAttributes: true
+        collectWorkloadUID: true
+        collectClusterUID: true
+        labelsAttributes:
+          - labelKey: "app.kubernetes.io/name"
+            attributeKey: "app.kubernetes.name"
+            from: "pod"
+        annotationsAttributes:
+          - annotationKey: "kubectl.kubernetes.io/restartedAt"
+            attributeKey: "kubectl.kubernetes.restartedAt"
+            from: "pod"
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f k8s-attributes.yaml
+    ```
+  </Step>
+</Steps>
+
+## Multi-Source Label Extraction Example
+
+The following example demonstrates how to extract the same label from multiple sources with proper precedence. This is useful when you want pod-level labels to override namespace-level labels when both exist.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml k8s-attributes-multi-source.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: collect-environment-label
+      namespace: odigos-system
+    spec:
+      actionName: "Collect Environment Label with Precedence"
+      signals:
+        - TRACES
+        - METRICS
+        - LOGS
+      k8sAttributes:
+        labelsAttributes:
+          - labelKey: "environment"
+            attributeKey: "k8s.environment"
+            fromSources:
+              - pod        # Highest precedence - pod labels override namespace labels
+              - namespace  # Lower precedence - used as fallback
+    ```
+
+    In this configuration:
+    - If a pod has an `environment` label, that value will be used
+    - If the pod doesn't have the label, but the namespace does, the namespace value will be used
+    - This allows namespace-wide defaults while permitting pod-level overrides
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f k8s-attributes-multi-source.yaml
+    ```
+  </Step>
+</Steps>

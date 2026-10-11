@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: QRYN_OSS_URL
       displayName: API Url

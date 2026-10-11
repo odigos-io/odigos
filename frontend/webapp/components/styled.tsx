@@ -9,3 +9,7 @@ export const OnboardingStepperWrapper = styled.div`
     display: none;
   }
 `;
+
+export const OnboardingContentWrapper = styled.div`
+  margin: 0 auto
+`;

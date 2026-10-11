@@ -3,46 +3,12 @@ package odigosurltemplateprocessor
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
-	"go.opentelemetry.io/collector/confmap/xconfmap"
+	"github.com/odigos-io/odigos/common/urltemplate"
+
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/confmap"
 )
-
-type K8sWorkload struct {
-	Namespace string `mapstructure:"namespace"`
-	Kind      string `mapstructure:"kind"`
-	Name      string `mapstructure:"name"`
-}
-
-// MatchProperties is similar to how the collector "attributes" and "resource"
-// processors allows to match on handy attributes and resources.
-// at the moment, we will just use the workload properties to match on
-// but in the future this can be extended and shared with other processors
-// that need some filtering capabilities.
-type MatchProperties struct {
-	// describes a list of k8s workloads to match on
-	// A match occurs if the resource matches a workload in the list.
-	// The workload is defined by the namespace, kind and name.
-	// Kind is "deployment", "statefulset" or "daemonset".
-	// This is optional field, and defaults to empty.
-	K8sWorkloads []K8sWorkload `mapstructure:"k8s_workloads"`
-}
-
-// Inspired by the "attributes" and "resource" processors config structure which will allow us
-// to be more streamlined with common existing components and extend/reuse in the future.
-// This matcher is adapted to the odigos use case.
-// basically, given a telemetry item, it will either match or not match an item,
-// based on the optional properties that are defined in the config.
-type MatchConfig struct {
-	// If set, a span that matches the filter properties will be excluded from processing.
-	// if a span matches both include and exclude, it will be excluded (exclude takes precedence).
-	Exclude *MatchProperties `mapstructure:"exclude"`
-
-	// If set, the span must match at least one of the properties to be processed.
-	Include *MatchProperties `mapstructure:"include"`
-
-	// If neither Include nor Exclude are specified, the processor will match all otel resources.
-}
 
 type CustomIdConfig struct {
 
@@ -59,15 +25,10 @@ type CustomIdConfig struct {
 type TemplatizationConfig struct {
 
 	// This option allows fine-tuning for specific paths to customize what to templatize and what not.
-	// The rule looks like this: "/v1/{foo:regex}/bar/{baz}".
-	// Each segment part in "{}" denote templatization, and all other segments should match the text exactly.
-	// Inside the "{}" you can optionally set the template name and matching regex.
-	// The template name is the name that will be used in the span name and attributes (e.g. "/users/{userId}").
-	// The regex is optional, and if provided, it will be used to match the segment.
-	// If the regex does not match, the rule will be skipped and other rules and templatization will be evaluated.
-	// Example: "/v1/{foo:\d+}" will match "/v1/123" producing "/v1/{foo}", but not with "/v1/abc".
-	// compatible with golang regexp module https://pkg.go.dev/regexp
-	// for performance reasons, avoid using compute-intensive expressions or adding too many values here.
+	// The rule format supports:
+	// 1. Static string: "/v1/users" will match "/v1/users" but not "/v1/admins".
+	// 2. Templated segment: "/v1/{name}" matches any single segment and produces "/v1/{name}". Template name defaults to "id" if omitted.
+	// 3. Wildcard: "/v1/*" will match "/v1/users" or "/v1/admins" (one segment) but not "/v1/a/b".
 	TemplatizationRules []string `mapstructure:"templatization_rules"`
 
 	// CustomIds is a list of additional regex patterns that will be used to match and templated matching path segment.
@@ -81,61 +42,22 @@ type TemplatizationConfig struct {
 }
 
 type Config struct {
-	MatchConfig `mapstructure:",squash"`
-
 	// TemplatizationConfig is a list of rules that will be used in addition to the default rules
 	// to apply templatization to the path.
 	// It is optional and defaults to empty.
 	TemplatizationConfig `mapstructure:",squash"`
+
+	// OdigosConfigExtension is the default for Odigos: per-workload rules from the extension cache (e.g. odigos_config_k8s).
+	// Must implement OdigosConfigExtension. If omitted from YAML, only TemplatizationConfig above is used (legacy).
+	OdigosConfigExtension *component.ID `mapstructure:"odigos_config_extension"`
 }
 
-var _ xconfmap.Validator = (*Config)(nil)
-
-func validateK8sWorkload(workload K8sWorkload) error {
-	if workload.Namespace == "" {
-		return fmt.Errorf("namespace is required")
-	}
-	if workload.Kind == "" {
-		return fmt.Errorf("kind is required")
-	}
-	lowercaseKind := strings.ToLower(workload.Kind)
-	if lowercaseKind != "deployment" && lowercaseKind != "statefulset" && lowercaseKind != "daemonset" {
-		return fmt.Errorf("kind must be one of deployment, statefulset or daemonset")
-	}
-	if workload.Name == "" {
-		return fmt.Errorf("name is required")
-	}
-	return nil
-}
-
-func validatePropertiesConfig(mp *MatchProperties) error {
-	if mp == nil {
-		return nil
-	}
-	for _, workload := range mp.K8sWorkloads {
-		if err := validateK8sWorkload(workload); err != nil {
-			return fmt.Errorf("invalid workload: %w", err)
-		}
-	}
-	return nil
-}
+var _ confmap.Validator = (*Config)(nil)
 
 // Validate checks if the processor configuration is valid
 func (c Config) Validate() error {
-
-	if c.Exclude != nil {
-		if err := validatePropertiesConfig(c.Exclude); err != nil {
-			return fmt.Errorf("invalid exclude properties: %w", err)
-		}
-	}
-	if c.Include != nil {
-		if err := validatePropertiesConfig(c.Include); err != nil {
-			return fmt.Errorf("invalid include properties: %w", err)
-		}
-	}
-
 	for _, rule := range c.TemplatizationRules {
-		if _, err := parseUserInputRuleString(rule); err != nil {
+		if _, err := urltemplate.ParseUserInputRuleString(rule, false); err != nil {
 			return err
 		}
 	}
@@ -145,5 +67,14 @@ func (c Config) Validate() error {
 			return fmt.Errorf("invalid custom id regexp: %w", err)
 		}
 	}
+
+	// When set, the extension component type must be a valid OTel type string.
+	if c.OdigosConfigExtension != nil {
+		typeStr := c.OdigosConfigExtension.Type().String()
+		if _, err := component.NewType(typeStr); err != nil {
+			return fmt.Errorf("invalid odigos_config_extension type %q: %w", typeStr, err)
+		}
+	}
+
 	return nil
 }

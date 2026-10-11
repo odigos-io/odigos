@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: JAEGER_URL
       displayName: Jaeger OTLP gRPC Endpoint
@@ -26,21 +28,21 @@ spec:
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Secure connection'
+        tooltip: "Secure connection"
       customReadDataLabels:
-        - condition: 'true'
-          title: 'TLS'
-          value: 'Encrypted'
-        - condition: 'false'
-          title: 'TLS'
-          value: 'Unencrypted'
+        - condition: "true"
+          title: "TLS"
+          value: "Encrypted"
+        - condition: "false"
+          title: "TLS"
+          value: "Unencrypted"
     - name: JAEGER_CA_PEM
       displayName: Certificate Authority
       componentType: textarea
       componentProps:
         required: false
-        placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
-      renderCondition: ['JAEGER_TLS_ENABLED', '==', 'true']
-      hideFromReadData: ['true']
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA"
+      renderCondition: ["JAEGER_TLS_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]
   testConnectionSupported: true

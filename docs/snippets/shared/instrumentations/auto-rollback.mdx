@@ -1,0 +1,15 @@
+## Auto-rollback and Recover
+
+If pods enter CrashLoopBackOff or ImagePullBackOff after instrumentation is injected, Odigos **disables the agent** and restarts the workload **without** instrumentation. The UI may show that Odigos detected a crash and rolled back instrumentation to protect the workload.
+
+That rollback is **not** a Kubernetes Deployment undo. Odigos does not restore a previous ReplicaSet or Helm revision. It only removes Odigos agents from the workload.
+
+**Recover** (in the UI) means **try instrumentation again**. It clears the rollback latch and rolls the workload **with** agents. Clicking Recover does not remove remaining instrumentation or roll back the Deployment a second time.
+
+Disable automatic uninstrumentation with:
+
+```bash
+odigos install --set autoRollback.disabled=true
+```
+
+or Helm `autoRollback.disabled=true`.

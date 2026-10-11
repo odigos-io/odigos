@@ -17,7 +17,7 @@
     <h2>Generate distributed traces for any application without code changes.</h2>
     <h4>If you find Odigos helpful, please ⭐ this repository to show your support!</h4>
     <h2>
-        <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a>
+        <a href="https://odigos.io/?demo">Demo Video</a>
         • <a href="https://docs.odigos.io">Documentation</a>
         • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
     </h2>
@@ -72,7 +72,7 @@ Manage and configure collectors via a convenient web UI.
 ## Installation
 
 Installing Odigos takes less than 5 minutes and requires no code changes.<br />
-Download our [CLI](https://docs.odigos.io/installation) and run the following command:
+Download our [CLI](https://docs.odigos.io/setup/installation) and run the following command:
 
 ```bash
 odigos install

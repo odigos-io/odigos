@@ -1,14 +1,127 @@
 package common
 
+import (
+	"github.com/odigos-io/odigos/common/api/sampling"
+)
+
 type ProfileName string
 
-// +kubebuilder:validation:Enum=normal;readonly
+// OdigosLogLevel is the log level for Odigos components (ODIGOS_LOG_LEVEL).
+// +kubebuilder:validation:Enum=error;warn;info;debug
+type OdigosLogLevel string
+
+const (
+	LogLevelError OdigosLogLevel = "error"
+	LogLevelWarn  OdigosLogLevel = "warn"
+	LogLevelInfo  OdigosLogLevel = "info"
+	LogLevelDebug OdigosLogLevel = "debug"
+)
+
+// EnvVarValue returns the log level as a string value for the environment variable.
+// The agent and otel should support these values, or it needs to be adjusted when added for
+// language distros that use different values.
+func (l OdigosLogLevel) EnvVarValue() string {
+	return string(l)
+}
+
+// Compare returns a negative integer, zero, or a positive integer as l is less than, equal to, or greater than other.
+func (l OdigosLogLevel) Compare(other OdigosLogLevel) int {
+	switch l {
+	case LogLevelError:
+		return 10
+	case LogLevelWarn:
+		return 20
+	case LogLevelInfo:
+		return 30
+	case LogLevelDebug:
+		return 40
+	default:
+		return 0
+	}
+}
+
+// +kubebuilder:object:generate=true
+// ComponentLogLevels holds default and per-component log levels. Default is the global; per-field overrides for that component.
+type ComponentLogLevels struct {
+	Default      OdigosLogLevel `json:"default,omitempty"      yaml:"default,omitempty"`
+	Autoscaler   OdigosLogLevel `json:"autoscaler,omitempty"   yaml:"autoscaler,omitempty"`
+	Scheduler    OdigosLogLevel `json:"scheduler,omitempty"    yaml:"scheduler,omitempty"`
+	Instrumentor OdigosLogLevel `json:"instrumentor,omitempty" yaml:"instrumentor,omitempty"`
+	Odiglet      OdigosLogLevel `json:"odiglet,omitempty"      yaml:"odiglet,omitempty"`
+	Deviceplugin OdigosLogLevel `json:"deviceplugin,omitempty" yaml:"deviceplugin,omitempty"`
+	UI           OdigosLogLevel `json:"ui,omitempty"          yaml:"ui,omitempty"`
+	Collector    OdigosLogLevel `json:"collector,omitempty"   yaml:"collector,omitempty"`
+}
+
+// Resolve returns the effective log level for the component. Order: component-specific → Default → "info".
+func (c *ComponentLogLevels) Resolve(component string) string {
+	if c == nil {
+		return string(LogLevelInfo)
+	}
+	var v OdigosLogLevel
+	switch component {
+	case "autoscaler":
+		v = c.Autoscaler
+	case "scheduler":
+		v = c.Scheduler
+	case "instrumentor":
+		v = c.Instrumentor
+	case "odiglet":
+		v = c.Odiglet
+	case "deviceplugin":
+		v = c.Deviceplugin
+	case "ui":
+		v = c.UI
+	case "collector":
+		v = c.Collector
+	default:
+		v = ""
+	}
+	if v != "" {
+		return string(v)
+	}
+	if c.Default != "" {
+		return string(c.Default)
+	}
+	return string(LogLevelInfo)
+}
+
+// "normal" is deprecated. Kept here in the enum for backwards compatibility with operator CRD.
+// +kubebuilder:validation:Enum=default;readonly;normal
 type UiMode string
 
 const (
 	UiModeDefault  UiMode = "default"
 	UiModeReadonly UiMode = "readonly"
 )
+
+// McpAccessMode controls whether the Odigos MCP server may run write (mutating)
+// tools. It is independent of UiMode: read-only is the default, and an operator
+// raises it to read-write to let an agent change the cluster.
+// +kubebuilder:validation:Enum=read-only;read-write
+type McpAccessMode string
+
+const (
+	McpAccessModeReadOnly  McpAccessMode = "read-only"
+	McpAccessModeReadWrite McpAccessMode = "read-write"
+)
+
+// +kubebuilder:object:generate=true
+// ResourceDetectorConfig holds the configuration for a single resource detector.
+type ResourceDetectorConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ResourceDetectorsConfiguration controls which resource detectors are enabled
+// on the node collector's resourcedetection processor.
+type ResourceDetectorsConfiguration struct {
+	EC2   *ResourceDetectorConfig `json:"ec2,omitempty"`
+	EKS   *ResourceDetectorConfig `json:"eks,omitempty"`
+	Azure *ResourceDetectorConfig `json:"azure,omitempty"`
+	AKS   *ResourceDetectorConfig `json:"aks,omitempty"`
+	GCP   *ResourceDetectorConfig `json:"gcp,omitempty"`
+}
 
 type CollectorNodeConfiguration struct {
 	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
@@ -50,12 +163,56 @@ type CollectorNodeConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 
-	// Odigos will by default attempt to collect logs from '/var/log' on each k8s node.
-	// Sometimes, this directory is actually a symlink to another directory.
-	// In this case, for logs collection to work, we need to add a mount to the target directory.
-	// This field is used to specify this target directory in these cases.
-	// A common target directory is '/mnt/var/log'.
-	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
+	// Deprecated - use OtlpExporterConfiguration instead.
+	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
+
+	// OtlpExporterConfiguration is the configuration for the OTLP exporter.
+	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+
+	// ResourceDetectors controls which OpenTelemetry resource detectors are enabled.
+	// Defaults: ec2=true, eks=false, azure=true, aks=true, gcp=true.
+	ResourceDetectors *ResourceDetectorsConfiguration `json:"resourceDetectors,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type OtlpExporterConfiguration struct {
+	EnableDataCompression *bool           `json:"enableDataCompression,omitempty"`
+	Timeout               string          `json:"timeout,omitempty"`
+	RetryOnFailure        *RetryOnFailure `json:"retryOnFailure,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type RetryOnFailure struct {
+	Enabled         *bool  `json:"enabled,omitempty"`
+	InitialInterval string `json:"initialInterval,omitempty"`
+	MaxInterval     string `json:"maxInterval,omitempty"`
+	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`
+}
+
+// ServiceGraphOptions holds all configuration for the OpenTelemetry service graph connector.
+// It is serialized as a nested "serviceGraph" block inside CollectorGatewayConfiguration.
+// CollectorsGroupSpec (CRD) still stores these as flat fields to preserve CRD backward compatibility.
+// At the function-signature level it is also used directly in GatewayConfigOptions and
+// collector group construction.
+type ServiceGraphOptions struct {
+	// Disabled controls whether the service graph connector is active.
+	// Defaults to false (enabled). When disabled, the topology map in the UI will be unavailable
+	// and load-balancing between node collectors and the gateway is also removed.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// ExtraDimensions are additional attribute names to include as dimensions in the
+	// service graph metrics, on top of the default service.name dimension.
+	// Both span-level and resource-level attributes are supported.
+	ExtraDimensions []string `json:"extraDimensions,omitempty"`
+
+	// VirtualNodePeerAttributes is an ordered list of span-level attributes used to identify
+	// uninstrumented (virtual) nodes (e.g. Redis, Kafka). The connector picks the first
+	// attribute that has a value on the CLIENT span.
+	// When empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+	// Only span-level attributes are supported here; resource attributes are silently ignored.
+	VirtualNodePeerAttributes []string `json:"virtualNodePeerAttributes,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -100,6 +257,28 @@ type CollectorGatewayConfiguration struct {
 	// this is when go runtime will start garbage collection.
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+
+	// ServiceGraph holds all configuration for the service graph connector.
+	ServiceGraph *ServiceGraphOptions `json:"serviceGraph,omitempty"`
+
+	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	// This feature is only available when metrics destination is configured.
+	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
+
+	// for destinations that uses https for exporting data, this value can be used to set the value for the https proxy.
+	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
+
+	// Node selector for the cluster gateway collector deployment.
+	// Use this to force the gateway to run only on nodes with specific labels.
+	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+	// If no matching nodes exist, the pod will remain Pending.
+	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
+
+	// Deployment name for the cluster gateway collector deployment.
+	// If not set, the default is 'odigos-gateway'.
+	DeploymentName string `json:"deploymentName,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
@@ -121,6 +300,9 @@ type RolloutConfiguration struct {
 	// This setting does not control manual rollouts executed from the UI or via the API.
 	// Any additional configuration regarding rollouts and rollbacks are ignored when this is set to true.
 	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled"`
+
+	// ConcurrentRollouts is the maximum number of concurrent rollouts allowed. 0 is unlimited, disabling the limit.
+	MaxConcurrentRollouts int `json:"maxConcurrentRollouts"`
 }
 
 type OidcConfiguration struct {
@@ -134,34 +316,516 @@ type OidcConfiguration struct {
 	ClientSecret string `json:"clientSecret,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+type MetricsSourceSpanMetricsConfiguration struct {
+
+	// control beahvior for when to collect span metrics.
+	// - true - span metrics will never be collected, even if destinations require it.
+	// - false / nil - span metrics will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for flusing metrics (format: 15s, 1m etc). defaults: 60s (one minute).
+	Interval string `json:"interval,omitempty"`
+
+	// used to remove metrics after time that they are not reporting.
+	// if an app only generates metrics once in a while, this parameter can tune
+	// how much gap is allowed.
+	// format: duration string (15s, 1m, etc).
+	// default is 5m (five minutes).
+	MetricsExpiration string `json:"metricsExpiration,omitempty"`
+
+	// additional dimensions to add to the span metrics.
+	// these are span attributes that you want to convert to metrics attributes during collection.
+	// the values of the attributes must have low cardinality.
+	// it can increase the number of series in the destination.
+	// some dimensions are already added by default, regardless of this setting.
+	AdditionalDimensions []string `json:"additionalDimensions,omitempty"`
+
+	// if true, histogram metrics will not be collected.
+	HistogramDisabled bool `json:"histogramDisabled,omitempty"`
+
+	// explicit buckets list for the histogram metrics.
+	// format is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d` etc).
+	// if not set, the default buckets list will be used.
+	// the buckets must be in ascending order.
+	// example: ["100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"]
+	// Default value when unset:
+	// 		["2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"]
+	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
+	ExplicitHistogramBuckets []string `json:"explicitHistogramBuckets,omitempty"`
+
+	// By default, Odigos does not include process labels - meaning
+	// metrics will be aggregated by container as the lowest level.
+	// This means that multiple processes running in the same container
+	// will be aggregated into the same time series.
+	// For more granular metrics, set this option to true.
+	// This will include process-specific labels on metrics,
+	// which will cause more unique time series to be created.
+	IncludedProcessInDimensions *bool `json:"includedProcessInDimensions,omitempty"`
+
+	// exclude resource attributes from being added to span metrics.
+	// for example - if you don't care about the process granularity,
+	// and prefer the metrics to be aggregated for all processes in a pod container,
+	// you can list all "process.*" attributes here to exclude them from being added to span metrics.
+	// any other resource attribute can be set, either for sanitation or to reduce dimenssions for generate metrics.
+	ExcludedResourceAttributes []string `json:"excludedResourceAttributes,omitempty"`
+
+	// Advanced configuration - avoid using unless you know what you are doing.
+	// This list controls which resource attributes are included in the metric stream identity.
+	// These attributes are used to determines how span metrics are grouped.
+	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
+
+	// Controls the tradeoff between metric accuracy and resource usage.
+	// See sampling.SpanMetricsMode for possible values.
+	SpanMetricsMode *sampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceHostMetricsConfiguration struct {
+
+	// control beahvior for when to collect host metrics.
+	// - true - host metrics will never be collected, even if destinations require it.
+	// - false / nil - host metrics will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for scraping metrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceKubeletStatsConfiguration struct {
+
+	// control beahvior for when to collect kubelet stats.
+	// - true - kubelet stats will never be collected, even if destinations require it.
+	// - false / nil - kubelet stats will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for scraping metrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceOdigosOwnMetricsConfiguration struct {
+
+	// currently, odigos own metrics collection is based on:
+	// - if destination requires it (can be opt-in and out in destination level).
+	// - if odigos metrics store (odigos prometheus) is enabled.
+	// there is no way to enable or disable odigos own metrics globally here.
+
+	// time interval for scraping odigos ownmetrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceAgentSpanMetricsConfiguration struct {
+	Enabled bool `json:"enabled"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceAgentRuntimeMetricsConfiguration struct {
+	// configuration for Java runtime metrics
+	Java *MetricsSourceAgentJavaRuntimeMetricsConfiguration `json:"java,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceAgentJavaRuntimeMetricsConfiguration struct {
+	// global enable/disable for all Java runtime metrics
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// individual metric configurations
+	Metrics []MetricsSourceAgentRuntimeMetricConfiguration `json:"metrics,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceAgentRuntimeMetricConfiguration struct {
+	// name of the runtime metric (e.g., "jvm.class.loaded")
+	Name string `json:"name"`
+
+	// whether this specific metric is disabled
+	Disabled *bool `json:"disabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceAgentMetricsConfiguration struct {
+	SpanMetrics *MetricsSourceAgentSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
+
+	// configuration for runtime metrics from agents
+	RuntimeMetrics *MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
+}
+
+// AgentsInitContainerResources defines resource limits and requests for the init container
+// that is injected into user pods when using the k8s-init-container mount method.
+type AgentsInitContainerResources struct {
+	// RequestCPUm is the CPU request for the init container.
+	// it will be embedded in the init container as a resource request of the form "cpu: <value>m"
+	// default value is 300m
+	RequestCPUm int `json:"requestCPUm,omitempty" yaml:"requestCPUm,omitempty"`
+
+	// LimitCPUm is the CPU limit for the init container.
+	// it will be embedded in the init container as a resource limit of the form "cpu: <value>m"
+	// default value is 300m
+	LimitCPUm int `json:"limitCPUm,omitempty" yaml:"limitCPUm,omitempty"`
+
+	// RequestMemoryMiB is the memory request for the init container.
+	// it will be embedded in the init container as a resource request of the form "memory: <value>Mi"
+	// default value is 300Mi
+	RequestMemoryMiB int `json:"requestMemoryMiB,omitempty" yaml:"requestMemoryMiB,omitempty"`
+
+	// LimitMemoryMiB is the memory limit for the init container.
+	// it will be embedded in the init container as a resource limit of the form "memory: <value>Mi"
+	// default value is 300Mi
+	LimitMemoryMiB int `json:"limitMemoryMiB,omitempty" yaml:"limitMemoryMiB,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type TraceCorrelationsServiceIOConfiguration struct {
+	// enable/disable for service I/O correlation metrics (serviceio connector).
+	// disabled by default.
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	// OpenTelemetry span attribute names read from inbound spans when correlating service I/O
+	// on the receiving side (e.g. server spans). Each name should refer to a low-cardinality attribute.
+	InputSpanAttributes []string `json:"inputSpanAttributes,omitempty" yaml:"inputSpanAttributes,omitempty"`
+
+	// OpenTelemetry span attribute names read from outbound spans when correlating service I/O
+	// on the sending side (e.g. client/producer spans). Each name should refer to a low-cardinality attribute.
+	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty" yaml:"outputSpanAttributes,omitempty"`
+
+	// interval at which service I/O metrics are flushed (format: 15s, 1m, etc). default is 60s.
+	MetricsFlushInterval string `json:"metricsFlushInterval,omitempty" yaml:"metricsFlushInterval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type TraceCorrelationsConfiguration struct {
+	ServiceIO *TraceCorrelationsServiceIOConfiguration `json:"serviceIO,omitempty" yaml:"serviceIO,omitempty"`
+}
+
+// TraceCorrelationsServiceIOPipelineActive reports whether the serviceio connector pipeline should be applied.
+// Service I/O correlation is opt-in: serviceIO.Enabled must be explicitly true; nil or false keeps the feature off.
+func TraceCorrelationsServiceIOPipelineActive(t *TraceCorrelationsConfiguration) bool {
+	return t != nil &&
+		t.ServiceIO != nil &&
+		t.ServiceIO.Enabled != nil &&
+		*t.ServiceIO.Enabled
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceConfiguration struct {
+
+	// configuration for span metrics.
+	SpanMetrics *MetricsSourceSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
+
+	// configuration for host metrics.
+	HostMetrics *MetricsSourceHostMetricsConfiguration `json:"hostMetrics,omitempty"`
+
+	// configuration for kubelet stats.
+	KubeletStats *MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
+
+	// configuration for odigos own metrics which are send to configured destinations.
+	OdigosOwnMetrics *MetricsSourceOdigosOwnMetricsConfiguration `json:"odigosOwnMetrics,omitempty"`
+
+	// configuration for agent span metrics.
+	AgentMetrics *MetricsSourceAgentMetricsConfiguration `json:"agentMetrics,omitempty"`
+}
+
+type OdigosOwnTelemetryConfiguration struct {
+	// if set to true, odigos will not deploy victoriametrics as own metrics store and will not send own metrics to it.
+	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
+}
+
+// Configuration for Odigos auto-kubelet-probes detection and sampling.
+// Odigos can automatically pick up health probes from the k8s manifest,
+// and treat them as "noisy endpoints" to be sampled out.
+// Most users get little or no value from tracing health probes,
+// and it is recommended to enable and use it.
+// It will be used with head sampling where the agent support it.
+// When tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.
+type K8sHealthProbesSamplingConfiguration struct {
+	// If set to true, Odigos will automatically detect and sample out health probes.
+	// This is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
+	// Users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// percentage % (0-100) of health probes to keep.
+	// if not set, it is defaulted to 0% -> all health probes will be sampled out.
+	// set to some low value (like 1%) to still keep some health-probes traces.
+	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
+}
+
+type SamplingConfiguration struct {
+
+	// Set to true to enable dry run mode for sampling.
+	// When enabled, Odigos runs the sampling logic but does not drop any traces; metrics are still
+	// calculated so you can evaluate rule effectiveness before committing to changes that might lose data.
+	// Each span gets an attribute 'odigos.sampling.dry_run.kept' indicating whether it would be kept or dropped once dry run is off.
+	// With spanSamplingAttributes enabled, dry-run decisions are also visible as span attributes on each span.
+	DryRun *bool `json:"dryRun,omitempty"`
+
+	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+	// These attributes add context when viewing traces and inspecting costs, so you can understand
+	// how sampling decisions were made for an individual span and apply changes to fine-tune rules.
+	// When dry run is enabled, each span includes the sampling decision (kept or dropped) as it would apply once dry run is disabled.
+	SpanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
+
+	// Configuration for tail sampling.
+	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
+
+	// Configuration for Odigos auto-kubelet-probes detection and sampling.
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingUiConfiguration holds optional UI resource limits and OTLP listen overrides for profiling.
+type ProfilingUiConfiguration struct {
+	SlotTTLSeconds int `json:"slotTTLSeconds,omitempty" yaml:"slotTTLSeconds,omitempty"`
+	MaxSlots       int `json:"maxSlots,omitempty" yaml:"maxSlots,omitempty"`
+	SlotMaxBytes   int `json:"slotMaxBytes,omitempty" yaml:"slotMaxBytes,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingConfiguration is cluster-wide continuous profiling; disabled unless Enabled is set.
+type ProfilingConfiguration struct {
+	Enabled  *bool                      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Exporter *OtlpExporterConfiguration `json:"exporter,omitempty" yaml:"exporter,omitempty"`
+	// Symbolization controls how native (C/C++/Rust) frames are resolved to
+	// function names. Mirrors the VM agent's profiling.symbolization.native flag.
+	Symbolization *ProfilingSymbolizationConfiguration `json:"symbolization,omitempty" yaml:"symbolization,omitempty"`
+	// Ui tunes the UI backend's in-memory profile cache (slot count, per-slot and
+	// TTL limits). Applied live by the frontend on effective-config changes, so
+	// edits from the settings page take effect without restarting the UI pod.
+	Ui *ProfilingUiConfiguration `json:"ui,omitempty" yaml:"ui,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingSymbolizationConfiguration controls native frame symbolization.
+type ProfilingSymbolizationConfiguration struct {
+	// Native enables on-host symbolization of native (C/C++/Rust) frames in the node
+	// collector (odigossymbolizeprocessor). On by default when profiling is enabled;
+	// set to false to leave native frames as raw addresses.
+	Native *bool `json:"native,omitempty" yaml:"native,omitempty"`
+}
+
+// NativeSymbolizationEnabled reports whether native on-host symbolization should
+// run. It is ON by default whenever profiling is enabled; a user can explicitly
+// opt out by setting symbolization.native: false.
+func (p *ProfilingConfiguration) NativeSymbolizationEnabled() bool {
+	if p == nil || p.Enabled == nil || !*p.Enabled {
+		return false // profiling itself is off
+	}
+	if p.Symbolization != nil && p.Symbolization.Native != nil {
+		return *p.Symbolization.Native // explicit opt-out/opt-in
+	}
+	return true // default ON
+}
+
+// +kubebuilder:object:generate=true
+// InsightsConfiguration toggles an optional side-channel trace pipeline on
+// the cluster gateway. Disabled unless Enabled is set; when on, the gateway
+// taps the root traces pipeline (so the side-channel sees post-processed
+// spans) and forwards to a sidecar service over OTLP gRPC inside the namespace.
+type InsightsConfiguration struct {
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// LiveTrafficLearningAutomaticRulesConfiguration controls live-traffic automatic
+// rules — applying URL templatization rules learned from live traffic.
+type LiveTrafficLearningAutomaticRulesConfiguration struct {
+	// Enabled, when true, turns on live-traffic automatic rules: learned URL
+	// templatization rules that meet the ruleComputation thresholds are applied
+	// for you. That includes static exact-path rules and dynamic rules whose
+	// templated segments have high certainty. Opt-in; nil or false keeps
+	// live-traffic automatic rules off (rules are only suggested).
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// LiveTrafficLearningRuleComputationConfiguration holds thresholds used when
+// computing URL templatization rules from live traffic. They apply to both
+// UI recommendations and live-traffic automatic rules.
+type LiveTrafficLearningRuleComputationConfiguration struct {
+	// MinObservationsForRule is the minimum number of path observations
+	// required before a rule is recommended in the UI, and before it is applied
+	// as a live-traffic automatic rule when AutomaticRules.Enabled. Defaults to
+	// 100 when unset.
+	MinObservationsForRule *int `json:"minObservationsForRule,omitempty" yaml:"minObservationsForRule,omitempty"`
+
+	// MinCardinalityForTemplating is the min cardinality for templating: minimum
+	// number of distinct child segment values required before a path segment is
+	// collapsed into a templated placeholder ({id}) in recommended and
+	// live-traffic automatic rules. Below this threshold, high-branching
+	// segments stay as wildcards (*). Additive with MinObservationsForRule
+	// and the remaining learning checks. Defaults to 20 when unset.
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty" yaml:"minCardinalityForTemplating,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// LiveTrafficLearningConfiguration toggles learning URL templatization rules
+// from live traffic. Disabled unless Enabled is set; when on, Odigos records
+// unmatched HTTP paths and suggests templatization rules.
+type LiveTrafficLearningConfiguration struct {
+	// Enabled, when true, enables learning URL templatization rules from
+	// live traffic (HTTP spans with a path but no http.route / url.template).
+	// Enterprise-only; disabled unless explicitly true.
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	// MaxExamplePathsPerWorkload is the maximum number of distinct unmatched
+	// HTTP paths stored per workload for live-traffic learning. Each workload
+	// has separate server (inbound) and client (outbound) collections; this
+	// limit applies to each collection independently (not to their sum). A
+	// larger number can increase the accuracy and speed of automatic
+	// live-traffic rules, but requires more resources. Defaults to 5000 when
+	// unset.
+	MaxExamplePathsPerWorkload *int `json:"maxExamplePathsPerWorkload,omitempty" yaml:"maxExamplePathsPerWorkload,omitempty"`
+
+	// PathExampleIdleTTL is how long an unmatched path example is kept after
+	// its last observation (Go duration, e.g. "48h"). Each increment refreshes
+	// the TTL (sliding idle window). Expired paths free quota for new examples.
+	// Defaults to 48h (2 days) when unset.
+	PathExampleIdleTTL string `json:"pathExampleIdleTTL,omitempty" yaml:"pathExampleIdleTTL,omitempty"`
+
+	// LearningInterval is how often the instrumentor runs the live-traffic
+	// learning cycle (Go duration, e.g. "30s"): checking for new URL
+	// templatization rules and garbage-collecting path examples in the shared
+	// cache. Smaller intervals react faster and reclaim quota sooner but use
+	// more instrumentor resources. Defaults to 30s when unset.
+	LearningInterval string `json:"learningInterval,omitempty" yaml:"learningInterval,omitempty"`
+
+	// RuleComputation holds thresholds used when computing URL templatization
+	// rules from live traffic (recommendations and automatic apply).
+	RuleComputation *LiveTrafficLearningRuleComputationConfiguration `json:"ruleComputation,omitempty" yaml:"ruleComputation,omitempty"`
+
+	// AutomaticRules controls live-traffic automatic rules — whether learned
+	// rules are applied for you when they meet the ruleComputation thresholds.
+	AutomaticRules *LiveTrafficLearningAutomaticRulesConfiguration `json:"automaticRules,omitempty" yaml:"automaticRules,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// UrlTemplatizationCardinalityControlConfiguration controls learning URL
+// templatization rules from live traffic.
+type UrlTemplatizationCardinalityControlConfiguration struct {
+	LiveTrafficLearning *LiveTrafficLearningConfiguration `json:"liveTrafficLearning,omitempty" yaml:"liveTrafficLearning,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// CardinalityControlConfiguration holds settings for producing and maintaining
+// low-cardinality attributes and span names.
+type CardinalityControlConfiguration struct {
+	UrlTemplatization *UrlTemplatizationCardinalityControlConfiguration `json:"urlTemplatization,omitempty" yaml:"urlTemplatization,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
-	ConfigVersion                    int                            `json:"configVersion"`
-	TelemetryEnabled                 bool                           `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled                 bool                           `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces                []string                       `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers                []string                       `json:"ignoredContainers,omitempty"`
-	Psp                              bool                           `json:"psp,omitempty"`
-	ImagePrefix                      string                         `json:"imagePrefix,omitempty"`
-	SkipWebhookIssuerCreation        bool                           `json:"skipWebhookIssuerCreation,omitempty"`
-	CollectorGateway                 *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
-	CollectorNode                    *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
-	Profiles                         []ProfileName                  `json:"profiles,omitempty"`
-	AllowConcurrentAgents            *bool                          `json:"allowConcurrentAgents,omitempty"`
-	UiMode                           UiMode                         `json:"uiMode,omitempty"`
-	UiPaginationLimit                int                            `json:"uiPaginationLimit,omitempty"`
-	UiRemoteUrl                      string                         `json:"uiRemoteUrl,omitempty"`
-	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
-	ClusterName                      string                         `json:"clusterName,omitempty"`
-	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
-	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
-	AgentEnvVarsInjectionMethod      *EnvInjectionMethod            `json:"agentEnvVarsInjectionMethod,omitempty"`
-	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`
-	NodeSelector                     map[string]string              `json:"nodeSelector,omitempty"`
-	KarpenterEnabled                 *bool                          `json:"karpenterEnabled,omitempty"`
-	Rollout                          *RolloutConfiguration          `json:"rollout,omitempty"`
-	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
-	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
-	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
-	Oidc                             *OidcConfiguration             `json:"oidc,omitempty"`
+	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
+	TelemetryEnabled          bool                           `json:"telemetryEnabled,omitempty" yaml:"telemetryEnabled"`
+	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
+	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
+	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
+	IgnoreOdigosNamespace     *bool                          `json:"ignoreOdigosNamespace,omitempty" yaml:"ignoreOdigosNamespace"`
+	Psp                       bool                           `json:"psp,omitempty" yaml:"psp"`
+	ImagePrefix               string                         `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
+	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
+	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty" yaml:"collectorGateway"`
+	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty" yaml:"collectorNode"`
+	Profiles                  []ProfileName                  `json:"profiles,omitempty" yaml:"profiles"`
+	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty" yaml:"allowConcurrentAgents"`
+	UiMode                    UiMode                         `json:"uiMode,omitempty" yaml:"uiMode"`
+	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
+	UiRemoteUrl               string                         `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
+	McpAccessMode             McpAccessMode                  `json:"mcpAccessMode,omitempty" yaml:"mcpAccessMode"`
+	McpEnabled                *bool                          `json:"mcpEnabled,omitempty" yaml:"mcpEnabled"`
+	CentralBackendURL         string                         `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
+	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
+	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
+	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
+	CustomContainerRuntimeSocketPath  string                          `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+	AgentEnvVarsInjectionMethod       *EnvInjectionMethod             `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
+	UserInstrumentationEnvs           *UserInstrumentationEnvs        `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
+	NodeSelector                      map[string]string               `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  *bool                           `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	Rollout                           *RolloutConfiguration           `json:"rollout,omitempty" yaml:"rollout"`
+	RollbackDisabled                  *bool                           `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 string                          `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           string                          `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	Oidc                              *OidcConfiguration              `json:"oidc,omitempty" yaml:"oidc"`
+	OdigletHealthProbeBindPort        int                             `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 string                          `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	GoAutoOffsetsMode                 string                          `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
+	ClickhouseJsonTypeEnabledProperty *bool                           `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection  *bool                           `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset                string                          `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+	MetricsSources                    *MetricsSourceConfiguration     `json:"metricsSources,omitempty" yaml:"metricsSources"`
+	TraceCorrelations                 *TraceCorrelationsConfiguration `json:"traceCorrelations,omitempty" yaml:"traceCorrelations"`
+
+	//nolint:lll // AgentsInitContainerResources line is long due to struct tag requirements
+	AgentsInitContainerResources *AgentsInitContainerResources `json:"agentsInitContainerResources,omitempty" yaml:"agentsInitContainerResources"`
+
+	// traceIdSuffix when set, instruct odigos to use the "timedwall" id generator
+	// for generating trace ids.
+	// the below value should be a single byte hex value (for example "A3").
+	// this value is injected into each trace id as the 8th byte
+	// to identify the source of the generated trace.
+	TraceIdSuffix string `json:"traceIdSuffix,omitempty" yaml:"traceIdSuffix"`
+
+	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
+
+	// configuration for odigos own metrics store in the cluster.
+	OdigosOwnTelemetryStore *OdigosOwnTelemetryConfiguration `json:"odigosOwnTelemetryStore,omitempty" yaml:"odigosOwnTelemetryStore"`
+
+	// ImagePullSecrets to use for Odigos components and the agents init container.
+	// On Kubernetes 1.35+ the pod webhook injects these names onto init-container pods.
+	// The Secret objects must already exist in each instrumented namespace.
+	ImagePullSecrets []string `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets"`
+
+	// global configurations for sampling.
+	Sampling *SamplingConfiguration `json:"sampling,omitempty" yaml:"sampling"`
+
+	// ComponentLogLevels: default = global level (e.g. from Helm); per-component overrides (e.g. from UI).
+	ComponentLogLevels *ComponentLogLevels `json:"componentLogLevels,omitempty" yaml:"componentLogLevels,omitempty"`
+
+	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
+
+	Insights *InsightsConfiguration `json:"insights,omitempty" yaml:"insights,omitempty"`
+
+	CardinalityControl *CardinalityControlConfiguration `json:"cardinalityControl,omitempty" yaml:"cardinalityControl,omitempty"`
+}
+
+// ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
+// Profiling is opt-in: Enabled must be explicitly true; nil or false keeps profiling off.
+func ProfilingPipelineActive(p *ProfilingConfiguration) bool {
+	return p != nil && p.Enabled != nil && *p.Enabled
+}
+
+// ProfilingEnabled reports whether profiling is explicitly enabled on this configuration.
+func (o *OdigosConfiguration) ProfilingEnabled() bool {
+	return o != nil && ProfilingPipelineActive(o.Profiling)
+}
+
+// InsightsPipelineActive reports whether the optional side-channel trace
+// pipeline should be wired into the cluster-gateway collector. Opt-in:
+// Enabled must be explicitly true.
+func InsightsPipelineActive(a *InsightsConfiguration) bool {
+	return a != nil && a.Enabled != nil && *a.Enabled
+}
+
+// InsightsEnabled reports whether the side-channel trace pipeline is
+// explicitly enabled on this configuration.
+func (o *OdigosConfiguration) InsightsEnabled() bool {
+	return o != nil && InsightsPipelineActive(o.Insights)
+}
+
+// UrlTemplatizationLiveTrafficLearningActive reports whether traffic-based URL
+// templatization rule learning is enabled. Opt-in: Enabled must be explicitly true.
+func UrlTemplatizationLiveTrafficLearningActive(c *CardinalityControlConfiguration) bool {
+	return c != nil &&
+		c.UrlTemplatization != nil &&
+		c.UrlTemplatization.LiveTrafficLearning != nil &&
+		c.UrlTemplatization.LiveTrafficLearning.Enabled != nil &&
+		*c.UrlTemplatization.LiveTrafficLearning.Enabled
+}
+
+// UrlTemplatizationLiveTrafficLearningEnabled reports whether traffic-based URL
+// templatization rule computation is explicitly enabled on this configuration.
+func (o *OdigosConfiguration) UrlTemplatizationLiveTrafficLearningEnabled() bool {
+	return o != nil && UrlTemplatizationLiveTrafficLearningActive(o.CardinalityControl)
 }

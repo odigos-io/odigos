@@ -1,0 +1,112 @@
+---
+title: 'Preload the Fargate Agents Image'
+description: 'Mirror the Fargate agents image into a private registry instead of pulling it from the Odigos registry.'
+sidebarTitle: 'Preload'
+---
+
+Every instrumented Fargate task pulls the same agents bundle at task-start time — it isn't baked into your
+task image, so the pull happens on every new task launch, and a failed pull blocks the whole task (the
+application container waits on the stager with a `SUCCESS` dependency).
+
+Most accounts need none of this — with Odigos-managed instrumentation, the connector pulls the image from
+Odigos' own registry on your behalf. Preloading matters if your Fargate tasks run in a network that cannot
+reach that public registry, or your organization requires every image your tasks pull to live in a registry
+you own.
+
+<Tabs>
+  <Tab title="Odigos registry (default)">
+    By default, tasks pull `registry.odigos.io/odigos-fargate-agents:<version>` — a public, multi-arch
+    (amd64 + arm64/Graviton) image. This needs egress from the task's subnet to the public internet (a
+    public IP, or NAT).
+
+    Nothing to configure — this is what Odigos-managed instrumentation uses, and it's also the default a
+    self-managed CloudFormation task definition references unless you override it.
+  </Tab>
+
+  <Tab title="Your own private registry">
+    Mirror the image into a registry your task's execution role can already reach. For example, a private
+    ECR repository in the same account:
+
+    <Steps>
+      <Step title="Create a repository">
+        ```bash
+        aws ecr create-repository --repository-name odigos-fargate-agents --region <region>
+        ```
+      </Step>
+
+      <Step title="Authenticate Docker to your ECR registry">
+        ```bash
+        aws ecr get-login-password --region <region> \
+          | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<region>.amazonaws.com
+        ```
+      </Step>
+
+      <Step title="Copy the image, preserving the multi-arch manifest">
+        Use `docker buildx imagetools create` rather than `pull` + `push` — a plain pull only fetches the
+        image for your local machine's architecture, and pushing that back would give Graviton (arm64)
+        Fargate tasks an amd64 image that fails to start.
+
+        ```bash
+        docker buildx imagetools create \
+          --tag <account-id>.dkr.ecr.<region>.amazonaws.com/odigos-fargate-agents:<version> \
+          registry.odigos.io/odigos-fargate-agents:<version>
+        ```
+
+        <Tip>
+          Pin `<version>` to a specific released tag rather than mirroring on a
+          schedule — an unpinned mirror can drift from what the connector expects
+          if Odigos ships a newer bundle later.
+        </Tip>
+      </Step>
+
+      <Step title="Point instrumentation at your mirrored image">
+        <Tabs>
+          <Tab title="CloudFormation">
+            Replace the `Image` on the `odigos-agent` container in your task definition with your mirrored
+            tag — see [Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument).
+          </Tab>
+
+          <Tab title="CDK">
+            Pass your mirrored tag as `agentsImage` on the construct:
+
+            ```typescript
+            new OdigosFargateInstrumentation(this, 'Odigos', {
+              destination: { httpEndpoint: 'https://otlp.example.com:4318' },
+              agentsImage: '<account-id>.dkr.ecr.<region>.amazonaws.com/odigos-fargate-agents:<version>',
+            });
+            ```
+
+            See [CDK reference: Fargate](/cloud-connectors/aws/cdk/fargate#the-agents-image).
+          </Tab>
+
+          <Tab title="Odigos-managed">
+            The connector's default Fargate agents image is controlled by the `connector-runtime`
+            controller (`CONNECTOR_AWS_FARGATE_AGENTS_IMAGE`), which stamps `ODIGOS_FARGATE_AGENTS_IMAGE`
+            onto every AWS connector pod it creates. This isn't yet a `values.yaml` setting — set it on the
+            controller directly:
+
+            ```bash
+            kubectl set env deployment/connector-runtime -n odigos-central \
+              CONNECTOR_AWS_FARGATE_AGENTS_IMAGE=<account-id>.dkr.ecr.<region>.amazonaws.com/odigos-fargate-agents:<version>
+            ```
+
+            <Warning>
+              This overrides the Fargate agents bundle for **every** AWS connector the
+              controller manages. Confirm the version and IAM access (the task
+              execution role needs `ecr:GetDownloadUrlForLayer` / `ecr:BatchGetImage`
+              on the repository) with Odigos support before changing this in
+              production — a mismatched or unreachable override affects every
+              Fargate service across every AWS connector at once.
+            </Warning>
+          </Tab>
+        </Tabs>
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<Card title="Instrument Fargate" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
+  CDK and CloudFormation for every supported Fargate language.
+</Card>

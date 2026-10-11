@@ -1,12 +1,12 @@
-import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
+import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { awaitToast, deleteV2Entity, getCrdById, getCrdIds, handleExceptions, updateV2Entity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_TEST;
-const crdNames = CRD_NAMES.ACTIONS;
+const namespace = NAMESPACES.ODIGOS;
+const crdName = CRD_NAMES.ACTION;
 const totalEntities = SELECTED_ENTITIES.ACTIONS.length;
 
 describe('Actions CRUD', () => {
@@ -15,84 +15,64 @@ describe('Actions CRUD', () => {
     handleExceptions();
   });
 
-  it(`Should have 0 ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
-    expect(crdNames.length).to.eq(totalEntities);
-    crdNames.forEach((crdName) => {
-      getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
-    });
+  it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
   it(`Should create ${totalEntities} actions via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
         cy.get(DATA_IDS.ADD_ACTION).click();
-        cy.get(DATA_IDS.MODAL_ADD_ACTION).should('exist');
-        cy.get(DATA_IDS.MODAL_ADD_ACTION).find('input').should('have.attr', 'placeholder', INPUTS.ACTION_DROPDOWN).click();
-        cy.get(DATA_IDS.ACTION_OPTION(actionType)).click();
+
+        // Select action type from the drawer's left column list
+        cy.get(DATA_IDS.ACTION_OPTION(actionType)).should('exist').click();
 
         switch (actionType) {
           case 'K8sAttributesResolver': {
-            // default values are enough 👍
+            // The dynamic form seeds every collect flag on by default (matching the
+            // old bespoke form), so it's already a valid, non-no-op action — nothing
+            // to fill in.
             break;
           }
           case 'AddClusterInfo': {
-            cy.contains('div', 'Resource Attributes').parent().parent().find('input[placeholder="Attribute name"]').type('key');
-            cy.contains('div', 'Resource Attributes').parent().parent().find('input[placeholder="Attribute value"]').type('val');
+            // The dynamic table cells expose the column keyName as the input's
+            // data-id (see ui-kit InputTable -> Input), so target those instead
+            // of the (now catalog-defined) placeholder text.
+            cy.get('[data-id=clusterAttributes]').find('input[data-id=attributeName]').type('key');
+            cy.get('[data-id=clusterAttributes]').find('input[data-id=attributeStringValue]').type('val');
             break;
           }
           case 'DeleteAttribute': {
-            cy.contains('div', 'Attributes to delete').parent().parent().find('input').type('test');
+            cy.get('[data-id=attributeNamesToDelete]').find('input').first().type('test');
             break;
           }
           case 'RenameAttribute': {
-            cy.contains('div', 'Attributes to rename').parent().parent().find('input[placeholder="Attribute name"]').type('1');
-            cy.contains('div', 'Attributes to rename').parent().parent().find('input[placeholder="Attribute value"]').type('one');
+            // `renames` renders as a key/value table that persists as an object map.
+            cy.get('[data-id=renames]').find('input[data-id=key]').first().type('old.attr');
+            cy.get('[data-id=renames]').find('input[data-id=value]').first().type('new.attr');
             break;
           }
           case 'PiiMasking': {
-            // default values are enough 👍
+            // Credit card is pre-selected; also exercise EMAIL/JWT/UUID so CreateAction
+            // covers every category the Action CRD enum accepts. checkboxList (array mode)
+            // sets data-id from each option id, not the field name.
+            cy.get('[data-id=EMAIL]').click();
+            cy.get('[data-id=JWT]').click();
+            cy.get('[data-id=UUID]').click();
             break;
           }
-          case 'ErrorSampler': {
-            cy.contains('div', 'Fallback sampling ratio').parent().parent().find('input').type('1');
+          case 'ExtractAttribute': {
+            // The catalog form uses InputCardTable (`variant: cards`), which:
+            //   1. Defaults to the "preset" method (lookupKey + dataFormat).
+            //   2. Names each input `${field}-card-${row}-${keyName}` (not bare keyName).
+            // Switch to Custom Regex so we can fill target + regex without the
+            // lookupKey/dataFormat pair — also the path that used to 400 on an
+            // empty dataFormat enum before sanitizeExtractAttributeForWire.
+            cy.get('[data-id=extractAttribute-mode]').contains('Custom Regex').click();
+            cy.get('[data-id=extractAttribute]').find('input[data-id=extractAttribute-card-0-targetAttributeName]').type('extracted.value');
+            cy.get('[data-id=extractAttribute]').find('input[data-id=extractAttribute-card-0-regex]').type('(.*)');
             break;
           }
-          case 'ProbabilisticSampler': {
-            cy.contains('div', 'Sampling percentage').parent().parent().find('input').type('1');
-            break;
-          }
-          case 'LatencySampler': {
-            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
-            cy.get('tbody').find('input[placeholder="e.g. /api/v1/users"]').type('/path');
-            cy.get('tbody').find('input[placeholder="e.g. 1000"]').type('1');
-            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
-            break;
-          }
-          case 'ServiceNameSampler': {
-            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
-            cy.get('tbody').find('input[placeholder="e.g. 10"]').type('1');
-            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
-            break;
-          }
-          case 'SpanAttributeSampler': {
-            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
-            cy.get('tbody').find('input[placeholder="e.g. http.request.method"]').type('attribute');
-            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
-
-            // All parents: tooltip__TooltipContainer > field-label__Wrapper > dropdown__RootContainer
-            cy.get('tbody').find('div').contains('Condition').parent().parent().parent().children().eq(1).click();
-            cy.get('tbody').find('div').contains('String Condition').click();
-
-            // All parents: tooltip__TooltipContainer > field-label__Wrapper > dropdown__RootContainer
-            cy.get('tbody').find('div').contains('Operation').parent().parent().parent().children().eq(1).click();
-            cy.get('tbody').find('div').contains('Equals').click();
-
-            cy.get('tbody').find('input[placeholder="e.g. GET"]').type('x');
-            // Only for JSON Condition:
-            // cy.get('tbody').find('input[placeholder="e.g. $.user.role"]').type('x');
-            break;
-          }
-
           default: {
             // purposely fail the test
             cy.get('unknown action').should('eq', true);
@@ -100,37 +80,40 @@ describe('Actions CRUD', () => {
           }
         }
 
-        cy.get('button').contains(BUTTONS.DONE).click();
+        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
         // Wait for action to create
-        cy.wait('@gql').then(() => {
+        waitForGraphqlOperation('CreateAction').then(() => {
           awaitToast({ message: TEXTS.NOTIF_ACTION_CREATED(actionType) });
         });
       });
     });
   });
 
-  it(`Should have ${totalEntities} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
-    expect(crdNames.length).to.eq(totalEntities);
-    crdNames.forEach((crdName) => {
-      // always 1, because each CRD has a unique name (actions only)
-      getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 });
-    });
+  it(`Should have ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update ${totalEntities} actions via API, and notify locally`, () => {
+  it(`Should update ${totalEntities} actions via the v2 edit-action-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      SELECTED_ENTITIES.ACTIONS.forEach((actionType, idx) => {
-        updateEntity(
+      SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
+        updateV2Entity(
           {
-            nodeId: DATA_IDS.ACTION_NODE(idx),
+            // actions are fetched in random order, so we locate the row by the type text it shows
+            nodeId: 'div',
             nodeContains: actionType,
-            fieldKey: DATA_IDS.TITLE,
-            fieldValue: TEXTS.UPDATED_NAME,
+            prefix: DATA_IDS.ACTION_DRAWER_PREFIX,
+            fieldKey: DATA_IDS.ACTION_NAME_INPUT,
+            // Embed the action type in the new name. The v2 ListItem renders
+            // `name || type`, so renaming every row to a single shared value
+            // would erase the per-row text we use to find rows in the delete
+            // test (`cy.contains('div', actionType)`). Keeping `actionType` in
+            // the value lets that substring lookup keep working.
+            fieldValue: `${TEXTS.UPDATED_NAME} ${actionType}`,
           },
           () => {
             // Wait for the action to update
-            cy.wait('@gql').then(() => {
+            waitForGraphqlOperation('UpdateAction').then(() => {
               awaitToast({ message: TEXTS.NOTIF_ACTION_UPDATED(actionType) });
             });
           },
@@ -139,31 +122,30 @@ describe('Actions CRUD', () => {
     });
   });
 
-  it(`Should update ${totalEntities} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
-    expect(crdNames.length).to.eq(totalEntities);
-    crdNames.forEach((crdName) => {
-      // always 1, because each CRD has a unique name (actions only)
-      getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-        crdIds.forEach((crdId) => {
-          getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME });
-        });
+  it(`Should update ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
+      crdIds.forEach((crdId) => {
+        // Each action's `actionName` was renamed to `${UPDATED_NAME} ${type}`;
+        // verify the shared marker landed on every CRD without coupling to the
+        // CRD-id ↔ actionType mapping (which we don't track here).
+        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME, expectedValueContains: true });
       });
     });
   });
 
-  it(`Should delete ${totalEntities} actions via API, and notify locally`, () => {
+  it(`Should delete ${totalEntities} actions via the v2 edit-action-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
-        deleteEntity(
+        deleteV2Entity(
           {
-            // always index 0, because when one action is deleted, it shifts the index of the next action
-            nodeId: DATA_IDS.ACTION_NODE(0),
+            nodeId: 'div',
             nodeContains: actionType,
+            prefix: DATA_IDS.ACTION_DRAWER_PREFIX,
             warnModalTitle: TEXTS.ACTION_WARN_MODAL_TITLE,
           },
           () => {
             // Wait for the action to delete
-            cy.wait('@gql').then(() => {
+            waitForGraphqlOperation('DeleteAction').then(() => {
               awaitToast({ message: TEXTS.NOTIF_ACTION_DELETED(actionType) });
             });
           },
@@ -172,10 +154,7 @@ describe('Actions CRUD', () => {
     });
   });
 
-  it(`Should have ${0} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
-    expect(crdNames.length).to.eq(totalEntities);
-    crdNames.forEach((crdName) => {
-      getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
-    });
+  it(`Should have ${0} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 });

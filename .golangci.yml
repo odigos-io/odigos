@@ -58,7 +58,7 @@ linters:
     gocritic:
       settings:
         hugeParam:
-          sizeThreshold: 100
+          sizeThreshold: 105
       enabled-tags:
         - diagnostic
         - experimental

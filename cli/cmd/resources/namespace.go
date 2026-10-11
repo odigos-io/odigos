@@ -8,39 +8,42 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/common/consts"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var errNoOdigosNamespaceFound = errors.New("Odigos installation is not found in any namespace")
 
-func NewNamespace(name string) *v1.Namespace {
-	return &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels.OdigosSystem,
-		},
-	}
-}
-
-func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error) {
+func getNamespaceFromConfigMap(client *kube.Client, ctx context.Context, configMapName string) (string, error) {
 	configMap, err := client.CoreV1().ConfigMaps("").List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
 		}),
-		FieldSelector: fmt.Sprintf("metadata.name=%s", consts.OdigosConfigurationName),
+		FieldSelector: fmt.Sprintf("metadata.name=%s", configMapName),
 	})
+
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get odigos namespace: %w", err)
 	}
 
 	if len(configMap.Items) == 0 {
 		return "", errNoOdigosNamespaceFound
-	} else if len(configMap.Items) != 1 {
+	}
+	if len(configMap.Items) != 1 {
 		return "", fmt.Errorf("expected to get 1 namespace got %d", len(configMap.Items))
 	}
 
 	return configMap.Items[0].Namespace, nil
+}
+
+func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error) {
+	ns, err := getNamespaceFromConfigMap(client, ctx, consts.OdigosConfigurationName)
+	if err != nil {
+		if IsErrNoOdigosNamespaceFound(err) {
+			return "", err
+		}
+		return "", fmt.Errorf("failed to get odigos namespace: %w", err)
+	}
+	return ns, nil
 }
 
 func IsErrNoOdigosNamespaceFound(err error) bool {

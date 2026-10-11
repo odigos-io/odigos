@@ -1,2 +1,2 @@
-export * from './lib-imports';
+export * from './overview-header';
 export * from './styled';

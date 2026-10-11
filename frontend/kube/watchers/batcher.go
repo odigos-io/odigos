@@ -25,7 +25,8 @@ var (
 type EventBatcher struct {
 	mu       sync.Mutex
 	batch    []sse.SSEMessage
-	timer    *time.Timer
+	timer    *time.Timer // throttle timer: starts on first event, fires after Duration to flush the batch
+	maxTimer *time.Timer // hard-deadline timer: starts on first event, fires after MaxDelay regardless of throttle resets
 	stopped  atomic.Bool
 	config   EventBatcherConfig
 	stopOnce sync.Once
@@ -46,6 +47,15 @@ type EventBatcherConfig struct {
 	FailureBatchMessageFunc func(batchSize int, crd string) string
 	// Function to generate a message for a batch of successful messages
 	SuccessBatchMessageFunc func(batchSize int, crd string) string
+	// When the batch reaches this size, flush immediately regardless of timers.
+	// 0 means no cap (unlimited accumulation).
+	MaxBatchSize int
+	// Hard-deadline safety net: maximum wall-clock time from the first event in a
+	// batch to its flush, regardless of how often new events arrive. Prevents
+	// indefinite accumulation under sustained load. Contrast with Duration, which
+	// is the throttle window (restarted per batch, not per event).
+	// 0 means no limit.
+	MaxDelay time.Duration
 }
 
 func NewEventBatcher(config EventBatcherConfig) *EventBatcher {
@@ -87,14 +97,22 @@ func (eb *EventBatcher) AddEvent(msgType sse.MessageType, data, target string) e
 		Event:   eb.config.Event,
 		Data:    data,
 		CRDType: eb.config.CRDType,
-		Target:  target,
+		Targets: []string{target},
 	}
 
 	eb.batch = append(eb.batch, message)
 
+	if eb.config.MaxBatchSize > 0 && len(eb.batch) >= eb.config.MaxBatchSize {
+		eb.flushLocked()
+		return nil
+	}
+
 	if eb.timer == nil {
-		// A new batch timer is started once the first message is added
 		eb.timer = time.AfterFunc(eb.config.Duration, eb.sendBatch)
+	}
+
+	if eb.maxTimer == nil && eb.config.MaxDelay > 0 {
+		eb.maxTimer = time.AfterFunc(eb.config.MaxDelay, eb.sendBatch)
 	}
 
 	return nil
@@ -103,10 +121,22 @@ func (eb *EventBatcher) AddEvent(msgType sse.MessageType, data, target string) e
 func (eb *EventBatcher) sendBatch() {
 	eb.mu.Lock()
 	defer eb.mu.Unlock()
+	eb.flushLocked()
+}
+
+// flushLocked sends the current batch. Caller must hold eb.mu.
+func (eb *EventBatcher) flushLocked() {
+	if eb.timer != nil {
+		eb.timer.Stop()
+		eb.timer = nil
+	}
+	if eb.maxTimer != nil {
+		eb.maxTimer.Stop()
+		eb.maxTimer = nil
+	}
 
 	if len(eb.batch) == 0 {
 		eb.batch = nil
-		eb.timer = nil
 		return
 	}
 
@@ -115,7 +145,6 @@ func (eb *EventBatcher) sendBatch() {
 			sse.SendMessageToClient(message)
 		}
 	} else {
-		// currently we are grouping batches by success and error messages
 		batchMessages := eb.prepareBatchMessage()
 		for _, batch := range batchMessages {
 			sse.SendMessageToClient(batch)
@@ -123,39 +152,51 @@ func (eb *EventBatcher) sendBatch() {
 	}
 
 	eb.batch = nil
-	eb.timer = nil
 }
 
 func (eb *EventBatcher) prepareBatchMessage() []sse.SSEMessage {
-	successCount := 0
-	failureCount := 0
+	successTargets := make(map[string]struct{})
+	failureTargets := make(map[string]struct{})
 
 	for _, message := range eb.batch {
+		key := message.Data
+		if len(message.Targets) > 0 {
+			key = message.Targets[0]
+		}
+
 		if message.Type == sse.MessageTypeSuccess {
-			successCount++
+			successTargets[key] = struct{}{}
 		} else if message.Type == sse.MessageTypeError {
-			failureCount++
+			failureTargets[key] = struct{}{}
 		}
 	}
 
 	var result []sse.SSEMessage
-	if successCount > 0 {
+	if len(successTargets) > 0 {
+		targets := make([]string, 0, len(successTargets))
+		for t := range successTargets {
+			targets = append(targets, t)
+		}
 		result = append(result, sse.SSEMessage{
 			Type:    sse.MessageTypeSuccess,
 			Event:   eb.config.Event,
-			Data:    eb.config.SuccessBatchMessageFunc(successCount, eb.config.CRDType),
+			Data:    eb.config.SuccessBatchMessageFunc(len(successTargets), eb.config.CRDType),
 			CRDType: eb.config.CRDType,
-			Target:  "",
+			Targets: targets,
 		})
 	}
 
-	if failureCount > 0 {
+	if len(failureTargets) > 0 {
+		targets := make([]string, 0, len(failureTargets))
+		for t := range failureTargets {
+			targets = append(targets, t)
+		}
 		result = append(result, sse.SSEMessage{
 			Type:    sse.MessageTypeError,
 			Event:   eb.config.Event,
-			Data:    eb.config.FailureBatchMessageFunc(failureCount, eb.config.CRDType),
+			Data:    eb.config.FailureBatchMessageFunc(len(failureTargets), eb.config.CRDType),
 			CRDType: eb.config.CRDType,
-			Target:  "",
+			Targets: targets,
 		})
 	}
 	return result
@@ -167,6 +208,10 @@ func (eb *EventBatcher) Cancel() {
 		if eb.timer != nil {
 			eb.timer.Stop()
 			eb.timer = nil
+		}
+		if eb.maxTimer != nil {
+			eb.maxTimer.Stop()
+			eb.maxTimer = nil
 		}
 		eb.batch = nil
 	})

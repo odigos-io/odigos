@@ -359,6 +359,7 @@ export const DESCRIBE_SOURCE = gql`
             }
           }
         }
+        manifestYAML
       }
     }
   }

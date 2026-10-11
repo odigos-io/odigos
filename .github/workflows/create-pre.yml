@@ -1,0 +1,53 @@
+name: 'Create Pre Release'
+
+on:
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  create-pre-release:
+    runs-on: depot-ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Get sts tokens
+        id: sts-create-pre
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: push-tags
+          output-git-config: "true"
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ steps.sts-create-pre.outputs.GH_TOKEN }}
+
+      - name: Resolve semver
+        id: version
+        uses: odigos-io/ci-core/semver-info@main
+
+      - name: Create and push pre-release tag
+        env:
+          TAG: ${{ steps.version.outputs.next_pre }}
+        run: |
+
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Error: tag $TAG already exists"
+            exit 1
+          fi
+
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "Pushed tag $TAG to kick off the release process"
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully created pre-release tag ${{ steps.version.outputs.next_pre }}"
+          failure-description: "ERROR: Failed to create pre-release tag ${{ steps.version.outputs.next_pre }}"
+          tag: ${{ steps.version.outputs.next_pre }}

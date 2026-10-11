@@ -1,0 +1,77 @@
+<Info>
+
+This language instrumentation is using OpenTelemetry native-ruby SDK and
+instrumentation libraries.
+
+</Info>
+
+## Supported Versions
+
+The minimal supported version of Ruby is **3.1.0**.
+The maximal supported version of Ruby is **3.5.x**, when Ruby releases a new version we'll add the support for it.
+
+## Instrumentation Libraries
+
+The following Ruby gems will be auto instrumented by Odigos:
+
+### HTTP Clients:
+
+- [`http`](https://rubygems.org/gems/http) versions `*`
+- [`httpclient`](https://rubygems.org/gems/httpclient) versions `*`
+- [`restclient`](https://rubygems.org/gems/restclient) versions `*`
+- [`net-http`](https://rubygems.org/gems/net-http) versions `*`
+- [`faraday`](https://rubygems.org/gems/faraday) versions `*`
+- [`excon`](https://rubygems.org/gems/excon) versions `*`
+- [`ethon`](https://rubygems.org/gems/ethon) versions `*`
+
+### gRPC Clients:
+
+- [`grpc`](https://rubygems.org/gems/grpc) versions `*`
+
+### Web Frameworks & APIs:
+
+- [`rails`](https://rubygems.org/gems/rails) versions `*`
+- [`rack`](https://rubygems.org/gems/rack) versions `*`
+- [`sinatra`](https://rubygems.org/gems/sinatra) versions `*`
+- [`grape`](https://rubygems.org/gems/grape) versions `*`
+- [`gruf` (gRPC framework for Ruby)](https://rubygems.org/gems/gruf) versions `*`
+- [`racecar` (Kafka consumer framework for Rails)](https://rubygems.org/gems/racecar) versions `*`
+
+### Processing & Task Runners:
+
+- [`rake`](https://rubygems.org/gems/rake) versions `>=13.0`
+- [`concurrent-ruby` (Threading and scheduling utilities)](https://rubygems.org/gems/concurrent-ruby) versions `*`
+
+### Query & Schema APIs:
+
+- [`graphql`](https://rubygems.org/gems/graphql) versions `*`
+- [`koala` (Facebook Graph API client)](https://rubygems.org/gems/koala) versions `*`
+
+### Messaging & Background Jobs:
+
+- [`sidekiq`](https://rubygems.org/gems/sidekiq) versions `*`
+- [`resque`](https://rubygems.org/gems/resque) versions `*`
+- [`delayed_job`](https://rubygems.org/gems/delayed_job) versions `*`
+- [`que`](https://rubygems.org/gems/que) versions `*`
+- [`bunny` (RabbitMQ)](https://rubygems.org/gems/bunny) versions `*`
+- [`ruby-kafka`](https://rubygems.org/gems/ruby-kafka) versions `*`
+- [`rdkafka`](https://rubygems.org/gems/rdkafka) versions `*`
+
+### Databases & Caches:
+
+- [`pg` (PostgreSQL)](https://rubygems.org/gems/pg) versions `*`
+- [`mysql2`](https://rubygems.org/gems/mysql2) versions `*`
+- [`trilogy` (MySQL client by GitHub)](https://rubygems.org/gems/trilogy) versions `*`
+- [`mongo`](https://rubygems.org/gems/mongo) versions `*`
+- [`redis`](https://rubygems.org/gems/redis) versions `*`
+- [`dalli` (Memcached)](https://rubygems.org/gems/dalli) versions `*`
+- [`lmdb` (Lightning Memory-Mapped Database)](https://rubygems.org/gems/lmdb) versions `*`
+
+### Cloud SDKs:
+
+- [`aws-sdk`](https://rubygems.org/gems/aws-sdk) versions `*`
+- [`aws-sdk-lambda`](https://rubygems.org/gems/aws-sdk-lambda) versions `*`
+
+### Serialization:
+
+- [`active_model_serializers`](https://rubygems.org/gems/active_model_serializers) versions `>=0.10.0`

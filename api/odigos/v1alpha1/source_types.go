@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"context"
 	"errors"
+	"regexp"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -54,6 +55,19 @@ type ContainerOverride struct {
 	// If set for a container, the automatic detection will not be used for this container,
 	// and the distro to use will be calculated based on this value.
 	RuntimeInfo *RuntimeDetailsByContainer `json:"runtimeInfo,omitempty"`
+
+	// select one specific otel distro to use for this container.
+	// the selected distro must match the programming language and any constraints of the distro.
+	// if the programmin language is incorrect, the runtime info can be overridden to match
+	OtelDistroName *string `json:"otelDistroName,omitempty"`
+
+	// Odigos by default will attempt to detect if another agent is already running in the container,
+	// and if so, will avoid adding odigos agent to the container.
+	// This option allows to override this setting for a specific container in a source.
+	// Can be used for selective setting of which containers should run odigos concurrently with other agents.
+	// empty means take odigos global config for this setting.
+	// when not empty, the value will override the global config for this container
+	AllowConcurrentAgents *bool `json:"allowConcurrentAgents,omitempty"`
 }
 
 type SourceSpec struct {
@@ -79,6 +93,14 @@ type SourceSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	ContainerOverrides []ContainerOverride `json:"containerOverrides,omitempty"`
+
+	// MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
+	// When true, spec.workload.name is treated as a regular expression pattern.
+	// This allows matching multiple workloads with a single Source CRD.
+	// Not valid for namespace sources.
+	// +kubebuilder:validation:Optional
+	// +optional
+	MatchWorkloadNameAsRegex bool `json:"matchWorkloadNameAsRegex,omitempty"`
 }
 
 type SourceStatus struct {
@@ -120,8 +142,10 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 
 	if pw.Kind != k8sconsts.WorkloadKindNamespace {
 		sourceList := SourceList{}
+
+		// First, list all sources with matching namespace and kind
+		// We need to check both exact matches and regex matches
 		selector := labels.SelectorFromSet(labels.Set{
-			k8sconsts.WorkloadNameLabel:      pw.Name,
 			k8sconsts.WorkloadNamespaceLabel: namespace,
 			k8sconsts.WorkloadKindLabel:      string(pw.Kind),
 		})
@@ -129,11 +153,34 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 		if err != nil {
 			return nil, err
 		}
-		if len(sourceList.Items) > 1 {
+
+		// Filter sources: exact match or regex match
+		var matchingSources []Source
+		for _, source := range sourceList.Items {
+			if source.Spec.MatchWorkloadNameAsRegex {
+				// Compile and match regex pattern
+				pattern := source.Spec.Workload.Name
+				matched, err := regexp.MatchString(pattern, pw.Name)
+				if err != nil {
+					// Invalid regex pattern, skip this source
+					continue
+				}
+				if matched {
+					matchingSources = append(matchingSources, source)
+				}
+			} else {
+				// Exact match
+				if source.Spec.Workload.Name == pw.Name {
+					matchingSources = append(matchingSources, source)
+				}
+			}
+		}
+
+		if len(matchingSources) > 1 {
 			return nil, ErrorTooManySources
 		}
-		if len(sourceList.Items) == 1 {
-			workloadSources.Workload = &sourceList.Items[0]
+		if len(matchingSources) == 1 {
+			workloadSources.Workload = &matchingSources[0]
 		}
 	}
 

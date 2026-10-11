@@ -5,12 +5,12 @@ import (
 	"github.com/odigos-io/odigos/profiles/profile"
 )
 
-var LoaderFallbackToPodManifestEnvVarInjection = profile.Profile{
-	ProfileName:      common.ProfileName("loader-fallback-to-pod-manifest-env-var-injection"),
+var PodManifestEnvVarInjection = profile.Profile{
+	ProfileName:      common.ProfileName("pod-manifest-env-var-injection"),
 	MinimumTier:      common.CommunityOdigosTier,
-	ShortDescription: "Try using odigos loader env var injection method, fallback to pod manifest if not possible",
+	ShortDescription: "Use the pod manifest to add odigos runtime specific environment variables",
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
-		method := common.LoaderFallbackToPodManifestInjectionMethod
+		method := common.PodManifestEnvInjectionMethod
 		if config.AgentEnvVarsInjectionMethod == nil {
 			config.AgentEnvVarsInjectionMethod = &method
 		}

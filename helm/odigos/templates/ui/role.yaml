@@ -13,7 +13,11 @@ rules:
     verbs:
       - get
       - list
-  {{- if ne .Values.ui.uiMode "readonly" }}
+      - watch
+  {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - create
+      - update
+      - patch
   - apiGroups:
       - ''
     resources:
@@ -21,31 +25,55 @@ rules:
     verbs:
       - get
       - list
+      - watch
       - create
       - patch
       - update
       - delete
   {{- end }}
   - apiGroups:
-      - odigos.io
+      - apps
     resources:
-      - instrumentationrules
-      - destinations
+      - replicasets
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - get
+  # Get/view all Odigos resources for debug dump
+  - apiGroups:
+      - odigos.io
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - watch
+  {{- if include "odigos.ui.requiresWritePermissions" . }}
+  - apiGroups:
+      - odigos.io
+    resources:
+      - 'instrumentationrules'
+      - 'destinations'
+      - 'actions'
+      - 'samplings'
+    verbs:
       - create
       - patch
       - update
       - delete
-      {{- end }}
   - apiGroups:
       - odigos.io
     resources:
-      - destinations
+      - 'recommendations'
     verbs:
-      - watch
+      - update
+      - patch
+  {{- end }}
   - apiGroups:
       - odigos.io
     resources:
@@ -53,6 +81,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
   - apiGroups:
       - actions.odigos.io
     resources:
@@ -60,9 +89,67 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      - watch
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - create
       - patch
       - update
       - delete
       {{- end }}
+  - apiGroups:
+      - operator.odigos.io
+    resources:
+      - odigos
+    verbs:
+      - get
+      - list
+      - watch
+  # Permissions for pauseOdigos mutation
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/scale
+    resourceNames:
+      - {{ .Values.instrumentor.deploymentName | default "odigos-instrumentor" }}
+    verbs:
+      - get
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - update
+      - patch
+      {{- end }}
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+    resourceNames:
+      - odiglet
+    verbs:
+      - get
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - update
+      - patch
+      {{- end }}
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - delete
+      {{- end }}
+  # Get pod logs for debug dump
+  - apiGroups:
+      - ''
+    resources:
+      - pods/log
+    verbs:
+      - get
+  # Get pod proxy for debug dump (pprof profiles and metrics)
+  - apiGroups:
+      - ''
+    resources:
+      - pods/proxy
+    verbs:
+      - get

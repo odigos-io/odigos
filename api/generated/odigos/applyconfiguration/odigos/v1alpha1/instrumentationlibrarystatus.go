@@ -24,15 +24,28 @@ import (
 
 // InstrumentationLibraryStatusApplyConfiguration represents a declarative configuration of the InstrumentationLibraryStatus type for use
 // with apply.
+//
+// InstrumentationLibraryStatus defines the observed state of an InstrumentationLibrary.
+// if a library is not active/disable, it should not be included in the status
 type InstrumentationLibraryStatusApplyConfiguration struct {
-	Name                     *string                                    `json:"name,omitempty"`
-	Type                     *odigosv1alpha1.InstrumentationLibraryType `json:"type,omitempty"`
-	IdentifyingAttributes    []AttributeApplyConfiguration              `json:"identifyingAttributes,omitempty"`
-	NonIdentifyingAttributes []AttributeApplyConfiguration              `json:"nonIdentifyingAttributes,omitempty"`
-	Healthy                  *bool                                      `json:"healthy,omitempty"`
-	Message                  *string                                    `json:"message,omitempty"`
-	Reason                   *string                                    `json:"reason,omitempty"`
-	LastStatusTime           *v1.Time                                   `json:"lastStatusTime,omitempty"`
+	// for example ("net/http", "@opentelemetry/instrumentation-redis")
+	Name *string                                    `json:"name,omitempty"`
+	Type *odigosv1alpha1.InstrumentationLibraryType `json:"type,omitempty"`
+	// Attributes that identify the component.
+	// The combination of (Name, Type, IdentifyingAttributes) must be unique.
+	IdentifyingAttributes []AttributeApplyConfiguration `json:"identifyingAttributes,omitempty"`
+	// Attributes that do not necessarily identify the component but help describe
+	// its characteristics.
+	NonIdentifyingAttributes []AttributeApplyConfiguration `json:"nonIdentifyingAttributes,omitempty"`
+	Healthy                  *bool                         `json:"healthy,omitempty"`
+	// message is a human readable message indicating details about the component health.
+	// can be omitted if healthy is true
+	Message *string `json:"message,omitempty"`
+	// reason contains a programmatic identifier indicating the reason for the SDK status.
+	// Producers of specific condition types may define expected values and meanings for this field,
+	// and whether the values are considered a guaranteed API.
+	Reason         *string  `json:"reason,omitempty"`
+	LastStatusTime *v1.Time `json:"lastStatusTime,omitempty"`
 }
 
 // InstrumentationLibraryStatusApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryStatus type for use with

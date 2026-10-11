@@ -1,0 +1,166 @@
+## Mount Method
+
+<Warning>
+This section is for advanced users and odigos administrators.
+
+It is recommended to use the default settings, unless you have specific requirements or run into an issue.
+</Warning>
+
+## Supported Mount Methods
+
+Odigos supports 4 mount methods, which can be used depending on the user preference, cluster policies, integration with existing tools, etc.
+
+### 1. VirtualDevice
+
+<Info>
+This is the default mount method
+</Info>
+
+#### Pod Manifest Additions
+
+For agents and languages that requires filesystem mounts, odigos webhook will add the following:
+
+- For each instrumented container in the pod spec, odigos will add a resource requirement under the `spec.containers[].resources` field:
+
+```yaml
+    resources:
+      limits:
+        instrumentation.odigos.io/generic: "1"
+      requests:
+        instrumentation.odigos.io/generic: "1"
+```
+
+#### Caveats
+
+- With [Karpenter](../../setup/odigos-with-karpenter), provisioning can fail because Karpenter does not know about the `instrumentation.odigos.io/generic` extended resource when simulating new nodes. Support depends on your Karpenter version and provider: when [NodeOverlay](https://karpenter.sh/docs/concepts/nodeoverlays/) is available and enabled, apply an overlay that adds this capacity (see the [Karpenter guide](../../setup/odigos-with-karpenter#virtual-device-nodeoverlay)). Otherwise use [`k8s-init-container`](#3-InitContainer), or [`k8s-host-path`](#2-HostPath) / [`k8s-csi-driver`](#4-CSI-Driver) with the Karpenter integration steps.
+- Odiglet daemonset needs to be running on a node for instrumented pods to be scheduled on that node.
+
+### 2. HostPath
+
+This method is an opt-in configuration option which can be used if the virtual device method is not suitable for your cluster.
+
+If it is supported in the cluster, it is preferred to use over the VirtualDevice method which requires odiglet component to run.
+
+**Enabling HostPath**
+
+- Profile: `odigos profile add mount-method-k8s-host-path`
+
+- Odigos CLI: `odigos install --set instrumentor.mountMethod=k8s-host-path`
+
+- Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-host-path`, or use helm cli `--set instrumentor.mountMethod=k8s-host-path` flag with helm upgrade.
+
+- Kubernetes Manifest: under the `odigos-configuration` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-host-path`.
+
+#### Pod Manifest Additions
+
+For agents and languages that requires filesystem mounts, odigos webhook will add the following:
+
+- Volume to the pod spec, under the `spec.volumes` field:
+
+```yaml
+  - hostPath:
+      path: /var/odigos
+      type: ""
+    name: odigos-agent
+```
+
+- VolumeMount to the instrumented container specs, under the `spec.containers[].volumeMounts` field:
+
+```yaml
+    - mountPath: /var/odigos/{agent_sub_dir}
+      name: odigos-agent
+      readOnly: true
+      subPath: {agent_sub_dir}
+```
+
+#### Caveats
+
+- The "HostPath" option should be enabled in the cluster. Some policy tools may block this, like [Open Policy Agent](https://www.openpolicyagent.org/) or [Kyverno](https://kyverno.io/). If blocked, use the VirtualDevice method, or ask the cluster administrator to whitelist the Odigos agent host path.
+- With [Karpenter](../../setup/odigos-with-karpenter), additional configuration is required. By default Odigos adds node affinity for the odiglet-installed label, which blocks Karpenter from provisioning nodes. Enable `karpenter.enabled` and configure the NodePool `startupTaints` as described in the [Karpenter guide](../../setup/odigos-with-karpenter).
+
+### 3. InitContainer
+
+This is an opt-in configuration method designed for scenarios where using hostPath is not feasible due to security policies or virtual device limitations.
+
+For agents and languages that require filesystem mounts, Odigos will inject an InitContainer that copies the necessary files into a shared volume mounted by the application container.
+
+**Enabling InitContainer**
+
+- Odigos CLI: `odigos install --set instrumentor.mountMethod=k8s-init-container`
+- Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-init-container`, or use helm cli `--set instrumentor.mountMethod=k8s-init-container` flag with helm upgrade.
+- Kubernetes Manifest: under the `odigos-configuration` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-init-container`.
+
+#### Pod Manifest Additions
+Odigos will add an InitContainer that copies the necessary files for instrumentation, depending on the application language. These files will be placed into a shared volume that is also mounted by the application container.
+
+- Volume to the pod spec, under the `spec.volumes` field:
+
+```yaml
+  - hostPath:
+      path: /var/odigos
+      type: ""
+    name: odigos-agent
+```
+
+#### Caveats
+
+The InitContainer method must be enabled in the cluster and introduces a slight delay during pod initialization.
+This approach is ideal for users who prioritize avoiding hostPath or virtual device usage over startup speed.
+
+Works with [Karpenter](../../setup/odigos-with-karpenter) out of the box. No additional Karpenter configuration is required.
+
+#### Init container image pull secrets
+
+Kubernetes 1.35+ enables [`KubeletEnsureSecretPulledImages`](https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/) by default. The kubelet [re-verifies pull credentials](https://kubernetes.io/docs/concepts/containers/images/#ensure-image-pull-credential-verification) even when the agents image is already cached on the node. The injected `odigos-agents` init container therefore needs the same pull secret in the **application** namespace, not only in the Odigos namespace.
+
+This applies when you use `k8s-init-container` with a private registry:
+
+- the enterprise registry (`registry.odigos.io` via `odigos-enterprise-registry`, including `externalOnpremPullSecret` / `externalOnpremTokenSecret`)
+- a private mirrored registry (`imagePrefix` + `imagePullSecrets`)
+
+On Kubernetes 1.35+, the pod webhook adds those secret **names** to instrumented pods. You must create the same-named dockerconfig secret in every instrumented namespace yourself (External Secrets, Reflector, or a GitOps manifest). Below 1.35, odiglet pre-pulls the agents image onto each node and kubelet will use that cache without per-pod credentials.
+
+### 4. CSI Driver
+
+This is an opt-in configuration method that uses the Container Storage Interface (CSI) standard for mounting instrumentation files. It provides improved user experience over the VirtualDevice method by ensuring pods wait gracefully when the mount system isn't ready.
+
+**Enabling CSI Driver**
+
+- Odigos CLI: `odigos install --set instrumentor.mountMethod=k8s-csi-driver`
+- Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-csi-driver`, or use helm cli `--set instrumentor.mountMethod=k8s-csi-driver` flag with helm upgrade.
+- Kubernetes Manifest: under the `odigos-configuration` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-csi-driver`.
+
+#### Pod Manifest Additions
+
+For agents and languages that requires filesystem mounts, odigos webhook will add the following:
+
+- Volume to the pod spec, under the `spec.volumes` field:
+
+```yaml
+  - name: odigos-agent
+    csi:
+      driver: odigos.csi.driver
+      volumeAttributes:
+        type: instrumentation
+```
+
+- VolumeMount to the instrumented container specs, under the `spec.containers[].volumeMounts` field:
+
+```yaml
+    - mountPath: /var/odigos/{agent_sub_dir}
+      name: odigos-agent
+      readOnly: true
+      subPath: {agent_sub_dir}
+```
+
+#### Benefits
+
+- **Better User Experience**: Pods wait in "Creating" state until CSI driver is ready.
+- **Standard Compliance**: Uses Kubernetes CSI standard for storage integration.
+- **Same Functionality**: Provides identical mount behavior as the VirtualDevice method.
+
+#### Caveats
+
+- Requires CSI support in the cluster (available in Kubernetes 1.13+).
+- Like VirtualDevice, requires odiglet daemonset to be running on nodes for instrumented pods to be scheduled.
+- With [Karpenter](../../setup/odigos-with-karpenter), additional configuration is required. By default Odigos adds node affinity for the odiglet-installed label, which blocks Karpenter from provisioning nodes. Enable `karpenter.enabled` and configure the NodePool `startupTaints` as described in the [Karpenter guide](../../setup/odigos-with-karpenter).

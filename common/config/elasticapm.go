@@ -28,14 +28,14 @@ func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	elasticApmEndpoint := e.parseEndpoint(dest.GetConfig()[elasticApmServerEndpoint])
 
-	exporterName := "otlp/elastic-" + dest.GetID()
+	exporterName := "otlp_grpc/elastic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": elasticApmEndpoint,
 		"tls": GenericMap{
 			"insecure": isTlsDisabled,
 		},
 		"headers": GenericMap{
-			"authorization": "Bearer ${ELASTIC_APM_SECRET_TOKEN}",
+			"authorization": "Bearer " + SecretEnvPlaceholder("ELASTIC_APM_SECRET_TOKEN", dest),
 		},
 	}
 

@@ -18,7 +18,7 @@ func (e *Quickwit) DestType() common.DestinationType {
 
 func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if url, exists := dest.GetConfig()[qwUrlKey]; exists {
-		exporterName := "otlp/quickwit-" + dest.GetID()
+		exporterName := "otlp_grpc/quickwit-" + dest.GetID()
 
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"endpoint": url,

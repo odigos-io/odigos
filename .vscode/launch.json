@@ -17,7 +17,14 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/instrumentor/cmd",
-      "cwd": "${workspaceFolder}/instrumentor"
+      "cwd": "${workspaceFolder}/instrumentor",
+      "args": [
+        "--metrics-bind-address=:18080",
+        "--health-probe-bind-address=:18081"
+      ],
+      "env": {
+        "CURRENT_NS": "odigos-system"
+      }
     },
     {
       "name": "frontend",
@@ -35,25 +42,6 @@
       "mode": "debug",
       "program": "${workspaceFolder}/frontend/main.go",
       "cwd": "${workspaceFolder}/frontend"
-    },
-    {
-      "name": "autoscaler local",
-      "type": "go",
-      "request": "launch",
-      "mode": "debug",
-      "program": "${workspaceFolder}/autoscaler",
-      "cwd": "${workspaceFolder}/autoscaler",
-      "env": {
-        "ODIGOS_VERSION": "v1.0.90"
-      }
-    },
-    {
-      "name": "scheduler local",
-      "type": "go",
-      "request": "launch",
-      "mode": "debug",
-      "program": "${workspaceFolder}/scheduler/cmd",
-      "cwd": "${workspaceFolder}/scheduler"
     },
     {
       "name": "cli uninstall",

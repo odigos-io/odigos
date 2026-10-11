@@ -1,0 +1,1709 @@
+# Insights (enterprise security feature): read/write access to the odigos-insights
+# service, which learns per-transaction behavioral baselines from traces and
+# surfaces deviations as security findings.
+#
+# The GraphQL layer is a thin wrap of the insights REST API (insights/api/openapi.yaml
+# in the enterprise repo). All queries and mutations return an error when insights
+# is not enabled in the effective configuration.
+#
+# Conventions:
+# - Timestamps are RFC3339 strings.
+# - Transaction ids are int64 on the wire, exposed as ID (string) here.
+# - Free-form JSON payloads (baseline data, anomaly evidence, weight maps) are
+#   JSON-encoded strings, matching the existing schema convention for maps.
+
+enum InsightsTransactionKind {
+  HTTP
+  GRPC
+  CONSUMER
+  PRODUCER
+  CRON
+  INTERNAL
+}
+
+enum InsightsDeviationClass {
+  D1_call_edges
+  D2_egress
+  D3_latency
+  D4_args_returns
+  D5_libraries
+  D6_db_access
+  D7_payload_size
+}
+
+enum InsightsSampleReason {
+  example
+  anomaly_evidence
+  """
+  Guardrail violation evidence sample (`guardrail:<rule>:<offending>` in storage).
+  """
+  guardrail_evidence
+}
+
+enum InsightsPolicyScope {
+  global
+  service
+  transaction
+}
+
+enum InsightsSeverity {
+  info
+  low
+  medium
+  high
+  critical
+}
+
+enum InsightsFindingKind {
+  anomaly
+  violation
+}
+
+enum InsightsAnomalyStatus {
+  open
+  accepted
+  dismissed
+}
+
+enum InsightsViolationStatus {
+  open
+  dismissed
+  accepted
+}
+
+enum InsightsRuleMode {
+  suggest
+  enforce
+}
+
+enum InsightsAnomalyResolution {
+  accept
+  dismiss
+  reopen
+}
+
+enum InsightsBulkResolution {
+  accept
+  dismiss
+}
+
+enum InsightsLearningMode {
+  all
+  any
+  k_of
+}
+
+"""
+Coarse learning state for one baseline class. `promoted` means the baseline is
+frozen. `empty` means it has never grown. `learning` means it has grown and is
+still in the learning phase. `saturated` means the set crossed
+maxBaselineSetMembers; the class is frozen, will not promote and is not enforced.
+"""
+enum InsightsBaselineLearningPhase {
+  promoted
+  empty
+  learning
+  saturated
+}
+
+enum InsightsLearningConditionType {
+  min_observations
+  min_duration
+  stable_observations
+  stable_duration
+}
+
+enum InsightsStorageHealthStatus {
+  healthy
+  degraded
+  critical
+  unreachable
+}
+
+enum InsightsStorageDiskStatus {
+  ok
+  warning
+  critical
+}
+
+# Services / transactions
+
+type InsightsServiceStat {
+  namespace: String!
+  service: String!
+  transactionCount: Int!
+  volume: Int!
+  lastSeen: String!
+  """
+  The maxTransactionsPerService setting in effect, so a client can explain
+  transactionLimitReached without a second request.
+  """
+  transactionLimit: Int!
+  """
+  True once the service holds transactionLimit transactions. Operations of this
+  service not seen before are dropped and not learned.
+  """
+  transactionLimitReached: Boolean!
+}
+
+type InsightsServiceProfile {
+  namespace: String!
+  service: String!
+  callers: [String!]!
+  callees: [String!]!
+  egress: [String!]!
+  transactions: [String!]!
+}
+
+"""
+One service (or virtual dependency) in a blast-radius subgraph. Identity is (namespace, service).
+"""
+type InsightsBlastRadiusNode {
+  namespace: String!
+  service: String!
+  """
+  True for an uninstrumented dependency (database, queue, external API).
+  Virtual nodes are leaves — they have no outgoing calls.
+  """
+  isVirtual: Boolean!
+}
+
+"""
+A directed client -> server edge from the gateway servicegraph connector.
+Request/failure counts are rough magnitude, not exact totals.
+"""
+type InsightsBlastRadiusEdge {
+  clientNamespace: String!
+  clientService: String!
+  serverNamespace: String!
+  serverService: String!
+  connectionType: String!
+  requestCount: Int!
+  failedCount: Int!
+  lastSeen: String!
+}
+
+"""
+Neighborhood around an anchor service: callers and callees out to the requested hop depth.
+"""
+type InsightsBlastRadiusSubgraph {
+  root: InsightsBlastRadiusNode!
+  nodes: [InsightsBlastRadiusNode!]!
+  edges: [InsightsBlastRadiusEdge!]!
+}
+
+"""
+One parsed low-cardinality dimension from the stored operation identity suffix ([key=value]).
+For display only — canonical identity remains in `operation`.
+"""
+type InsightsTransactionIdentityValue {
+  key: String!
+  value: String!
+}
+
+type InsightsTransactionStat {
+  id: ID!
+  service: String!
+  namespace: String!
+  """
+  Full canonical identity string (hashed). Includes [key=value] suffixes when identity dimensions are enabled.
+  """
+  operation: String!
+  """
+  Entry-span operation without dimension suffixes.
+  """
+  operationName: String!
+  identityDimensions: [InsightsTransactionIdentityValue!]!
+  kind: InsightsTransactionKind!
+  volume: Int!
+  lastSeen: String!
+  hasBaseline: Boolean
+  """
+  True when every learned baseline class has finished learning: promoted, or
+  saturated (see saturatedClasses).
+  """
+  promoted: Boolean
+  """
+  Baseline classes whose learned set crossed maxBaselineSetMembers. They are
+  frozen, never promoted and never scored; the other classes keep working.
+  Empty when no class saturated.
+  """
+  saturatedClasses: [InsightsDeviationClass!]!
+}
+
+type InsightsTransaction {
+  id: ID!
+  service: String!
+  namespace: String!
+  """
+  Full canonical identity string (hashed, guardrails). Includes [key=value] suffixes when identity dimensions are enabled.
+  """
+  operation: String!
+  """
+  Human-readable entry-span operation without dimension suffixes.
+  """
+  operationName: String!
+  identityDimensions: [InsightsTransactionIdentityValue!]!
+  kind: InsightsTransactionKind!
+}
+
+# Baselines / observations
+
+"""
+One stability dimension. For observations, current/target is a count. For
+duration, both are minutes. `target` is 0 when there is no policy target —
+still render `current` as "grew N ago".
+"""
+type InsightsBaselineStabilityProgress {
+  current: Int!
+  target: Int!
+  drivesPromotion: Boolean!
+  met: Boolean!
+}
+
+"""
+Both stability signals so the UI can show "X / Y observations" and
+"grew N minutes ago" together. Under `all`, one dimension `met` does not mean
+the class promotes — use `readyToPromote`.
+"""
+type InsightsBaselineLearningStability {
+  observations: InsightsBaselineStabilityProgress!
+  duration: InsightsBaselineStabilityProgress!
+}
+
+"""
+Computed learning/stability snapshot for one baseline class against its
+resolved learning policy. Always present, including on placeholder classes.
+"""
+type InsightsBaselineLearning {
+  phase: InsightsBaselineLearningPhase!
+  observationsSinceLastChange: Int!
+  quietMinutes: Int!
+  mode: InsightsLearningMode!
+  readyToPromote: Boolean!
+  stability: InsightsBaselineLearningStability!
+}
+
+enum InsightsBaselineHistogramUnit {
+  us
+  bytes
+}
+
+type InsightsBaselineHistogramBar {
+  lo: Int!
+  hi: Int!
+  count: Int!
+  label: String!
+}
+
+type InsightsBaselineHistogramSeries {
+  name: String!
+  label: String!
+  bars: [InsightsBaselineHistogramBar!]!
+}
+
+"""
+Chart-ready exponential histogram for D3_latency and D7_payload_size.
+Plot series[].bars; do not recompute bounds from raw data.
+"""
+type InsightsBaselineHistogram {
+  unit: InsightsBaselineHistogramUnit!
+  layoutFingerprint: String
+  series: [InsightsBaselineHistogramSeries!]!
+}
+
+type InsightsBaselineClass {
+  transactionId: ID!
+  class: InsightsDeviationClass!
+  """
+  Human-readable name for what this class learns on a transaction
+  (e.g. "Request latency" for D3_latency). Sourced from the risk catalog;
+  UI should display this and keep `class` as the stable id for promote/reset.
+  """
+  classLabel: String!
+  """
+  Tooltip text describing what this class learns for the transaction.
+  Suitable for hover UI; not the finding/anomaly wording.
+  """
+  classDescription: String!
+  """
+  JSON-encoded baseline data; shape varies per deviation class.
+  """
+  data: String
+  """
+  Chart-ready histogram for D3_latency / D7_payload_size. Omitted for other classes.
+  """
+  histogram: InsightsBaselineHistogram
+  dataSchemaVersion: Int
+  observationCount: Int!
+  promoted: Boolean!
+  """
+  True when this class's set crossed maxBaselineSetMembers. The class is frozen
+  at a truncated set, will never promote and is never scored.
+  learning.phase is saturated.
+  """
+  saturated: Boolean!
+  learningStartedAt: String
+  lastChangedAt: String
+  observationCountAtLastChange: Int
+  learning: InsightsBaselineLearning!
+}
+
+type InsightsPromoteResult {
+  transactionId: ID!
+  class: InsightsDeviationClass!
+  promoted: Boolean!
+}
+
+type InsightsObservationSummary {
+  traceId: String!
+  transactionId: ID!
+  observedAt: String!
+  durationMs: Int!
+  sampleReason: InsightsSampleReason!
+}
+
+type InsightsObservation {
+  traceId: String!
+  transactionId: ID!
+  observedAt: String!
+  durationMs: Int!
+  sampleReason: InsightsSampleReason!
+  """
+  Base64-encoded OTLP protobuf; only available on the single-observation query.
+  """
+  rawOtlp: String!
+}
+
+# Alert policies / learning policies
+
+type InsightsPolicy {
+  id: ID!
+  name: String!
+  enabled: Boolean!
+  fireAtScore: Int!
+  """
+  JSON-encoded map[string]int of per-signal weights.
+  """
+  signalWeights: String
+  """
+  JSON-encoded map[string][]string of enricher keyword lists.
+  """
+  enricherLists: String
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+}
+
+input InsightsPolicyInput {
+  """
+  Server-assigned; omit on create (the policy key is scope + scopeKey).
+  """
+  id: ID
+  name: String!
+  enabled: Boolean!
+  fireAtScore: Int!
+  """
+  JSON-encoded map[string]int of per-signal weights.
+  """
+  signalWeights: String
+  """
+  JSON-encoded map[string][]string of enricher keyword lists.
+  """
+  enricherLists: String
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+}
+
+type InsightsLearningCondition {
+  type: InsightsLearningConditionType!
+  minObservations: Int
+  minDurationMinutes: Int
+  stableObservations: Int
+  stableMinutes: Int
+}
+
+type InsightsLearningPolicy {
+  class: InsightsDeviationClass!
+  mode: InsightsLearningMode!
+  conditions: [InsightsLearningCondition!]
+  minMatches: Int
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+}
+
+input InsightsLearningConditionInput {
+  type: InsightsLearningConditionType!
+  minObservations: Int
+  minDurationMinutes: Int
+  stableObservations: Int
+  stableMinutes: Int
+}
+
+input InsightsLearningPolicyInput {
+  class: InsightsDeviationClass!
+  mode: InsightsLearningMode!
+  conditions: [InsightsLearningConditionInput!]
+  minMatches: Int
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+}
+
+# Findings (unified severity-ranked feed of anomalies + guardrail violations)
+
+type InsightsFinding {
+  kind: InsightsFindingKind!
+  service: String!
+  namespace: String!
+  """
+  Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
+  """
+  title: String!
+  """
+  Render-ready one-line explanation so the list conveys the gist without opening
+  investigate. Omits service and title (already on the row): anomalies name the
+  deviated classes; violations name the rule and what broke it. Display as-is.
+  """
+  summary: String!
+  """
+  Full canonical transaction operation (anomalies only). Omitted for violations.
+  """
+  operation: String
+  """
+  Entry-span operation without dimension suffixes (anomalies).
+  """
+  operationName: String
+  """
+  Parsed identity dimensions (anomalies only).
+  """
+  identityDimensions: [InsightsTransactionIdentityValue!]
+  offending: String
+  score: Int!
+  severity: InsightsSeverity!
+  occurrences: Int!
+  """
+  Earliest occurrence of this finding (anomaly or guardrail violation).
+  """
+  firstSeen: String
+  lastSeen: String!
+  """
+  Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).
+  """
+  status: String!
+  """
+  Anomaly drill-down key; set when kind is anomaly.
+  """
+  transactionId: ID
+  """
+  Anomaly drill-down key; set when kind is anomaly.
+  """
+  signature: String
+  """
+  Anomaly signal classes; empty/absent for violations.
+  """
+  triggeredClasses: [InsightsDeviationClass!]
+  """
+  Violation drill-down key; set when kind is violation.
+  """
+  scopeKey: String
+  """
+  Violation drill-down key; set when kind is violation.
+  """
+  ruleKey: String
+}
+
+# Anomalies
+
+type InsightsRiskSignal {
+  source: String!
+  category: String!
+  weight: Int!
+  confidence: Float!
+  contribution: Int!
+  rationale: String
+  mitre: String
+  owasp: String
+}
+
+type InsightsRiskAssessment {
+  score: Int!
+  severity: InsightsSeverity!
+  correlated: Boolean!
+  correlationBonus: Int!
+  fireAtScore: Int!
+  categories: [String!]
+  signals: [InsightsRiskSignal!]!
+}
+
+type InsightsAnomalySummary {
+  transactionId: ID!
+  signature: String!
+  service: String!
+  namespace: String!
+  """
+  Full canonical identity string.
+  """
+  operation: String!
+  """
+  Entry-span operation without dimension suffixes.
+  """
+  operationName: String!
+  identityDimensions: [InsightsTransactionIdentityValue!]!
+  kind: InsightsTransactionKind
+  triggeredClasses: [InsightsDeviationClass!]!
+  offending: String
+  policyId: ID
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  firstSeen: String
+  lastSeen: String
+  lastTraceId: String
+  status: InsightsAnomalyStatus!
+}
+
+enum InsightsAnomalyClassFindingKind {
+  structural
+  metric
+}
+
+type InsightsAnomalySpanHighlight {
+  spanId: String!
+  """
+  high | medium | low
+  """
+  severity: String!
+  reason: String!
+}
+
+type InsightsAnomalyAttrHighlight {
+  spanId: String!
+  key: String!
+  value: String!
+}
+
+type InsightsAnomalyMetricComparison {
+  observed: Int!
+  baseline: Int!
+  """
+  us | bytes
+  """
+  unit: String!
+}
+
+"""
+Render-ready explanation of one deviation class within an anomaly issue.
+Built at read time; the UI should render title/summary/highlights and not parse raw evidence.
+"""
+type InsightsAnomalyClassFinding {
+  class: InsightsDeviationClass!
+  kind: InsightsAnomalyClassFindingKind!
+  title: String!
+  summary: String!
+  spanHighlights: [InsightsAnomalySpanHighlight!]
+  attrHighlights: [InsightsAnomalyAttrHighlight!]
+  metric: InsightsAnomalyMetricComparison
+  """
+  JSON-encoded original per-class evidence blob (fallback / debug).
+  """
+  rawEvidence: String
+}
+
+type InsightsAnomalyIssue {
+  transactionId: ID!
+  signature: String!
+  service: String!
+  namespace: String!
+  """
+  Full canonical identity string.
+  """
+  operation: String!
+  """
+  Entry-span operation without dimension suffixes.
+  """
+  operationName: String!
+  identityDimensions: [InsightsTransactionIdentityValue!]!
+  kind: InsightsTransactionKind
+  triggeredClasses: [InsightsDeviationClass!]!
+  offending: String
+  policyId: ID
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  firstSeen: String
+  lastSeen: String
+  lastTraceId: String
+  status: InsightsAnomalyStatus!
+  """
+  JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query.
+  """
+  evidence: String!
+  risk: InsightsRiskAssessment
+  """
+  One render-ready finding per triggered class (title, summary, highlights). Always present on detail.
+  """
+  classFindings: [InsightsAnomalyClassFinding!]!
+  """
+  Evidence sample for this issue including rawOtlp. Omitted when no sample was retained.
+  """
+  anomalyTrace: InsightsObservation
+  """
+  Learning-phase example sample including rawOtlp for baseline compare. Omitted when none exist.
+  """
+  baselineTrace: InsightsObservation
+}
+
+input InsightsAnomalyRefInput {
+  transactionId: ID!
+  signature: String!
+}
+
+type InsightsBulkResolveResult {
+  resolution: String!
+  resolved: Int!
+}
+
+type InsightsBulkPromoteResult {
+  promoted: Int!
+}
+
+type InsightsBulkDeleteResult {
+  deleted: Int!
+}
+
+# Guardrails (operator-declared L7 rules, orthogonal to learned baselines)
+
+"""
+Relation asserted between two correlated attribute values within one trace.
+"""
+enum InsightsCorrelationRelation {
+  equals
+  not_equals
+}
+
+"""
+Locates one attribute on one span within a trace (attribute_correlation rule).
+"""
+type InsightsCorrelationSelector {
+  """
+  Owning service name of the span.
+  """
+  service: String!
+  """
+  Span match — the span name or captured `code.function.name`.
+  """
+  span: String!
+  """
+  Attribute key to read (e.g. return.value, arg.0, url.full).
+  """
+  attr: String!
+  """
+  Optional regex applied to the attribute value. Capture group 1 is used when
+  present, otherwise the whole match. Empty = use the value verbatim.
+  """
+  extract: String
+}
+
+input InsightsCorrelationSelectorInput {
+  service: String!
+  span: String!
+  attr: String!
+  extract: String
+}
+
+"""
+One cross-span consistency assertion for the attribute_correlation rule.
+"""
+type InsightsCorrelationSpec {
+  name: String!
+  left: InsightsCorrelationSelector!
+  right: InsightsCorrelationSelector!
+  relation: InsightsCorrelationRelation!
+  """
+  Risk of a violation of this rule. Defaults to critical when omitted on write.
+  """
+  severity: InsightsSeverity!
+  """
+  Operator rationale, shown in the finding.
+  """
+  why: String
+}
+
+input InsightsCorrelationSpecInput {
+  name: String!
+  left: InsightsCorrelationSelectorInput!
+  right: InsightsCorrelationSelectorInput!
+  relation: InsightsCorrelationRelation!
+  """
+  Defaults to critical when omitted.
+  """
+  severity: InsightsSeverity
+  why: String
+}
+
+type InsightsGuardrailRule {
+  key: String!
+  label: String!
+  mode: InsightsRuleMode!
+  allowlist: [String!]
+  """
+  Cross-span correlation specs. Only used by `attribute_correlation`
+  (transaction-scoped): each spec asserts two captured span attributes stay
+  consistent within one trace.
+  """
+  correlations: [InsightsCorrelationSpec!]
+  """
+  How this rule was created. `auto_transaction_guardrail` means it was created
+  automatically when the service's transactions promoted (not a manual edit).
+  """
+  origin: String
+}
+
+type InsightsGuardrail {
+  scope: InsightsPolicyScope!
+  """
+  `namespace/service` for service scope; numeric transaction id for transaction scope.
+  """
+  scopeKey: String!
+  rules: [InsightsGuardrailRule!]!
+}
+
+input InsightsGuardrailRuleInput {
+  key: String!
+  label: String!
+  mode: InsightsRuleMode!
+  allowlist: [String!]
+  """
+  Required for `attribute_correlation` (transaction-scoped) rules.
+  """
+  correlations: [InsightsCorrelationSpecInput!]
+  """
+  Preserved on save so auto-created rules keep their origin across edits.
+  """
+  origin: String
+}
+
+input InsightsGuardrailInput {
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+  rules: [InsightsGuardrailRuleInput!]!
+}
+
+type InsightsGuardrailViolation {
+  service: String!
+  namespace: String!
+  scopeKey: String!
+  ruleKey: String!
+  ruleLabel: String!
+  offending: String
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  lastSeen: String
+  status: InsightsViolationStatus!
+}
+
+"""
+Full violation for investigate. Detail path only — includes summary, span
+highlights, and optional evidenceTrace. Identity is (scopeKey, ruleKey, offending).
+"""
+type InsightsGuardrailViolationDetail {
+  service: String!
+  namespace: String!
+  scopeKey: String!
+  ruleKey: String!
+  ruleLabel: String!
+  offending: String!
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  lastSeen: String
+  status: InsightsViolationStatus!
+  """
+  One-line explanation of what broke (service, rule, offending).
+  """
+  summary: String!
+  """
+  Spans on the evidence trace that witness the forbidden edge.
+  """
+  spanHighlights: [InsightsAnomalySpanHighlight!]
+  """
+  Captured sample including rawOtlp. Omitted when no sample was retained.
+  """
+  evidenceTrace: InsightsObservation
+}
+
+input InsightsViolationActionInput {
+  scopeKey: String!
+  ruleKey: String!
+  offending: String!
+}
+
+input InsightsGuardrailSeedInput {
+  scopeKey: String!
+  mode: InsightsRuleMode
+  """
+  JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress | allowed_transactions.
+  """
+  items: String!
+}
+
+# Guardrail recommendations (rules the engine mined and offers for quick apply)
+
+"""
+What applying the recommendation would write. `attribute_correlation` adds one
+cross-span rule to a transaction's guardrail; `service_guardrail` pre-fills a
+service's allowlist rules from the profile it was observed to follow.
+
+The two kinds share one type: the fields a kind does not carry are null, so a
+client switches on `kind` rather than on a union.
+"""
+enum InsightsRecommendationKind {
+  attribute_correlation
+  service_guardrail
+}
+
+"""
+Lifecycle bucket. `open` awaits a decision, `applied` became a guardrail rule,
+`dismissed` was rejected (sticky across re-mining).
+"""
+enum InsightsRecommendationState {
+  open
+  applied
+  dismissed
+}
+
+"""
+How much the engine trusts the relation. `low` means live traffic has already
+broken it, so applying would fire violations immediately.
+"""
+enum InsightsRecommendationConfidenceLevel {
+  high
+  medium
+  low
+}
+
+"""
+One stored sample the relation held on, with the two values it compared.
+"""
+type InsightsRecommendationExample {
+  traceId: String!
+  leftValue: String!
+  rightValue: String!
+  observedAt: String!
+}
+
+"""
+Why the engine believes the recommendation. `level` and `reasons` are
+render-ready for both kinds; everything else needs the kind for context.
+
+The stored-sample stats (`holdRatio`, `observed`, `held`, `distinct`) describe a
+mined relation and are null on a `service_guardrail`. The live counters come
+from evaluating the open recommendation silently against real traffic and keep
+growing until it is applied or dismissed.
+"""
+type InsightsRecommendationConfidence {
+  level: InsightsRecommendationConfidenceLevel!
+  """
+  `attribute_correlation` only: held / observed on the stored samples (0..1).
+  """
+  holdRatio: Float
+  """
+  `attribute_correlation` only: stored samples where both values were present.
+  """
+  observed: Int
+  """
+  `attribute_correlation` only: of those, how many satisfied the relation.
+  """
+  held: Int
+  """
+  `attribute_correlation` only: distinct left-hand values seen agreeing. Guards
+  against two attributes that merely share a constant.
+  """
+  distinct: Int
+  """
+  What the lists were learned from. `attribute_correlation`: relation samples
+  the mining run looked at. `service_guardrail`: promoted transactions of the
+  service whose learned profile seeded the rules.
+  """
+  sampleCount: Int!
+  """
+  `attribute_correlation`: live traces the relation held on.
+  `service_guardrail`: the sum over `rules` of (liveChecked - liveViolated) —
+  rule checks, not traces, so one trace can count once per rule.
+  """
+  liveHeld: Int!
+  """
+  `attribute_correlation`: live traces the relation broke on.
+  `service_guardrail`: the sum over `rules` of liveViolated, again rule checks
+  rather than traces.
+  """
+  liveBroken: Int!
+  """
+  Null until the first live trace was evaluated. On a `service_guardrail` this
+  is the earliest of the listed rules' windows.
+  """
+  liveSince: String
+  """
+  Null until the first live trace was evaluated. On a `service_guardrail` this
+  is the latest of the listed rules' windows.
+  """
+  liveLast: String
+  """
+  Render-ready evidence lines, e.g. "Held on 50 of 50 stored samples". Prose for
+  both kinds — render them, do not parse them.
+  """
+  reasons: [String!]!
+}
+
+"""
+One allowlist rule a `service_guardrail` recommendation proposes, pre-filled
+from what the service was observed doing. Rules arrive in catalog order
+(callers, callees, egress, transactions) and only cover what the service does
+not enforce yet, so applying extends a guardrail and never overrides a rule an
+operator already set.
+"""
+type InsightsRecommendationRule {
+  """
+  Rule key: `allowed_callers`, `allowed_callees`, `allowed_egress` or
+  `allowed_transactions`. A String rather than an enum on purpose — the catalog
+  can gain keys without this schema changing under a running client.
+  """
+  rule: String!
+  """
+  Catalog label, e.g. "Allowed egress".
+  """
+  label: String!
+  """
+  One line on what the rule enforces, from the catalog.
+  """
+  description: String!
+  """
+  The allowlist an apply would write, sorted. Plain service names for
+  `allowed_callers` and `allowed_callees`, `host` or `host:port` for
+  `allowed_egress`, and the transaction kind joined to the operation by a
+  literal tab (U+0009) for `allowed_transactions` — split on that tab to render
+  the kind and the operation apart, never on a space.
+
+  An empty list is meaningful and strict rather than missing data: the service
+  was never seen doing this, so enforcing forbids all of it.
+  """
+  items: [String!]!
+  """
+  This rule's own level: `low` once live traffic already went outside the list,
+  `high` after enough silent checks held, `medium` otherwise. The card's
+  `confidence.level` is the weakest rule's.
+  """
+  confidence: InsightsRecommendationConfidenceLevel!
+  """
+  Live traces of this service checked silently against the proposed list.
+  """
+  liveChecked: Int!
+  """
+  Of those, how many carried something outside the list. Non-zero means real
+  traffic already disagrees with what was learned — look before enforcing.
+  """
+  liveViolated: Int!
+  """
+  Null until the first live trace was checked against this rule.
+  """
+  liveSince: String
+  """
+  Null until the first live trace was checked against this rule.
+  """
+  liveLast: String
+}
+
+"""
+One mined recommendation the operator can apply as-is, adjust and apply, or
+dismiss. The engine writes the presentation fields, so a client renders `title`,
+`summary`, `whyItMatters` and `confidence.reasons` without knowing what the
+numbers behind them mean.
+
+Both kinds share this type. The 16 non-null fields are the ones every kind
+carries; every nullable field belongs to exactly one kind and is null on the
+other, so read them after switching on `kind` — an absent field is "not this
+kind", never "false" or "zero".
+"""
+type InsightsRecommendation {
+  id: ID!
+  kind: InsightsRecommendationKind!
+  state: InsightsRecommendationState!
+  """
+  The latest mining run no longer produced this row: the relation stopped
+  holding, its samples aged out, or the service has nothing left to enforce.
+  Hidden from the list unless `includeStale` is set, and applying a stale
+  `service_guardrail` fails — recompute it first.
+  """
+  stale: Boolean!
+  """
+  Position among the scope's recommendations, 0 = strongest.
+  """
+  rank: Int!
+  """
+  The guardrail this would extend, with the same meaning as a guardrail's
+  scope/scopeKey: `transaction` for `attribute_correlation`, `service` for
+  `service_guardrail`.
+  """
+  scope: InsightsPolicyScope!
+  """
+  The scoped guardrail's key: the decimal transaction id for
+  `attribute_correlation`, `"<namespace>/<service>"` for `service_guardrail`.
+  """
+  scopeKey: String!
+  """
+  `attribute_correlation` only: the transaction the rule belongs to. Null on a
+  `service_guardrail`, which is scoped to the service rather than to one
+  transaction — so filtering `recommendations` by `transactionId` never returns
+  a service card.
+  """
+  transactionId: ID
+  """
+  `attribute_correlation` only: that transaction's kind.
+  """
+  transactionKind: InsightsTransactionKind
+  service: String!
+  namespace: String!
+  """
+  `attribute_correlation` only: that transaction's operation.
+  """
+  operation: String
+  """
+  One-line headline, e.g. "resolvePrincipal return.value matches getCart arg.0"
+  or "Lock down account-service". It carries no counts — use `rules` for those.
+  """
+  title: String!
+  """
+  One or two sentences on what was learned and what applying does.
+  """
+  summary: String!
+  """
+  The security story — what breaking this would mean, in plain words. Populated
+  for both kinds: the mined relation's own reasoning for
+  `attribute_correlation`, and a fixed sentence about first-appearance
+  detection for `service_guardrail`.
+  """
+  whyItMatters: String!
+  """
+  `attribute_correlation` only: how the two values relate — `exact` (identical),
+  `core` (identical after a constant prefix/suffix), `digits` (same numeric id),
+  `contains` (one value is embedded in the other).
+  """
+  transform: String
+  """
+  `attribute_correlation` only: guaranteed by the transport rather than by
+  business logic — the same field on both ends of one hop, such as a Kafka
+  message key on producer and consumer. A break means tampering in flight, not a
+  business-logic bypass, so it is mined at low severity and ranked after every
+  business relation.
+  """
+  transport: Boolean
+  """
+  `attribute_correlation` only: the exact rule `applyInsightsRecommendations`
+  would add to the transaction guardrail. Edit and pass it back to apply
+  something different. Null on a `service_guardrail` — read `rules` instead.
+  """
+  spec: InsightsCorrelationSpec
+  """
+  `service_guardrail` only: the allowlist rules proposed for enforcement, in
+  catalog order. Only rules the service does not enforce yet are listed, so this
+  can be empty on a card that has already been applied.
+  """
+  rules: [InsightsRecommendationRule!]
+  """
+  `service_guardrail` only: the rule keys an apply actually turned on. Set while
+  `state` is `applied`; rules listed in `rules` but missing here were left out
+  by the operator.
+  """
+  appliedRules: [String!]
+  confidence: InsightsRecommendationConfidence!
+  """
+  `attribute_correlation` only: up to three stored samples the relation held on.
+  """
+  examples: [InsightsRecommendationExample!]
+  """
+  `attribute_correlation` only: the transaction's guardrail already has a rule
+  on the same two attributes (e.g. written by hand), so applying would replace
+  it.
+  """
+  alreadyCovered: Boolean
+  minedAt: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type InsightsRecommendationItemError {
+  id: ID!
+  error: String!
+}
+
+"""
+Outcome of a bulk action. Items are independent — one failing does not stop the
+rest — so `done` and `errors` can both be non-empty.
+"""
+type InsightsRecommendationBulkResult {
+  done: Int!
+  failed: Int!
+  errors: [InsightsRecommendationItemError!]!
+}
+
+"""
+One recommendation to apply, optionally with the operator's edits. Each field
+belongs to one kind — sending a `spec` with a `service_guardrail` id is
+rejected for the whole batch even though the spec would be ignored.
+"""
+input InsightsRecommendationApplyItemInput {
+  id: ID!
+  """
+  `attribute_correlation` only: an edited rule applied instead of the mined one.
+  Left/right service, span and attr must match the recommendation; name,
+  severity, why, relation and extract regexes may differ.
+  """
+  spec: InsightsCorrelationSpecInput
+  """
+  `service_guardrail` only: which of the recommendation's `rules` to turn on, by
+  rule key. Omitting it — or passing an empty list — turns on every rule on the
+  card, so there is no way to spell "apply nothing": just do not send the item.
+  A key that is not on the card fails that item alone.
+  """
+  rules: [String!]
+}
+
+"""
+How a spec fares on the transaction's stored relation samples. Backs the
+"edit & apply" flow so the operator sees how often the rule would have held
+before enforcing it.
+"""
+type InsightsRecommendationPreview {
+  sampleCount: Int!
+  observed: Int!
+  held: Int!
+  distinct: Int!
+  holdRatio: Float!
+  examples: [InsightsRecommendationExample!]!
+  """
+  Up to three samples where the relation did not hold.
+  """
+  counterExamples: [InsightsRecommendationExample!]!
+}
+
+# Catalog (risk-model reference data)
+
+type InsightsCatalogClass {
+  id: String!
+  label: String!
+  description: String
+  """
+  Transaction-baseline name for this class (what is learned). Distinct from finding-oriented `label`.
+  """
+  baselineLabel: String!
+  """
+  Tooltip for what this class learns on a transaction baseline.
+  """
+  baselineDescription: String
+  category: String!
+  categoryLabel: String
+  weight: Int!
+  mitre: String
+  owasp: String
+}
+
+type InsightsEnricherList {
+  key: String!
+  label: String!
+  hint: String
+  default: [String!]
+}
+
+type InsightsCatalogEnricher {
+  source: String!
+  parentClass: String!
+  category: String!
+  weight: Int!
+  label: String!
+  description: String
+  list: InsightsEnricherList
+}
+
+type InsightsCatalogCategory {
+  id: String!
+  label: String!
+  base: Int!
+  mitre: String
+  owasp: String
+}
+
+type InsightsCatalogGuardrailRule {
+  key: String!
+  label: String!
+  description: String
+  category: String!
+  weight: Int!
+  hint: String
+}
+
+type InsightsSeverityBand {
+  severity: InsightsSeverity!
+  minScore: Int!
+}
+
+type InsightsCatalog {
+  deviationClasses: [InsightsCatalogClass!]!
+  enrichers: [InsightsCatalogEnricher!]!
+  categories: [InsightsCatalogCategory!]!
+  guardrailRules: [InsightsCatalogGuardrailRule!]!
+  severityBands: [InsightsSeverityBand!]!
+  correlationBonus: Int!
+  """
+  JSON-encoded map[string]string.
+  """
+  tags: String!
+}
+
+# System settings (singleton engine config)
+
+type InsightsSystemSamplingSettings {
+  examplesPerTransaction: Int!
+  exampleSampleIntervalSeconds: Int!
+}
+
+type InsightsSystemRetentionSettings {
+  observationRetentionDays: Int!
+}
+
+type InsightsSystemCapacitySettings {
+  maxResidentTransactions: Int!
+  maxBaselineSetMembers: Int!
+  """
+  Max distinct transactions one service may add to the inventory. Once reached,
+  operations not seen before are dropped, so span names carrying ids cannot grow
+  the inventory without bound.
+  """
+  maxTransactionsPerService: Int!
+}
+
+type InsightsSystemWritebackSettings {
+  flushIntervalSeconds: Int!
+}
+
+type InsightsSystemDetectionSettings {
+  """
+  When true, automatically create an enforced allowed_transactions guardrail
+  when a service finishes promoting. Applies only going forward — already-promoted
+  services are not backfilled. Per-service disable uses rule mode off.
+  """
+  autoTransactionGuardrail: Boolean!
+}
+
+"""
+One low-cardinality attribute (or built-in resolver key) folded into transaction identity
+from the sub-transaction entry span only.
+"""
+type InsightsSystemTransactionIdentityDimension {
+  key: String!
+  enabled: Boolean!
+}
+
+"""
+Extra dimensions appended to transaction Operation before hashing.
+Each enabled dimension multiplies cardinality. Use only low-cardinality attributes.
+"""
+type InsightsSystemIdentitySettings {
+  transactionIdentityDimensions: [InsightsSystemTransactionIdentityDimension!]!
+}
+
+type InsightsSystemSettings {
+  sampling: InsightsSystemSamplingSettings!
+  retention: InsightsSystemRetentionSettings!
+  capacity: InsightsSystemCapacitySettings!
+  writeback: InsightsSystemWritebackSettings!
+  detection: InsightsSystemDetectionSettings!
+  identity: InsightsSystemIdentitySettings!
+}
+
+input InsightsSystemSamplingSettingsInput {
+  examplesPerTransaction: Int!
+  exampleSampleIntervalSeconds: Int!
+}
+
+input InsightsSystemRetentionSettingsInput {
+  observationRetentionDays: Int!
+}
+
+input InsightsSystemCapacitySettingsInput {
+  maxResidentTransactions: Int!
+  maxBaselineSetMembers: Int!
+  """
+  Optional so clients built before it existed stay valid; when omitted the
+  insights default applies.
+  """
+  maxTransactionsPerService: Int
+}
+
+input InsightsSystemWritebackSettingsInput {
+  flushIntervalSeconds: Int!
+}
+
+input InsightsSystemDetectionSettingsInput {
+  autoTransactionGuardrail: Boolean!
+}
+
+input InsightsSystemTransactionIdentityDimensionInput {
+  key: String!
+  enabled: Boolean!
+}
+
+input InsightsSystemIdentitySettingsInput {
+  transactionIdentityDimensions: [InsightsSystemTransactionIdentityDimensionInput!]!
+}
+
+input InsightsSystemSettingsInput {
+  sampling: InsightsSystemSamplingSettingsInput!
+  retention: InsightsSystemRetentionSettingsInput!
+  capacity: InsightsSystemCapacitySettingsInput!
+  writeback: InsightsSystemWritebackSettingsInput!
+  detection: InsightsSystemDetectionSettingsInput!
+  identity: InsightsSystemIdentitySettingsInput!
+  """
+  Write-only. When true and identity dimensions changed vs stored settings,
+  delete all transactions and related baselines/samples/findings before applying.
+  Never returned by GET.
+  """
+  resetTransactions: Boolean
+}
+
+# Storage health (ClickHouse + writeback snapshot, for the settings/health page)
+
+type InsightsStorageConnection {
+  reachable: Boolean!
+  pingLatencyMs: Int!
+  version: String!
+  database: String!
+  error: String
+}
+
+type InsightsStorageDisk {
+  insightsBytes: Int!
+  totalBytes: Int!
+  usedBytes: Int!
+  availableBytes: Int!
+  usedPercent: Float!
+  status: InsightsStorageDiskStatus!
+}
+
+type InsightsStorageMemory {
+  processRssBytes: Int!
+  cgroupUsedBytes: Int!
+  """
+  0 means no limit.
+  """
+  cgroupTotalBytes: Int!
+  uptimeSeconds: Float!
+}
+
+type InsightsStorageQuery {
+  elapsedSeconds: Float!
+  user: String!
+  memoryBytes: Int!
+  query: String!
+  """
+  Omitted for still-running queries.
+  """
+  finishedAt: String
+}
+
+type InsightsStorageQueries {
+  active: Int!
+  longestSeconds: Float!
+  peakMemoryBytes: Int!
+  items: [InsightsStorageQuery!]!
+  recentHeaviest: [InsightsStorageQuery!]!
+  recentLatest: [InsightsStorageQuery!]!
+}
+
+type InsightsStorageTable {
+  name: String!
+  rows: Int!
+  bytesOnDisk: Int!
+  activeParts: Int!
+}
+
+type InsightsStorageWritePressure {
+  unfinishedMutations: Int!
+  activeParts: Int!
+}
+
+type InsightsStorageWriteback {
+  flushIntervalSeconds: Int!
+  everFlushed: Boolean!
+  lastFlushOk: Boolean!
+  lastFlushAt: String
+  lastFlushError: String
+}
+
+type InsightsStorageHealth {
+  checkedAt: String!
+  status: InsightsStorageHealthStatus!
+  connection: InsightsStorageConnection!
+  disk: InsightsStorageDisk!
+  memory: InsightsStorageMemory!
+  queries: InsightsStorageQueries!
+  tables: [InsightsStorageTable!]!
+  writePressure: InsightsStorageWritePressure!
+  writeback: InsightsStorageWriteback!
+}
+
+# Root
+
+type Insights {
+  services: [InsightsServiceStat!]!
+  """
+  Every distinct service name Insights has seen. Cluster-wide candidate set for
+  guardrail caller/callee allowlists — fetch once and combine with a service profile.
+  """
+  serviceNames: [String!]!
+  serviceProfile(namespace: String, service: String!): InsightsServiceProfile!
+  """
+  Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
+  """
+  blastRadius(
+    namespace: String
+    service: String!
+    depth: Int
+  ): InsightsBlastRadiusSubgraph!
+  transactions(
+    namespace: String
+    service: String
+    kind: InsightsTransactionKind
+    windowHours: Int
+  ): [InsightsTransactionStat!]!
+  transaction(id: ID!): InsightsTransaction
+  baseline(transactionId: ID!): [InsightsBaselineClass!]!
+  observations(
+    transactionId: ID!
+    sampleReason: InsightsSampleReason
+  ): [InsightsObservationSummary!]!
+  observation(transactionId: ID!, traceId: String!): InsightsObservation
+  findings(
+    windowHours: Int
+    service: String
+    namespace: String
+    status: String
+    kind: InsightsFindingKind
+  ): [InsightsFinding!]!
+  anomalies(
+    windowHours: Int
+    service: String
+    namespace: String
+    status: String
+  ): [InsightsAnomalySummary!]!
+  anomaly(transactionId: ID!, signature: String!): InsightsAnomalyIssue
+  policies: [InsightsPolicy!]!
+  learningPolicies: [InsightsLearningPolicy!]!
+  guardrails: [InsightsGuardrail!]!
+  guardrailViolations(
+    windowHours: Int
+    service: String
+    namespace: String
+    status: String
+  ): [InsightsGuardrailViolation!]!
+  """
+  Violation investigate payload (summary + evidence trace). Analogous to anomaly(...).
+  """
+  guardrailViolation(
+    scopeKey: String!
+    ruleKey: String!
+    offending: String!
+  ): InsightsGuardrailViolationDetail
+  """
+  Guardrail rules the engine mined and offers for quick apply, strongest first
+  within each scope: cross-span relations learned from a transaction's stored
+  samples, and per-service allowlists learned from a service's profile. Stale
+  rows (the latest mining run no longer produced them) are hidden unless
+  `includeStale` is true.
+
+  There is no scope filter — pass `kind` to get one kind's cards. `transactionId`
+  narrows to transaction-scoped rows by construction, so combining it with
+  `kind: service_guardrail` always comes back empty.
+  """
+  recommendations(
+    kind: InsightsRecommendationKind
+    state: InsightsRecommendationState
+    transactionId: ID
+    service: String
+    namespace: String
+    includeStale: Boolean
+  ): [InsightsRecommendation!]!
+  recommendation(id: ID!): InsightsRecommendation
+  catalog: InsightsCatalog!
+  systemSettings: InsightsSystemSettings!
+  storageHealth: InsightsStorageHealth!
+}
+
+extend type Query {
+  """
+  Insights (enterprise security feature). Nullable so a failure or a disabled
+  feature does not null out sibling query fields; resolvers return an error
+  when insights is not enabled in the effective configuration.
+  """
+  insights: Insights
+}
+
+extend type Mutation {
+  promoteInsightsBaselineClass(
+    transactionId: ID!
+    class: InsightsDeviationClass!
+  ): InsightsPromoteResult!
+  resetInsightsBaselineClass(
+    transactionId: ID!
+    class: InsightsDeviationClass!
+  ): Boolean!
+  resetInsightsTransactionBaselines(transactionId: ID!): Boolean!
+  """
+  Force-promote every scored baseline class of one transaction
+  (POST /api/v1/transactions/{id}/baselines/promote). May auto-enable the
+  transaction guardrail when the global setting is on.
+  """
+  promoteInsightsTransactionBaselines(transactionId: ID!): Boolean!
+  """
+  Force-promote every scored baseline class on each listed transaction
+  (POST /api/v1/transactions/promote).
+  """
+  bulkPromoteInsightsTransactions(
+    transactionIds: [ID!]!
+  ): InsightsBulkPromoteResult!
+  """
+  Force-promote every scored baseline class on every transaction of a service
+  (POST /api/v1/services/transaction-guardrail/force-promote). May auto-enable
+  the transaction guardrail when the global setting is on.
+  """
+  forcePromoteInsightsService(namespace: String!, service: String!): Boolean!
+  """
+  Enable a service's transaction guardrail (POST /api/v1/services/transaction-guardrail/enable).
+  Seeds allowed_transactions from current ops and sets the rule to enforce.
+  """
+  enableInsightsTransactionGuardrail(
+    namespace: String!
+    service: String!
+  ): Boolean!
+  """
+  Disable a service's transaction guardrail (POST /api/v1/services/transaction-guardrail/disable).
+  Sets allowed_transactions to mode off so auto-enable will not recreate it.
+  """
+  disableInsightsTransactionGuardrail(
+    namespace: String!
+    service: String!
+  ): Boolean!
+  """
+  Permanently removes a transaction and related state (baselines, samples, issues, txn-scoped policies).
+  """
+  deleteInsightsTransaction(transactionId: ID!): Boolean!
+  """
+  Permanently removes many transactions and their related state
+  (POST /api/v1/transactions).
+  """
+  bulkDeleteInsightsTransactions(
+    transactionIds: [ID!]!
+  ): InsightsBulkDeleteResult!
+  upsertInsightsPolicy(policy: InsightsPolicyInput!): InsightsPolicy!
+  deleteInsightsPolicy(scope: InsightsPolicyScope!, scopeKey: String!): Boolean!
+  upsertInsightsLearningPolicy(
+    policy: InsightsLearningPolicyInput!
+  ): InsightsLearningPolicy!
+  deleteInsightsLearningPolicy(
+    class: InsightsDeviationClass!
+    scope: InsightsPolicyScope!
+    scopeKey: String!
+  ): Boolean!
+  resolveInsightsAnomaly(
+    transactionId: ID!
+    signature: String!
+    resolution: InsightsAnomalyResolution!
+  ): Boolean!
+  bulkResolveInsightsAnomalies(
+    resolution: InsightsBulkResolution!
+    items: [InsightsAnomalyRefInput!]!
+  ): InsightsBulkResolveResult!
+  upsertInsightsGuardrail(
+    guardrail: InsightsGuardrailInput!
+  ): InsightsGuardrail!
+  """
+  Deletes one guardrail. `scope` must match how it was declared (`service` or
+  `transaction`). Defaults to `service` when omitted so existing callers keep
+  working.
+  """
+  deleteInsightsGuardrail(
+    scopeKey: String!
+    scope: InsightsPolicyScope
+  ): Boolean!
+  seedInsightsGuardrail(seed: InsightsGuardrailSeedInput!): Boolean!
+  acceptInsightsGuardrailViolation(
+    action: InsightsViolationActionInput!
+  ): Boolean!
+  dismissInsightsGuardrailViolation(
+    action: InsightsViolationActionInput!
+  ): Boolean!
+  reopenInsightsGuardrailViolation(
+    action: InsightsViolationActionInput!
+  ): Boolean!
+  updateInsightsSystemSettings(
+    settings: InsightsSystemSettingsInput!
+  ): InsightsSystemSettings!
+  """
+  Enforce each recommendation on the guardrail it names (created if missing),
+  reload the engine, and mark the recommendation applied. An
+  `attribute_correlation` item writes one cross-span rule on its transaction's
+  guardrail; a `service_guardrail` item turns on the allowlist rules its `rules`
+  field selects, defaulting to every rule on the card.
+
+  Items are independent: one failing does not stop the rest, so check `errors`
+  even when some succeeded. Only `open`, non-stale `service_guardrail` cards can
+  be applied, and rules an operator has meanwhile enforced or switched off are
+  skipped rather than re-applied.
+  """
+  applyInsightsRecommendations(
+    items: [InsightsRecommendationApplyItemInput!]!
+  ): InsightsRecommendationBulkResult!
+  """
+  Reject without creating a rule. Sticky across re-mining — the same relation
+  found again stays dismissed — and shadow evaluation stops.
+  """
+  dismissInsightsRecommendations(ids: [ID!]!): InsightsRecommendationBulkResult!
+  """
+  Move dismissed recommendations back to open.
+  """
+  restoreInsightsRecommendations(ids: [ID!]!): InsightsRecommendationBulkResult!
+  """
+  Remove the rule an earlier apply added from the transaction's guardrail,
+  reload the engine, and move the recommendation back to open.
+  """
+  revertInsightsRecommendations(ids: [ID!]!): InsightsRecommendationBulkResult!
+  """
+  Evaluate an edited spec against the transaction's stored relation samples
+  without persisting anything, so the operator sees how often the rule would
+  have held before enforcing it.
+
+  `attribute_correlation` only: there is no dry run for a `service_guardrail`,
+  whose forward-looking signal is the per-rule liveChecked / liveViolated
+  counters instead.
+  """
+  previewInsightsRecommendation(
+    transactionId: ID!
+    spec: InsightsCorrelationSpecInput!
+  ): InsightsRecommendationPreview!
+  """
+  Queue a mining run: for one transaction with `transactionId`, for one
+  service's guardrail card with `namespace` **and** `service`, or a sweep over
+  every promoted transaction with unmined samples and every fully-learned
+  service when all three are omitted.
+
+  Pass either `transactionId` or the namespace/service pair, never both, and
+  never a namespace without its service. Runs in the background: this returns
+  once the run is queued, then poll `recommendations` — there is no job id to
+  follow.
+  """
+  recomputeInsightsRecommendations(
+    transactionId: ID
+    namespace: String
+    service: String
+  ): Boolean!
+}

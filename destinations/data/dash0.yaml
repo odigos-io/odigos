@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: DASH0_ENDPOINT
       displayName: Dash0 OTLP gRPC Endpoint

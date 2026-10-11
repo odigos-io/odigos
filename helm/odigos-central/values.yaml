@@ -1,9 +1,28 @@
+# Global image controls
+# -- Override image tag for all Odigos components (empty = chart default)
 image:
-  tag: ""
-imagePrefix: ""
+  tag: ''
+# -- Prefix/registry for all Odigos images (empty = registry.odigos.io)
+imagePrefix: ''
+# -- Image pull secrets for private registries (k8s secret names)
 imagePullSecrets: []
 
+# On-prem token for Odigos Enterprise (chart-managed odigos-central secret when set)
+# onPremToken: ''
+
+# Set to true when odigos-central is managed externally (GitOps). The chart reads the token from
+# the existing odigos-central secret to create the enterprise registry pull secret.
+# externalOnpremTokenSecret: false
+
+# Set to true when odigos-enterprise-registry is managed externally (GitOps).
+# The chart mounts the existing pull secret but does not create it.
+# externalOnpremPullSecret: false
+
 centralBackend:
+  # Resources and scheduling for the Central backend
+  # -- Maximum WebSocket message size in bytes between central-backend and proxies
+  #    (default 33554432 = 32Mi). Raise for very large RemoteFetch payloads.
+  maxMessageSize: '33554432'
   resources:
     requests:
       cpu: 100m
@@ -15,11 +34,43 @@ centralBackend:
     kubernetes.io/os: linux
   tolerations: []
   affinity: []
+  # HorizontalPodAutoscaler for the backend
+  autoscaling:
+    # -- Enable HPA for the backend
+    enabled: true
+    # -- HPA replica bounds
+    minReplicas: 1
+    maxReplicas: 10
+    # -- Target average CPU utilization percentage
+    cpuTargetUtilization: 70
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 30
+        selectPolicy: Max
+        policies:
+          percent:
+            value: 100
+            periodSeconds: 30
+          pods:
+            value: 2
+            periodSeconds: 30
+      scaleDown:
+        stabilizationWindowSeconds: 600
+        selectPolicy: Min
+        policies:
+          percent:
+            value: 10
+            periodSeconds: 60
+          pods:
+            value: 1
+            periodSeconds: 60
 
 centralUI:
+  # Central UI settings
   uiMode: normal
   uiPaginationLimit: 0
-  centralBackendURL: ""
+  # -- Override backend URL (empty = in-cluster service)
+  centralBackendURL: ''
   resources:
     requests:
       cpu: 100m
@@ -36,20 +87,273 @@ redis:
   image: redis:7.4.2
   port: 6379
   portName: redis
+  # Set to ~85% of memory limit to leave headroom for Redis overhead
+  # Current: 220mb = 85% of 256Mi limit. Adjust proportionally if changing memory limits.
+  maxmemory: 220mb
+  # Eviction policy when maxmemory is reached
+  # allkeys-lru: evict least recently used keys (good default for mixed use)
+  maxmemoryPolicy: allkeys-lru
+  # TCP keepalive interval in seconds. Sends probe packets on idle connections to prevent
+  # network infrastructure (NAT/firewall) from closing them due to idle timeouts.
+  tcpKeepalive: 30
 
+  # Liveness probe settings
+  # `redis-cli ping` fails when the server is unresponsive (hung process, OOM),
+  # which a TCP check on the port would not catch.
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 3
+    failureThreshold: 5
+    # Must be 1 for liveness probes
+    successThreshold: 1
+
+  # Readiness probe settings
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+    successThreshold: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
+
+auth:
+  # Built-in Keycloak configuration
+  enabled: true
+  # -- Browser-accessible URL of the central-backend for SSO redirect flows.
+  # Configures Keycloak's hostname (for token issuer) and the backend's external URL
+  # (for browser-facing Keycloak proxy URLs during sign-in/sign-out).
+  # Examples:
+  #   Port-forward (default): 'http://localhost:8081'
+  #   Production with ingress: 'https://central.example.com'
+  # When empty, defaults to 'http://localhost:8081' (suitable for port-forward / local dev).
+  externalUrl: ''
+  # -- Browser-accessible URL of the Central UI for OAuth redirect_uri (/signin).
+  # When empty, defaults to auth.externalUrl, except for local port-forward
+  # (http://localhost:8081) where the UI is reached on port 3000.
+  externalUIUrl: ''
+  image: registry.odigos.io/keycloak:24.0.3
+  adminUsername: admin
+  # -- Keycloak admin password for internal API access.
+  # On first install: uses this value, or auto-generates if empty.
+  # On upgrades: ignores this value and reuses the existing password from the secret
+  # to prevent mismatch with Keycloak's stored credentials.
+  adminPassword: ''
+  port: 8080
+  portName: http
+  # Ensure volume permissions are compatible when persistence is enabled
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1000
+  securityContext:
+    enabled: true
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+
+  # Persistence (disabled by default). Enable to keep Keycloak data via PVC.
+  # ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+  persistence:
+    enabled: false
+    size: 1Gi
+    # -- PVC access modes
+    # See: kubectl explain persistentvolumeclaim.spec.accessModes
+    accessModes:
+      - ReadWriteOnce
+    # -- Storage class behavior:
+    #    - Omit key to use the cluster default (if any)
+    #    - Set to a class name to bind to that class
+    storageClassName: ''
+    # -- Use an existing PVC by name instead of creating one
+    # If set, the chart will not create a PVC and will mount this claim
+    existingClaim: ''
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Limits Keycloak's JVM memory to a small, efficient range suitable for medium traffic
+  javaOpts: '-Xms128m -Xmx256m'
+
+  # Startup probe settings
+  # Absorbs Keycloak's slow JVM boot (up to failureThreshold * periodSeconds = 300s)
+  # so the liveness and readiness probes below can use short initial delays.
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+    # Must be 1 for startup probes
+    successThreshold: 1
+    port: 8080
+
+  # Liveness probe settings
+  # Keycloak exposes /health/live for liveness checks
+  # initialDelaySeconds is 0 because the startup probe already covers boot time.
+  # Raise it if startupProbe.enabled is set to false.
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 0
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    port: 8080
+
+  # Readiness probe settings
+  # Keycloak exposes /health/ready for readiness checks
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    port: 8080
+
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: []
+
+# Cloud connectors (platformType = connector). Feature-gated; when disabled, none of the
+# connector-runtime controller, PostgreSQL, migration Job or CRD are installed.
+cloudConnectors:
+  # -- Master switch for the entire cloud-connectors subsystem.
+  enabled: false
+
+  # The connector-runtime controller that reconciles OdigosCloudConnector CRs into connector workloads.
+  connectorRuntime:
+    # -- Override the controller image (empty = built-in odigos-enterprise-connector-runtime).
+    image: ''
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations: []
+    affinity: {}
+
+  # Odigos-managed telemetry Collectors, deployed into the customer's own cloud account and configured
+  # over OpAMP.
+  managedCollectors:
+    # -- Public endpoint the managed Collectors connect back to, normally
+    # wss://<central-host>/v1/opamp. Per environment: staging and production are different Central
+    # installations and therefore different endpoints.
+    #
+    # Deliberately empty by default. There is no address that is right for an unknown Central
+    # installation, and a wrong one would point Collectors running in a customer's cloud account at
+    # somebody else's endpoint. Empty means no Collector is deployed, and a connector that was allowed
+    # to manage one says so on its own resource.
+    #
+    # Must be wss:// (or https://) for any host that is not loopback: the Collector presents a bearer
+    # credential on this connection, and that credential can read the destination's own credential out
+    # of a configuration push.
+    #
+    # Changing it does not move Collectors that are already deployed — each holds the endpoint injected
+    # into its workload definition, so it is redeployed to pick up a new one.
+    externalEndpoint: ''
+
+    # connector-opamp-gateway is the component that SERVES the endpoint above: one gateway for the whole
+    # fleet across every provider, authenticating each Collector's credential and proxying the session to
+    # the connector that owns its cloud account.
+    #
+    # -- Deploy it. Gated separately from externalEndpoint because the two fail differently: without the
+    # gateway nothing serves the address, and without the address no Collector is told to dial it.
+    enabled: false
+    # -- Override the gateway image (empty = built-in odigos-enterprise-connector-opamp-gateway).
+    image: ''
+    # -- Replica count. Sessions are long-lived WebSockets holding no shared state, so any replica can
+    # serve any Collector — and a rolling restart costs a fleet-wide reconnect.
+    replicas: 2
+    # -- Port the gateway listens on, serving both the OpAMP path and its probes. One listener, so a
+    # probe cannot pass on a port while the one that matters is refusing connections.
+    port: 8080
+    portName: opamp
+    # -- Path the edge forwards. OpAMP's default and what the gateway serves; change it only alongside
+    # externalEndpoint, or the two describe different URLs.
+    path: /v1/opamp
+    # -- How long a revoked credential may keep an already-open session (empty = the build's default).
+    revalidateInterval: ''
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations: []
+    affinity: {}
+
+  # Provider connector runtime images the controller stamps onto per-account connector Deployments.
+  aws:
+    # -- Override the AWS connector image (empty = built-in odigos-enterprise-connector-aws).
+    image: ''
+  gcp:
+    # -- Override the GCP connector image (empty = built-in odigos-enterprise-connector-gcp).
+    image: ''
+  azure:
+    # -- Override the Azure connector image (empty = built-in odigos-enterprise-connector-azure).
+    image: ''
+
+  # Bundled PostgreSQL (durable store for connector state) + Atlas migrations.
+  postgres:
+    # -- Override the postgres image (empty = built-in odigos-enterprise-connector-postgres).
+    image: ''
+    port: 5432
+    portName: postgres
+    database: odigos_central
+    username: odigos
+    # -- PostgreSQL password (dev default; override for non-dev installs or use an external secret).
+    password: odigos
+    persistence:
+      enabled: true
+      size: 20Gi
+      accessModes:
+        - ReadWriteOnce
+      # -- Storage class (empty = cluster default)
+      storageClassName: ''
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: '1'
+        memory: 1Gi
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations: []
+    affinity: {}
+
+# OpenShift-specific toggles (RBAC/SELinux/images)
 openshift:
   enabled: false
 
+# GKE-specific toggles (reserved)
 gke:
   enabled: false
 
-# Refer to the official Kubernetes documentation for structure and field details:
-# https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
-#
-# Example: Odigos components should be evenly spread across zones.
-# No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
-# topologySpreadConstraints:
-#   - maxSkew: 1
-#     topologyKey: "topology.kubernetes.io/zone"
-#     whenUnsatisfiable: "ScheduleAnyway"
 topologySpreadConstraints: []

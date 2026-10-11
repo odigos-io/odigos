@@ -1,0 +1,11 @@
+type: odigos_trace_filter
+status:
+  class: processor
+  stability:
+    beta: [traces]
+  codeowners:
+    active: [blumamir]
+
+tests:
+  config:
+    drop_unsampled: true

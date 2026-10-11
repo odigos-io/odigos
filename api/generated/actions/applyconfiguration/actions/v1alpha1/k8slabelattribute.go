@@ -17,11 +17,29 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+)
+
 // K8sLabelAttributeApplyConfiguration represents a declarative configuration of the K8sLabelAttribute type for use
 // with apply.
 type K8sLabelAttributeApplyConfiguration struct {
-	LabelKey     *string `json:"labelKey,omitempty"`
+	// The label name to be extracted.
+	// e.g. "app.kubernetes.io/name"
+	LabelKey *string `json:"labelKey,omitempty"`
+	// The attribute key to be used for the resource attribute created from the label.
+	// e.g. "app.kubernetes.name"
 	AttributeKey *string `json:"attributeKey,omitempty"`
+	// The source of the label.
+	// e.g. "pod" or "namespace"
+	// Deprecated: Use FromSources instead for specifying multiple sources with precedence.
+	From *actionsv1alpha1.K8sAttributeSource `json:"from,omitempty"`
+	// The sources from which to extract the label, in order of precedence (most specific first).
+	// When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+	// over less specific sources (e.g., namespace).
+	// If a label exists in multiple sources, the value from the most specific source will be used.
+	// Supported sources: "pod", "namespace", "node"
+	FromSources []actionsv1alpha1.K8sAttributeSource `json:"fromSources,omitempty"`
 }
 
 // K8sLabelAttributeApplyConfiguration constructs a declarative configuration of the K8sLabelAttribute type for use with
@@ -43,5 +61,23 @@ func (b *K8sLabelAttributeApplyConfiguration) WithLabelKey(value string) *K8sLab
 // If called multiple times, the AttributeKey field is set to the value of the last call.
 func (b *K8sLabelAttributeApplyConfiguration) WithAttributeKey(value string) *K8sLabelAttributeApplyConfiguration {
 	b.AttributeKey = &value
+	return b
+}
+
+// WithFrom sets the From field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the From field is set to the value of the last call.
+func (b *K8sLabelAttributeApplyConfiguration) WithFrom(value actionsv1alpha1.K8sAttributeSource) *K8sLabelAttributeApplyConfiguration {
+	b.From = &value
+	return b
+}
+
+// WithFromSources adds the given value to the FromSources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the FromSources field.
+func (b *K8sLabelAttributeApplyConfiguration) WithFromSources(values ...actionsv1alpha1.K8sAttributeSource) *K8sLabelAttributeApplyConfiguration {
+	for i := range values {
+		b.FromSources = append(b.FromSources, values[i])
+	}
 	return b
 }

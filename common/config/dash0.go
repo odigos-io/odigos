@@ -33,11 +33,11 @@ func (j *Dash0) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		return nil, err
 	}
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authorization": "Bearer ${DASH0_TOKEN}",
+			"Authorization": "Bearer " + SecretEnvPlaceholder("DASH0_TOKEN", dest),
 		},
 	}
 

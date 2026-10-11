@@ -1,0 +1,411 @@
+---
+title: 'Instrument Fargate with CloudFormation'
+description: 'Self-managed ECS Fargate instrumentation for Java, Python, Node.js, .NET, PHP, and Ruby using hand-written CloudFormation.'
+sidebarTitle: 'Instrument Fargate'
+---
+
+This page shows how to instrument an ECS **service** running on Fargate yourself via CloudFormation, by editing its task
+definition directly — no changes made by the connector on your behalf. Odigos still discovers the service
+and reports its status once your changes are in place; see
+[Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation)
+for how that works. 
+
+<Info>
+  Prefer the Odigos CDK construct? See
+  [CDK: Fargate](/cloud-connectors/aws/cdk/fargate). This page is the
+  hand-written CloudFormation / raw ECS form of the same change.
+</Info>
+
+## How it works
+
+Self-managed Fargate instrumentation adds one extra container to your task definition, plus a handful of
+environment variables on your application container. Here's what happens each time the task starts:
+
+1. A small helper container, **`odigos-agent`**, starts first. It copies the files your application's
+   language agent needs into a shared volume, then exits. It's marked non-essential, since its only job is
+   to prepare files — it isn't part of your running application.
+2. Your **application container** waits for step 1 to finish successfully before it starts
+   (`DependsOn: ... Condition: SUCCESS`) — this guarantees the agent files are already in place by the time
+   your code runs.
+3. Your application container picks up the agent through environment variables specific to its language —
+   for example `JAVA_TOOL_OPTIONS` for Java — and begins exporting telemetry.
+
+<Info>
+  There's no intermediate collector inside the task — each Fargate task sends
+  telemetry **directly** to your OTLP destination, so that destination's endpoint
+  must be reachable from the task's network. See
+  [Telemetry export](/cloud-connectors/aws/overview#telemetry-export).
+</Info>
+
+## CloudFormation
+
+Merge these properties into your task definition. Only the exact agent path, activation variable, and network protocol change per language. Pick yours below:
+
+<Tabs>
+  <Tab title="Java">
+    ```yaml
+    # Merge into Resources.<YourTaskDefinition>.Properties
+    Volumes:
+      - Name: odigos-agent   # ephemeral-storage bind mount, scoped to the task
+    ContainerDefinitions:
+      - Name: odigos-agent
+        Image: "registry.odigos.io/odigos-fargate-agents:<version>"
+        Essential: false
+        Command: ["sh", "-c", "mkdir -p /var/odigos && cp -r /instrumentations/java /var/odigos/java"]
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+      - Name: "<YOUR_CONTAINER>"
+        # ... your existing configuration ...
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+            ReadOnly: true
+        DependsOn:
+          - ContainerName: odigos-agent
+            Condition: SUCCESS
+        Environment:
+          - Name: ODIGOS_IAC
+            Value: '{"v":1,"lang":"java"}'
+          - Name: OTEL_SERVICE_NAME
+            Value: "<YOUR_SERVICE_NAME>"
+          - Name: OTEL_RESOURCE_ATTRIBUTES
+            Value: "cloud.provider=aws,cloud.platform=aws_ecs,cloud.region=<REGION>"
+          - Name: OTEL_EXPORTER_OTLP_ENDPOINT
+            Value: "<OTLP_ENDPOINT_URL>"
+          - Name: OTEL_EXPORTER_OTLP_PROTOCOL
+            Value: "http/protobuf"   # or "grpc" — must match your destination; see note below
+          - Name: OTEL_TRACES_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_METRICS_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_LOGS_EXPORTER
+            Value: "otlp"
+          # APPEND after any existing value, joined by a space — assigning discards yours.
+          - Name: JAVA_TOOL_OPTIONS
+            Value: "<YOUR_EXISTING_VALUE> -javaagent:/var/odigos/java/javaagent.jar"
+    ```
+  </Tab>
+
+  <Tab title="Python">
+    ```yaml
+    # Merge into Resources.<YourTaskDefinition>.Properties
+    Volumes:
+      - Name: odigos-agent
+    ContainerDefinitions:
+      - Name: odigos-agent
+        Image: "registry.odigos.io/odigos-fargate-agents:<version>"
+        Essential: false
+        Command: ["sh", "-c", "mkdir -p /var/odigos && cp -r /instrumentations/python /var/odigos/python"]
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+      - Name: "<YOUR_CONTAINER>"
+        # ... your existing configuration ...
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+            ReadOnly: true
+        DependsOn:
+          - ContainerName: odigos-agent
+            Condition: SUCCESS
+        Environment:
+          - Name: ODIGOS_IAC
+            Value: '{"v":1,"lang":"python"}'
+          - Name: OTEL_SERVICE_NAME
+            Value: "<YOUR_SERVICE_NAME>"
+          - Name: OTEL_RESOURCE_ATTRIBUTES
+            Value: "cloud.provider=aws,cloud.platform=aws_ecs,cloud.region=<REGION>"
+          - Name: OTEL_EXPORTER_OTLP_ENDPOINT
+            Value: "<OTLP_ENDPOINT_URL>"
+          - Name: OTEL_EXPORTER_OTLP_PROTOCOL
+            Value: "http/protobuf"
+          - Name: OTEL_TRACES_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_METRICS_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_LOGS_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_PYTHON_CONFIGURATOR
+            Value: "odigos-python-configurator"
+          # APPEND after any existing value, joined by ":" — assigning discards yours.
+          - Name: PYTHONPATH
+            Value: "<YOUR_EXISTING_VALUE>:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"
+    ```
+  </Tab>
+
+  <Tab title="Node.js">
+    ```yaml
+    # Merge into Resources.<YourTaskDefinition>.Properties
+    Volumes:
+      - Name: odigos-agent
+    ContainerDefinitions:
+      - Name: odigos-agent
+        Image: "registry.odigos.io/odigos-fargate-agents:<version>"
+        Essential: false
+        Command: ["sh", "-c", "mkdir -p /var/odigos && cp -r /instrumentations/nodejs /var/odigos/nodejs"]
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+      - Name: "<YOUR_CONTAINER>"
+        # ... your existing configuration ...
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+            ReadOnly: true
+        DependsOn:
+          - ContainerName: odigos-agent
+            Condition: SUCCESS
+        Environment:
+          - Name: ODIGOS_IAC
+            Value: '{"v":1,"lang":"nodejs"}'
+          - Name: OTEL_SERVICE_NAME
+            Value: "<YOUR_SERVICE_NAME>"
+          - Name: OTEL_RESOURCE_ATTRIBUTES
+            Value: "cloud.provider=aws,cloud.platform=aws_ecs,cloud.region=<REGION>"
+          - Name: OTEL_EXPORTER_OTLP_ENDPOINT
+            Value: "<OTLP_ENDPOINT_URL>"
+          - Name: OTEL_EXPORTER_OTLP_PROTOCOL
+            Value: "http/protobuf"
+          - Name: OTEL_TRACES_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_METRICS_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_LOGS_EXPORTER
+            Value: "otlp"
+          # APPEND after any existing value, joined by a space — assigning discards yours.
+          - Name: NODE_OPTIONS
+            Value: "<YOUR_EXISTING_VALUE> --require /var/odigos/nodejs/node_modules/@opentelemetry/auto-instrumentations-node/build/src/register.js"
+    ```
+  </Tab>
+
+  <Tab title=".NET">
+    ```yaml
+    # Merge into Resources.<YourTaskDefinition>.Properties
+    Volumes:
+      - Name: odigos-agent
+    ContainerDefinitions:
+      - Name: odigos-agent
+        Image: "registry.odigos.io/odigos-fargate-agents:<version>"
+        Essential: false
+        Command: ["sh", "-c", "mkdir -p /var/odigos && cp -r /instrumentations/dotnet /var/odigos/dotnet"]
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+      - Name: "<YOUR_CONTAINER>"
+        # ... your existing configuration ...
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+            ReadOnly: true
+        DependsOn:
+          - ContainerName: odigos-agent
+            Condition: SUCCESS
+        Environment:
+          - Name: ODIGOS_IAC
+            Value: '{"v":1,"lang":"dotnet"}'
+          - Name: OTEL_SERVICE_NAME
+            Value: "<YOUR_SERVICE_NAME>"
+          - Name: OTEL_RESOURCE_ATTRIBUTES
+            Value: "cloud.provider=aws,cloud.platform=aws_ecs,cloud.region=<REGION>"
+          - Name: OTEL_EXPORTER_OTLP_ENDPOINT
+            Value: "<OTLP_ENDPOINT_URL>"
+          - Name: OTEL_EXPORTER_OTLP_PROTOCOL
+            Value: "http/protobuf"
+          - Name: OTEL_TRACES_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_METRICS_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_LOGS_EXPORTER
+            Value: "otlp"
+          # --- .NET activation: every value below is SET exactly as shown, not appended ---
+          - Name: CORECLR_ENABLE_PROFILING
+            Value: "1"
+          - Name: CORECLR_PROFILER
+            Value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+          - Name: CORECLR_PROFILER_PATH
+            Value: "/var/odigos/dotnet/linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so"
+          - Name: OTEL_DOTNET_AUTO_HOME
+            Value: "/var/odigos/dotnet"
+          - Name: DOTNET_STARTUP_HOOKS
+            Value: "/var/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+          - Name: DOTNET_ADDITIONAL_DEPS
+            Value: "/var/odigos/dotnet/AdditionalDeps"
+          - Name: DOTNET_SHARED_STORE
+            Value: "/var/odigos/dotnet/store"
+    ```
+
+    <Warning>
+      The .NET agent is **glibc-only**. A musl-based image (Alpine) can't be
+      instrumented this way — the profiler shared object won't load, and the
+      container starts uninstrumented with no error.
+    </Warning>
+  </Tab>
+
+  <Tab title="PHP">
+    ```yaml
+    # Merge into Resources.<YourTaskDefinition>.Properties
+    Volumes:
+      - Name: odigos-agent
+    ContainerDefinitions:
+      - Name: odigos-agent
+        Image: "registry.odigos.io/odigos-fargate-agents:<version>"
+        Essential: false
+        Command: ["sh", "-c", "mkdir -p /var/odigos && cp -r /instrumentations/php /var/odigos/php"]
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+      - Name: "<YOUR_CONTAINER>"
+        # ... your existing configuration ...
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+            ReadOnly: true
+        DependsOn:
+          - ContainerName: odigos-agent
+            Condition: SUCCESS
+        Environment:
+          - Name: ODIGOS_IAC
+            Value: '{"v":1,"lang":"php"}'
+          - Name: OTEL_SERVICE_NAME
+            Value: "<YOUR_SERVICE_NAME>"
+          - Name: OTEL_RESOURCE_ATTRIBUTES
+            Value: "cloud.provider=aws,cloud.platform=aws_ecs,cloud.region=<REGION>"
+          - Name: OTEL_EXPORTER_OTLP_ENDPOINT
+            Value: "<OTLP_ENDPOINT_URL>"     # must be an OTLP/HTTP endpoint — see note below
+          - Name: OTEL_EXPORTER_OTLP_PROTOCOL
+            Value: "http/protobuf"
+          - Name: OTEL_TRACES_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_METRICS_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_LOGS_EXPORTER
+            Value: "otlp"
+          # --- PHP activation ---
+          - Name: PHP_INI_SCAN_DIR
+            Value: ":/var/odigos/php/<RUNTIME_VERSION>"   # e.g. 8.3 — must match your image's PHP version
+          - Name: OTEL_PHP_AUTOLOAD_ENABLED
+            Value: "true"
+          - Name: OTEL_PROPAGATORS
+            Value: "tracecontext,baggage"
+    ```
+
+    <Warning>
+      The PHP agent speaks **OTLP/HTTP only** — it cannot use gRPC. Your OTLP
+      destination must offer an HTTP endpoint (standard port 4318), or PHP services
+      can't be instrumented at all. `<RUNTIME_VERSION>` must match your container's
+      actual PHP major.minor (e.g. `8.3`) — set a runtime override on the Source so
+      Odigos judges the container against the path you actually mounted.
+    </Warning>
+  </Tab>
+
+  <Tab title="Ruby">
+    ```yaml
+    # Merge into Resources.<YourTaskDefinition>.Properties
+    Volumes:
+      - Name: odigos-agent
+    ContainerDefinitions:
+      - Name: odigos-agent
+        Image: "registry.odigos.io/odigos-fargate-agents:<version>"
+        Essential: false
+        Command: ["sh", "-c", "mkdir -p /var/odigos && cp -r /instrumentations/ruby /var/odigos/ruby"]
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+      - Name: "<YOUR_CONTAINER>"
+        # ... your existing configuration ...
+        MountPoints:
+          - SourceVolume: odigos-agent
+            ContainerPath: /var/odigos
+            ReadOnly: true
+        DependsOn:
+          - ContainerName: odigos-agent
+            Condition: SUCCESS
+        Environment:
+          - Name: ODIGOS_IAC
+            Value: '{"v":1,"lang":"ruby"}'
+          - Name: OTEL_SERVICE_NAME
+            Value: "<YOUR_SERVICE_NAME>"
+          - Name: OTEL_RESOURCE_ATTRIBUTES
+            Value: "cloud.provider=aws,cloud.platform=aws_ecs,cloud.region=<REGION>"
+          - Name: OTEL_EXPORTER_OTLP_ENDPOINT
+            Value: "<OTLP_ENDPOINT_URL>"     # must be an OTLP/HTTP endpoint — see note below
+          - Name: OTEL_EXPORTER_OTLP_PROTOCOL
+            Value: "http/protobuf"
+          - Name: OTEL_TRACES_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_METRICS_EXPORTER
+            Value: "otlp"
+          - Name: OTEL_LOGS_EXPORTER
+            Value: "otlp"
+          # --- Ruby activation: RUBYOPT is SET, replacing anything already there ---
+          - Name: RUBYOPT
+            Value: "-r/var/odigos/ruby/<RUNTIME_VERSION>/index.rb"   # e.g. 3.3
+          - Name: ODIGOS_GEM_PATH
+            Value: "/var/odigos/ruby/<RUNTIME_VERSION>/bundle"
+          - Name: OTEL_PROPAGATORS
+            Value: "tracecontext,baggage"
+    ```
+
+    <Warning>
+      The Ruby agent speaks **OTLP/HTTP only** — it cannot use gRPC. Your OTLP
+      destination must offer an HTTP endpoint (standard port 4318). `<RUNTIME_VERSION>`
+      must match your container's actual Ruby major.minor (e.g. `3.3`); set a runtime
+      override on the Source so Odigos judges the container against the path you
+      actually mounted.
+    </Warning>
+  </Tab>
+</Tabs>
+
+### Rules that apply to every language
+
+<AccordionGroup>
+  <Accordion title="ODIGOS_IAC is per container">
+    It's the only thing marking a container as instrumented, and its recorded language is what the
+    activation environment is checked against. Never set `ODIGOS_MANAGED` — that's the connector's own
+    rollback record, written only when you hand the workload to Odigos-managed instrumentation instead.
+  </Accordion>
+
+  <Accordion title="Endpoint and protocol are one decision">
+    Both are compared exactly against what your OTLP destination resolves to on this connector. If it only
+    offers OTLP/gRPC, use the gRPC endpoint (standard port 4317) and `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`
+    instead of the `http/protobuf` shown above (except PHP and Ruby, which support HTTP only — see their
+    tabs). Pairing an endpoint with the wrong transport fails at runtime as an opaque connection reset.
+  </Accordion>
+
+  <Accordion title="One odigos-agent container serves the whole task">
+    Its `Command` is per task, not per language. A task definition with application containers in more than
+    one language needs a chained `&& cp -r /instrumentations/<lang> /var/odigos/<lang>` for each, in
+    alphabetical order — Odigos compares the command exactly against the union of every marked container's
+    language.
+  </Accordion>
+
+  <Accordion title="Roll the service, not just the revision">
+    Registering a new task-definition revision isn't enough on its own — update the service to it, or it
+    keeps running the old one.
+  </Accordion>
+
+  <Accordion title="Constraints">
+    A 10-container task-definition limit, Linux-only agents bundle (no Windows tasks), and the
+    `odigos-agent` container must stay non-essential — ECS only accepts a `SUCCESS` dependency against a
+    non-essential container.
+  </Accordion>
+
+  <Accordion title="Registry reachability">
+    The image is pulled by the task's execution role at every task start. If your task's subnet can't reach
+    `registry.odigos.io`, mirror the image into a registry it can — see
+    [Preload artifacts](/cloud-connectors/aws/workloads/fargate/preload).
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Preload artifacts" icon="download" href="/cloud-connectors/aws/workloads/fargate/preload">
+    Mirror the Fargate agents image into a private registry.
+  </Card>
+
+  <Card title="CDK: Fargate" icon="code" href="/cloud-connectors/aws/cdk/fargate">
+    Every option on the Fargate CDK construct, in depth.
+  </Card>
+</CardGroup>

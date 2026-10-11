@@ -1,12 +1,9 @@
 package collectormetrics
 
 import (
-	"errors"
 	"sync"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
@@ -30,7 +27,8 @@ func newSourcesMetrics() sourcesMetrics {
 }
 
 func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) {
-	sID, err := metricAttributesToSourceID(dp.Attributes())
+	metricName = normalizeTrafficMetricName(metricName)
+	sID, err := common.ResourceAttributesToSourceID(dp.Attributes())
 	if err != nil {
 		return
 	}
@@ -96,11 +94,12 @@ func (sourceMetrics *sourcesMetrics) handleNodeCollectorMetrics(senderPod string
 			sm := smSlice.At(j)
 			for k := 0; k < sm.Metrics().Len(); k++ {
 				m := sm.Metrics().At(k)
-				switch m.Name() {
+				metricName := normalizeTrafficMetricName(m.Name())
+				switch metricName {
 				case traceSizeMetricName, metricSizeMetricName, logSizeMetricName:
 					for dataPointIndex := 0; dataPointIndex < m.Sum().DataPoints().Len(); dataPointIndex++ {
 						dataPoint := m.Sum().DataPoints().At(dataPointIndex)
-						sourceMetrics.updateSourceMetrics(dataPoint, m.Name(), senderPod)
+						sourceMetrics.updateSourceMetrics(dataPoint, metricName, senderPod)
 					}
 				}
 			}
@@ -109,6 +108,8 @@ func (sourceMetrics *sourcesMetrics) handleNodeCollectorMetrics(senderPod string
 }
 
 func (sourceMetrics *sourcesMetrics) removeNodeCollector(nodeCollectorID string) {
+	sourceMetrics.sourcesMu.Lock()
+	defer sourceMetrics.sourcesMu.Unlock()
 	for _, sm := range sourceMetrics.sourcesMap {
 		sm.mu.Lock()
 		delete(sm.nodeCollectorsTraffic, nodeCollectorID)
@@ -132,7 +133,9 @@ func (sourcesMetrics *sourcesMetrics) addSource(sID common.SourceID) {
 }
 
 func (sourceMetrics *sourcesMetrics) metricsByID(sID common.SourceID) (trafficMetrics, bool) {
+	sourceMetrics.sourcesMu.Lock()
 	sm, ok := sourceMetrics.sourcesMap[sID]
+	sourceMetrics.sourcesMu.Unlock()
 	if !ok {
 		return trafficMetrics{}, false
 	}
@@ -174,32 +177,4 @@ func (sourcesMetrics *sourcesMetrics) sourcesMetrics() map[common.SourceID]traff
 	}
 
 	return result
-}
-
-func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
-	ns, ok := attrs.Get(K8SNamespaceNameKey)
-	if !ok {
-		return common.SourceID{}, errors.New("namespace not found")
-	}
-
-	var kind k8sconsts.WorkloadKind
-	var name pcommon.Value
-	if depName, ok := attrs.Get(K8SDeploymentNameKey); ok {
-		kind = k8sconsts.WorkloadKindDeployment
-		name = depName
-	} else if ssName, ok := attrs.Get(K8SStatefulSetNameKey); ok {
-		kind = k8sconsts.WorkloadKindStatefulSet
-		name = ssName
-	} else if dsName, ok := attrs.Get(K8SDaemonSetNameKey); ok {
-		kind = k8sconsts.WorkloadKindDaemonSet
-		name = dsName
-	} else {
-		return common.SourceID{}, errors.New("kind not found")
-	}
-
-	return common.SourceID{
-		Name:      name.Str(),
-		Namespace: ns.Str(),
-		Kind:      kind,
-	}, nil
 }

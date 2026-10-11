@@ -1,9 +1,15 @@
 package distro
 
-import "github.com/odigos-io/odigos/common"
+import (
+	"text/template"
+
+	"github.com/odigos-io/odigos/common"
+	commonopamp "github.com/odigos-io/odigos/common/opamp"
+)
 
 const AgentPlaceholderDirectory = "{{ODIGOS_AGENTS_DIR}}"
-const RuntimeVersionPlaceholderMajorMinor = "{{RUNTIME_VERSION_MAJOR_MINOR}}"
+
+const RuntimeVersionMajorMinorDistroParameterName = "RUNTIME_VERSION_MAJOR_MINOR"
 
 type RuntimeEnvironment struct {
 	// the runtime environment this distribution targets.
@@ -11,7 +17,8 @@ type RuntimeEnvironment struct {
 	// while java-script can run in both nodejs and browser, the distribution should specify where it is intended to run.
 	Name string `yaml:"name"`
 
-	// semconv range of the runtime versions supported by this distribution.
+	// semconv range of the runtime versions supported by this distribution (hashicorp/go-version constraint).
+	// May be '*' in YAML for distros that skip runtime version checks in the instrumentor (e.g. wildcard language).
 	SupportedVersions string `yaml:"supportedVersions,omitempty"`
 }
 
@@ -30,11 +37,19 @@ type StaticEnvironmentVariable struct {
 
 	// The value of the environment variable to set.
 	EnvValue string `yaml:"envValue"`
+
+	// pre-parsed template that is ready to be executed with the relevant parameters.
+	// if the EnvValue field is templated (e.g. contains {{.PARAM_NAME}}), this field is set.
+	// it indicates that the value should be templated with the relevant parameters.
+	// this field is calculated based on the EnvValue field, and is not pulled from the yaml.
+	Template *template.Template
 }
 
 type EnvironmentVariables struct {
-
-	// if this distribution runs an opamp client, add the environment variables that configures the server endpoint (local node)
+	// if this distribution runs an opamp client, add the environment variables that configure the
+	// server endpoint. The actual transport (and which ODIGOS_OPAMP_* env var to inject) is picked
+	// from RuntimeAgent.OpAmpTransportsSupported based on cluster constraints; if no transports are
+	// declared, http (ODIGOS_OPAMP_SERVER_HOST) is used by default.
 	OpAmpClientEnvironments bool `yaml:"opAmpClientEnvironments,omitempty"`
 
 	// set to true if this distribution uses the OTLP HTTP protocol to emit telemetry data to node collector.
@@ -62,7 +77,6 @@ type EnvironmentVariables struct {
 // This environment variable should be patched with odigos value if it already exists in the manifest.
 // If this value is determined to arrive from Container Runtime during runtime inspection, this value should be set in manifest so not to break the application.
 type AppendOdigosEnvironmentVariable struct {
-
 	// The name of the environment variable to set or patch.
 	EnvName string `yaml:"envName"`
 
@@ -85,6 +99,10 @@ type RuntimeAgent struct {
 	// K8s will mount this directory from the node fs to the container. other platforms may have different ways to make the directory accessible.
 	DirectoryNames []string `yaml:"directoryNames"`
 
+	// Options can be used to add language-specific configuration for the agent.
+	// for example, java supports dynamic attach, and the agent location and configuration can be declared here.
+	Options []Option `yaml:"options,omitempty"`
+
 	// This field indicates that the agent populates k8s resource attributes via environment variables.
 	// It targets distros odigos uses without wrapper or customization.
 	// For eBPF, the resource attributes are set in code.
@@ -100,6 +118,151 @@ type RuntimeAgent struct {
 	// This list contains the full path of the files that need to be opened for the agent to properly start.
 	// All these paths must be contained in one of the directoryNames.
 	FileOpenTriggers []string `yaml:"fileOpenTriggers,omitempty"`
+
+	// If true, the agent supports ld-preload injection of "append" environment variables.
+	LdPreloadInjectionSupported bool `yaml:"ldPreloadInjectionSupported,omitempty"`
+
+	// If true, the agent supports wasp.
+	// This field used to be inspected by the pods webhook, it is currently no used - keep it for clarity and future use.
+	WaspSupported bool `yaml:"waspSupported,omitempty"`
+
+	// If true, the instrumentation applied by this agent does not require application restart.
+	NoRestartRequired bool `yaml:"noRestartRequired,omitempty"`
+
+	// OpAmpTransportsSupported is the ordered list of OpAMP client transports this distribution's
+	// agent can speak. The webhook picks the first entry that is usable on the target node given
+	// runtime constraints (mount method, runtime version, …). Empty defaults to [http].
+	// Only consulted when EnvironmentVariables.OpAmpClientEnvironments is true.
+	OpAmpTransportsSupported []commonopamp.OpAmpTransport `yaml:"opAmpTransportsSupported,omitempty"`
+}
+
+type Option struct {
+	// The name of the option, which is used to identify it and reference it in the configuration.
+	Name string `yaml:"name"`
+	// The value of the option, which is used to configure the agent in a specific way.
+	Value string `yaml:"value"`
+}
+
+type SpanMetrics struct {
+	// if true, the agent supports span metrics.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type RuntimeMetrics struct {
+	// if true, the agent supports runtime metrics.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+// configuration for this distro's support for metrics generated from the runtime agent.
+type AgentMetrics struct {
+	// configuration for this distro's support for agent span metrics.
+	// these are span metrics that are generated directly in the agent,
+	// unlike span metrics calculated at collectors which miss
+	// head unsampled spans and spans dropped before reaching the collector.
+	SpanMetrics *SpanMetrics `yaml:"spanMetrics,omitempty"`
+
+	// configuration for this distro's support for agent runtime metrics.
+	// these are runtime environment metrics like JVM metrics, heap usage, etc.
+	RuntimeMetrics *RuntimeMetrics `yaml:"runtimeMetrics,omitempty"`
+}
+
+type HeadSampling struct {
+	// if true, the distro supports head sampling for health checks.
+	Supported bool `yaml:"supported,omitempty"`
+
+	// if true, the distro supports HTTP query params sampling.
+	HttpQueryParamsSupported bool `yaml:"httpQueryParamsSupported,omitempty"`
+}
+
+type HeadersCollection struct {
+	// if true, the distro supports headers collection for health checks.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type UrlTemplatization struct {
+	// if true, the distro supports applying URL templatization rules to traces in the agent.
+	// useful when spanmetrics are calculated in the agent itself, and for head sampling to use correct route.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type SpanRenamer struct {
+	// if true, the distro supports applying span renamer rules to traces in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type PayloadCollection struct {
+	// if true, the distro supports payload collection for traces in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type CodeAttributes struct {
+	// if true, the distro supports code attributes collection for traces in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type CustomInstrumentations struct {
+	// if true, the distro supports custom instrumentation probes in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type TraceVerbosity struct {
+	// if true, the distro supports disabling instrumentation libraries that are being setup by odigos agent.
+	DisablingOdigosAgentLibrariesSupported bool `yaml:"disablingOdigosAgentLibrariesSupported,omitempty"`
+	// if true, the distro supports disabling instrumentation libraries that are being setup by user
+	// or dependencies, which are not under odigos control.
+	// anyone can create a tracer and use it to start spans with any arbitrary scope.
+	DisablingAnyScopeSupported bool `yaml:"disablingAnyScopeSupported,omitempty"`
+}
+
+// eBPF log capture itself works for every distro; this only documents what it adds per distro.
+type EbpfLogCapture struct {
+	// if true, logs captured via eBPF carry the trace and span ids of the active span.
+	TraceCorrelation bool `yaml:"traceCorrelation,omitempty"`
+}
+
+type Logs struct {
+	EbpfLogCapture *EbpfLogCapture `yaml:"ebpfLogCapture,omitempty"`
+}
+
+// document support by this distro for agent own diagnostics features
+// for example - logs that the agent or the components it brings with it produce.
+type OwnDiagnostics struct {
+
+	// if true, the distro supports agent own logging.
+	OdigosAgentOwnLogerSupported bool `yaml:"odigosAgentOwnLogerSupported,omitempty"`
+
+	// if set, the distro supports configuring the log level for the OpenTelemetry components.
+	// For example: SDK, instrumentation libraries, detectors, etc.
+	OpenTelemetryComponentsLoggerSupported bool `yaml:"openTelemetryComponentsLoggerSupported,omitempty"`
+}
+
+type Traces struct {
+	// if set, the distro supports head sampling based on root spans of traces.
+	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
+
+	// if set, the distro supports headers collection for http headers.
+	HeadersCollection *HeadersCollection `yaml:"headersCollection,omitempty"`
+
+	// if set, the distro supports applying URL templatization rules to traces in the agent.
+	// useful when spanmetrics are calculated in the agent itself, and for head sampling to use correct route.
+	UrlTemplatization *UrlTemplatization `yaml:"urlTemplatization,omitempty"`
+
+	// if set, the distro supports applying span renamer rules to traces in the agent.
+	SpanRenamer *SpanRenamer `yaml:"spanRenamer,omitempty"`
+
+	// if set, the distro supports payload collection.
+	// which payload and under which conditions to collect is instrumentation library specific.
+	PayloadCollection *PayloadCollection `yaml:"payloadCollection,omitempty"`
+
+	// if set, the distro supports code attributes collection.
+	CodeAttributes *CodeAttributes `yaml:"codeAttributes,omitempty"`
+
+	// if set, the distro supports custom instrumentation probes.
+	CustomInstrumentations *CustomInstrumentations `yaml:"customInstrumentations,omitempty"`
+
+	// if set, the distro supports configuring verbosity of traces - which spans should be included / excluded.
+	// the exact features and level of support is specified in the TraceVerbosity struct.
+	TraceVerbosity *TraceVerbosity `yaml:"traceVerbosity,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
@@ -108,7 +271,6 @@ type RuntimeAgent struct {
 // The metadata includes the tiers of the distribution, the instrumentations, and the SDKs used.
 // Multiple distributions can co-exist with the same properties but different names.
 type OtelDistro struct {
-
 	// a human-friendly name for this distribution, which can be displayed in the UI and documentation.
 	// may include spaces and special characters.
 	DisplayName string `yaml:"displayName"`
@@ -118,7 +280,7 @@ type OtelDistro struct {
 	Name string `yaml:"name"`
 
 	// the programming language this distribution targets.
-	// each distribution must target a single language.
+	// Use common.ProgrammingLanguageWildcard ("*") for distributions that accept any language (see supportedVersions wildcard pattern).
 	Language common.ProgrammingLanguage `yaml:"language"`
 
 	// List of distribution parameters that are required to be set by the user.
@@ -129,6 +291,11 @@ type OtelDistro struct {
 	// examples: nodejs, JVM, CPython, etc.
 	// while java-script can run in both nodejs and browser, the distribution should specify where it is intended to run.
 	RuntimeEnvironments []RuntimeEnvironment `yaml:"runtimeEnvironments"`
+
+	// If the detected runtime version does not satisfy this distro's SupportedVersions,
+	// fall back to this distro name and repeat the version check.
+	// This forms an explicit ordered chain from newest to oldest supported version range.
+	FallbackDistro *string `yaml:"fallbackDistro,omitempty"`
 
 	// A list of frameworks this distribution targets (can be left empty)
 	Frameworks []Framework `yaml:"frameworks"`
@@ -143,4 +310,25 @@ type OtelDistro struct {
 	// Metadata and properties of the runtime agent that is used to enable the distribution.
 	// Can be nil in case no runtime agent is required.
 	RuntimeAgent *RuntimeAgent `yaml:"runtimeAgent,omitempty"`
+
+	// if true, the distro receives it's configuration as environment variables.
+	// it means the distro does not support opamp and not configurable via ebpf.
+	// these pods will require a restart to apply the new configuration.
+	// used for java as temporary solution until we have a better way to configure the agent.
+	ConfigAsEnvVars bool `yaml:"configAsEnvVars,omitempty"`
+
+	// if true, this distro is eBPF-based.
+	IsEbpf bool `yaml:"isEbpf,omitempty"`
+
+	// document support for metrics produced directly from the runtime
+	AgentMetrics *AgentMetrics `yaml:"agentMetrics,omitempty"`
+
+	// document support by this distro for trace features
+	Traces *Traces `yaml:"traces,omitempty"`
+
+	// document support by this distro for logs features
+	Logs *Logs `yaml:"logs,omitempty"`
+
+	// document support by this distro for agent own logging features
+	OwnDiagnostics *OwnDiagnostics `yaml:"ownDiagnostics,omitempty"`
 }

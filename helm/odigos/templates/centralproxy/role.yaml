@@ -1,4 +1,4 @@
-{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
+{{- if and .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

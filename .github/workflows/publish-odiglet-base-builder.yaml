@@ -6,18 +6,25 @@ on:
       image_tag:
         description: "The new image tag for the base builder docker image (e.g. v1.0)"
         required: true
+      release_branch_count:
+        description: "How many of the newest releases/v* branches to also open a pin-bump PR against"
+        required: false
+        default: "2"
 
-permissions:
-  contents: write
-  packages: write
+permissions: read-all
 
 env:
   DOCKERHUB_ORG: "keyval"
 
 jobs:
   publish-odiglet-base-builder:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-8
+    permissions:
+      id-token: write
+
+
     steps:
+
       - name: Validate New Version
         run: |
           # Fetch tags from Docker Hub
@@ -45,19 +52,48 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v4
+      - name: Get ro Token for this repo
+        id: sts-this-repo
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: ro
+          output-git-config: "false"
+
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.sts-this-repo.outputs.GH_TOKEN }}
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - id: gcp-auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
+
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Publish Odiglet Base Builder
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -66,3 +102,123 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_ORG }}/odiglet-base:${{ github.event.inputs.image_tag }}
             ${{ env.DOCKERHUB_ORG }}/odiglet-base:latest
+            us-central1-docker.pkg.dev/odigos-cloud/components/odiglet-base:${{ github.event.inputs.image_tag }}
+            us-central1-docker.pkg.dev/odigos-cloud/components-private/odiglet-base:${{ github.event.inputs.image_tag }}
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully published new Odiglet Base Builder image ${{ github.event.inputs.image_tag }}"
+          failure-description: "ERROR: Failed to publish a new Odiglet Base Builder image ${{ github.event.inputs.image_tag }}"
+          tag: ${{ github.event.inputs.image_tag }}
+
+  # Resolve which branches should get the pin bump. Previously only main was
+  # updated, so release branches silently kept whatever base they were cut with.
+  resolve-update-targets:
+    needs: publish-odiglet-base-builder
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.resolve.outputs.targets }}
+    steps:
+      - name: Resolve target branches
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BRANCH_COUNT: ${{ github.event.inputs.release_branch_count }}
+        run: |
+          set -euo pipefail
+          COUNT="${RELEASE_BRANCH_COUNT:-2}"
+
+          # main, plus the newest N releases/v* branches by version
+          RELEASES=$(gh api "repos/${GITHUB_REPOSITORY}/branches?per_page=100" --paginate --jq '.[].name' \
+            | grep -E '^releases/v[0-9]+\.[0-9]+' \
+            | sort -t/ -k2 -V -r \
+            | head -n "$COUNT" || true)
+
+          # emit {branch, slug} so the PR branch name has no slashes in it
+          TARGETS=$(printf '%s\n' "main" $RELEASES \
+            | jq -R '{branch: ., slug: (. | gsub("/"; "-"))}' | jq -sc .)
+          echo "Updating: $TARGETS"
+          echo "targets=$TARGETS" >> "$GITHUB_OUTPUT"
+
+  update-odiglet-dockerfiles:
+    needs: [publish-odiglet-base-builder, resolve-update-targets]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.resolve-update-targets.outputs.targets) }}
+    steps:
+
+      - name: Get ro Token for this repo
+        id: sts-this-repo
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: ro
+          output-git-config: "false"
+
+      - name: Checkout ${{ matrix.target.branch }}
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.target.branch }}
+          token: ${{ steps.sts-this-repo.outputs.GH_TOKEN }}
+
+      - name: Update Odiglet Base Builder image in dockerfiles
+        run: |
+          sed -i "s|registry.odigos.io/odiglet-base:.*|registry.odigos.io/odiglet-base:${{ github.event.inputs.image_tag }}|g" odiglet/Dockerfile
+          sed -i "s|registry.odigos.io/odiglet-base:.*|registry.odigos.io/odiglet-base:${{ github.event.inputs.image_tag }}|g" odiglet/debug.Dockerfile
+
+      - name: Create PR token
+        id: create-pr-sts
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: create-pr
+          output-git-config: true
+
+      - name: Open a PR to update the Odiglet Base Builder image
+        uses: peter-evans/create-pull-request@v8
+        id: create-pr
+        with:
+          token: ${{ steps.create-pr-sts.outputs.GH_TOKEN }}
+          title: "Update Odiglet Base Builder image to ${{ github.event.inputs.image_tag }} on ${{ matrix.target.branch }}"
+          body: |
+            #### What this PR does / why we need it:
+            This is an automated PR generated after a new release of the odiglet base builder. It updates the base builder image reference in `odiglet/Dockerfile` and `odiglet/debug.Dockerfile` to `${{ github.event.inputs.image_tag }}`.
+
+            #### Changelog entry: Does this PR introduce a user-facing bug fix, feature, dependency update, or breaking change??
+            <!--
+            If this update includes any **user-facing** changes that users should know about—for example: dropped support for versions, new features, or breaking changes—replace `NONE` in the block below and document them in the release notes.
+            -->
+
+            ```release-note
+            NONE
+            ```
+          base: ${{ matrix.target.branch }}
+          branch: automated/odiglet-base-${{ github.event.inputs.image_tag }}-${{ matrix.target.slug }}
+          commit-message: "Update Odiglet Base Builder image to ${{ github.event.inputs.image_tag }}"
+          labels: |
+            automated
+          delete-branch: true
+
+      - name: Enable Pull Request Automerge
+        if: steps.create-pr.outputs.pull-request-operation == 'created'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ steps.create-pr-sts.outputs.GH_TOKEN }}
+          pull-request-number: ${{ steps.create-pr.outputs.pull-request-number }}
+          merge-method: squash
+
+      - name: Notify Slack
+        if: always() && steps.create-pr.outputs.pull-request-number != ''
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully created PR to update the Odiglet Base Builder image to ${{ github.event.inputs.image_tag }}: ${{ steps.create-pr.outputs.pull-request-url }}"
+          failure-description: "ERROR: Failed to create PR to update the Odiglet Base Builder image to ${{ github.event.inputs.image_tag }}"
+          tag: ${{ github.event.inputs.image_tag }}

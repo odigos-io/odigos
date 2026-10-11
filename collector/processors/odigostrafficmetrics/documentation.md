@@ -10,46 +10,62 @@ The following telemetry is emitted by this component.
 
 Number of log records passed through the processor.
 
-| Unit | Metric Type | Value Type | Monotonic |
-| ---- | ----------- | ---------- | --------- |
-| {records} | Sum | Int | true |
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {records} | Sum | Int | true | Development |
 
 ### otelcol_odigos_accepted_metric_points
 
 Number of data points passed through the processor.
 
-| Unit | Metric Type | Value Type | Monotonic |
-| ---- | ----------- | ---------- | --------- |
-| {datapoints} | Sum | Int | true |
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {datapoints} | Sum | Int | true | Development |
+
+### otelcol_odigos_accepted_profile_samples
+
+Number of profile samples passed through the processor.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {samples} | Sum | Int | true | Development |
 
 ### otelcol_odigos_accepted_spans
 
 Number of spans passed through the processor.
 
-| Unit | Metric Type | Value Type | Monotonic |
-| ---- | ----------- | ---------- | --------- |
-| {spans} | Sum | Int | true |
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {spans} | Sum | Int | true | Development |
 
 ### otelcol_odigos_log_data_size
 
 Total size of log data passed to the processor
 
-| Unit | Metric Type | Value Type | Monotonic |
-| ---- | ----------- | ---------- | --------- |
-| By | Sum | Int | true |
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| By | Sum | Int | true | Development |
 
 ### otelcol_odigos_metric_data_size
 
 Total size of metric data passed to the processor
 
-| Unit | Metric Type | Value Type | Monotonic |
-| ---- | ----------- | ---------- | --------- |
-| By | Sum | Int | true |
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| By | Sum | Int | true | Development |
+
+### otelcol_odigos_profile_data_size
+
+Total size of profile data passed to the processor
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| By | Sum | Int | true | Development |
 
 ### otelcol_odigos_trace_data_size
 
 Total size of trace data passed to the processor
 
-| Unit | Metric Type | Value Type | Monotonic |
-| ---- | ----------- | ---------- | --------- |
-| By | Sum | Int | true |
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| By | Sum | Int | true | Development |

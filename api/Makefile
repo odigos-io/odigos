@@ -17,7 +17,7 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-TOOLS := $(PWD)/../.tools
+TOOLS := $(CURDIR)/../.tools
 
 .PHONY: all
 all: generate manifests generate-client sync-helm-crd docgen
@@ -53,21 +53,33 @@ genref: tools
 
 .PHONY: docgen
 docgen: genref
-	rm -rf $(PWD)/../docs/api-reference/*
-	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/api-reference
-	for file in $(PWD)/../docs/api-reference/*; do \
+	@if [ ! -f "$(CURDIR)/../go.work" ]; then \
+		echo "go.work not found; creating workspace (required for operator.odigos.io API docs)..."; \
+		cd $(CURDIR)/.. && go work init && go work use -r .; \
+	fi
+	rm -rf $(CURDIR)/../docs/snippets/shared/api-reference/*
+	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(CURDIR)/../docs/snippets/shared/api-reference
+	for file in $(CURDIR)/../docs/snippets/shared/api-reference/*; do \
 		mv $${file} $${file%.md}.mdx; \
 	done
+	# Fix known genref output issues (trailing whitespace + broken MDX <td> formatting)
+	python3 $(CURDIR)/fix-genref-output.py $(CURDIR)/../docs/snippets/shared/api-reference
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	# remove the existing CRD files directory before recreating, so removed files will not be left over
 	@rm -rf config/crd/bases
-	$(CONTROLLER_GEN) crd:allowDangerousTypes=true webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	# Regular Odigos CRDs (odigos.io + actions.odigos.io). The cloud connector CRD is intentionally
+	# excluded here and generated separately below, so it is not bundled with the rest of the CRDs and
+	# can be shipped only by the odigos-central Helm chart.
+	$(CONTROLLER_GEN) crd:allowDangerousTypes=true webhook paths="./odigos/..." paths="./actions/..." output:crd:artifacts:config=config/crd/bases
+	# Cloud connector CRD, kept out of config/crd/bases so sync-helm-crd only ships it to odigos-central.
+	@rm -rf cloud-connectors/config/crd/bases
+	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths="./cloud-connectors/..." output:crd:artifacts:config=cloud-connectors/config/crd/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..." paths="../common/..."
 
 .PHONY: install
 install: manifests ## Install CRDs into the K8s cluster specified in ~/.kube/config.
@@ -89,7 +101,8 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
-CONTROLLER_TOOLS_VERSION ?= v0.16.1
+CONTROLLER_TOOLS_VERSION ?= v0.19.0
+ENVTEST_VERSION ?= release-0.22
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -105,7 +118,7 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
 
 .PHONY: generate-client
 generate-client:
@@ -115,6 +128,8 @@ generate-client:
 
 .PHONY: sync-helm
 sync-helm-crd:
-	@echo "Syncing CRD yamls to Helm repo"
+	@echo "Syncing regular CRD yamls to the odigos Helm chart"
 	@rm ../helm/odigos/templates/crds/* # remove existing files so we don't get leftovers
 	@cp -r config/crd/bases/* ../helm/odigos/templates/crds/
+	@echo "Syncing cloud connector CRD only to the odigos-central chart (guarded by connectors.enabled)"
+	@{ echo '{{- if (include "connectors.enabled" .) }}'; cat cloud-connectors/config/crd/bases/odigos.io_odigoscloudconnectors.yaml; echo '{{- end }}'; } > ../helm/odigos-central/templates/crds/odigoscloudconnectors.yaml

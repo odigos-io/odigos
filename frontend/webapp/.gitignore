@@ -10,7 +10,10 @@
 
 # next.js
 /.next/
-/out/
+# out/ holds the built bundle (gitignored), but keep the dir tracked via .keep
+# so the Go //go:embed in embed.go compiles before a yarn build has run.
+/out/*
+!/out/.keep
 
 # production
 /build

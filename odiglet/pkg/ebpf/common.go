@@ -2,30 +2,52 @@ package ebpf
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
-	"github.com/go-logr/logr"
+	cilumebpf "github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/rlimit"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 
 	processdetector "github.com/odigos-io/runtime-detector"
-	"go.opentelemetry.io/otel/metric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InstrumentationManagerOptions struct {
-	Factories          map[instrumentation.OtelDistribution]instrumentation.Factory
-	DistributionGetter *distros.Getter
-	MeterProvider      metric.MeterProvider
+	Factories map[string]instrumentation.Factory
+	// GenericFactories are factories run for every process regardless of distro, in addition to
+	// the factory selected by the process's distribution (e.g. OBI network metrics, eBPF log
+	// capture). They are handled off the main path and never report their status.
+	// See instrumentation.ManagerOptions.GenericFactories.
+	GenericFactories           map[string]instrumentation.Factory
+	DistributionGetter         *distros.Getter
+	OdigletHealthProbeBindPort int
+	// TracesMap and LogsMap are shared eBPF maps owned by the caller and handed to the
+	// instrumentation factories, which then run as external readers. Creating them and serving
+	// their file descriptors is enterprise-only, so OSS leaves these nil and every factory falls
+	// back to the map it creates itself.
+	TracesMap *cilumebpf.Map
+	LogsMap   *cilumebpf.Map
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
 // Instrumentation factories must be provided in order to create the instrumentation objects.
 // Detector options can be provided to configure the process detector, but if not provided, default options will be used.
-func NewManager(client client.Client, logger logr.Logger, opts InstrumentationManagerOptions, configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup], appendEnvVarNames map[string]struct{}) (instrumentation.Manager, error) {
+// logger is optional; when provided it is used by the instrumentation manager for logging.
+func NewManager(
+	client client.Client,
+	logger *commonlogger.OdigosLogger,
+	opts InstrumentationManagerOptions,
+	configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup],
+	instrumentationRequests <-chan instrumentation.Request[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails],
+	appendEnvVarNames map[string]struct{},
+) (instrumentation.Manager, error) {
 	if len(opts.Factories) == 0 {
 		return nil, errors.New("instrumentation factories must be provided")
 	}
@@ -38,14 +60,25 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	for env := range appendEnvVarNames {
 		appendEnvVarSlice = append(appendEnvVarSlice, env)
 	}
+	appendEnvVarSlice = append(appendEnvVarSlice, k8sconsts.OtelResourceAttributesEnvVar)
 
-	managerOpts := instrumentation.ManagerOptions[K8sProcessDetails, K8sConfigGroup]{
-		Logger:          logger,
-		Factories:       opts.Factories,
-		Handler:         newHandler(client),
-		DetectorOptions: detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
-		ConfigUpdates:   configUpdates,
-		MeterProvider:   opts.MeterProvider,
+	// The instrumentations load eBPF programs of their own, so the rlimit still has to be raised
+	// here even though odiglet itself no longer creates any map.
+	if err := rlimit.RemoveMemlock(); err != nil {
+		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
+	}
+
+	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
+
+		Logger:                  logger,
+		Factories:               opts.Factories,
+		GenericFactories:        opts.GenericFactories,
+		Handler:                 newHandler(client, opts.DistributionGetter),
+		DetectorOptions:         detector.DefaultK8sDetectorOptions(appendEnvVarSlice),
+		ConfigUpdates:           configUpdates,
+		InstrumentationRequests: instrumentationRequests,
+		TracesMap:               opts.TracesMap,
+		LogsMap:                 opts.LogsMap,
 	}
 
 	// Add file open triggers from all distributions.
@@ -72,7 +105,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 
 	if len(fileOpenTriggers) > 0 {
 		managerOpts.DetectorOptions = append(managerOpts.DetectorOptions, processdetector.WithFilesOpenTrigger(fileOpenTriggers...))
-		logger.V(0).Info("Added file open triggers to the detector", "triggers", fileOpenTriggers)
+		commonlogger.LoggerCompat().With("subsystem", "ebpfcommon").Info("Added file open triggers to the detector", "triggers", fileOpenTriggers)
 	}
 
 	manager, err := instrumentation.NewManager(managerOpts)
@@ -83,23 +116,20 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	return manager, nil
 }
 
-func newHandler(client client.Client) *instrumentation.Handler[K8sProcessDetails, K8sConfigGroup] {
+func newHandler(client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] {
 	reporter := &k8sReporter{
 		client: client,
 	}
 	processDetailsResolver := &k8sDetailsResolver{
-		client: client,
+		client:             client,
+		distributionGetter: distributionGetter,
 	}
-	configGroupResolver := &k8sConfigGroupResolver{}
 	settingsGetter := &k8sSettingsGetter{
 		client: client,
 	}
-	distributionMatcher := &podDeviceDistributionMatcher{}
-	return &instrumentation.Handler[K8sProcessDetails, K8sConfigGroup]{
+	return &instrumentation.Handler[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
 		ProcessDetailsResolver: processDetailsResolver,
-		ConfigGroupResolver:    configGroupResolver,
 		Reporter:               reporter,
-		DistributionMatcher:    distributionMatcher,
 		SettingsGetter:         settingsGetter,
 	}
 }

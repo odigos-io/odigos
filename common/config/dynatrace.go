@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
 
 const (
-	dynatraceURLKey      = "DYNATRACE_URL"
-	dynatraceAPITOKENKey = "${DYNATRACE_API_TOKEN}"
+	dynatraceURLKey = "DYNATRACE_URL"
 )
 
 var (
@@ -34,11 +34,11 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		return nil, errors.New("Dynatrace url is not a valid")
 	}
 
-	exporterName := "otlphttp/dynatrace-" + dest.GetID()
+	exporterName := "otlp_http/dynatrace-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": baseURL + "/api/v2/otlp",
 		"headers": GenericMap{
-			"Authorization": "Api-Token ${DYNATRACE_API_TOKEN}",
+			"Authorization": "Api-Token " + SecretEnvPlaceholder("DYNATRACE_API_TOKEN", dest),
 		},
 	}
 	var pipelineNames []string
@@ -85,5 +85,8 @@ func parsetheDTurl(rawURL string) (string, error) {
 		return parsetheDTurl(fmt.Sprintf("https://%s", rawURL))
 	}
 
-	return fmt.Sprintf("https://%s", u.Host), nil
+	// Preserve the URL path for Dynatrace Managed / ActiveGate environments
+	// where the URL includes a path component like /e/{environment-id}
+	path := strings.TrimRight(u.Path, "/")
+	return fmt.Sprintf("https://%s%s", u.Host, path), nil
 }

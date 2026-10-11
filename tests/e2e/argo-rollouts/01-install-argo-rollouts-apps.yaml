@@ -1,0 +1,172 @@
+##################################################
+# Python Argo Rollout
+# Uses canary strategy to test instrumentation during progressive delivery
+##################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: python-rollout
+  namespace: default
+  labels:
+    app: python-rollout
+    odigos.io/e2e: argo-rollout-test
+spec:
+  replicas: 1
+  strategy:
+    canary:
+      steps:
+        - setWeight: 100
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: python-rollout
+  template:
+    metadata:
+      labels:
+        app: python-rollout
+    spec:
+      containers:
+        - name: python-rollout
+          image: public.ecr.aws/odigos/python-latest-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-rollout
+  namespace: default
+spec:
+  selector:
+    app: python-rollout
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+
+---
+##################################################
+# Node.js Argo Rollout
+# Uses blueGreen strategy to test different deployment approaches
+##################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: nodejs-rollout
+  namespace: default
+  labels:
+    app: nodejs-rollout
+    odigos.io/e2e: argo-rollout-test
+spec:
+  replicas: 1
+  strategy:
+    blueGreen:
+      activeService: nodejs-rollout-active
+      previewService: nodejs-rollout-preview
+      autoPromotionEnabled: true
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: nodejs-rollout
+  template:
+    metadata:
+      labels:
+        app: nodejs-rollout
+    spec:
+      containers:
+        - name: nodejs-rollout
+          image: public.ecr.aws/odigos/nodejs-minimum-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-rollout-active
+  namespace: default
+spec:
+  selector:
+    app: nodejs-rollout
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-rollout-preview
+  namespace: default
+spec:
+  selector:
+    app: nodejs-rollout
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+
+---
+##################################################
+# Java Argo Rollout
+# Uses canary strategy with auto-promote for testing
+##################################################
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: java-rollout
+  namespace: default
+  labels:
+    app: java-rollout
+    odigos.io/e2e: argo-rollout-test
+spec:
+  replicas: 1
+  strategy:
+    canary:
+      steps:
+        - setWeight: 100
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: java-rollout
+  template:
+    metadata:
+      labels:
+        app: java-rollout
+    spec:
+      containers:
+        - name: java-rollout
+          image: public.ecr.aws/odigos/java-supported-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-rollout
+  namespace: default
+spec:
+  selector:
+    app: java-rollout
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000

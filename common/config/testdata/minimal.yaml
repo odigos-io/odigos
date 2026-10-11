@@ -13,7 +13,6 @@ receivers:
 exporters: {}
 processors:
   batch/generic-batch-processor: {}
-  memory_limiter: {}
   resource/odigos-version:
     attributes:
     - action: upsert
@@ -31,5 +30,8 @@ service:
   - pprof
   pipelines: {}
   telemetry:
-    metrics: {}
-    resource: {}
+    metrics:
+      level: ""
+      readers: []
+    logs:
+      level: ""

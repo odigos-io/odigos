@@ -23,12 +23,12 @@ func (a *Axiom) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		dataset = "default"
 	}
 
-	axiomExporterName := "otlphttp/axiom-" + dest.GetID()
+	axiomExporterName := "otlp_http/axiom-" + dest.GetID()
 	currentConfig.Exporters[axiomExporterName] = GenericMap{
 		"compression": "gzip",
 		"endpoint":    "https://api.axiom.co",
 		"headers": GenericMap{
-			"authorization":   "Bearer ${AXIOM_API_TOKEN}",
+			"authorization":   "Bearer " + SecretEnvPlaceholder("AXIOM_API_TOKEN", dest),
 			"x-axiom-dataset": dataset,
 		},
 	}

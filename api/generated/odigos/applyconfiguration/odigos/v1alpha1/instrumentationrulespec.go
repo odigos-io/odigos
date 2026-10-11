@@ -19,23 +19,52 @@ package v1alpha1
 
 import (
 	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
-	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+	instrumentationrules "github.com/odigos-io/odigos/common/api/instrumentationrules"
 )
 
 // InstrumentationRuleSpecApplyConfiguration represents a declarative configuration of the InstrumentationRuleSpec type for use
 // with apply.
 type InstrumentationRuleSpecApplyConfiguration struct {
-	RuleName                 *string                                             `json:"ruleName,omitempty"`
-	Notes                    *string                                             `json:"notes,omitempty"`
-	Disabled                 *bool                                               `json:"disabled,omitempty"`
-	Workloads                *[]k8sconsts.PodWorkload                            `json:"workloads,omitempty"`
+	// Allows you to attach a meaningful name to the rule for convenience. Odigos does not use or assume any meaning from this field.
+	RuleName *string `json:"ruleName,omitempty"`
+	// A free-form text field that allows you to attach notes regarding the rule for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes *string `json:"notes,omitempty"`
+	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
+	Disabled *bool `json:"disabled,omitempty"`
+	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
+	// For fine grained control, the user can specify the instrumentation library to use.
+	// One can specify same rule for multiple languages and libraries at the same time.
+	// If nil, all instrumentation libraries will be used.
+	// If empty, no instrumentation libraries will be used.
 	InstrumentationLibraries *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
-	PayloadCollection        *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
-	OtelSdks                 *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
-	OtelDistros              *instrumentationrules.OtelDistros                   `json:"otelDistros,omitempty"`
-	CodeAttributes           *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
-	HeadersCollection        *instrumentationrules.HttpHeadersCollection         `json:"headersCollection,omitempty"`
-	TraceConfig              *instrumentationrules.TraceConfig                   `json:"traceConfig,omitempty"`
+	// Allows to configure payload collection aspects for different types of payloads.
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
+	// Set the otel distros to use instead of the defaults.
+	OtelDistros *instrumentationrules.OtelDistros `json:"otelDistros,omitempty"`
+	// Configure which code attributes should be recorded as span attributes.
+	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+	// Allows to configure the collection of http headers for different types of payloads.
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
+	// Configure the tracing configuration for the library.
+	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+	// Add custom instrumentation probes
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+	// Configure general fraction of traces to record if none of the rules evaluate to true.
+	// this can help in reducing very noisy and heavy traffic services.
+	// note that traces will be dropped regardless of thier attributes/errors/importance.
+	// @deprecated: use odigos config to set this value instead.
+	HeadSamplingFallbackFraction *instrumentationrules.HeadSamplingFallbackFraction `json:"headSamplingFallbackFraction,omitempty"`
+	// Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+	// will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+	// register instrumented processes for eBPF log capture.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+	// Configure network flow and TCP stats metrics for scoped workloads.
+	NetworkMetrics *instrumentationrules.NetworkMetricsConfig `json:"networkMetrics,omitempty"`
+	// Configure the verbosity of the traces for the library.
+	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+	// Configure the agent own logging configuration.
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -68,11 +97,11 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithDisabled(value bool) *In
 	return b
 }
 
-// WithWorkloads sets the Workloads field in the declarative configuration to the given value
+// WithScopes sets the Scopes field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Workloads field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithWorkloads(value []k8sconsts.PodWorkload) *InstrumentationRuleSpecApplyConfiguration {
-	b.Workloads = &value
+// If called multiple times, the Scopes field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithScopes(value k8sconsts.SourcesScopes) *InstrumentationRuleSpecApplyConfiguration {
+	b.Scopes = &value
 	return b
 }
 
@@ -101,14 +130,6 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithInstrumentationLibraries
 // If called multiple times, the PayloadCollection field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithPayloadCollection(value instrumentationrules.PayloadCollection) *InstrumentationRuleSpecApplyConfiguration {
 	b.PayloadCollection = &value
-	return b
-}
-
-// WithOtelSdks sets the OtelSdks field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the OtelSdks field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelSdks(value instrumentationrules.OtelSdks) *InstrumentationRuleSpecApplyConfiguration {
-	b.OtelSdks = &value
 	return b
 }
 
@@ -141,5 +162,53 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithHeadersCollection(value 
 // If called multiple times, the TraceConfig field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceConfig(value instrumentationrules.TraceConfig) *InstrumentationRuleSpecApplyConfiguration {
 	b.TraceConfig = &value
+	return b
+}
+
+// WithCustomInstrumentations sets the CustomInstrumentations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CustomInstrumentations field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentations) *InstrumentationRuleSpecApplyConfiguration {
+	b.CustomInstrumentations = &value
+	return b
+}
+
+// WithHeadSamplingFallbackFraction sets the HeadSamplingFallbackFraction field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HeadSamplingFallbackFraction field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithHeadSamplingFallbackFraction(value instrumentationrules.HeadSamplingFallbackFraction) *InstrumentationRuleSpecApplyConfiguration {
+	b.HeadSamplingFallbackFraction = &value
+	return b
+}
+
+// WithEbpfLogCapture sets the EbpfLogCapture field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EbpfLogCapture field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithEbpfLogCapture(value instrumentationrules.EbpfLogCapture) *InstrumentationRuleSpecApplyConfiguration {
+	b.EbpfLogCapture = &value
+	return b
+}
+
+// WithNetworkMetrics sets the NetworkMetrics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NetworkMetrics field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithNetworkMetrics(value instrumentationrules.NetworkMetricsConfig) *InstrumentationRuleSpecApplyConfiguration {
+	b.NetworkMetrics = &value
+	return b
+}
+
+// WithTraceVerbosity sets the TraceVerbosity field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TraceVerbosity field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceVerbosity(value instrumentationrules.TraceVerbosity) *InstrumentationRuleSpecApplyConfiguration {
+	b.TraceVerbosity = &value
+	return b
+}
+
+// WithAgentDiagnostics sets the AgentDiagnostics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentDiagnostics field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithAgentDiagnostics(value instrumentationrules.AgentDiagnostics) *InstrumentationRuleSpecApplyConfiguration {
+	b.AgentDiagnostics = &value
 	return b
 }

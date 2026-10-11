@@ -28,7 +28,6 @@ go 1.23.5
 
 use (
 	./api
-	./autoscaler
 	./cli
 <several more>
 )
@@ -58,7 +57,6 @@ use (
    ../runtime-detector
 
 	./api
-	./autoscaler
 	./cli
 <several more>
 )
@@ -74,24 +72,24 @@ Forward the relevant pod to your local machine to enable profiling access:
 ```bash
 kubectl port-forward pod/<pod-name> -n odigos-system 1777:1777
 ```
- 
+
 ### Step 2: Collect Profiling Data
 
-- **CPU Profile**  
+- **CPU Profile**
    Captures data about the time your application spends executing functions. Use this profile to identify performance bottlenecks, optimize CPU-intensive operations, and analyze which parts of the code consume the most CPU resources.
 
    ```bash
    curl -o cpu_profile.prof http://localhost:1777/debug/pprof/profile?seconds=30
    ```
- 
-- **Heap Memory Profile**  
+
+- **Heap Memory Profile**
    Captures a snapshot of memory currently in use by your application after the latest garbage collection. Use this profile to identify memory leaks, track high memory usage, and analyze memory consumption by specific parts of the code.
 
    ```bash
    curl -o heap.out http://localhost:1777/debug/pprof/heap
    ```
 
-- **Historical Memory Allocation**  
+- **Historical Memory Allocation**
    Provides insights into all memory allocations made by the program since it started running, including memory that has already been freed by the garbage collector (GC). This is useful for understanding memory allocation patterns and optimizing allocation behavior.
 
    ```bash
@@ -112,6 +110,45 @@ This opens an interactive interface in your browser where you can:
 ---
 
 ## Debugging CLI Commands
+
+### 🧩 Debugging CLI `install` / `upgrade` / `uninstall` Commands (Helm-based)
+
+Developers have a few options for debugging the Helm-based CLI commands:
+
+#### Option 1: Run the Go module directly (without the embedded chart)
+
+You can run the CLI from source while specifying the chart and image versions manually:
+
+```
+go run -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=<CHART_VERSION>" -tags=embed_manifests . install --set image.tag=v<IMAGE_TAG>
+```
+
+This approach is useful when testing changes to the CLI logic itself without rebuilding the binary.
+
+---
+
+#### Option 2: Build the CLI with the embedded Helm chart
+
+To test modifications made to the Helm chart, build the CLI with the chart embedded:
+
+```
+make cli-build
+```
+
+This command creates a CLI binary under the `cli/` directory bundled with your **local chart version**.
+You can then run commands directly using the built binary:
+```
+cd cli
+./odigos help
+./odigos install --set image.tag=v<IMAGE_TAG>
+```
+
+Example output:
+```
+📦 Using embedded chart odigos (chart version: 0.0.0-e2e-test)
+
+✅ Installed release "odigos" in namespace "odigos-system" (chart version: 0.0.0-e2e-test)
+```
 
 ### Debugging the `cli pro` Command
 
@@ -172,10 +209,22 @@ To debug the `cli install` command in Visual Studio Code, use the following conf
 1. Update builder version and component versions in `collector/builder-config.yaml` and builder version in `collector/Makefile`
 2. Update the `BUILDER_VERSION` in `collector/Makefile`
 3. In `collector` directory, run `make genodigoscol generate` (may help to run in a Docker container)
-4. Run `make go-mod-tidy`
+4. In root directory, run `make go-mod-tidy`
 5. Update `OTEL_*` versions in `Makefile`
 6. Run `make update-otel`
 7. Run `make go-mod-tidy`
 
 Note that OTel frequently makes breaking changes upstream, deprecating and removing packages that will cause breaks.
 Search the upstream OTel collector and collector-contrib repos for package deprecations if you get an error that a package isn't found.
+
+It may help to run commands like `make update-otel` in a container to avoid interference with
+your own Go mod cache. Try that if you see errors like this:
+
+```
+$ make update-otel
+/Library/Developer/CommandLineTools/usr/bin/make update-dep MODULE=go.opentelemetry.io/collector/cmd/mdatagen VERSION=v0.136.0
+cd ./api && go get go.opentelemetry.io/collector/cmd/mdatagen@v0.136.0
+go: module go.opentelemetry.io/collector@v0.136.0 found, but does not contain package go.opentelemetry.io/collector/cmd/mdatagen
+make[1]: *** [update-dep/./api] Error 1
+make: *** [update-otel] Error 2
+```

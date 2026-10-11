@@ -12,3 +12,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: odigos-instrumentor
+  namespace: {{ .Release.Namespace }}

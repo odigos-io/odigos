@@ -1,0 +1,130 @@
+# =====================
+# Collectors
+# Centralized common types for collector headers (Gateway Deployment, Data Collection DaemonSet)
+# =====================
+
+"""
+Rollout/availability status of a workload.
+
+- Healthy: All desired replicas are updated, available, and ready.
+- Updating: Workload is progressing towards desired state (e.g., updating pods).
+- Degraded: Progressing but with availability issues (e.g., not enough available replicas).
+- Failed: Progress deadline exceeded or an unrecoverable error occurred.
+- Down: No available replicas.
+- Unknown: Status cannot be determined from current signals.
+"""
+enum WorkloadRolloutStatus {
+  Healthy
+  Updating
+  Degraded
+  Failed
+  Down
+  Unknown
+}
+
+type ResourceAmounts {
+  cpu: String
+  memory: String
+}
+
+type Resources {
+  requests: ResourceAmounts
+  limits: ResourceAmounts
+}
+
+type NodesSummary {
+  desired: Int!
+  ready: Int!
+}
+
+type HorizontalPodAutoscalerInfo {
+  min: Int
+  max: Int
+  current: Int
+  desired: Int
+  conditions: [Condition]
+}
+
+enum ManifestFormat {
+  YAML
+  JSON
+}
+
+type GatewayDeploymentInfo {
+  status: WorkloadRolloutStatus!
+  hpa: HorizontalPodAutoscalerInfo
+  throughputTracesBytesPerSec: Int
+  throughputMetricsBytesPerSec: Int
+  throughputLogsBytesPerSec: Int
+  resources: Resources
+  imageVersion: String
+  lastRolloutAt: String
+  rolloutInProgress: Boolean!
+  manifestYAML: String!
+  configMapYAML: String!
+}
+
+type CollectorDaemonSetInfo {
+  status: WorkloadRolloutStatus!
+  nodes: NodesSummary!
+  throughputTracesBytesPerSec: Int
+  throughputMetricsBytesPerSec: Int
+  throughputLogsBytesPerSec: Int
+  resources: Resources
+  imageVersion: String
+  lastRolloutAt: String
+  rolloutInProgress: Boolean!
+  manifestYAML: String!
+  configMapYAML: String!
+}
+
+# =====================
+# Gateway Pods List API
+# =====================
+
+# 5m-rate view of collector data flow for a single pod
+type CollectorPodMetrics {
+  # Receiver: accepted metric points per second
+  metricsAcceptedRps: Float!
+  # Receiver rejected/dropped metric points per second (refused/dropped)
+  metricsDroppedRps: Float!
+  # Exporter successfully sent metric points per second
+  exporterSuccessRps: Float!
+  # Exporter failed-to-send metric points per second
+  exporterFailedRps: Float!
+  # e.g. "5m"
+  window: String!
+  # Last evaluation timestamp from Prometheus, RFC3339
+  lastScrape: String
+}
+
+type PodInfo {
+  namespace: String!
+  name: String!
+  # Container status reason when pod is in waiting or terminated state (e.g., "ImagePullBackOff", "CrashLoopBackOff", "Completed"). "Running" if all containers are running normally.
+  status: String!
+  # Total number of container restarts across all containers in the pod
+  restartsCount: Int!
+  nodeName: String!
+  creationTimestamp: String!
+  image: String!
+  # Odiglet per-pod collector throughput and error rates over a recent window
+  collectorMetrics: CollectorPodMetrics
+}
+
+extend type Query {
+  # Gateway (Deployment)
+  gatewayDeploymentInfo: GatewayDeploymentInfo!
+
+  # Odiglet (DaemonSet)
+  odigletDaemonSetInfo: CollectorDaemonSetInfo!
+
+  # Gateway Pods list with summary information about all the pods containers and their statuses
+  gatewayPods: [PodInfo!]!
+
+  # Odiglet Pods list with status information for the data-collection container in each pod
+  odigletPods: [PodInfo!]!
+
+  # Collector Pod details with only the collector container (used in pod details drawer)
+  collectorPod(namespace: String!, name: String!): PodDetails!
+}

@@ -2,7 +2,7 @@
 
 > ⚠️ **Warning**: Improper configuration of this processor can result in high cardinality values in span names and attributes.
 > This can lead to performance degradation and excessive costs in telemetry backends.
-> It is highly recommended to test and monitor templatization results in staging before deploying to production. Use `include`/`exclude` filters and custom regex rules judiciously.
+> It is highly recommended to test and monitor templatization results in staging before deploying to production. Use custom templatization rules judiciously.
 
 This processor fills a gap between semantic conventions and real users needs.
 
@@ -21,7 +21,6 @@ When the templated path is not collected at instrumentation level, this processo
 
 The following conditions must be met for a span to be considered relevant for this processor:
 
-0. the span matches any processor "include" or "exclude" filters which can limit the spans to be processed (more info and examples below).
 1. an http span - contains `http.request.method` or `http.method` attribute.
 2. the attribute is not already set by instrumentation. e.g. no `http.route` for server spans and no `url.template` for client spans.
 3. the url path is recorded on a relevant attribute in the span (`url.path` / `url.full`) or the deprecated attributes (`http.target` / `http.url`).
@@ -36,7 +35,7 @@ For spans that match the above constraints, the processor will calculate the tem
 
 ### Span Name
 
-If the span name equals the method (e.g. "GET"), and the processor is able to calculate a templated route, the span name will be set to `{method} {target}`. Otherwise, the span name will not be modified.
+If the span name equals the method (e.g. "GET"), and the processor is able to calculate a templated route, the span name will be set to `{method} {target}`. If the span name already contains the original URL path, that path is replaced with the templated target. Otherwise, the span name will not be modified.
 
 When `target` is empty string, for example `http://example.com`, the target will be set to `"/"` for enhanced usability (differentiate root path from missing target).
 
@@ -48,36 +47,23 @@ Example configuration: (see more details for each option below)
 processors:
   odigosurltemplateprocessor:
 
-    # when include is set, the span must match at least one of the properties to be processed.
-    include:
-      k8s_workloads:
-        - namespace: "default"
-          kind: "deployment" ## or "daemonset" or "statefulset"
-          name: "myapp1"
-        - namespace: "default"
-          kind: "deployment"
-          name: "myapp2"
-
-    # when exclude is set, a span that matches the filter properties will be excluded from processing.
-    # if a span matches both include and exclude, it will be excluded (exclude takes precedence).exclude:
-    exclude:
-      k8s_workloads:
-        - namespace: "default"
-          kind: "deployment"
-          name: "noisyapp"
-
     # This option allows fine-tuning for specific paths to customize what to templatize and what not.
-    # The rule looks like this: "/v1/{foo:regex}/bar/{baz}".
-    # Each segment part in "{}" denote templatization, and all other segments should match the text exactly.
-    # Inside the "{}" you can optionally set the template name and matching regex.
-    # The template name is the name that will be used in the span name and attributes (e.g. "/users/{userId}").
-    # The regex is optional, and if provided, it will be used to match the segment.
-    # If the regex does not match, the rule will be skipped and other rules and templatization will be evaluated.
-    # Example: "/v1/{foo:\d+}" will match "/v1/123" producing "/v1/{foo}", but not with "/v1/abc".
-    # compatible with golang regexp module https://pkg.go.dev/regexp
-    # for performance reasons, avoid using compute-intensive expressions or adding too many values here.
+    # The rule looks like this: "/v1/{foo}/bar/{baz}".
+    #
+    # Templated segments:
+    # Each segment part in "{}" denotes templatization; the name inside is used in the output attribute.
+    # For example "/users/{userId}" will produce "/users/{userId}" when matched against "/users/john".
+    # All other segments must match the path text exactly (static match).
+    #
+    # Non templated segments:
+    # You can match using 2 different ways:
+    # 1. Static string: "/v1/users" will match "/v1/users" but not "/v1/admins".
+    # 2. Wildcard: "/v1/*" will match "/v1/users" or "/v1/admins" but not "/v1/foo/bar" since it's 3 segments long.
+    #
+    # for performance reasons, avoid adding too many values here.
     templatization_rules:
-      - "/user/{user-name}/friends/{friend-id:\d+}"
+      - "/user/{user-name}/friends/{friend-id}"
+      - "/v1/*"  # matches "/v1/users" or "/v1/admins" but not "/v1/foo/bar" which is 3 segments long.
 
     # list of additional regex patterns that will be used to match and templated matching path segment.
     # It allows users to define their own regex patterns for custom id formats used/observed in their applications.
@@ -90,30 +76,6 @@ processors:
       - regexp: "^inc_\d+$"
         template_name: "incidentId"
 ```
-
-## Include/Exclude Filters
-
-This processor is powerful and well polished based on real world usage. However, it is not hermetic, and the consequences of a false positive can be high cardinality values in span names and attributes which can lead to performance issues in some backends and is generally not recommended.
-
-To work around this, the processor supports include/exclude configuration options that limit which spans will be enriched with url templatization values.
-
-### Default Mode
-
-When no include/exclude filters are set, the processor will attempt to process all spans that match the relevant span conditions. This is the default mode and is recommended for most users.
-
-### Opt-In (Include Filter)
-
-Safer, more manual mode where users review each source for low cardinality values before being added to the processor.
-
-To use this mode, set the `include` option in the configuration. A span will be processed only if it matches with at least one of the include filters.
-
-If exclude filters are also set, and the span matches with any of the exclude filters, it will be excluded from processing even if it matches with the include filters.
-
-### Opt-Out (Exclude Filter)
-
-Less manual mode where all spans are processed by default, and users can exclude specific sources if they found that the processor is causing high cardinality values later on.
-
-This reduce the chore in reviewing each and every source upfront, and allows a more "reactive" approach where issues are addressed as the are found. It will also automatically include future sources and opt them in without reviewing them, potentially introducing high cardinality values.
 
 ## Templatization
 
@@ -130,10 +92,39 @@ By default, the processor will split the path to segment (e.g. "/user/1234" -> [
 - hex-encoded strings - `^(?:[0-9a-fA-F]{2}){8,}$` -> `{id}` (`6f2a9cdeab34f01e`, `6F2A9CDEAB34F01E`)
 - long numbers anywhere - `\d{7,}` -> `{id}` (`1234567`, `INC328962358623904`, `sb_12345678901234567890_us`)
 - common [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) date-time formats - `^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?(?:Z|[+-]\d{4})?$` -> `{date}` (`2023-10-01T12:00:00+0000`)
-- emails - `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$` like `foo@bar.io` -> `{email}`
+- emails - `` ^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ `` like `foo@bar.io` -> `{email}`
 - unicode replacement character - `�` -> `{id}` (assume this is dynamic value and not static path segment)
 
 These default rules will not templatize paths like `/user/john`, `/user/s111222`, `/users/123456_789` which will be copied as is into the span name and attribute with potentially high cardinality.
+
+#### Skip default templatization on HTTP errors (extension mode)
+
+For internet-exposed services, bot and scanner traffic often hits random paths that return error status codes (for example **404**). Default heuristic templatization would turn each of those into a distinct route and cause high cardinality.
+
+When using per-workload configuration from the **URLTemplatization** Action (extension mode), you can set `skipPolicy` under `spec.urlTemplatization.defaultTemplatization[].defaultTemplatization` for a `sourcesScopes` group. Custom templatization rules are still evaluated first; `skipPolicy` only affects the default heuristic step when no custom rule matched. This option is not available on the legacy static processor path (processor YAML `templatization_rules` / `custom_ids` only).
+
+- `skipForNonSuccessCodes: true` — skip default templatization for any HTTP status outside 2xx. When set, `statusCodes` is ignored.
+- `statusCodes` — skip default templatization only for the listed codes (for example `[404]` or `[404, 401]`).
+
+Example for a publicly accessible deployment where 404 probe traffic should not be heuristically templatized:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: url-templatization-skip-404
+spec:
+  urlTemplatization:
+    defaultTemplatization:
+      - sourcesScopes:
+          sources:
+            - namespace: default
+              kind: Deployment
+              name: my-public-api
+        defaultTemplatization:
+          skipPolicy:
+            statusCodes: [404]
+```
 
 ### Custom Templatization
 
@@ -147,7 +138,9 @@ Example for templatization rules:
 
 This rule, when applied to the path `/user/john/friends/1234`, will result in the templated value `/user/{user-name}/friends/{friend-id}`.
 
-To denote a template path segment, use `{}` brackets with name and optional regexp: `{name:regexp}`. name will be used to generate the templated path (e.g `/user/{foo})` will result in this template value when matched against `/user/john`).
+To denote a template path segment, use `{}` brackets with a name: `{name}`. The name will be used to generate the templated path (e.g `/user/{foo}` will result in this template value when matched against `/user/john`).
+
+Non-template segments are treated as exact static strings that must match the corresponding path segment. Use a wildcard `*` to match any single segment without templating it.
 
 ### Custom Ids
 

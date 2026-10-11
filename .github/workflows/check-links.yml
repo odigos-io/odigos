@@ -2,14 +2,16 @@ name: Check links
 
 on:
   pull_request:
+    branches:
+      - releases/**
   workflow_dispatch:
 
 jobs:
   check-links:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -22,16 +24,23 @@ jobs:
           restore-keys: cache-lychee-pr-
 
       - name: Link Checker
-        uses: lycheeverse/lychee-action@v2.4.1
+        uses: lycheeverse/lychee-action@v2.9.0
         with:
           args: >-
             -v -n "*.md" "**/*.md" "**/*.mdx"
+            --exclude-path "docs/snippets"
+            --root-dir "${{ github.workspace }}/docs"
+            --fallback-extensions mdx,md
             --exclude "http://localhost*"
             --exclude "^https://logs-prod.*"
             --exclude ".*your-account.*"
             --exclude ".*qryn.local.*"
             --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
             --exclude "https://github.com/odigos-io/ui-kit"
+            --exclude "http://host:port*"
+            --exclude "https://www.npmjs.com/*"
+            --exclude "^https://join\\.slack\\.com/.*"
+            --exclude "^https://github\\.com/odigos-io/odigos-enterprise.*"
             --timeout 30
             --max-concurrency 2
             --retry-wait-time 15

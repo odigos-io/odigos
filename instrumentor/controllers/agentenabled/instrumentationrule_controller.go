@@ -3,30 +3,24 @@ package agentenabled
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InstrumentationRuleReconciler struct {
 	client.Client
-	DistrosProvider *distros.Provider
+	DistrosProvider           *distros.Provider
+	RolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter
 }
 
 func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
-	// Fetch the InstrumentationRule instance
-	ir := &odigosv1.InstrumentationRule{}
-	err := r.Get(ctx, req.NamespacedName, ir)
-	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// avoid processing instrumentation rules which are not relevant to this controller
-	if ir.Spec.OtelSdks == nil {
-		return ctrl.Result{}, nil
-	}
-
-	return reconcileAll(ctx, r.Client, r.DistrosProvider)
+	// This reconciler is fired everytime an instruentation rule that is relevant for agent injection
+	// is either created, updated or deleted.
+	// we might get an event here with relevant rules set to nil,
+	// but they should still be processed to potentially revert thier original effects.
+	// thus it is very important to have strong filtering in the predicate
+	// so not to execute this reconciler too much when not needed.
+	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutConcurrencyLimiter)
 }

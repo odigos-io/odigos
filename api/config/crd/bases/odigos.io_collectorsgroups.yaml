@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     odigos.io/system-object: "true"
   name: collectorsgroups.odigos.io
@@ -41,17 +41,273 @@ spec:
           spec:
             description: CollectorsGroupSpec defines the desired state of Collector
             properties:
+              clusterMetricsEnabled:
+                description: |-
+                  ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+                  It is disabled by default and can be enabled by setting the enabled flag to true.
+                type: boolean
               collectorOwnMetricsPort:
                 description: |-
                   The port to use for exposing the collector's own metrics as a prometheus endpoint.
                   This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
-              k8sNodeLogsDirectory:
+              deploymentName:
                 description: |-
-                  Additional directory to mount in the node collector pod for logs.
-                  This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
+                  Deployment name for the collectors group deployment.
+                  Only relevant for cluster gateway collector.
                 type: string
+              enableDataCompression:
+                description: |-
+                  Deprecated - use OtlpExporterConfiguration instead.
+                  EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+                  It is disabled by default and can be enabled by setting the enabled flag to true.
+                type: boolean
+              httpsProxyAddress:
+                description: |-
+                  for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+                  when unset or empty, no proxy will be used.
+                type: string
+              metrics:
+                description: |-
+                  configuration for metrics handling in this collectors group
+                  if metric collection is disabled, this will be nil
+                  the content is populated only if relevant to this collectors group
+                  it's being calculated based on active destinations and their settings,
+                  and global settings provided in the odigos configuration or instrumentation rules.
+                  it allows for the collector group reconciler to be simplified,
+                  and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
+                properties:
+                  agentsTelemetry:
+                    description: |-
+                      this part controls the metrics which are received from agents in the otlp receiver.
+                      it is generally enabled when we want to record metrics, and listed here for completeness.
+                      any "otlp receiver" specific settings can go here
+                    type: object
+                  hostMetrics:
+                    description: |-
+                      if not nil for node collector, it means host metrics is enabled,
+                      and the opentelemetry collector "hostmetrics" receiver should be included in the pipeline.
+                      host metrics are metrics that are collected from the host node,
+                      such as cpu, memory, disk, network, etc.
+                    properties:
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect host metrics.
+                          - true - host metrics will never be collected, even if destinations require it.
+                          - false / nil - host metrics will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      interval:
+                        description: 'time interval for scraping metrics (format:
+                          15s, 1m etc). defaults: 10s.'
+                        type: string
+                    type: object
+                  kubeletStats:
+                    description: |-
+                      if not nil for node collector, it means kubelet stats is enabled,
+                      and the opentelemetry collector "kubeletstats" receiver should be included in the pipeline.
+                      kubelet stats are metrics that are collected from the kubelet point of view,
+                      such as cpu, memory, disk, network, per pod, node and more.
+                    properties:
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect kubelet stats.
+                          - true - kubelet stats will never be collected, even if destinations require it.
+                          - false / nil - kubelet stats will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      interval:
+                        description: 'time interval for scraping metrics (format:
+                          15s, 1m etc). defaults: 10s.'
+                        type: string
+                    type: object
+                  odigosOwnMetrics:
+                    description: |-
+                      if not nil for node collector, it means that some metric destinations are
+                      intresseted in collecting metrics about: odigos, the collected data, and the pipeline itself.
+                      this allows for users to monitor and operate odigos within their existing system,
+                      create dashboards, alerting, and more.
+                    properties:
+                      interval:
+                        description: 'time interval for flusing metrics (format: 15s,
+                          1m etc). defaults: 10s'
+                        type: string
+                      sendToMetricsDestinations:
+                        description: |-
+                          if true, odigos will send all the metrics it collects about itself to the metrics pipeline,
+                          which will make them available to the metrics destinations.
+                          users can troubleshoot odigos itself by monitoring these metrics in their existing systems,
+                          and create their own dashboards, alerting, and more.
+                        type: boolean
+                      sendToOdigosMetricsStore:
+                        description: |-
+                          if true, odigos will send all the metrics it collects about itself to the odigos metrics store,
+                          which is available to odigos UI.
+                          it can help in presenting a consistent view of odigos itself, without relying on user system and integrations.
+                        type: boolean
+                    type: object
+                  serviceGraph:
+                    description: |-
+                      if not nil for cluster collector, it means service graph is enabled,
+                      and metrics for the "connectivity" between services should be calculated
+                      to be exported to metrics destinations.
+                    type: object
+                  spanMetrics:
+                    description: |-
+                      if not nil for node collector, it means span to metrics is enabled,
+                      and the node collector should set it up in the pipeline.
+                      span to metrics is the ability to calculate metrics like http requests/errors/duration etc
+                      from the individual spans recorded for relevant operation.
+                    properties:
+                      additionalDimensions:
+                        description: |-
+                          additional dimensions to add to the span metrics.
+                          these are span attributes that you want to convert to metrics attributes during collection.
+                          the values of the attributes must have low cardinality.
+                          it can increase the number of series in the destination.
+                          some dimensions are already added by default, regardless of this setting.
+                        items:
+                          type: string
+                        type: array
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect span metrics.
+                          - true - span metrics will never be collected, even if destinations require it.
+                          - false / nil - span metrics will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      excludedResourceAttributes:
+                        description: |-
+                          exclude resource attributes from being added to span metrics.
+                          for example - if you don't care about the process granularity,
+                          and prefer the metrics to be aggregated for all processes in a pod container,
+                          you can list all "process.*" attributes here to exclude them from being added to span metrics.
+                          any other resource attribute can be set, either for sanitation or to reduce dimenssions for generate metrics.
+                        items:
+                          type: string
+                        type: array
+                      explicitHistogramBuckets:
+                        description: "explicit buckets list for the histogram metrics.\nformat
+                          is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d`
+                          etc).\nif not set, the default buckets list will be used.\nthe
+                          buckets must be in ascending order.\nexample: [\"100us\",
+                          \"1ms\", \"2ms\", \"6ms\", \"10ms\", \"100ms\", \"250ms\"]\nDefault
+                          value when unset:\n\t\t[\"2ms\", \"4ms\", \"6ms\", \"8ms\",
+                          \"10ms\", \"50ms\", \"100ms\", \"200ms\", \"400ms\", \"800ms\",
+                          \"1s\", \"1400ms\", \"2s\", \"5s\", \"10s\", \"15s\"]\nnotice
+                          that more granular buckets are recommended for better precision
+                          but costs more since more metric series are produced."
+                        items:
+                          type: string
+                        type: array
+                      histogramDisabled:
+                        description: if true, histogram metrics will not be collected.
+                        type: boolean
+                      includedProcessInDimensions:
+                        description: |-
+                          By default, Odigos does not include process labels - meaning
+                          metrics will be aggregated by container as the lowest level.
+                          This means that multiple processes running in the same container
+                          will be aggregated into the same time series.
+                          For more granular metrics, set this option to true.
+                          This will include process-specific labels on metrics,
+                          which will cause more unique time series to be created.
+                        type: boolean
+                      interval:
+                        description: 'time interval for flusing metrics (format: 15s,
+                          1m etc). defaults: 60s (one minute).'
+                        type: string
+                      metricsExpiration:
+                        description: |-
+                          used to remove metrics after time that they are not reporting.
+                          if an app only generates metrics once in a while, this parameter can tune
+                          how much gap is allowed.
+                          format: duration string (15s, 1m, etc).
+                          default is 5m (five minutes).
+                        type: string
+                      resourceMetricsKeyAttributes:
+                        description: |-
+                          Advanced configuration - avoid using unless you know what you are doing.
+                          This list controls which resource attributes are included in the metric stream identity.
+                          These attributes are used to determines how span metrics are grouped.
+                        items:
+                          type: string
+                        type: array
+                      spanMetricsMode:
+                        description: |-
+                          Controls the tradeoff between metric accuracy and resource usage.
+                          See sampling.SpanMetricsMode for possible values.
+                        type: string
+                    type: object
+                type: object
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Node selector for the collectors group deployment.
+                  Use this to force the gateway to run only on nodes with specific labels.
+                  This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+                  If no matching nodes exist, the pod will remain Pending.
+                type: object
+              otlpExporterConfiguration:
+                description: OtlpExporterConfiguration is the configuration for the
+                  OTLP exporter from node collector to cluster gateway collector.
+                properties:
+                  enableDataCompression:
+                    type: boolean
+                  retryOnFailure:
+                    properties:
+                      enabled:
+                        type: boolean
+                      initialInterval:
+                        type: string
+                      maxElapsedTime:
+                        type: string
+                      maxInterval:
+                        type: string
+                    type: object
+                  timeout:
+                    type: string
+                type: object
+              resourceDetectors:
+                description: |-
+                  ResourceDetectors controls which OpenTelemetry resource detectors are enabled
+                  on the node collector's resourcedetection processor.
+                properties:
+                  aks:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  azure:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  ec2:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  eks:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  gcp:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                type: object
               resourcesSettings:
                 description: |-
                   Resources [memory/cpu] settings for the collectors group.
@@ -126,6 +382,138 @@ spec:
                 - CLUSTER_GATEWAY
                 - NODE_COLLECTOR
                 type: string
+              samplingDryRun:
+                description: |-
+                  Set to true to enable dry run mode for sampling.
+                  When enabled, odigos will invoke the sampling logic, but will not drop any traces.
+                  This is useful while evaluating sampling rules to check for effectiveness and correctness
+                  before committing to any changes that might lose data.
+                type: boolean
+              serviceGraphDisabled:
+                description: |-
+                  ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
+                  It is enabled by default and can be disabled by setting the enabled flag to false.
+                type: boolean
+              serviceGraphExtraDimensions:
+                description: |-
+                  ServiceGraphExtraDimensions are additional span attribute names to include as dimensions
+                  in the service graph metrics, on top of the default service.name dimension.
+                items:
+                  type: string
+                type: array
+              serviceGraphVirtualNodePeerAttributes:
+                description: |-
+                  ServiceGraphVirtualNodePeerAttributes is an ordered list of span attributes used to identify
+                  uninstrumented (virtual) nodes in the service graph.
+                  The connector picks the first attribute that has a value on the span.
+                  When nil/empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+                items:
+                  type: string
+                type: array
+              spanSamplingAttributes:
+                description: |-
+                  Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+                  Capturing these attributes gives visibility into sampling decision-making and effective
+                  sampling percentages when viewing traces or querying the database with tools.
+                properties:
+                  disabled:
+                    description: |-
+                      Set to true to disable span sampling attributes.
+                      When disabled, Odigos will not set span attributes for sampling decisions
+                      (unless explicitly enabled for specific attributes set).
+                    type: boolean
+                  samplingCategoryDisabled:
+                    description: |-
+                      Set to true to disable recording the sampling category as a span attribute.
+                      Attributes: odigos.sampling.category (noise, highly relevant, cost reduction, or empty)
+                    type: boolean
+                  spanDecisionAttributesDisabled:
+                    description: |-
+                      Set to true to disable recording the span-level deciding rule as span attributes.
+                      The trace-level decision is an aggregation of all spans in the trace; these attributes record
+                      which spans contributed to it and how, so you can link decisions back to the specific spans and operations.
+                      For example, if a trace is kept due to high duration, the attributes pinpoint the span(s) that drove that decision.
+                      Attributes:
+                        - odigos.sampling.span.deciding_rule.id
+                        - odigos.sampling.span.deciding_rule.name
+                        - odigos.sampling.span.deciding_rule.keep_percentage
+                    type: boolean
+                  traceDecidingRuleDisabled:
+                    description: |-
+                      Set to true to disable recording the trace-level deciding rule as span attributes.
+                      When a trace matches an enabled sampling rule for a category, the most "severe" rule
+                      is chosen as the "deciding rule" and recorded as span attributes on all spans in the trace.
+                      If multiple rules with the same percentage match, one is chosen arbitrarily.
+                      Use these attributes to find rules that are too permissive (high cost) or too strict (dropping important traces).
+                      For example, if a rare and important trace is dropped by a rule that is too strict, increase its keep percentage
+                      or add a separate rule for that use case. If cost analysis shows expensive traces, find rules that are too permissive
+                      and decrease their percentage or remove them.
+                      Attributes:
+                        - odigos.sampling.trace.deciding_rule.id
+                        - odigos.sampling.trace.deciding_rule.name
+                        - odigos.sampling.trace.deciding_rule.keep_percentage
+                    type: boolean
+                type: object
+              tailSampling:
+                description: |-
+                  Sampling holds the sampling configuration derived from the OdigosConfiguration.
+                  Currently this is only relevant for the cluster gateway collector.
+                properties:
+                  disabled:
+                    description: |-
+                      If set to true, tail sampling will be disabled globally
+                      regardless of any other configurations or rules set.
+                      Can be used to reduce collectors resource usage, troubleshooting, etc,
+                      or when tail-sampling is not needed or desired and should be shut off.
+                    type: boolean
+                  noisyOperationsEnforcement:
+                    description: |-
+                      Controls when the collector enforces noisy-operations rules via tail sampling.
+                      auto (default): only for sources whose agent does not support head sampling.
+                      always: for every source, including those that already apply noisy ops at head.
+                    type: string
+                  traceAggregationWaitDuration:
+                    description: |-
+                      Time to wait from the first span of a trace until a trace is considered completed.
+                      At this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+                      Introduces this amount of latency in the pipeline and for trace to hit the destination.
+                      Also increases memory usage for keeping spans in memory until the wait duration time is reached.
+                      Setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+                      and broken traces due to sampling each trace in few pieces.
+                    type: string
+                type: object
+              traceCorrelations:
+                description: |-
+                  TraceCorrelations holds trace correlations configuration derived from OdigosConfiguration.
+                  Currently only relevant for the cluster gateway collector.
+                properties:
+                  serviceIO:
+                    properties:
+                      enabled:
+                        description: |-
+                          enable/disable for service I/O correlation metrics (serviceio connector).
+                          disabled by default.
+                        type: boolean
+                      inputSpanAttributes:
+                        description: |-
+                          OpenTelemetry span attribute names read from inbound spans when correlating service I/O
+                          on the receiving side (e.g. server spans). Each name should refer to a low-cardinality attribute.
+                        items:
+                          type: string
+                        type: array
+                      metricsFlushInterval:
+                        description: 'interval at which service I/O metrics are flushed
+                          (format: 15s, 1m, etc). default is 60s.'
+                        type: string
+                      outputSpanAttributes:
+                        description: |-
+                          OpenTelemetry span attribute names read from outbound spans when correlating service I/O
+                          on the sending side (e.g. client/producer spans). Each name should refer to a low-cardinality attribute.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                type: object
             required:
             - collectorOwnMetricsPort
             - resourcesSettings
@@ -209,6 +597,7 @@ spec:
                   - LOGS
                   - TRACES
                   - METRICS
+                  - PROFILES
                   type: string
                 type: array
             type: object

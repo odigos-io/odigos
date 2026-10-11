@@ -2,20 +2,27 @@ package common
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
+// DynatraceDynamizerExeSubString is the wrapper exe name used by the Dynatrace
+// agent for Go processes; the Go language inspector matches on it.
+const DynatraceDynamizerExeSubString = "oneagentdynamizer"
+
 type ProgramLanguageDetails struct {
 	Language       ProgrammingLanguage
-	RuntimeVersion *version.Version
+	RuntimeVersion string
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;cplusplus;mysql;nginx;redis;postgres;unknown;ignored
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;cplusplus;mysql;nginx;redis;postgres;unknown;ignored;*
 type ProgrammingLanguage string
 
 const (
+	// ProgrammingLanguageWildcard means the distribution accepts any container programming language (see distro YAML).
+	ProgrammingLanguageWildcard   ProgrammingLanguage = "*"
 	JavaProgrammingLanguage       ProgrammingLanguage = "java"
 	PythonProgrammingLanguage     ProgrammingLanguage = "python"
 	GoProgrammingLanguage         ProgrammingLanguage = "go"
@@ -36,9 +43,12 @@ const (
 	PostgresProgrammingLanguage ProgrammingLanguage = "postgres"
 	// Used when the language detection is not successful for all the available inspectors
 	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
-	// Deprecated: This is no longer supported and will not be set be odiglet
-	IgnoredProgrammingLanguage ProgrammingLanguage = "ignored"
 )
+
+// IsProgrammingLanguageWildcard reports whether lang is the distro wildcard meaning "any language".
+func IsProgrammingLanguageWildcard(lang ProgrammingLanguage) bool {
+	return strings.TrimSpace(string(lang)) == string(ProgrammingLanguageWildcard)
+}
 
 // MapOdigosToSemConv maps odigos programming language to OpenTelemetry semantic conventions
 // It is supported only for the languages that are supported by OpenTelemetry [not for mysql, nginx, etc.]
@@ -52,18 +62,25 @@ func MapOdigosToSemConv(odigosPrograminglang ProgrammingLanguage) string {
 }
 
 func GetVersion(versionString string) *version.Version {
-	runtimeVersion, err := version.NewVersion(versionString)
+	return ParseRuntimeVersion(versionString)
+}
+
+// ParseRuntimeVersion parses a runtime version for semver constraint checks.
+// Leading "v" and prerelease/build suffixes (e.g. "v1.2.3-0", "1.2.3+build") are normalized
+// to the core release (1.2.3) so they compare correctly against supported version ranges.
+func ParseRuntimeVersion(versionString string) *version.Version {
+	v, err := version.NewVersion(versionString)
 	if err != nil {
 		return nil
 	}
-	return runtimeVersion
+	return v.Core()
 }
 
-func MajorMinorStringOnly(v *version.Version) string {
+func MajorMinorStringOnly(v *version.Version) (string, error) {
 	segments := v.Segments()
 	if len(segments) < 2 {
 		// fallback for malformed versions
-		return v.String()
+		return "", fmt.Errorf("version %s has less than 2 segments", v.String())
 	}
-	return fmt.Sprintf("%d.%d", segments[0], segments[1])
+	return fmt.Sprintf("%d.%d", segments[0], segments[1]), nil
 }

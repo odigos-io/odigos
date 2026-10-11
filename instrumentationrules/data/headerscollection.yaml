@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: InstrumentationRule
+metadata:
+  type: HeadersCollection
+  displayName: Headers Collection
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/rules/headerscollection
+  description: The "Headers Collection" rule can be used to add span attributes containing HTTP Headers data to traces.
+  supportedLanguages:
+    - go
+    - java
+    - javascript
+  fields:
+    # Persisted as `headersCollection: { headerKeys: [...] }`; `wrapKey` nests the
+    # string list under `headerKeys`. Defaults to `["*"]` (collect all headers).
+    - name: headersCollection
+      displayName: Header keys
+      componentType: multiInput
+      initialValue: '["*"]'
+      componentProps:
+        wrapKey: headerKeys
+        tooltip: Specify which headers you want to collect
+        helpMessage: Asterisk (*) will collect all headers

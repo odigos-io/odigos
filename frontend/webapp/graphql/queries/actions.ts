@@ -1,18 +1,143 @@
 import { gql } from '@apollo/client';
 
+export const GET_ACTION_TYPES = gql`
+  query GetActionTypes {
+    actionTypes {
+      type
+      displayName
+      category
+      subtitle
+      description
+      allowedSignals
+      docsUrl
+      fields {
+        name
+        displayName
+        componentType
+        componentProperties
+        initialValue
+        renderCondition
+      }
+    }
+  }
+`;
+
 export const GET_ACTIONS = gql`
   query GetActions {
     computePlatform {
       actions {
         id
         type
-        spec
+        name
+        notes
+        disabled
+        signals
+        uiGenerated
+        managedBy
+        fields {
+          collectContainerAttributes
+          collectReplicaSetAttributes
+          collectWorkloadId
+          collectClusterId
+          labelsAttributes {
+            labelKey
+            attributeKey
+            from
+            fromSources
+          }
+          annotationsAttributes {
+            annotationKey
+            attributeKey
+            from
+            fromSources
+          }
+          clusterAttributes {
+            attributeName
+            attributeStringValue
+          }
+          overwriteExistingValues
+          attributeNamesToDelete
+          renames
+          piiCategories
+          customFormatMaskings {
+            lookupKey
+            dataFormat
+          }
+          customRegexMaskings {
+            regex
+          }
+          urlTemplatizationRulesGroups {
+            scopes {
+              namespaces
+              languages
+              sources {
+                namespace
+                kind
+                name
+              }
+            }
+            filterK8sNamespace
+            filterK8sWorkloadKind
+            filterK8sWorkloadName
+            filterProgrammingLanguage
+            notes
+            workloadFilters {
+              kind
+              name
+            }
+            templatizationRules {
+              template
+              notes
+              examples
+            }
+          }
+          urlTemplatizationDefaultGroups {
+            disabled
+            scopes {
+              namespaces
+              languages
+              sources {
+                namespace
+                kind
+                name
+              }
+            }
+            skipPolicy {
+              skipForNonSuccessCodes
+              skipHttpStatusCodes
+            }
+          }
+          extractAttribute {
+            extractions {
+              targetAttributeName
+              lookupKey
+              dataFormat
+              regex
+            }
+          }
+          scopes {
+            sources {
+              namespace
+              kind
+              name
+            }
+            namespaces
+            languages
+          }
+          templatizeLiterals
+          removePostgresCastOperator
+        }
         conditions {
           status
           type
           reason
           message
-          lastTransitionTime
+        }
+        statuses {
+          name
+          status
+          reasonEnum
+          message
         }
       }
     }

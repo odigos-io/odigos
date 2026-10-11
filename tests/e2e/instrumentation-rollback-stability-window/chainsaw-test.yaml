@@ -14,21 +14,21 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 3m
+            timeout: 2m
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux --set autoRollback.graceTime=3m --set autoRollback.stabilityWindowTime=2m
               else
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux --set autoRollback.graceTime=3m --set autoRollback.stabilityWindowTime=2m
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
 
     - name: Verify Odigos Installation
       try:
         - script:
-            timeout: 6m
+            timeout: 5m
             content: |
               echo "Starting Odigos version check..."
               export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
@@ -50,7 +50,7 @@ spec:
 
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
       catch:
         - script:
@@ -69,7 +69,7 @@ spec:
     - name: Assert Trace DB is up
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: Install - crash demo app
@@ -77,9 +77,14 @@ spec:
         - apply:
             file: ../../common/apply/install-crash-demo.yaml
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
-              kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=120s
+              echo "Waiting for 5 seconds before checking deployment status..."
+              sleep 5
+              # Wait for deployment rollout to complete first
+              kubectl rollout status deployment/otel-crash-demo --timeout=120s
+              # Then wait for pods to be ready (should be immediate after rollout completes)
+              kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=30s
         - assert:
             file: ../../common/assert/crash-demo/crash-demo-installed.yaml
 
@@ -96,25 +101,23 @@ spec:
     - name: Odigos pipeline ready
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
-    - name: Update rollback values
+    - name: Assert rollback grace time configured
       try:
         - script:
-            content: |
-              ../../../cli/odigos config set instrumentation-auto-rollback-grace-time 3m
-              ../../../cli/odigos config set instrumentation-auto-rollback-stability-window 2m
+            timeout: 1m10s
+            content: ../../common/assert_config_value.sh -k rollbackGraceTime -v 3m
 
-    # Some services restart after updating configs
-    - name: Odigos pipeline ready
+    - name: Assert rollback stability window time configured
       try:
-        - assert:
-            timeout: 1m
-            file: ../../common/assert/pipeline-ready.yaml
+        - script:
+            timeout: 1m10s
+            content: ../../common/assert_config_value.sh -k rollbackStabilityWindow -v 2m
 
     - name: Test crash demo in crashloop and still instrumented
       try:
         - assert:
-            timeout: 2m
+            timeout: 1m20s
             file: ../../common/assert/crash-demo/crash-demo-in-crashloop-instrumented.yaml

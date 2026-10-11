@@ -1,7 +1,7 @@
 'use client';
 
 import React, { type FC, type PropsWithChildren, useState } from 'react';
-import Theme from '@odigos/ui-kit/theme';
+import { Provider } from '@odigos/ui-kit/theme';
 import { useServerInsertedHTML } from 'next/navigation';
 import { ServerStyleSheet, StyleSheetManager } from 'styled-components';
 
@@ -23,9 +23,9 @@ const StyledComponentsRegistry: FC<PropsWithChildren> = ({ children }) => {
 
 const ThemeProvider: FC<PropsWithChildren> = ({ children }) => {
   return (
-    <Theme.Provider>
+    <Provider>
       <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
-    </Theme.Provider>
+    </Provider>
   );
 };
 

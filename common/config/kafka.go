@@ -1,7 +1,10 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
+	"maps"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -51,9 +54,13 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	if !exists {
 		return nil, errorMissingKey(KAFKA_PROTOCOL_VERSION)
 	}
-	brokers, exists := config[KAFKA_BROKERS]
+	rawBrokers, exists := config[KAFKA_BROKERS]
 	if !exists {
-		brokers = "[\"localhost:9092\"]"
+		rawBrokers = "[\"localhost:9092\"]"
+	}
+	brokers, err := parseKafkaBrokers(rawBrokers)
+	if err != nil {
+		return nil, err
 	}
 	resolveCanonicalBootstrapServersOnly, exists := config[KAFKA_RESOLVE_CANONICAL_BOOTSTRAP_SERVERS_ONLY]
 	if !exists {
@@ -144,6 +151,23 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		producerFlushMaxMessages = "0"
 	}
 
+	metadataMaxRetryValue, err := parseInt(KAFKA_METADATA_MAX_RETRY, metadataMaxRetry)
+	if err != nil {
+		return nil, err
+	}
+	producerMaxMessageBytesValue, err := parseInt(KAFKA_PRODUCER_MAX_MESSAGE_BYTES, producerMaxMessageBytes)
+	if err != nil {
+		return nil, err
+	}
+	producerRequiredAcksValue, err := parseInt(KAFKA_PRODUCER_REQUIRED_ACKS, producerRequiredAcks)
+	if err != nil {
+		return nil, err
+	}
+	producerFlushMaxMessagesValue, err := parseInt(KAFKA_PRODUCER_FLUSH_MAX_MESSAGES, producerFlushMaxMessages)
+	if err != nil {
+		return nil, err
+	}
+
 	// Modify the exporter here
 	exporterName := "kafka/" + uniqueUri
 	exporterConfig := GenericMap{
@@ -160,7 +184,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		"metadata": GenericMap{
 			"full": parseBool(metadataFull),
 			"retry": GenericMap{
-				"max":     parseInt(metadataMaxRetry),
+				"max":     metadataMaxRetryValue,
 				"backoff": metadataBackoffRetry,
 			},
 		},
@@ -172,10 +196,10 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 			"max_elapsed_time": retryOnFailureMaxTimeElapsed,
 		},
 		"producer": GenericMap{
-			"max_message_bytes":  parseInt(producerMaxMessageBytes),
-			"required_acks":      parseInt(producerRequiredAcks),
+			"max_message_bytes":  producerMaxMessageBytesValue,
+			"required_acks":      producerRequiredAcksValue,
 			"compression":        producerCompression,
-			"flush_max_messages": parseInt(producerFlushMaxMessages),
+			"flush_max_messages": producerFlushMaxMessagesValue,
 		},
 		"auth": GenericMap{
 			"tls": GenericMap{
@@ -191,51 +215,93 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		}
 		exporterConfigAuth["plain_text"] = GenericMap{
 			"username": username,
-			"password": "${KAFKA_PASSWORD}",
+			"password": SecretEnvPlaceholder("KAFKA_PASSWORD", dest),
 		}
 	}
 
 	// Modify the pipelines here
 	var pipelineNames []string
 
-	if isTracingEnabled(dest) {
-		if topic == "" {
-			exporterConfig["topic"] = "otlp_spans"
+	// when no topic is pinned, each signal exports to a different default topic, so every signal
+	// needs its own exporter. Sharing one exporter would leave every pipeline with whichever
+	// default topic was written last.
+	registerExporter := func(signal string, defaultTopic string) string {
+		if topic != "" {
+			currentConfig.Exporters[exporterName] = exporterConfig
+			return exporterName
 		}
-		currentConfig.Exporters[exporterName] = exporterConfig
+		signalExporterName := exporterName + "-" + signal
+		signalExporterConfig := maps.Clone(exporterConfig)
+		signalExporterConfig["topic"] = defaultTopic
+		currentConfig.Exporters[signalExporterName] = signalExporterConfig
+		return signalExporterName
+	}
+
+	if isTracingEnabled(dest) {
+		signalExporterName := registerExporter("traces", "otlp_spans")
 
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters: []string{signalExporterName},
 		}
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isMetricsEnabled(dest) {
-		if topic == "" {
-			exporterConfig["topic"] = "otlp_metrics"
-		}
-		currentConfig.Exporters[exporterName] = exporterConfig
+		signalExporterName := registerExporter("metrics", "otlp_metrics")
 
 		pipeName := "metrics/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters: []string{signalExporterName},
 		}
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isLoggingEnabled(dest) {
-		if topic == "" {
-			exporterConfig["topic"] = "otlp_logs"
-		}
-		currentConfig.Exporters[exporterName] = exporterConfig
+		signalExporterName := registerExporter("logs", "otlp_logs")
 
 		pipeName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters: []string{signalExporterName},
 		}
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	return pipelineNames, nil
+}
+
+// KAFKA_BROKERS is a multiInput field, so the UI and the generated docs store it as a
+// JSON encoded string array. The kafka exporter expects a real list, and the collector decodes a
+// plain string with a comma separated split, so passing the raw value through turns
+// `["broker-a:9092","broker-b:9092"]` into the two broker addresses `["broker-a:9092` and
+// `"broker-b:9092"]`. Values that are not JSON are still read as a comma separated list, which is
+// how a single plain broker address was already being interpreted.
+func parseKafkaBrokers(rawBrokers string) ([]string, error) {
+	trimmed := strings.TrimSpace(rawBrokers)
+
+	var brokers []string
+	if strings.HasPrefix(trimmed, "[") {
+		if err := json.Unmarshal([]byte(trimmed), &brokers); err != nil {
+			return nil, errors.Join(err, errors.New(
+				"failed to parse kafka destination parameter \""+KAFKA_BROKERS+"\" as JSON string in the format: string[]",
+			))
+		}
+	} else {
+		brokers = strings.Split(trimmed, ",")
+	}
+
+	nonEmptyBrokers := make([]string, 0, len(brokers))
+	for _, broker := range brokers {
+		if broker = strings.TrimSpace(broker); broker != "" {
+			nonEmptyBrokers = append(nonEmptyBrokers, broker)
+		}
+	}
+
+	// an exporter with no brokers fails to start and would crash loop the whole gateway,
+	// so skip this destination instead.
+	if len(nonEmptyBrokers) == 0 {
+		return nil, errors.New("kafka destination parameter \"" + KAFKA_BROKERS + "\" must list at least one broker")
+	}
+
+	return nonEmptyBrokers, nil
 }

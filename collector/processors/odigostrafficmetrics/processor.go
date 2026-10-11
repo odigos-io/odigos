@@ -6,8 +6,10 @@ import (
 	"math/rand"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics/internal/metadata"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/otel/attribute"
@@ -17,9 +19,10 @@ import (
 
 type dataSizesMetricsProcessor struct {
 	logger                  *zap.Logger
-	tracesSizer             ptrace.Sizer
-	metricsSizer            pmetric.Sizer
-	logsSizer               plog.Sizer
+	tracesSizer             *ptrace.ProtoMarshaler
+	metricsSizer            *pmetric.ProtoMarshaler
+	logsSizer               *plog.ProtoMarshaler
+	profilesSizer           *pprofile.ProtoMarshaler
 	resAttrsKeys            []string
 	samplingFraction        float64
 	inverseSamplingFraction int64
@@ -49,6 +52,7 @@ func newThroughputMeasurementProcessor(set processor.Settings, cfg *Config) (*da
 		tracesSizer:             &ptrace.ProtoMarshaler{},
 		metricsSizer:            &pmetric.ProtoMarshaler{},
 		logsSizer:               &plog.ProtoMarshaler{},
+		profilesSizer:           &pprofile.ProtoMarshaler{},
 		resAttrsKeys:            cfg.ResourceAttributesKeys,
 		samplingFraction:        samplingFraction,
 		inverseSamplingFraction: inverseSamplingFraction,
@@ -56,54 +60,27 @@ func newThroughputMeasurementProcessor(set processor.Settings, cfg *Config) (*da
 	}, nil
 }
 
-func (p *dataSizesMetricsProcessor) traceAttributes(td ptrace.Traces) []attribute.KeyValue {
-	resSpans := td.ResourceSpans()
+func (p *dataSizesMetricsProcessor) attributeSetFromResource(res pcommon.Resource) attribute.Set {
 	result := []attribute.KeyValue{}
-	for i := 0; i < resSpans.Len(); i++ {
-		res := resSpans.At(i).Resource()
-		attrs := res.Attributes()
-		for _, key := range p.resAttrsKeys {
-			if v, ok := attrs.Get(key); ok {
-				result = append(result, attribute.String(key, v.Str()))
-			}
+	attrs := res.Attributes()
+	for _, key := range p.resAttrsKeys {
+		if v, ok := attrs.Get(key); ok {
+			result = append(result, attribute.String(key, v.Str()))
 		}
 	}
-	return result
-}
-
-func (p *dataSizesMetricsProcessor) logAttributes(ld plog.Logs) []attribute.KeyValue {
-	resSpans := ld.ResourceLogs()
-	result := []attribute.KeyValue{}
-	for i := 0; i < resSpans.Len(); i++ {
-		res := resSpans.At(i).Resource()
-		attrs := res.Attributes()
-		for _, key := range p.resAttrsKeys {
-			if v, ok := attrs.Get(key); ok {
-				result = append(result, attribute.String(key, v.Str()))
-			}
-		}
-	}
-	return result
-}
-
-func (p *dataSizesMetricsProcessor) meterAttributes(md pmetric.Metrics) []attribute.KeyValue {
-	resSpans := md.ResourceMetrics()
-	result := []attribute.KeyValue{}
-	for i := 0; i < resSpans.Len(); i++ {
-		res := resSpans.At(i).Resource()
-		attrs := res.Attributes()
-		for _, key := range p.resAttrsKeys {
-			if v, ok := attrs.Get(key); ok {
-				result = append(result, attribute.String(key, v.Str()))
-			}
-		}
-	}
-	return result
+	return attribute.NewSet(result...)
 }
 
 func (p *dataSizesMetricsProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.obsrep.OdigosTraceDataSize.Add(ctx, int64(p.tracesSizer.TracesSize(td))*p.inverseSamplingFraction, metric.WithAttributes(p.traceAttributes(td)...))
+		resSpans := td.ResourceSpans()
+		for i := 0; i < resSpans.Len(); i++ {
+			res := resSpans.At(i).Resource()
+			p.obsrep.OdigosTraceDataSize.Add(ctx,
+				int64(p.tracesSizer.ResourceSpansSize(resSpans.At(i)))*p.inverseSamplingFraction,
+				metric.WithAttributeSet(p.attributeSetFromResource(res)),
+			)
+		}
 		p.obsrep.OdigosAcceptedSpans.Add(ctx, int64(td.SpanCount()))
 	}
 	return td, nil
@@ -111,15 +88,44 @@ func (p *dataSizesMetricsProcessor) processTraces(ctx context.Context, td ptrace
 
 func (p *dataSizesMetricsProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.obsrep.OdigosLogDataSize.Add(ctx, int64(p.logsSizer.LogsSize(ld))*p.inverseSamplingFraction, metric.WithAttributes(p.logAttributes(ld)...))
+		resLogs := ld.ResourceLogs()
+		for i := 0; i < resLogs.Len(); i++ {
+			res := resLogs.At(i).Resource()
+			p.obsrep.OdigosLogDataSize.Add(ctx,
+				int64(p.logsSizer.ResourceLogsSize(resLogs.At(i)))*p.inverseSamplingFraction,
+				metric.WithAttributeSet(p.attributeSetFromResource(res)),
+			)
+		}
 		p.obsrep.OdigosAcceptedLogRecords.Add(ctx, int64(ld.LogRecordCount()))
 	}
 	return ld, nil
 }
 
+func (p *dataSizesMetricsProcessor) processProfiles(ctx context.Context, pd pprofile.Profiles) (pprofile.Profiles, error) {
+	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
+		resProfiles := pd.ResourceProfiles()
+		for i := 0; i < resProfiles.Len(); i++ {
+			res := resProfiles.At(i).Resource()
+			p.obsrep.OdigosProfileDataSize.Add(ctx,
+				int64(p.profilesSizer.ResourceProfilesSize(resProfiles.At(i)))*p.inverseSamplingFraction,
+				metric.WithAttributeSet(p.attributeSetFromResource(res)),
+			)
+		}
+		p.obsrep.OdigosAcceptedProfileSamples.Add(ctx, int64(pd.SampleCount()))
+	}
+	return pd, nil
+}
+
 func (p *dataSizesMetricsProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.obsrep.OdigosMetricDataSize.Add(ctx, int64(p.metricsSizer.MetricsSize(md))*p.inverseSamplingFraction, metric.WithAttributes(p.meterAttributes(md)...))
+		resMetrics := md.ResourceMetrics()
+		for i := 0; i < resMetrics.Len(); i++ {
+			res := resMetrics.At(i).Resource()
+			p.obsrep.OdigosMetricDataSize.Add(ctx,
+				int64(p.metricsSizer.ResourceMetricsSize(resMetrics.At(i)))*p.inverseSamplingFraction,
+				metric.WithAttributeSet(p.attributeSetFromResource(res)),
+			)
+		}
 		p.obsrep.OdigosAcceptedMetricPoints.Add(ctx, int64(md.MetricCount()))
 	}
 	return md, nil

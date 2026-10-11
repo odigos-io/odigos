@@ -1,0 +1,43 @@
+import EnrichmentIntro from "/snippets/shared/enrichment-intro.mdx";
+
+<EnrichmentIntro language="Ruby" />
+
+## Required Dependencies
+
+Add the following dependencies to your project by running:
+
+```bash
+gem install opentelemetry-sdk
+```
+
+## Creating a Span
+
+To acquire a tracer:
+
+```ruby
+# If in a Rails app, this lives in config/initializers/opentelemetry.rb
+require "opentelemetry/sdk"
+
+OpenTelemetry::SDK.configure do |c|
+  c.service_name = '<YOUR_SERVICE_NAME>'
+end
+
+# 'MyAppTracer' can be used throughout your code now
+MyAppTracer = OpenTelemetry.tracer_provider.tracer('<YOUR_TRACER_NAME>')
+```
+
+To create a new span:
+
+```ruby
+require "opentelemetry/sdk"
+
+def do_work
+  MyAppTracer.in_span("do_work") do |span|
+    # do some work that the 'do_work' span tracks!
+  end
+end
+```
+
+## Additional Information
+
+For more use cases, see the [OpenTelemetry Ruby API documentation](https://opentelemetry.io/docs/languages/ruby).

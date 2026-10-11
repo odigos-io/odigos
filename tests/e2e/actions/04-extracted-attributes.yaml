@@ -1,0 +1,14 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: Verify ExtractAttribute extracts JSON, SQL, URL (multi-key) and regex variations onto new attributes
+query: |
+  length([?(
+    span.spanAttributes."extracted.json.study_id" == '1.2.3.4.5.111' &&
+    span.spanAttributes."extracted.sql.order_id" == '42' &&
+    span.spanAttributes."extracted.url.project" == 'test-project' &&
+    span.spanAttributes."extracted.url.location" == 'test-region' &&
+    span.spanAttributes."extracted.url.study" == '1.2.3.4.5.111' &&
+    span.spanAttributes."extracted.regex.request_id" == 'xyz9'
+  )]) > `0`
+expected:
+  minimum: 1

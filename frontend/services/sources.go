@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -17,26 +18,38 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/version"
 )
 
 const (
-	WorkloadKindNamespace   model.K8sResourceKind = "Namespace"
-	WorkloadKindDeployment  model.K8sResourceKind = "Deployment"
-	WorkloadKindStatefulSet model.K8sResourceKind = "StatefulSet"
-	WorkloadKindDaemonSet   model.K8sResourceKind = "DaemonSet"
-	WorkloadKindCronJob     model.K8sResourceKind = "CronJob"
+	WorkloadKindNamespace        model.K8sResourceKind = "Namespace"
+	WorkloadKindDeployment       model.K8sResourceKind = "Deployment"
+	WorkloadKindStatefulSet      model.K8sResourceKind = "StatefulSet"
+	WorkloadKindDaemonSet        model.K8sResourceKind = "DaemonSet"
+	WorkloadKindStaticPod        model.K8sResourceKind = "StaticPod"
+	WorkloadKindCronJob          model.K8sResourceKind = "CronJob"
+	WorkloadKindDeploymentConfig model.K8sResourceKind = "DeploymentConfig"
+	// WorkloadKindArgoRollout represents Argo Rollouts workload.
+	// Note: The actual Kubernetes resource has kind "Rollout" (not "ArgoRollout"):
+	//   apiVersion: argoproj.io/v1alpha1
+	//   kind: Rollout
+	// We use "ArgoRollout" in the variable name to distinguish it from other rollout concepts.
+	WorkloadKindArgoRollout model.K8sResourceKind = "Rollout"
 )
+
+type InstanceCounts struct {
+	TotalInstances   int
+	HealthyInstances int
+}
 
 func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
@@ -46,10 +59,12 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 
 	g, ctx := errgroup.WithContext(ctx)
 	var (
-		deps      []model.K8sActualSource
-		statefuls []model.K8sActualSource
-		daemons   []model.K8sActualSource
-		crons     []model.K8sActualSource
+		deps          []model.K8sActualSource
+		statefuls     []model.K8sActualSource
+		daemons       []model.K8sActualSource
+		crons         []model.K8sActualSource
+		deployConfigs []model.K8sActualSource
+		rollouts      []model.K8sActualSource
 	)
 
 	g.Go(func() error {
@@ -76,15 +91,38 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 		return err
 	})
 
+	g.Go(func() error {
+		// Only try to get DeploymentConfigs if they're available
+		if !kube.IsDeploymentConfigAvailable() {
+			deployConfigs = []model.K8sActualSource{}
+			return nil
+		}
+		var err error
+		deployConfigs, err = getDeploymentConfigs(ctx, *namespace)
+		return err
+	})
+
+	g.Go(func() error {
+		if !kube.IsArgoRolloutAvailable {
+			rollouts = []model.K8sActualSource{}
+			return nil
+		}
+		var err error
+		rollouts, err = getRollouts(ctx, *namespace)
+		return err
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
-	items := make([]model.K8sActualSource, len(deps)+len(statefuls)+len(daemons)+len(crons))
+	items := make([]model.K8sActualSource, len(deps)+len(statefuls)+len(daemons)+len(crons)+len(deployConfigs)+len(rollouts))
 	copy(items, deps)
 	copy(items[len(deps):], statefuls)
 	copy(items[len(deps)+len(statefuls):], daemons)
 	copy(items[len(deps)+len(statefuls)+len(daemons):], crons)
+	copy(items[len(deps)+len(statefuls)+len(daemons)+len(crons):], deployConfigs)
+	copy(items[len(deps)+len(statefuls)+len(daemons)+len(crons)+len(deployConfigs):], rollouts)
 
 	return items, nil
 }
@@ -103,7 +141,6 @@ func getDeployments(ctx context.Context, namespace corev1.Namespace) ([]model.K8
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +162,6 @@ func getDaemonSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8s
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +183,6 @@ func getStatefulSets(ctx context.Context, namespace corev1.Namespace) ([]model.K
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -158,44 +193,101 @@ func getStatefulSets(ctx context.Context, namespace corev1.Namespace) ([]model.K
 func getCronJobs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 
-	ver, err := getKubeVersion()
-	if err != nil {
-		return nil, fmt.Errorf("failed to detect Kubernetes version: %w", err)
-	}
-
-	// Note: batchv1beta1 is deprecated in Kubernetes 1.21 and removed in 1.25
-	// so we use batchv1beta1 for versions < 1.21 and batchv1 for >= 1.21
-	// this is to ensure compatibility with older Kubernetes versions.
-	if ver.LessThan(version.MustParseSemantic("1.21.0")) {
-		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1beta1().CronJobs(namespace.Name).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1beta1.CronJobList) error {
-			for _, cj := range cjs.Items {
-				numberOfInstances := len(cj.Status.Active)
-				response = append(response, model.K8sActualSource{
-					Namespace:         cj.Namespace,
-					Name:              cj.Name,
-					Kind:              WorkloadKindCronJob,
-					NumberOfInstances: &numberOfInstances,
-				})
-			}
-			return nil
-		})
-	} else {
-		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1().CronJobs(namespace.Name).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1.CronJobList) error {
-			for _, cj := range cjs.Items {
-				numberOfInstances := len(cj.Status.Active)
-				response = append(response, model.K8sActualSource{
-					Namespace:         cj.Namespace,
-					Name:              cj.Name,
-					Kind:              WorkloadKindCronJob,
-					NumberOfInstances: &numberOfInstances,
-				})
-			}
-			return nil
-		})
-	}
+	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1().CronJobs(namespace.Name).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1.CronJobList) error {
+		for _, cj := range cjs.Items {
+			numberOfInstances := len(cj.Status.Active)
+			response = append(response, model.K8sActualSource{
+				Namespace:         cj.Namespace,
+				Name:              cj.Name,
+				Kind:              WorkloadKindCronJob,
+				NumberOfInstances: &numberOfInstances,
+			})
+		}
+		return nil
+	})
 
 	if err != nil {
 		return nil, err
+	}
+
+	return response, nil
+}
+
+func getDeploymentConfigs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
+	var response []model.K8sActualSource
+
+	// Use dynamic client for DeploymentConfigs
+	dcClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "apps.openshift.io",
+		Version:  "v1",
+		Resource: "deploymentconfigs",
+	}).Namespace(namespace.Name)
+
+	// List all DeploymentConfigs in the namespace
+	dcList, err := dcClient.List(ctx, metav1.ListOptions{})
+	if err != nil {
+		// If DeploymentConfigs API is not available (not OpenShift) or we don't have permission, just return empty list
+		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || apierrors.IsForbidden(err) {
+			return response, nil
+		}
+		return nil, err
+	}
+
+	// Convert unstructured to typed
+	for _, dcUnstructured := range dcList.Items {
+		var dc openshiftappsv1.DeploymentConfig
+		err := kube.Scheme.Convert(&dcUnstructured, &dc, nil)
+		if err != nil {
+			// If conversion fails, skip this item
+			continue
+		}
+
+		numberOfInstances := int(dc.Status.AvailableReplicas)
+		response = append(response, model.K8sActualSource{
+			Namespace:         dc.Namespace,
+			Name:              dc.Name,
+			Kind:              WorkloadKindDeploymentConfig,
+			NumberOfInstances: &numberOfInstances,
+		})
+	}
+
+	return response, nil
+}
+
+func getRollouts(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
+	var response []model.K8sActualSource
+
+	rolloutClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "argoproj.io",
+		Version:  "v1alpha1",
+		Resource: "rollouts",
+	}).Namespace(namespace.Name)
+
+	// List all Rollouts in the namespace
+	rolloutList, err := rolloutClient.List(ctx, metav1.ListOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || apierrors.IsForbidden(err) {
+			return response, nil
+		}
+		return nil, err
+	}
+
+	// Convert unstructured to typed
+	for _, rolloutUnstructured := range rolloutList.Items {
+		var rollout argorolloutsv1alpha1.Rollout
+		err := kube.Scheme.Convert(&rolloutUnstructured, &rollout, nil)
+		if err != nil {
+			// If conversion fails, skip this item
+			continue
+		}
+
+		numberOfInstances := int(rollout.Status.AvailableReplicas)
+		response = append(response, model.K8sActualSource{
+			Namespace:         rollout.Namespace,
+			Name:              rollout.Name,
+			Kind:              WorkloadKindArgoRollout,
+			NumberOfInstances: &numberOfInstances,
+		})
 	}
 
 	return response, nil
@@ -206,51 +298,24 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 
 	switch kind {
 	case WorkloadKindDeployment:
-		dep, err := kube.DefaultClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+		patchData := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, now))
+		_, err := kube.DefaultClient.AppsV1().Deployments(namespace).Patch(ctx, name, types.StrategicMergePatchType, patchData, metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to get deployment: %w", err)
-		}
-
-		if dep.Spec.Template.Annotations == nil {
-			dep.Spec.Template.Annotations = map[string]string{}
-		}
-		dep.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
-
-		_, err = kube.DefaultClient.AppsV1().Deployments(namespace).Update(ctx, dep, metav1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update deployment: %w", err)
+			return fmt.Errorf("failed to restart deployment: %w", err)
 		}
 
 	case WorkloadKindStatefulSet:
-		sts, err := kube.DefaultClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		patchData := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, now))
+		_, err := kube.DefaultClient.AppsV1().StatefulSets(namespace).Patch(ctx, name, types.StrategicMergePatchType, patchData, metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to get statefulset: %w", err)
-		}
-
-		if sts.Spec.Template.Annotations == nil {
-			sts.Spec.Template.Annotations = map[string]string{}
-		}
-		sts.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
-
-		_, err = kube.DefaultClient.AppsV1().StatefulSets(namespace).Update(ctx, sts, metav1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update statefulset: %w", err)
+			return fmt.Errorf("failed to restart statefulset: %w", err)
 		}
 
 	case WorkloadKindDaemonSet:
-		ds, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		patchData := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, now))
+		_, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).Patch(ctx, name, types.StrategicMergePatchType, patchData, metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to get daemonset: %w", err)
-		}
-
-		if ds.Spec.Template.Annotations == nil {
-			ds.Spec.Template.Annotations = map[string]string{}
-		}
-		ds.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
-
-		_, err = kube.DefaultClient.AppsV1().DaemonSets(namespace).Update(ctx, ds, metav1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update daemonset: %w", err)
+			return fmt.Errorf("failed to restart daemonset: %w", err)
 		}
 
 	case WorkloadKindCronJob:
@@ -258,33 +323,74 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 		// We return nil here to prevent an error, as this is a no-op.
 		return nil
 
+	case WorkloadKindDeploymentConfig:
+		// Check if DeploymentConfig is available first
+		if !kube.IsDeploymentConfigAvailable() {
+			return fmt.Errorf("deploymentconfig resources are not available in this cluster")
+		}
+
+		// Use dynamic client for DeploymentConfig
+		dcClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+			Group:    "apps.openshift.io",
+			Version:  "v1",
+			Resource: "deploymentconfigs",
+		}).Namespace(namespace)
+
+		patchData := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, now))
+		_, err := dcClient.Patch(ctx, name, types.MergePatchType, patchData, metav1.PatchOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to restart deploymentconfig: %w", err)
+		}
+
+	case WorkloadKindArgoRollout:
+		if !kube.IsArgoRolloutAvailable {
+			return fmt.Errorf("argo rollouts resources are not available in this cluster")
+		}
+
+		rolloutClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+			Group:    "argoproj.io",
+			Version:  "v1alpha1",
+			Resource: "rollouts",
+		}).Namespace(namespace)
+
+		// Argo Rollouts use spec.restartAt field for restarting, not pod template annotations
+		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
+		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, now))
+		_, err := rolloutClient.Patch(ctx, name, types.MergePatchType, rolloutPatch, metav1.PatchOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to patch rollout: %w", err)
+		}
+
+	case WorkloadKindStaticPod:
+		return errors.New("static pods can't be restarted")
+
 	default:
-		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, or DaemonSet)", kind)
+		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, DaemonSet, CronJob, DeploymentConfig or Rollout)", kind)
 	}
 
 	return nil
 }
 
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind model.K8sResourceKind) (*v1alpha1.Source, error) {
-	list, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
+	sourceList := &v1alpha1.SourceList{}
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			k8sconsts.WorkloadNamespaceLabel: nsName,
 			k8sconsts.WorkloadNameLabel:      workloadName,
 			k8sconsts.WorkloadKindLabel:      string(workloadKind),
 		}).String(),
 	})
-
 	if err != nil {
 		return nil, err
 	}
-	if len(list.Items) == 0 {
+	if len(sourceList.Items) == 0 {
 		return nil, apierrors.NewNotFound(schema.GroupResource{Group: "", Resource: "source"}, workloadName)
 	}
-	if len(list.Items) > 1 {
-		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(list.Items))
+	if len(sourceList.Items) > 1 {
+		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(sourceList.Items))
 	}
 
-	return &list.Items[0], err
+	return &sourceList.Items[0], nil
 }
 
 func DeleteSourceWithAPI(c *gin.Context) {
@@ -334,6 +440,10 @@ func stringToWorkloadKind(workloadKind string) (model.K8sResourceKind, bool) {
 		return WorkloadKindDaemonSet, true
 	case "cronjob":
 		return WorkloadKindCronJob, true
+	case "rollout":
+		return WorkloadKindArgoRollout, true
+	case "staticpod":
+		return WorkloadKindStaticPod, true
 	}
 
 	return "", false
@@ -347,10 +457,17 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
-	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob:
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob, WorkloadKindDeploymentConfig, WorkloadKindArgoRollout, WorkloadKindStaticPod:
 		break
 	default:
 		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
+	}
+
+	if workloadKind == WorkloadKindStaticPod {
+		config := GetConfig(ctx)
+		if config.Tier != model.TierOnprem {
+			return nil, fmt.Errorf("StaticPod instrumentation is an enterprise (on-prem) feature")
+		}
 	}
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
@@ -450,10 +567,21 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
-	patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s", "value": %v}]`, specField, newValue)
+	// the patch document must be marshalled rather than formatted, otherwise a value
+	// containing a quote closes the JSON string and the rest is parsed as patch syntax.
+	patch, err := json.Marshal([]map[string]any{
+		{
+			"op":    "replace",
+			"path":  "/spec/" + specField,
+			"value": newValue,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
-		ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{},
+		ctx, crdName, types.JSONPatchType, patch, metav1.PatchOptions{},
 	)
 
 	return source, err
@@ -501,18 +629,10 @@ func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	}
 }
 
-type InstanceCounts struct {
-	TotalInstances   int
-	HealthyInstances int
-}
-
-func getInstrumentationInstancesConditions(ctx context.Context, namespace string, name string, kind string) ([]*model.SourceConditions, error) {
-	result := make([]*model.SourceConditions, 0)
-	conditionsMap := make(map[string]*model.SourceConditions)
-	instanceCountsMap := make(map[string]*InstanceCounts)
+func GetInstrumentationInstances(ctx context.Context, namespace string, name string, kind string) ([]*v1alpha1.InstrumentationInstance, error) {
+	result := make([]*v1alpha1.InstrumentationInstance, 0)
 
 	listOptions := metav1.ListOptions{}
-
 	if namespace != "" && name != "" && kind != "" {
 		objectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 		if len(objectName) > 63 {
@@ -528,8 +648,25 @@ func getInstrumentationInstancesConditions(ctx context.Context, namespace string
 		return nil, err
 	}
 
-	// Count instances and group by workload
 	for _, instance := range list.Items {
+		result = append(result, &instance)
+	}
+
+	return result, nil
+}
+
+func getInstrumentationInstancesConditions(ctx context.Context, namespace string, name string, kind string) ([]*model.SourceConditions, error) {
+	result := make([]*model.SourceConditions, 0)
+	conditionsMap := make(map[string]*model.SourceConditions)
+	instanceCountsMap := make(map[string]*InstanceCounts)
+
+	items, err := GetInstrumentationInstances(ctx, namespace, name, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Count instances and group by workload
+	for _, instance := range items {
 		objectName, exists := instance.Labels[consts.InstrumentedAppNameLabel]
 		if !exists {
 			continue
@@ -571,14 +708,12 @@ func getInstrumentationInstancesConditions(ctx context.Context, namespace string
 
 		reason := v1alpha1.InstrumentationInstancesHealth
 		message := fmt.Sprintf("%d/%d instances are healthy", instanceCounts.HealthyInstances, instanceCounts.TotalInstances)
-		lastTransitionTime := Metav1TimeToString(metav1.NewTime(time.Now()))
 
 		item.Conditions = append(item.Conditions, &model.Condition{
-			Type:               reason,
-			Status:             status,
-			Reason:             &reason,
-			Message:            &message,
-			LastTransitionTime: &lastTransitionTime,
+			Type:    reason,
+			Status:  status,
+			Reason:  &reason,
+			Message: &message,
 		})
 
 		result = append(result, item)
@@ -625,14 +760,12 @@ func getWorkloadsConditions(ctx context.Context, namespace string, name string, 
 
 			for _, c := range dep.Status.Conditions {
 				status := TransformConditionStatus(metav1.ConditionStatus(c.Status), string(c.Type), c.Reason)
-				lastTransitionTime := Metav1TimeToString(c.LastTransitionTime)
 
 				conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, &model.Condition{
-					Status:             status,
-					Type:               string(c.Type),
-					Reason:             &c.Reason,
-					Message:            &c.Message,
-					LastTransitionTime: &lastTransitionTime,
+					Status:  status,
+					Type:    string(c.Type),
+					Reason:  &c.Reason,
+					Message: &c.Message,
 				})
 			}
 		}
@@ -672,14 +805,12 @@ func getWorkloadsConditions(ctx context.Context, namespace string, name string, 
 
 			for _, c := range ds.Status.Conditions {
 				status := TransformConditionStatus(metav1.ConditionStatus(c.Status), string(c.Type), c.Reason)
-				lastTransitionTime := Metav1TimeToString(c.LastTransitionTime)
 
 				conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, &model.Condition{
-					Status:             status,
-					Type:               string(c.Type),
-					Reason:             &c.Reason,
-					Message:            &c.Message,
-					LastTransitionTime: &lastTransitionTime,
+					Status:  status,
+					Type:    string(c.Type),
+					Reason:  &c.Reason,
+					Message: &c.Message,
 				})
 			}
 		}
@@ -719,14 +850,12 @@ func getWorkloadsConditions(ctx context.Context, namespace string, name string, 
 
 			for _, c := range ss.Status.Conditions {
 				status := TransformConditionStatus(metav1.ConditionStatus(c.Status), string(c.Type), c.Reason)
-				lastTransitionTime := Metav1TimeToString(c.LastTransitionTime)
 
 				conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, &model.Condition{
-					Status:             status,
-					Type:               string(c.Type),
-					Reason:             &c.Reason,
-					Message:            &c.Message,
-					LastTransitionTime: &lastTransitionTime,
+					Status:  status,
+					Type:    string(c.Type),
+					Reason:  &c.Reason,
+					Message: &c.Message,
 				})
 			}
 		}
@@ -754,27 +883,62 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 			conditionsMap[key] = instanceItem
 		} else {
 			conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, instanceItem.Conditions...)
-			SortConditions(conditionsMap[key].Conditions)
 		}
 	}
 
-	workloadsConditions, err := getWorkloadsConditions(ctx, namespace, name, kind)
-	if err != nil {
-		return nil, err
-	}
-	for _, workloadItem := range workloadsConditions {
-		key := fmt.Sprintf("%s/%s/%s", workloadItem.Namespace, workloadItem.Name, workloadItem.Kind)
-		if _, exists := conditionsMap[key]; !exists {
-			conditionsMap[key] = workloadItem
-		} else {
-			conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, workloadItem.Conditions...)
-			SortConditions(conditionsMap[key].Conditions)
-		}
-	}
+	// TODO: uncomment this when we have a better way to differentiate between errors
+	// workloadsConditions, err := getWorkloadsConditions(ctx, namespace, name, kind)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// for _, workloadItem := range workloadsConditions {
+	// 	key := fmt.Sprintf("%s/%s/%s", workloadItem.Namespace, workloadItem.Name, workloadItem.Kind)
+	// 	if _, exists := conditionsMap[key]; !exists {
+	// 		conditionsMap[key] = workloadItem
+	// 	} else {
+	// 		conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, workloadItem.Conditions...)
+	// 		SortConditions(conditionsMap[key].Conditions)
+	// 	}
+	// }
 
 	for _, item := range conditionsMap {
 		result = append(result, item)
 	}
 
 	return result, nil
+}
+
+func UninstrumentCluster(ctx context.Context) error {
+	// use the non-cached client to make sure we don't miss any one
+	list, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	namespaceSources := make([]v1alpha1.Source, 0)
+	workloadSources := make([]v1alpha1.Source, 0)
+
+	for _, source := range list.Items {
+		if source.Spec.Workload.Kind == k8sconsts.WorkloadKind(WorkloadKindNamespace) {
+			namespaceSources = append(namespaceSources, source)
+		} else {
+			workloadSources = append(workloadSources, source)
+		}
+	}
+
+	for _, source := range namespaceSources {
+		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, source := range workloadSources {
+		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

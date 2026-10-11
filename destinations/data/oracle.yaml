@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: ORACLE_ENDPOINT
       displayName: OTLP HTTP Endpoint
@@ -20,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'The data upload endpoint of the Oracle APM domain.'
+        tooltip: "The data upload endpoint of the Oracle APM domain."
     - name: ORACLE_DATA_KEY
       displayName: Data Key
       componentType: input
@@ -36,5 +38,5 @@ spec:
         values:
           - private
           - public
-        tooltip: 'The type of the data key, relevant for Traces. Metrics are always authenticated with a private data key.'
+        tooltip: "The type of the data key, relevant for Traces. Metrics are always authenticated with a private data key."
       initialValue: private

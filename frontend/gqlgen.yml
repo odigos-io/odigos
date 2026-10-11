@@ -22,12 +22,12 @@ resolver:
   layout: follow-schema
   dir: graph
   package: graph
-  filename_template: '{name}.resolvers.go'
+  filename_template: "{name}.resolvers.go"
 
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-  - 'github.com/odigos-io/odigos/frontend/graph/model'
+  - "github.com/odigos-io/odigos/frontend/graph/model"
 
 models:
   ID:
@@ -62,7 +62,191 @@ models:
         resolver: true
       dataStreams:
         resolver: true
+      recommendations:
+        resolver: true
   K8sActualNamespace:
     fields:
       sources:
+        resolver: true
+
+  K8sWorkload:
+    fields:
+      workloadOdigosHealthStatus:
+        resolver: true
+      serviceName:
+        resolver: true
+      conditions:
+        resolver: true
+      markedForInstrumentation:
+        resolver: true
+      runtimeInfo:
+        resolver: true
+      agentEnabled:
+        resolver: true
+      rollout:
+        resolver: true
+      autoRollback:
+        resolver: true
+      containers:
+        resolver: true
+      pods:
+        resolver: true
+      podsAgentInjectionStatus:
+        resolver: true
+      podsHealthStatus:
+        resolver: true
+      podsOdigosHealthStatus:
+        resolver: true
+      workloadHealthStatus:
+        resolver: true
+      processesHealthStatus:
+        resolver: true
+      telemetryMetrics:
+        resolver: true
+      dataStreamNames:
+        resolver: true
+      numberOfInstances:
+        resolver: true
+      rollbackOccurred:
+        resolver: true
+
+  K8sWorkloadRollout:
+    fields:
+      podsManifestInjectionOverview:
+        resolver: true
+
+  K8sWorkloadTelemetryMetrics:
+    fields:
+      expectingTelemetry:
+        resolver: true
+
+  K8sWorkloadPodContainer:
+    fields:
+      processes:
+        resolver: true
+
+  K8sActualSource:
+    fields:
+      profiling:
+        resolver: true
+
+  Sampling:
+    fields:
+      rules:
+        resolver: true
+
+  SamplingConfigs:
+    fields:
+      effective:
+        resolver: true
+      helmDeployment:
+        resolver: true
+      remoteConfigFromCentral:
+        resolver: true
+      localUiConfig:
+        resolver: true
+
+  SamplingRules:
+    fields:
+      noisyOperations:
+        resolver: true
+      highlyRelevantOperations:
+        resolver: true
+      costReductionRules:
+        resolver: true
+
+  # Sampling rule updates are partial: an omitted field keeps its current value,
+  # while an explicit null clears it (e.g. a null operation widens the rule to all
+  # operations). Omittable lets the update merge tell the two apart.
+  NoisyOperationRuleInput:
+    fields:
+      name: { omittable: true }
+      disabled: { omittable: true }
+      sourceScopes: { omittable: true }
+      operation: { omittable: true }
+      percentageAtMost: { omittable: true }
+      notes: { omittable: true }
+
+  HighlyRelevantOperationRuleInput:
+    fields:
+      name: { omittable: true }
+      disabled: { omittable: true }
+      sourceScopes: { omittable: true }
+      error: { omittable: true }
+      durationAtLeastMs: { omittable: true }
+      operation: { omittable: true }
+      percentageAtLeast: { omittable: true }
+      notes: { omittable: true }
+
+  CostReductionRuleInput:
+    fields:
+      name: { omittable: true }
+      disabled: { omittable: true }
+      sourceScopes: { omittable: true }
+      operation: { omittable: true }
+      notes: { omittable: true }
+
+  # Same partial-update semantics for the instrumentation rule selectors: a null
+  # sourcesScopes widens the rule to the entire cluster, and a null
+  # instrumentationLibraries to all libraries. The type payloads are left as-is:
+  # clients send null for the ones that don't apply to the rule's type.
+  InstrumentationRuleInput:
+    fields:
+      sourcesScopes: { omittable: true }
+      instrumentationLibraries: { omittable: true }
+
+  K8sNamespace:
+    fields:
+      markedForInstrumentation:
+        resolver: true
+      dataStreamNames:
+        resolver: true
+      workloads:
+        resolver: true
+
+  Insights:
+    fields:
+      services:
+        resolver: true
+      serviceNames:
+        resolver: true
+      serviceProfile:
+        resolver: true
+      blastRadius:
+        resolver: true
+      transactions:
+        resolver: true
+      transaction:
+        resolver: true
+      baseline:
+        resolver: true
+      observations:
+        resolver: true
+      observation:
+        resolver: true
+      findings:
+        resolver: true
+      anomalies:
+        resolver: true
+      anomaly:
+        resolver: true
+      policies:
+        resolver: true
+      learningPolicies:
+        resolver: true
+      guardrails:
+        resolver: true
+      guardrailViolations:
+        resolver: true
+      guardrailViolation:
+        resolver: true
+      recommendations:
+        resolver: true
+      recommendation:
+        resolver: true
+      catalog:
+        resolver: true
+      systemSettings:
+        resolver: true
+      storageHealth:
         resolver: true

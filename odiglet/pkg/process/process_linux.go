@@ -1,49 +1,116 @@
 package process
 
 import (
+	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
 	"os"
-	"path"
-	"strings"
 
-	mount "github.com/moby/sys/mountinfo"
-	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func isPodContainerPredicate(podUID string, containerName string) func(string) bool {
+func groupByCgroup(pcs []PodContainer) (map[PodContainerKey]map[int]struct{}, error) {
+	result := make(map[PodContainerKey]map[int]struct{}, len(pcs))
+	for _, pc := range pcs {
+		if pc.ContainerID == "" {
+			continue
+		}
+		pids, err := pidsInContainerByCgroup(hostCgroupLayout, pc)
+		if err != nil {
+			if errors.Is(err, ErrCgroupMissing) {
+				continue
+			}
+			return nil, fmt.Errorf("pids in container %s/%s: %w", pc.PodUID, pc.ContainerName, err)
+		}
+		if len(pids) == 0 {
+			continue
+		}
+		set := make(map[int]struct{}, len(pids))
+		for _, pid := range pids {
+			set[pid] = struct{}{}
+		}
+		result[pc.PodContainerKey] = set
+	}
+	return result, nil
+}
 
-	// Added trailing slash to avoid substring collisions like "membership" matching "membership1".
-	// Real m.Root ends with runtime ID (e.g., .../containers/membership/<runtime-id>), so exact match fails.
-	// Using slash ensures we only match full "containers/<name>/" segments in mount paths.
-	expectedMountRoot := fmt.Sprintf("%s/containers/%s/", podUID, containerName)
+// groupByProcMountInfo is the legacy fallback: a single /proc scan
+// that checks each PID's mountinfo for the k8s service-account mount
+// path identifying its pod+container. Slower per-PID but only walks
+// /proc once for any size of pcs.
+func groupByProcMountInfo(pcs []PodContainer) (map[PodContainerKey]map[int]struct{}, error) {
+	keys := make([]PodContainerKey, 0, len(pcs))
+	for _, pc := range pcs {
+		keys = append(keys, pc.PodContainerKey)
+	}
+	groups, err := process.Group(isInPodContainersBatchPredicate(keys))
+	if err != nil {
+		return nil, fmt.Errorf("failed to group processes by (pod, container) :%w", err)
+	}
+	return groups, nil
+}
 
-	return func(procDirName string) bool {
-		mountInfoFile := path.Join("/proc", procDirName, "mountinfo")
+func isInPodContainersBatchPredicate(keys []PodContainerKey) func(int) (PodContainerKey, bool) {
+	expectedMountByPodContainer := make(map[PodContainerKey][]byte, len(keys))
+	for _, k := range keys {
+		expectedMount := fmt.Sprintf("%s/containers/%s/", k.PodUID, k.ContainerName)
+		expectedMountByPodContainer[k] = []byte(expectedMount)
+	}
+
+	return func(pid int) (PodContainerKey, bool) {
+		mountInfoFile := process.ProcFilePath(pid, "mountinfo")
 		f, err := os.Open(mountInfoFile)
 		if err != nil {
-			return false
+			return PodContainerKey{}, false
 		}
 		defer f.Close()
 
-		infos, err := mount.GetMountsFromReader(f, func(m *mount.Info) (skip, stop bool) {
-			if strings.Contains(m.Root, expectedMountRoot) {
-				// Found the mount, add it and stop
-				return false, true
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			for pc, mountPath := range expectedMountByPodContainer {
+				if bytes.Contains(scanner.Bytes(), mountPath) {
+					return pc, true
+				}
 			}
-			// Keep looking
-			return true, false
-		})
-		if err != nil {
-			return false
 		}
-		if len(infos) > 0 {
-			return true
-		}
-
-		return false
+		return PodContainerKey{}, false
 	}
 }
 
-func FindAllInContainer(podUID string, containerName string, runtimeDetectionEnvs map[string]struct{}) ([]procdiscovery.Details, error) {
-	return procdiscovery.FindAllProcesses(isPodContainerPredicate(podUID, containerName), runtimeDetectionEnvs)
+type PodContainerKey struct {
+	PodUID        string
+	ContainerName string
+}
+
+type PodContainer struct {
+	PodContainerKey
+	QOSClass    corev1.PodQOSClass
+	ContainerID string
+}
+
+// GroupByPodContainer groups all the current active processes by
+// (podUID, containerName) using the provided list of PodContainers to
+// filter relevant processes. Processes that do not belong to any of
+// the provided PodContainers are ignored.
+func GroupByPodContainer(pcs []PodContainer) (map[PodContainerKey]map[int]struct{}, error) {
+	// if we have the cgroup layout available,
+	// use it for grouping as it's more efficient.
+	if hostCgroupLayout.Valid {
+		groups, err := groupByCgroup(pcs)
+		// if we had and error or no groups, fallback to the legacy proc mountinfo parsing
+		// currently we fallback even when err is nil and no matches were found,
+		// to avoid possible regressions due to the cgroup path resolution logic.
+		switch {
+		case err == nil && len(groups) > 0:
+			commonlogger.LoggerCompat().Debug("found process groups based on cgroups", "groups", len(groups), "pod-containers", pcs)
+			return groups, nil
+		case err != nil:
+			commonlogger.LoggerCompat().Warn("failed to perfrom pid resolution based on cgroup, fallback to proc scan", "error", err)
+		}
+	}
+	// fallback to /proc/<pid>/mountinfo parsing
+	return groupByProcMountInfo(pcs)
 }

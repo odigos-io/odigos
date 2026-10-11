@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-instrumentor
     odigos.io/system-object: "true"
-  name: odigos-instrumentor
+  name: {{ .Values.instrumentor.deploymentName | default "odigos-instrumentor" }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 2
@@ -29,7 +29,12 @@ spec:
               app.kubernetes.io/name: odigos-instrumentor
         {{- end }}
       {{- end }}
-      {{- if .Values.nodeSelector }}
+      {{- if .Values.instrumentor.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.instrumentor.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
@@ -42,6 +47,9 @@ spec:
                   matchLabels:
                     app.kubernetes.io/name: odigos-instrumentor
                 topologyKey: "kubernetes.io/hostname"
+      {{- if .Values.instrumentor.priorityClassName }}
+      priorityClassName: {{ .Values.instrumentor.priorityClassName }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081
@@ -50,26 +58,42 @@ spec:
         command:
           - /app
         {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        {{- $extendedSuffix := "" -}}
+        {{- if and .Values.odiglet.extended (include "odigos.secretExists" .) -}}
+          {{- $extendedSuffix = "-extended" -}}
+        {{- end -}}
+        {{- $agentsImageTag := printf "%s%s" $imageTag $extendedSuffix -}}
         {{- if include "odigos.secretExists" . }}
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-instrumentor" "Tag" $imageTag) }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-instrumentor" "Tag" $imageTag) }}
         {{- else }}
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "instrumentor" "Tag" $imageTag) }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "instrumentor" "Tag" $imageTag) }}
         {{- end }}
         ports:
           - containerPort: 9443
             name: webhook-server
             protocol: TCP
         env:
+          {{- if .Values.instrumentor.deploymentName }}
+          - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
+            value: {{ .Values.instrumentor.deploymentName | quote }}
+          {{- end }}
           - name: OTEL_SERVICE_NAME
             value: instrumentor
           - name: CURRENT_NS
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: ODIGOS_LOG_LEVEL
+            value: {{ .Values.instrumentor.logLevel | default .Values.logLevel | default "info" | quote }}
           - name: ODIGOS_TIER
             valueFrom:
               configMapKeyRef:
                 key: ODIGOS_TIER
+                name: odigos-deployment
+          - name: ODIGOS_VERSION
+            valueFrom:
+              configMapKeyRef:
+                key: ODIGOS_VERSION
                 name: odigos-deployment
           {{- if include "odigos.secretExists" . }}
           - name: ODIGOS_ONPREM_TOKEN
@@ -78,6 +102,28 @@ spec:
                 name: odigos-pro
                 key: odigos-onprem-token
           {{- end }}
+          - name: ODIGOS_COLLECTOR_IMAGE
+            {{- if include "odigos.secretExists" . }}
+            value: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-collector" "Tag" $imageTag) }}'
+            {{- else }}
+            value: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "collector" "Tag" $imageTag) }}'
+            {{- end }}
+          - name: ODIGOS_INIT_CONTAINER_IMAGE
+            {{- if include "odigos.secretExists" . }}
+            value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-agents" "Tag" $agentsImageTag) }}
+            {{- else }}
+            value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "agents" "Tag" $imageTag) }}
+            {{- end }}
+          {{- if dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict) }}
+          - name: ODIGOS_INSTRUMENTED_PODS_NODE_LABEL_RETENTION
+            value: {{ dig "scheduleOnlyOnInstrumentedNodes" "nodeLabelRetention" "5m" (.Values.odiglet | default dict) | quote }}
+          {{- end }}
+          {{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" }}
+          - name: ODIGOS_URL_TEMPLATIZATION_LIVE_TRAFFIC_LEARNING
+            value: "true"
+          {{- end }}
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.instrumentor.resources) }}
         volumeMounts:
           - name: instrumentor-webhooks-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -92,11 +138,13 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /readyz
             port: 8081
           periodSeconds: 10
+          timeoutSeconds: 5
         name: manager
         resources:
 {{ toYaml .Values.instrumentor.resources | indent 10 }}
@@ -111,14 +159,8 @@ spec:
             secretName: instrumentor-webhooks-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.instrumentor }}
-  {{- if .nodeSelector }}
-      nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
-  {{- end }}
   {{- if .tolerations }}
       tolerations: {{ toYaml .tolerations | nindent 8 }}
   {{- end }}

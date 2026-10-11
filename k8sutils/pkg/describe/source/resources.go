@@ -33,7 +33,8 @@ type OdigosSourceResources struct {
 }
 
 func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
-	workloadObj *K8sSourceObject) (*OdigosSourceResources, error) {
+	workloadObj *K8sSourceObject,
+) (*OdigosSourceResources, error) {
 	sourceResources := OdigosSourceResources{}
 
 	sources, err := getSources(ctx, odigosClient, workloadObj)
@@ -78,9 +79,12 @@ func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Inter
 }
 
 func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloadObj *K8sSourceObject) (*corev1.PodList, error) {
-	podLabelSelector := metav1.FormatLabelSelector(workloadObj.LabelSelector)
+	var podLabelSelector string
+	if workloadObj.LabelSelector != nil {
+		podLabelSelector = metav1.FormatLabelSelector(workloadObj.LabelSelector)
+	}
 
-	if workloadObj.Kind == "Deployment" {
+	if workloadObj.Kind == k8sconsts.WorkloadKindDeployment {
 		// In case 2 deployment have the same podLabelselector and namespace, we need to get the specific pods
 		// for the deployment, get the pods by listing the replica-sets owned by the deployment and then listing the pods
 		replicaSets, err := kubeClient.AppsV1().ReplicaSets(workloadObj.Namespace).List(ctx, metav1.ListOptions{
@@ -120,6 +124,9 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 					isLatestRevisionText = "true"
 				}
 				for i := range podList.Items {
+					if podList.Items[i].Annotations == nil {
+						podList.Items[i].Annotations = make(map[string]string)
+					}
 					podList.Items[i].Annotations[OdigosRunningLatestWorkloadRevisionAnnotation] = isLatestRevisionText
 				}
 
@@ -129,6 +136,12 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 			}
 		}
 		return pods, nil
+	} else if podLabelSelector == "" {
+		pod, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).Get(ctx, workloadObj.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return &corev1.PodList{Items: []corev1.Pod{*pod}}, nil
 	} else {
 		pods, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{LabelSelector: podLabelSelector})
 		if err != nil {

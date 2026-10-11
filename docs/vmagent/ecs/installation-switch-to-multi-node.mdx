@@ -1,0 +1,83 @@
+---
+title: "Switch from Single Node to Multi Node"
+sidebarTitle: "Switch to Multi Node"
+description: "Move an existing Agent-only ECS deployment to Agent + Proxy so the cluster appears in Odigos Central as one platform — without reinstalling the agents."
+---
+
+import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+
+<EnterpriseVMAgent />
+
+No reinstall. The agents already running from
+[Install: Single Node](/vmagent/ecs/installation-agent-only) speak the same
+protocol to the proxy that they speak to Central. You add the proxy, re-point
+the agents at it, and roll the daemon.
+
+After the switch, Central shows **one** platform named after the ECS cluster,
+replacing the per-node platforms.
+
+<Info>
+  You need the **`odigos-ecs-proxy`** image in addition to the agent image you
+  already run. Mirror it the same way as in
+  [System Requirements](/vmagent/ecs/requirements#license-and-images).
+</Info>
+
+## Switch
+
+<Steps>
+  <Step title="Deploy the proxy">
+    Follow [Install: Multi Node](/vmagent/ecs/installation-with-proxy) steps
+    3–5 (stable address, proxy task definition, proxy service). Prefer the
+    internal NLB; a pinned instance is test/dev only.
+
+    Do **not** create a second agent service — keep the daemon you already have.
+  </Step>
+  <Step title="Re-point the agents">
+    In the agent task definition, change `ODIGOS_DEFAULT_CONFIG`'s endpoint to
+    the proxy's `host:4321` **and** add `ODIGOS_ECS_BEHIND_PROXY=true`. Register
+    the new revision.
+
+    The endpoint alone cannot tell a proxy from Central. Without
+    `ODIGOS_ECS_BEHIND_PROXY=true`, every agent still registers under the
+    cluster name and the coverage check reports all instances as uncovered. See
+    [platform naming](/vmagent/ecs/configuration#platform-naming-per-mode).
+  </Step>
+  <Step title="Roll the daemon">
+    ```bash
+    aws ecs update-service --cluster "$CLUSTER" --service odigos-ecs-agent \
+      --task-definition odigos-ecs-agent --force-new-deployment
+    ```
+  </Step>
+  <Step title="Verify">
+    Use [Install: Multi Node, Step 8](/vmagent/ecs/installation-with-proxy#step-8-verify):
+    agents connected to the proxy, `/healthz` lists every node, and Central
+    shows one platform for the cluster.
+  </Step>
+</Steps>
+
+Values already persisted in each node's `config.yaml`
+[take precedence](/vmagent/ecs/configuration#configuration-precedence-and-persistence)
+over `ODIGOS_DEFAULT_CONFIG`. After the first boot behind the proxy, change the
+endpoint through Central or `odictl` if a node still points at Central.
+
+## Switch back to single node
+
+The same flow in reverse:
+
+1. Point `ODIGOS_DEFAULT_CONFIG`'s endpoint back at Central.
+2. Remove `ODIGOS_ECS_BEHIND_PROXY` (or set it to `false`).
+3. Register a new revision and `update-service --force-new-deployment`.
+4. Delete the proxy service.
+
+Each node then appears in Central as its own platform again.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Install: Multi Node" icon="sitemap" href="/vmagent/ecs/installation-with-proxy">
+    Full Agent + Proxy install if you are starting from scratch.
+  </Card>
+  <Card title="Configuration Reference" icon="sliders" href="/vmagent/ecs/configuration">
+    `ODIGOS_ECS_BEHIND_PROXY` and the proxy environment variables.
+  </Card>
+</CardGroup>

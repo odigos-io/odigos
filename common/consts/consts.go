@@ -2,28 +2,24 @@ package consts
 
 import (
 	"errors"
+	"time"
 )
 
 const (
-	CurrentNamespaceEnvVar      = "CURRENT_NS"
-	OdigosVersionEnvVarName     = "ODIGOS_VERSION"
-	OdigosTierEnvVarName        = "ODIGOS_TIER"
-	DefaultOdigosNamespace      = "odigos-system"
-	OdigosConfigurationName     = "odigos-config"
-	OdigosEffectiveConfigName   = "effective-config"
-	OdigosConfigurationFileName = "config.yaml"
-	OTLPPort                    = 4317
-	OTLPHttpPort                = 4318
-	PprofOdigosPort             = 6060
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	OdigosInstrumentationLabel = "odigos-instrumentation"
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	InstrumentationEnabled = "enabled"
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	InstrumentationDisabled = "disabled"
+	CurrentNamespaceEnvVar              = "CURRENT_NS"
+	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
+	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
+	OdigosTierEnvVarName                = "ODIGOS_TIER"
+	OdigosLogLevelEnvVarName            = "ODIGOS_LOG_LEVEL"
+	OtelLogLevelEnvVarName              = "OTEL_LOG_LEVEL"
+	DefaultOdigosNamespace              = "odigos-system"
+	OdigosConfigurationName             = "odigos-configuration"
+	OdigosEffectiveConfigName           = "effective-config"
+	OdigosRemoteConfigName              = "odigos-remote-config"   // backend/GraphQL overlay (e.g. rollout)
+	OdigosLocalUiConfigName             = "odigos-local-ui-config" // UI overlay (log level, sampling)
+	OdigosConfigurationFileName         = "config.yaml"
+	OTLPPort                            = 4317
+	OTLPHttpPort                        = 4318
 
 	// DefaultDataStream is the default data stream name used for telemetry data.
 	DefaultDataStream = "default"
@@ -51,7 +47,8 @@ const (
 	InstrumentationInstance = "InstrumentationInstance"
 	Destination             = "Destination"
 
-	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
+	GoOffsetsPublicBucketURL = "https://storage.googleapis.com/odigos-cloud/"
+	GoOffsetsPublicURL       = GoOffsetsPublicBucketURL + "offset_results_min.json"
 
 	LdPreloadEnvVarName = "LD_PRELOAD"
 	OdigosLoaderDirName = "loader"
@@ -59,42 +56,73 @@ const (
 
 	// name of the secret that contains the oidc client secret
 	OidcSecretName = "odigos-oidc"
+
+	ServiceGraphConnectorName = "servicegraph"
+	ServiceGraphEndpointPort  = 9090
+
+	// ServiceGraphInsightsExporterName is the OTLP gRPC exporter that ships the
+	// servicegraph connector's metrics to the odigos-insights service so it can
+	// build the blast-radius topology. Added as a second exporter on the existing
+	// metrics/servicegraph pipeline when insights is active.
+	ServiceGraphInsightsExporterName = "otlp_grpc/servicegraph-insights"
+
+	ServiceIOConnectorName                       = "serviceio"
+	TraceCorrelationsMetricsPipelineName         = "metrics/tracecorrelations"
+	TraceCorrelationsMetricsServiceName          = "odigos-correlations-metrics"
+	TraceCorrelationsVictoriaMetricsExporterName = "otlp_http/odigos-correlations-metrics"
+
+	// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
+	// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.
+	// Since DeploymentConfig uses k8s.deployment.name as the semconv key, we need to add this attribute to the list of attributes to be collected.
+	// This is needed to distinguish between workloads that share the same semconv key
+	// (e.g., DeploymentConfig uses k8s.deployment.name)
+	OdigosWorkloadKindAttribute = "odigos.workload.kind"
+
+	// Custom attribute which specifies the odigos workload/source name.
+	// For Deployments this will be the deployment name, for StatefulSets the statefulset name, etc'
+	// See Source CRD workload field for more details.
+	OdigosWorkloadNameAttribute = "odigos.workload.name"
 )
 
 // Odigos config properties
 const (
-	TelemetryEnabledProperty          = "telemetry-enabled"
-	OpenshiftEnabledProperty          = "openshift-enabled"
-	PspProperty                       = "psp"
-	SkipWebhookIssuerCreationProperty = "skip-webhook-issuer-creation"
-	AllowConcurrentAgentsProperty     = "allow-concurrent-agents"
-	ImagePrefixProperty               = "image-prefix"
-	UiModeProperty                    = "ui-mode"
-	UiPaginationLimitProperty         = "ui-pagination-limit"
-	UiRemoteUrlProperty               = "ui-remote-url"
-	CentralBackendURLProperty         = "central-backend-url"
-	ClusterNameProperty               = "cluster-name"
-	IgnoredNamespacesProperty         = "ignored-namespaces"
-	IgnoredContainersProperty         = "ignored-containers"
-	MountMethodProperty               = "mount-method"
-	CustomContainerRuntimeSocketPath  = "custom-container-runtime-socket-path"
-	K8sNodeLogsDirectory              = "k8s-node-logs-directory"
-	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
-	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
-	NodeSelectorProperty              = "node-selector"
-	KarpenterEnabledProperty          = "karpenter-enabled"
-	RollbackDisabledProperty          = "instrumentation-auto-rollback-disabled"
-	RollbackGraceTimeProperty         = "instrumentation-auto-rollback-grace-time"
-	RollbackStabilityWindow           = "instrumentation-auto-rollback-stability-window"
-	AutomaticRolloutDisabledProperty  = "automatic-rollout-disabled"
-	OidcTenantUrlProperty             = "oidc-tenant-url"
-	OidcClientIdProperty              = "oidc-client-id"
-	OidcClientSecretProperty          = "oidc-client-secret"
+	TelemetryEnabledProperty           = "telemetry-enabled"
+	OpenshiftEnabledProperty           = "openshift-enabled"
+	PspProperty                        = "psp"
+	SkipWebhookIssuerCreationProperty  = "skip-webhook-issuer-creation"
+	AllowConcurrentAgentsProperty      = "allow-concurrent-agents"
+	ImagePrefixProperty                = "image-prefix"
+	UiModeProperty                     = "ui-mode"
+	UiPaginationLimitProperty          = "ui-pagination-limit"
+	UiRemoteUrlProperty                = "ui-remote-url"
+	CentralBackendURLProperty          = "central-backend-url"
+	ClusterNameProperty                = "cluster-name"
+	IgnoredNamespacesProperty          = "ignored-namespaces"
+	IgnoredContainersProperty          = "ignored-containers"
+	MountMethodProperty                = "mount-method"
+	CustomContainerRuntimeSocketPath   = "custom-container-runtime-socket-path"
+	UserInstrumentationEnvsProperty    = "user-instrumentation-envs"
+	AgentEnvVarsInjectionMethod        = "agent-env-vars-injection-method"
+	NodeSelectorProperty               = "node-selector"
+	KarpenterEnabledProperty           = "karpenter-enabled"
+	RollbackDisabledProperty           = "instrumentation-auto-rollback-disabled"
+	RollbackGraceTimeProperty          = "instrumentation-auto-rollback-grace-time"
+	RollbackStabilityWindow            = "instrumentation-auto-rollback-stability-window"
+	AutomaticRolloutDisabledProperty   = "automatic-rollout-disabled"
+	OidcTenantUrlProperty              = "oidc-tenant-url"
+	OidcClientIdProperty               = "oidc-client-id"
+	OidcClientSecretProperty           = "oidc-client-secret"
+	OdigletHealthProbeBindPortProperty = "odiglet-health-probe-bind-port"
+	ServiceGraphDisabledProperty       = "service-graph-disabled"
+	GoAutoOffsetsCronProperty          = "go-auto-offsets-cron"
+	GoAutoOffsetsModeProperty          = "go-auto-offsets-mode"
+	ClickhouseJsonTypeEnabledProperty  = "clickhouse-json-type-enabled"
+	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
+	EnableDataCompressionProperty      = "enable-data-compression"
+	ResourceSizePresetProperty         = "resource-size-preset"
 )
 
-var (
-	ErrorPodsNotFound = errors.New("could not find a ready pod")
-)
+var ErrorPodsNotFound = errors.New("could not find a ready pod")
 
 // Agents related consts
 var (
@@ -117,14 +145,36 @@ const (
 	KarpenterStartupTaintKey = "odigos.io/needs-init"
 )
 
-// Batch processor related consts
+// Processor related consts
 const (
-	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
-	SmallBatchesProcessor          = "batch/small-batches"
+	GenericBatchProcessorConfigKey        = "batch/generic-batch-processor"
+	SmallBatchesProcessor                 = "batch/small-batches"
+	GroupByTraceProcessor                 = "groupbytrace"
+	TracesPostGroupByForwardConnectorName = "forward/traces-post-groupby"
+	TracesExportingPipelineName           = "traces/exporting"
+	OdigosTailSamplingProcessorName       = "odigostailsampling"
+	OdigosTraceStateProcessorName         = "odigostracestate"
+	URLTemplatizationProcessorName        = "odigos-url-templatization"
+	OdigosURLTemplateProcessorType        = "odigosurltemplate"
+	PiiMaskingProcessorName               = "odigos-pii-masking"
+	OdigosPiiMaskingProcessorType         = "odigospiimasking"
+	SQLQueryProcessorName                 = "odigos-sql-query"
+	OdigosSQLQueryProcessorType           = "odigossqlquery"
+	OdigosExtractAttributeProcessorType   = "odigosextractattribute"
+)
+
+// Extension related consts
+const (
+	OdigosCapabilitiesExtensionType = "odigos_capabilities"
 )
 
 // Auto rollback related consts
+var (
+	DefaultAutoRollbackGraceTime       = 5 * time.Minute
+	DefaultAutoRollbackStabilityWindow = 1 * time.Hour
+)
+
+// UnixFD related consts
 const (
-	DefaultAutoRollbackGraceTime       = "5m"
-	DefaultAutoRollbackStabilityWindow = "1h"
+	ExchangeDir = "/var/exchange"
 )

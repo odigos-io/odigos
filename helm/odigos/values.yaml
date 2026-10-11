@@ -1,220 +1,693 @@
+# @schema
+# description: User should be specifying the signals they want to collect.
+# @schema
+signals:
+  - traces
+  - metrics
+  - logs
+
 image:
   tag: ''
 imagePullSecrets: []
 
-# By default, images are pulled from odigos registry at `registry.odigos.io`
-# If you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.
-# For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
+# @schema
+# description: |-
+#   Default image registry prefix. When unset:
+#     - community installs use `docker.io/keyval`
+#     - enterprise installs (onPremToken / odigos-pro secret) use `registry.odigos.io`
+#     - OpenShift installs use `registry.connect.redhat.com/odigos`
+#   If you use a custom or internal registry, set imagePrefix to your registry.
+#   For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
+# @schema
 imagePrefix:
 
-# namespaces list not to show in odigos ui
-# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
-# you can add additional namespaces to ignore by adding them to the list
+# @schema
+# description: |-
+#   Per-component image overrides. When set, these full image URLs take precedence over
+#   the constructed image name (imagePrefix + component + tag).
+#   This is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.
+#   Example:
+#     images:
+#       instrumentor: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v1.0.0
+#       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
+#   Supported component names: collector, enterprise-collector, ui, enterprise-ui,
+#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, agents, enterprise-agents,
+#     enterprise-insights, victoria-metrics, cache
+# additionalProperties: true
+# @schema
+images: {}
+
+# @schema
+# description: |-
+#   Namespaces excluded from the Odigos UI so system and infrastructure namespaces
+#   (service meshes, local storage, lease holders, etc.) do not clutter the sources list.
+#   The Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.
+#   When openshift.enabled is true, OpenShift system namespaces are also ignored automatically.
+# @schema
 ignoredNamespaces:
+  - local-path-storage
+  - istio-system
+  - linkerd
+  - kube-node-lease
 
-# container names to never instrument
-# useful for sidecars which are not interesting to be instrumented
-# set by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init
-# you can add additional container names to ignore by adding them to the list
+# @schema
+# description: |-
+#   Whether to automatically ignore the namespace where Odigos is installed.
+#   By default (true), the Odigos namespace is automatically added to ignoredNamespaces.
+#   Set to false to allow the Odigos namespace to be visible in the UI.
+#   Default: true
+# @schema
+ignoreOdigosNamespace: true
+
+# @schema
+# description: |-
+#   container names to never instrument
+#   useful for sidecars which are not interesting to be instrumented
+# @schema
 ignoredContainers:
+  - istio-proxy
+  - vault-agent
+  - filebeat
+  - linkerd-proxy
+  - fluentd
+  - akeyless-init
 
-# Name of the cluster, will be used to identify this cluster in the centralized backend
+# @schema
+# description: Name of the cluster, will be used to identify this cluster in the centralized backend
+# @schema
 clusterName: ''
 
+# @schema
+# description: |-
+#   When false (default), selected recommendation Actions (URL templatization, Infer DB Attributes)
+#   are created automatically as post-install Helm hooks. Set to true to skip auto-applying them.
+# @schema
+disableAutoRecommendations: false
+
+# @schema
+# description: |-
+#   Cardinality control settings. Configure how Odigos produces and maintains low-cardinality
+#   attributes and span names in telemetry, and discovers and removes high-cardinality ones
+#   (for example URL templatization, which sets http.route / url.template and rewrites
+#   HTTP span names to templated routes that must stay low-cardinality).
+# @schema
+cardinalityControl:
+  # @schema
+  # description: |-
+  #   URL templatization replaces variable parts of HTTP paths with placeholders
+  #   (e.g. /users/123 → /users/{id}) in span names and attributes (http.route / url.template).
+  # @schema
+  urlTemplatization:
+    # @schema
+    # description: |-
+    #   Learn URL templatization rules from live traffic based on path segment
+    #   occurrence counts. Enterprise-only — requires an on-prem token
+    #   (onPremToken / odigos-pro secret). Enabling this deploys the shared
+    #   cache under cacheDb.
+    # @schema
+    liveTrafficLearning:
+      # @schema
+      # description: |-
+      #   When true, enables live-traffic learning of URL templatization rules.
+      #   Opt-in; unset/empty keeps the feature off.
+      # @schema
+      enabled:
+
+      # @schema
+      # description: |-
+      #   Max example paths per workload: for each workload, Odigos keeps two
+      #   separate collections of unmatched HTTP path examples — one for
+      #   inbound (server) spans and one for outbound (client) spans. This
+      #   limit is the maximum distinct paths in each collection, not both
+      #   combined (so a workload can store up to this many server paths and
+      #   this many client paths). A larger number can increase the accuracy
+      #   and speed of automatic live-traffic rules, but requires more
+      #   resources. Default: 5000.
+      # @schema
+      maxExamplePathsPerWorkload: 5000
+
+      # @schema
+      # description: |-
+      #   Path example idle TTL: how long an unmatched path example is kept
+      #   after its last observation. Each new observation refreshes the TTL
+      #   (sliding window). Expired paths free quota for new examples. Must
+      #   stay well above the collector flush interval and the learning
+      #   interval. Default: 48h (2 days).
+      # @schema
+      pathExampleIdleTTL: 48h
+
+      # @schema
+      # description: |-
+      #   Learning interval: how often the instrumentor runs the live-traffic
+      #   learning cycle — checking for new URL templatization rules and
+      #   garbage-collecting path examples in the shared cache. Smaller
+      #   intervals react faster and reclaim quota sooner but use more
+      #   instrumentor resources. Default: 30s.
+      # @schema
+      learningInterval: 30s
+
+      # @schema
+      # description: |-
+      #   Thresholds used when computing URL templatization rules from live
+      #   traffic. They apply to both UI recommendations and live-traffic
+      #   automatic rules.
+      # @schema
+      ruleComputation:
+        # @schema
+        # description: |-
+        #   Min observations for a rule: minimum number of path observations
+        #   required before a rule is recommended in the UI, and before it is
+        #   applied as a live-traffic automatic rule when automaticRules.enabled
+        #   is true. Default: 100.
+        # @schema
+        minObservationsForRule: 100
+
+        # @schema
+        # description: |-
+        #   Min cardinality for templating: minimum number of distinct child
+        #   segment values required before a path segment is collapsed into a
+        #   templated placeholder ({id}) in recommended and live-traffic
+        #   automatic rules. Below this threshold, high-branching segments stay
+        #   as wildcards (*). Additive with minObservationsForRule and
+        #   the remaining learning checks. Default: 20.
+        # @schema
+        minCardinalityForTemplating: 20
+
+      # @schema
+      # description: |-
+      #   Live-traffic automatic rules: apply URL templatization rules learned
+      #   from live traffic when they meet the ruleComputation thresholds.
+      #   Opt-in; unset/empty keeps live-traffic automatic rules off (rules
+      #   are only suggested).
+      # @schema
+      automaticRules:
+        # @schema
+        # description: |-
+        #   When true, enables live-traffic automatic rules — learned URL
+        #   templatization rules that meet the ruleComputation thresholds are
+        #   applied for you. Requires liveTrafficLearning.enabled. Opt-in;
+        #   unset/empty keeps live-traffic automatic rules off.
+        # @schema
+        enabled:
+
+# @schema
+# description: |-
+#   Shared cache DB used by Odigos features that need a cluster-local cache
+#   (for example cardinality-control URL templatization rule computation).
+#   Deployed when a consuming feature is enabled (currently
+#   cardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is
+#   enterprise-only and requires an on-prem token).
+#   Backend is an implementation detail (Redis, published as odigos-cache with the
+#   Odigos release tag); values stay backend-agnostic so the chart can switch to
+#   another cache (e.g. Memcached) without renaming this section. Override the
+#   image via images.cache or imagePrefix like other Odigos components.
+# @schema
+cacheDb:
+  # @schema
+  # description: |-
+  #   Soft memory cap for the cache process when the backend supports it.
+  #   When unset, derived as ~85% of the effective memory limit (see resources).
+  # @schema
+  # maxmemory: 220mb
+
+  # @schema
+  # additionalProperties: true
+  # description: |-
+  #   Optional CPU/memory requests and limits for the shared cache pod.
+  #   When unset, defaults use Burstable QoS (requests below limits) since the
+  #   cache is usually idle. Set requests and/or limits to override; if only one
+  #   side is set, the other is mirrored from it.
+  # @schema
+  # resources:
+  #   requests:
+  #     cpu: 50m
+  #     memory: 64Mi
+  #   limits:
+  #     cpu: 200m
+  #     memory: 256Mi
+
+# @schema
+# description: |-
+#   Default log level for components when component-level logLevel is not set.
+#   Accepted values: debug, info, warn, error. Default: info.
+#   Set via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.
+# @schema
+logLevel: "info"
+
+# @schema
+# description: |-
+#   Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads
+#   with an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.
+#   When enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a
+#   partial override falls back to the chart defaults below.
+# @schema
+profiling:
+  # @schema
+  # description: When true, enables profiling pipelines on the node collector and cluster gateway.
+  # @schema
+  enabled: false
+  # @schema
+  # description: OTLP settings for profiling exporters (node → gateway, gateway → UI). Omitted from config when profiling.enabled is false.
+  # @schema
+  exporter:
+    # @schema
+    # description: Enable gzip compression on profiling OTLP exports.
+    # @schema
+    enableDataCompression: false
+    # @schema
+    # description: Per-attempt send timeout for profiling OTLP exporters.
+    # @schema
+    timeout: 5s
+    # @schema
+    # description: Retry policy for profiling OTLP exports.
+    # @schema
+    retryOnFailure:
+      # @schema
+      # description: Whether to retry failed OTLP sends for profiling.
+      # @schema
+      enabled: true
+      # @schema
+      # description: Backoff after the first failure.
+      # @schema
+      initialInterval: 5s
+      # @schema
+      # description: Upper bound on backoff between retries.
+      # @schema
+      maxInterval: 30s
+      # @schema
+      # description: Maximum time spent retrying a batch; 0 means retry until success.
+      # @schema
+      maxElapsedTime: 300s
+  # @schema
+  # description: UI-side profiling resource limits (written when profiling.enabled is true). Override any field from Helm as needed.
+  # @schema
+  ui:
+    # @schema
+    # description: Slot TTL in seconds.
+    # @schema
+    slotTTLSeconds: 300
+    # @schema
+    # description: Max in-memory profile slots.
+    # @schema
+    maxSlots: 32
+    # @schema
+    # description: Max bytes per slot (default 8 MiB).
+    # @schema
+    slotMaxBytes: 8388608
+
+# @schema
+# description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
+# @schema
 userInstrumentationEnvs:
-  # Configuration for OpenTelemetry (OTEL) agents instrumentation.
-  # These settings enable and configure OTEL agents for programming languages supported by Odigos.
-  # See the official OTEL documentation for language-specific configuration details:
-  # https://opentelemetry.io/docs/zero-code/
-  # Example:
-  # languages:
-  #   java:
-  #     enabled: true
-  #     env:
-  #       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
-  # Note: For eBPF-based distributions, exporting and batching cannot be configured here, as they are managed by the Odiglet.
-  # Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
+  # @schema
+  # description: |-
+  #   Configuration for OpenTelemetry (OTEL) agents instrumentation.
+  #   These settings enable and configure OTEL agents for programming languages supported by Odigos.
+  #   See the official OTEL documentation for language-specific configuration details:
+  #   https://opentelemetry.io/docs/zero-code/
+  #   Example:
+  #   languages:
+  #     java:
+  #       enabled: true
+  #       env:
+  #         OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
+  #   Note: For eBPF-based distributions, exporting and batching cannot be configured here, as they are managed by the Odiglet.
+  #   Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
+  # @schema
   languages:
     java:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     python:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     nodejs:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     go:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     dotnet:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     php:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
 
+# @schema
+# description: |-
+#   Sizing Configurations size_s, size_m, size_l are pre-defined configurations designed to simplify pipeline configurations.
+#   The default value is 'size_m', which is the medium size configuration.
+#   See https://docs.odigos.io/pipeline/configuration#1-using-sizing-configuration for more details.
+# @schema
+ResourceSizePreset: size_m
+
+# @schema
+# description: |-
+#   HYBRID CONFIGURATION APPROACH:
+#   By default, all values below are automatically set based on the ResourceSizePreset above.
+#   Uncomment and modify any value to override the automatic sizing for that specific parameter.
+#
+#   IMPORTANT CONSTRAINTS:
+#   1. minReplicas must be less or equal to maxReplicas
+#   2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
+#   3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request
+#   4. Same logic applies to CPU settings
+# @schema
 collectorGateway:
-  # the memory request for the cluster gateway collector deployment.
-  # it will be embedded in the deployment as a resource request
-  # of the form "memory: <value>Mi".
-  # default value is 500Mi
-  requestMemoryMiB: 500
-  # the memory limit for the cluster gateway collector deployment.
-  # it will be embedded in the deployment as a resource limit
-  # of the form "memory: <value>Mi".
-  # default value is 625Mi
-  limitMemoryMiB: 625
+  # @schema
+  # description: |-
+  #   the memory request for the cluster gateway collector deployment.
+  #   it will be embedded in the deployment as a resource request
+  #   of the form "memory: <value>Mi".
+  #   default value is 600Mi
+  #   If you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.
+  # @schema
+  # requestMemoryMiB: 600
 
-  # the CPU request for the cluster gateway collector deployment.
-  # it will be embedded in the deployment as a resource request
-  # of the form "cpu: <value>m".
-  # default value is 500m
-  requestCPUm: 500
-  # the CPU limit for the cluster gateway collector deployment.
-  # it will be embedded in the deployment as a resource limit
-  # of the form "cpu: <value>m".
-  # default value is 1000m
-  limitCPUm: 1000
+  # @schema
+  # description: |-
+  #   the memory limit for the cluster gateway collector deployment.
+  #   it will be embedded in the deployment as a resource limit
+  #   of the form "memory: <value>Mi".
+  #   default value is 600Mi
+  #   If you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.
+  # @schema
+  # limitMemoryMiB: 600
 
-  # The number of replicas for the cluster gateway collector deployment.
-  # Also uses in MinReplicas the HPA config.
-  minReplicas: 1
-  # The maxReplicas in the HPA config.
-  maxReplicas: 10
+  # @schema
+  # description: |-
+  #   the CPU request for the cluster gateway collector deployment.
+  #   it will be embedded in the deployment as a resource request
+  #   of the form "cpu: <value>m".
+  #   default value is 1000m
+  #   If you set only requestCPUm, the limitCPUm will be set to the same value.
+  # @schema
+  # requestCPUm: 1000
 
-  # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
-  # it is the hard limit after which a force garbage collection will be performed.
-  # if not set, it will be 50Mi below the memory request.
-  memoryLimiterLimitMiB: 450
-  # sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector gateway.
-  # note that this is not the processor soft limit, but the diff in MiB between the hard limit and the soft limit.
-  # if not specified, this value will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
-  memoryLimiterSpikeLimitMiB: 90
-  # the GOMEMLIMIT environment variable value for the collector gateway deployment.
-  # this is when go runtime will start garbage collection.
-  # if not specified, it will be set to 80% of the hard limit of the memory limiter.
-  goMemLimitMiB: 340
+  # @schema
+  # description: |-
+  #   the CPU limit for the cluster gateway collector deployment.
+  #   it will be embedded in the deployment as a resource limit
+  #   of the form "cpu: <value>m".
+  #   default value is 1000m
+  #   If you set only limitCPUm, the requestCPUm will be set to the same value.
+  # @schema
+  # limitCPUm: 1000
 
+  # @schema
+  # description: |-
+  #   The number of replicas for the cluster gateway collector deployment.
+  #   Also uses in MinReplicas the HPA config.
+  # @schema
+  # minReplicas: 2
+
+  # @schema
+  # description: The maxReplicas in the HPA config.
+  # @schema
+  # maxReplicas: 8
+
+  # @schema
+  # description: |-
+  #   sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
+  #   it is the hard limit after which a force garbage collection will be performed.
+  #   if not set, it will be 50Mi below the memory limit.
+  # @schema
+  # memoryLimiterLimitMiB: 550
+
+  # @schema
+  # description: |-
+  #   sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector gateway.
+  #   note that this is not the processor soft limit, but the diff in MiB between the hard limit and the soft limit.
+  #   if not specified, this value will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
+  # @schema
+  # memoryLimiterSpikeLimitMiB: 110
+
+  # @schema
+  # description: |-
+  #   the GOMEMLIMIT environment variable value for the collector gateway deployment.
+  #   this is when go runtime will start garbage collection.
+  #   if not specified, it will be set to 80% of the hard limit of the memory limiter.
+  # @schema
+  # goMemLimitMiB: 440
+
+  # @schema
+  # description: |-
+  #   Service Graph settings
+  #   Service Graph is a feature that allows you to visualize the service graph of your application.
+  #   It is enabled by default and can be disabled by setting the disabled flag to true.
+  # @schema
+  serviceGraphDisabled: false
+
+  # @schema
+  # type: array
+  # items:
+  #   type: string
+  # description: |-
+  #   Extra attribute names to include as additional dimensions in service graph metrics,
+  #   on top of the default service.name dimension.
+  #   Use this when multiple services share the same service.name but should appear as distinct
+  #   nodes in the graph. For example, if the same service is deployed in multiple namespaces
+  #   (e.g. staging and production in the same cluster), adding "k8s.namespace.name" will
+  #   produce a separate node per namespace instead of merging them into one.
+  #   NOTE: both span-level and resource-level attributes (e.g. k8s.namespace.name) are
+  #   supported here.
+  # @schema
+  # serviceGraphExtraDimensions:
+  #   - k8s.namespace.name
+
+  # @schema
+  # type: array
+  # items:
+  #   type: string
+  # description: |-
+  #   Ordered list of span-level attributes used to identify uninstrumented (virtual) nodes in the service graph.
+  #   The connector picks the first attribute that has a value on the CLIENT span and uses it as the node name.
+  #   When not set, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+  #   Add "server.address" before "db.system" to distinguish individual Redis/DB instances by hostname.
+  #   IMPORTANT: only span-level attributes work here (e.g. server.address, db.system, peer.service).
+  # @schema
+  # serviceGraphVirtualNodePeerAttributes:
+  #   - peer.service
+  #   - server.address
+  #   - net.peer.name
+  #   - db.name
+  #   - db.system
+
+  # @schema
+  # description: |-
+  #   Cluster Metrics settings
+  #   Cluster Metrics is a feature that allows you to enable the cluster metrics.
+  #   [https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver]
+  #   It is disabled by default and can be enabled by setting the enabled flag to true.
+  # @schema
+  clusterMetricsEnabled: false
+
+  # @schema
+  # description: |-
+  #   for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+  #   when unset or empty, no proxy will be used.
+  # @schema
+  # httpsProxyAddress: ''
+
+  # @schema
+  # description: |-
+  #   Node selector for the cluster gateway collector deployment.
+  #   Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # description: |-
+  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
+  #   default is 'odigos-gateway'
+  # @schema
+  # deploymentName: 'odigos-gateway'
+
+# @schema
+# description: Settings for Odigos data-collection (node) Collectors
+# @schema
 collectorNode:
-  # The port to use for exposing the collector's own metrics as a prometheus endpoint.
-  # This can be used to resolve conflicting ports when a collector is using the host network.
+  # @schema
+  # description: |-
+  #   The port to use for exposing the collector's own metrics as a prometheus endpoint.
+  #   This can be used to resolve conflicting ports when a collector is using the host network.
+  # @schema
   collectorOwnMetricsPort: 55682
 
-  # RequestMemoryMiB is the memory request for the node collector daemonset.
-  # it will be embedded in the daemonset as a resource request of the form "memory: <value>Mi"
-  # default value is 250Mi
-  requestMemoryMiB: 250
+  # @schema
+  # description: |-
+  #   RequestMemoryMiB is the memory request for the node collector daemonset.
+  #   it will be embedded in the daemonset as a resource request of the form "memory: <value>Mi"
+  #   default value is 250Mi
+  #   If you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.
+  # @schema
+  # requestMemoryMiB: 250
 
-  # LimitMemoryMiB is the memory limit for the node collector daemonset.
-  # it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
-  # default value is 2x the memory request.
-  limitMemoryMiB: 500
+  # @schema
+  # description: |-
+  #   LimitMemoryMiB is the memory limit for the node collector daemonset.
+  #   it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
+  #   default value is 500Mi
+  #   If you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.
+  # @schema
+  # limitMemoryMiB: 500
 
-  # the CPU request for the node collector daemonset.
-  # it will be embedded in the daemonset as a resource request
-  # of the form "cpu: <value>m".
-  # default value is 250m
-  requestCPUm: 250
-  # the CPU limit for the node collector daemonset.
-  # it will be embedded in the daemonset as a resource limit
-  # of the form "cpu: <value>m".
-  # default value is 500m
-  limitCPUm: 500
+  # @schema
+  # description: |-
+  #   Deprecated: Use limitMemoryMiB instead. Here for backwards compatibility with helm schema.
+  # @schema
+  # memoryLimit: 500
 
-  # this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
-  # it is the hard limit after which a force garbage collection will be performed.
-  # if not set, it will be 50Mi below the memory limit.
-  memoryLimiterLimitMiB: 450
+  # @schema
+  # description: |-
+  #   the CPU request for the node collector daemonset.
+  #   it will be embedded in the daemonset as a resource request
+  #   of the form "cpu: <value>m".
+  #   default value is 250m
+  #   If you set only requestCPUm, the limitCPUm will be set to the same value.
+  # @schema
+  # requestCPUm: 250
 
-  # this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the node collector.
-  # note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
-  # if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
-  memoryLimiterSpikeLimitMiB: 55
+  # @schema
+  # description: |-
+  #   the CPU limit for the node collector daemonset.
+  #   it will be embedded in the daemonset as a resource limit
+  #   of the form "cpu: <value>m".
+  #   default value is 500m
+  #   If you set only limitCPUm, the requestCPUm will be set to the same value.
+  # @schema
+  # limitCPUm: 500
 
-  # the GOMEMLIMIT environment variable value for the node collector daemonset.
-  # this is when go runtime will start garbage collection.
-  # if not specified, it will be set to 80% of the hard limit of the memory limiter.
-  goMemLimitMiB: 360
+  # @schema
+  # description: |-
+  #   this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
+  #   it is the hard limit after which a force garbage collection will be performed.
+  #   if not set, it will be 50Mi below the memory limit.
+  # @schema
+  # memoryLimiterLimitMiB: 450
 
-  # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink
-  # to some other directory (for example, '/mnt/var/log')
+  # @schema
+  # description: |-
+  #   this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the node collector.
+  #   note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
+  #   if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
+  # @schema
+  # memoryLimiterSpikeLimitMiB: 90
+
+  # @schema
+  # description: |-
+  #   the GOMEMLIMIT environment variable value for the node collector daemonset.
+  #   this is when go runtime will start garbage collection.
+  #   if not specified, it will be set to 80% of the hard limit of the memory limiter.
+  # @schema
+  # goMemLimitMiB: 360
+
+  # @schema
+  # description: |-
+  #   this configuration is used for logs collection where '/var/log' in a k8s node is a symlink
+  #   to some other directory (for example, '/mnt/var/log')
+  # @schema
   k8sNodeLogsDirectory: ''
 
-autoscaler:
-  nodeSelector:
-    kubernetes.io/os: linux
-  tolerations: []
-  affinity: {}
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
+  # @schema
+  # description: OTLP exporter configuration for the node collector.
+  # @schema
+  otlpExporterConfiguration:
+    # @schema
+    # description: |-
+    #   EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+    #   It is disabled by default and can be enabled by setting the enabled flag to true.
+    # @schema
+    enableDataCompression: false
+    # @schema
+    # description: Time to wait per individual attempt to send data to a backend
+    # @schema
+    timeout: 5s
+    # @schema
+    # description: Configuration for retry on failure.
+    # @schema
+    retryOnFailure:
+      # @schema
+      # description: Whether to retry on failure, by default it is enabled.
+      # @schema
+      enabled: true
+      # @schema
+      # description: Time to wait after the first failure before retrying; ignored if `enabled` is `false`.
+      # @schema
+      initialInterval: 5s
+      # @schema
+      # description: Is the upper bound on backoff; ignored if `enabled` is `false`.
+      # @schema
+      maxInterval: 30s
+      # @schema
+      # description: |-
+      #   Is the maximum amount of time spent trying to send a batch; ignored if `enabled` is `false`.
+      #   If set to 0, the retry will continue indefinitely until the data is sent successfully.
+      # @schema
+      maxElapsedTime: 300s
 
-scheduler:
-  nodeSelector:
-    kubernetes.io/os: linux
-  tolerations: []
-  affinity: {}
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-
+# @schema
+# description: Configuration for the UI component.
+# @schema
 ui:
-  nodeSelector:
-    kubernetes.io/os: linux
-  tolerations: []
-  affinity: {}
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-  # uiMode: 'default' or 'readonly'
-  #  - This flag controls whether the UI should be in read-only mode.
-  #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
-  #  - If not set, the UI will be in default mode.
-  uiMode: 'default'
-  # uiPaginationLimit:
-  #  - This flag controls the number of items to fetch per paginated-batch in the UI.
-  #  - If not set, the UI will fetch 100 items per paginated-batch.
-  uiPaginationLimit: 0
-  # uiRemoteUrl:
-  #  - This flag sets the URL of the remote UI (e.g. https://my-odigos-ui.com).
-  #  - If not set, the UI will default to the local UI.
-  #  - This is useful when you are hosting the Odigos UI on a custom/remote URL, and require OIDC authentication.
-  uiRemoteUrl: ''
-  # oidcTenantUrl:
-  #  - This flag sets the URL of the OIDC tenant (e.g. https://my-oidc-tenant.com).
-  #  - If not set, the UI will not process OIDC authentication.
-  oidcTenantUrl: ''
-  # oidcClientId:
-  #  - This flag sets the client ID of the OIDC application.
-  #  - If not set, the UI will not process OIDC authentication.
-  oidcClientId: ''
-  # oidcClientSecret:
-  #  - This flag sets the client secret of the OIDC application.
-  #  - If not set, the UI will not process OIDC authentication.
-  oidcClientSecret: ''
-  centralBackendURL: ''
+  # @schema
+  # description: Mount the embedded MCP server at /mcp on the enterprise UI. Enterprise-only — the gate is rendered only when an onPremToken/odigos-pro secret is present (the same condition that selects the enterprise UI image); it has no effect on the community image. Served on the UI port; reachable in-cluster via the ui Service.
+  # type: object
+  # @schema
+  mcp:
+    enabled: true
 
-instrumentor:
-  # which mount method to use for odigos agent directory
-  # k8s-virtual-device: default method using a virtual device
-  # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
-  mountMethod: ''
-  nodeSelector:
-    kubernetes.io/os: linux
+  # @schema
+  # description: Log level for UI. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
+  # description: Override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
   resources:
     requests:
@@ -223,33 +696,428 @@ instrumentor:
     limits:
       cpu: 500m
       memory: 512Mi
-  # skipWebhookIssuerCreation:
-  #   - This flag controls whether the chart should skip creating an Issuer
-  #     and associated Certificate for securing the mutating webhook communication.
-  #   - Setting this to "true" will skip the creation of an Issuer and Certificate,
-  #     even if cert-manager is detected in the cluster and the required API version is available.
-  #   - In some cases, the Issuer and Certificate are necessary for the instrumentor service
-  #     to run its pod mutating webhook, which requires a signed certificate to comply with
-  #     Kubernetes' TLS requirements.
-  #   - If cert-manager is not installed or detected, no Issuer or Certificate will be created
-  #     regardless of this flag.
-  skipWebhookIssuerCreation: false
-  # how to add the required environment variables for instrumentation to a container
-  # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
-  # pod-manifest: add the environment variables to the container manifest.
-  # loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
+
+  # @schema
+  # description: Priority class name. Set to use your existing cluster priority classes.
+  # @schema
+  # priorityClassName: ''
+
+  # @schema
+  # description: |-
+  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
+  #   default is 'odigos-ui'
+  # @schema
+  # deploymentName: 'odigos-ui'
+
+  # @schema
+  # description: |-
+  #   uiMode: 'default' or 'readonly'
+  #    - This flag controls whether the UI should be in read-only mode.
+  #    - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
+  #    - If not set, the UI will be in default mode.
+  # @schema
+  uiMode: 'default'
+
+  # @schema
+  # description: |-
+  #   mcpAccessMode: 'read-only' or 'read-write'
+  #    - Controls whether the MCP server may run write (mutating) tools.
+  #    - Defaults to 'read-only', so an agent cannot change the cluster until
+  #      an operator opts in to 'read-write'.
+  # @schema
+  mcpAccessMode: 'read-only'
+
+  # @schema
+  # description: |-
+  #   uiPaginationLimit:
+  #    - This flag controls the number of items to fetch per paginated-batch in the UI.
+  #    - If not set, the UI will fetch 100 items per paginated-batch.
+  # @schema
+  uiPaginationLimit: 0
+
+  # @schema
+  # description: |-
+  #   uiRemoteUrl:
+  #    - This flag sets the URL of the remote UI (e.g. https://my-odigos-ui.com).
+  #    - If not set, the UI will default to the local UI.
+  #    - This is useful when you are hosting the Odigos UI on a custom/remote URL, and require OIDC authentication.
+  # @schema
+  uiRemoteUrl: ''
+
+  # @schema
+  # description: |-
+  #   oidcTenantUrl:
+  #    - This flag sets the URL of the OIDC tenant (e.g. https://my-oidc-tenant.com).
+  #    - If not set, the UI will not process OIDC authentication.
+  # @schema
+  oidcTenantUrl: ''
+
+  # @schema
+  # description: |-
+  #   oidcClientId:
+  #    - This flag sets the client ID of the OIDC application.
+  #    - If not set, the UI will not process OIDC authentication.
+  # @schema
+  oidcClientId: ''
+
+  # @schema
+  # description: |-
+  #   oidcClientSecret:
+  #    - This flag sets the client secret of the OIDC application.
+  #    - If not set, the UI will not process OIDC authentication.
+  # @schema
+  oidcClientSecret: ''
+
+# @schema
+# additionalProperties: true
+# description: |-
+#   Deprecated. Ignored after autoscaler merged into instrumentor.
+#   Kept so helm upgrade --reuse-values from older charts still validates.
+#   Remove after 8 April 2027.
+# @schema
+autoscaler: {}
+
+# @schema
+# additionalProperties: true
+# description: |-
+#   Deprecated. Ignored after scheduler merged into instrumentor.
+#   Kept so helm upgrade --reuse-values from older charts still validates.
+#   Remove after 8 April 2027.
+# @schema
+scheduler: {}
+
+# @schema
+# description: Configuration for the instrumentor component.
+# @schema
+instrumentor:
+  # @schema
+  # description: Log level for instrumentor. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
+  # description: |-
+  #   which mount method to use for odigos agent directory
+  #   k8s-virtual-device: default method using a virtual device
+  #   k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
+  #   k8s-init-container: alternative which uses an init container to copy the agent files to the shared volume
+  #   k8s-csi-driver: alternative which uses a CSI driver to mount the agent directory
+  # @schema
+  mountMethod: ''
+
+  # @schema
+  # description: |-
+  #   checkDeviceHealthBeforeInjection is relevant only when mountMethod is k8s-virtual-device.
+  #   before injecting odigos agent into a new pod, it will check that all odiglet "deviceplugin"
+  #   containers are not in crash loop backoff.
+  #   this is to avoid adding a device (as resource request on a container)
+  #   where an odiglet might not be able to provide the device on the node and fail k8s scheduling for instrumented pods on all nodes.
+  # @schema
+  checkDeviceHealthBeforeInjection: false
+
+  # @schema
+  # description: |-
+  #   Resource configuration for the init container that is injected into user pods
+  #   when using the k8s-init-container mount method.
+  #   The init container is responsible for copying the instrumentation agents to the shared volume.
+  # @schema
+  agentsInitContainerResources:
+    requests:
+      cpu: 300m
+      memory: 300Mi
+    limits:
+      cpu: 300m
+      memory: 300Mi
+
+  # @schema
+  # description: Override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
+  tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
+  affinity: {}
+
+  # @schema
+  # description: |-
+  #   resources for the instrumentor deployment.
+  # @schema
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # @schema
+  # description: Priority class name. Set to use your existing cluster priority classes.
+  # @schema
+  # priorityClassName: ''
+
+  # @schema
+  # description: |-
+  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
+  #   default is 'odigos-instrumentor'
+  # @schema
+  # deploymentName: 'odigos-instrumentor'
+
+  # @schema
+  # description: |-
+  #   how to add the required environment variables for instrumentation to a container
+  #   loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
+  #   pod-manifest: add the environment variables to the container manifest.
+  #   loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
+  # @schema
   agentEnvVarsInjectionMethod: ''
 
+  # @schema
+  # description: |-
+  #   the timeout in seconds for the pods webhook.
+  #   default is 10 seconds and it is recommended to keep it as is unless you are experiencing issues with the webhook.
+  #   value must be 30 seconds max (inforced by kubernetes)
+  #   a shorter timeout will relieve API pressure, but may result in more pods failing to instrument
+  # @schema
+  # podsWebhookTimeoutSeconds: 25
+
+# @schema
+# description: Configuration for the odiglet component.
+# @schema
 odiglet:
-  nodeSelector:
-    kubernetes.io/os: linux
+  # @schema
+  # description: Log level for odiglet. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
+  # description: Configuration for the odiglet container.
+  # @schema
+  odiglet:
+    livenessProbe:
+      httpGet:
+        path: /healthz
+
+        # @schema
+        # description: |-
+        #   Prior to Kubernetes v1.26, Odigos uses host networking.
+        #   In some environments, different ports may already be in use on the host (e.g., due to other daemons or networking constraints).
+        #   Use the following values to configure the readiness and liveness probe ports to avoid conflicts.
+        # @schema
+        port: 55683
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      timeoutSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 55683
+      periodSeconds: 10
+
+    # @schema
+    # description: |-
+    #   Run the odiglet container, and its init container, as privileged containers.
+    # @schema
+    privileged: false
+
+    # @schema
+    # description: |-
+    #   capabilities to add to the odiglet container when running non-privileged - this will be ignored when running as privileged.
+    #   SYS_ADMIN required when running in unprivileged mode if one of the following is true:
+    #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
+    #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
+    #   IPC_LOCK required for mmap of perf buffers
+    #   KILL is added automatically on community installations, where the go instrumentation
+    #   checks that the target process is alive by signalling it.
+    #   SYS_RESOURCE required only for kernels < 5.11, used for setting rlimit for BPF maps
+    # @schema
+    capabilities:
+      - SYS_ADMIN
+      - BPF
+      - PERFMON
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+      - IPC_LOCK
+      - SYS_RESOURCE
+      # required for jattach - dynamically instrumenting java processes.
+      - SETUID
+      # required for jattach - dynamically instrumenting java processes.
+      - SETGID
+      # required for OBI Traffic Control programs. Can be removed if OBI is not being used.
+      - NET_ADMIN
+      # required for OBI socket filter programs. Can be removed if OBI is not being used.
+      - NET_RAW
+
+    # @schema
+    # description: |-
+    #   apparmorProfile for the odiglet container when running non-privileged.
+    #   this will be ignored when running as privileged.
+    # @schema
+    appArmorProfile:
+      type: "Unconfined"
+
+    # @schema
+    # description: |-
+    #   SELinux options for the odiglet container when running non-privileged.
+    #   Ignored when running as privileged, since container runtimes drop the label in that mode.
+    #   On SELinux enforcing nodes odiglet needs a privileged SELinux domain to inspect and
+    #   instrument application processes. "spc_t" is that domain in the standard container policy
+    #   (https://github.com/containers/container-selinux/blob/v2.232.1/container.te#L105), and on
+    #   Bottlerocket, which aliases it to its own "control_t".
+    #   Adjust the type if your nodes use a custom SELinux policy, or set to null to leave the
+    #   label to the container runtime.
+    #   This is an advanced option and should only be changed if you know what you are doing.
+    # @schema
+    seLinuxOptions:
+      type: "spc_t"
+      level: "s0"
+
+    # @schema
+    # description: |-
+    #   Percentage of the memory limit to use for GOMEMLIMIT when the odiglet
+    #   memory limit is >= 500Mi. Below 500Mi the default 80% is used.
+    #   Odiglet allocates significant memory for eBPF maps which live outside
+    #   the Go heap. The Go runtime is unaware of this memory, so GOMEMLIMIT
+    #   must leave enough headroom for these allocations to avoid OOM kills.
+    # @schema
+    # goMemLimitPercentage: 60
+
+  # @schema
+  # description: |-
+  #   traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
+  #   supported only in odigos pro (not available in community tier)
+  # @schema
+  # traceIdSuffix: 'AA'
+
+  # @schema
+  # description: Configuration for the data-collection container.
+  # @schema
+  dataCollection:
+
+    # @schema
+    # description: |-
+    #   capabilities to add to the data-collection container when running non-privileged - this will be ignored when running as privileged.
+    #   SYS_ADMIN required when running in unprivileged mode if one of the following is true:
+    #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
+    #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
+    #   SYSLOG, SYS_RESOURCE, SYS_PTRACE, DAC_READ_SEARCH and CHECKPOINT_RESTORE are added automatically when profiling.enabled is true.
+    # @schema
+    capabilities:
+      - SYS_ADMIN
+      - BPF
+      - PERFMON
+      - IPC_LOCK
+
+    # @schema
+    # description: |-
+    #   Run the data-collection container as a privileged container.
+    # @schema
+    privileged: false
+
+    # @schema
+    # description: |-
+    #   seLinuxOptions for the data-collection container when running non-privileged.
+    #   "spc_t" is the SELinux domain the container already gets when running privileged.
+    #   The level matches the odiglet container's, since containers sharing a volume must share its SELinux label.
+    #   This is an advanced option and should only be changed if you know what you are doing.
+    # @schema
+    seLinuxOptions:
+      type: "spc_t"
+      level: "s0"
+
+  # @schema
+  # description: Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # description: |-
+  #   This toleration with 'Exists' operator and no key/effect specified
+  #   will match ALL taints, allowing pods to be scheduled on any node
+  #   regardless of its taints (including master/control-plane nodes)
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations:
-    ## This toleration with 'Exists' operator and no key/effect specified
-    ## will match ALL taints, allowing pods to be scheduled on any node
-    ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
+
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
-  # Resource configuration for the odiglet daemonset
+
+  # @schema
+  # description: |-
+  #   Schedule odiglet only on nodes that already have at least one instrumented
+  #   pod. Reduces the resources Odigos uses on the cluster, which is useful when
+  #   there are many nodes and few instrumented pods.
+  #   Requires instrumentor.mountMethod to be set to k8s-init-container.
+  #   Cons: the first time an instrumented pod starts on a node there is a period
+  #   without telemetry until odiglet starts on that node; assumes additional RBAC
+  #   permissions to patch and update node labels.
+  # @schema
+  scheduleOnlyOnInstrumentedNodes:
+    # @schema
+    # description: |-
+    #   When true, odiglet runs only on nodes that already have instrumented pods.
+    #   By default (false), odiglet runs on all nodes (subject to nodeSelector,
+    #   affinity, and tolerations).
+    #   When enabled together with a non-default nodeSelector, affinity, or
+    #   tolerations, those settings still apply: odiglet is scheduled only on
+    #   nodes that both carry the instrumented-pod label and satisfy the other
+    #   constraints (they are combined, not replaced).
+    # @schema
+    enabled: false
+
+    # @schema
+    # description: |-
+    #   How long to keep odiglet scheduled on a node after its last instrumented
+    #   pod leaves. Acts as a rate limit so odiglet is not started and stopped
+    #   too frequently. Go duration string (e.g. 5m, 1h). Set to 0s to stop
+    #   immediately. Default is 5m.
+    # type: string
+    # @schema
+    # nodeLabelRetention: "5m"
+
+  # @schema
+  # description: Priority class name. Set to empty string to disable.
+  # @schema
+  priorityClassName: 'system-node-critical'
+
+  # @schema
+  # description: Resource configuration for the odiglet daemonset
+  # @schema
   # resources:
   #   requests:
   #     cpu: 10m
@@ -258,82 +1126,1078 @@ odiglet:
   #     cpu: 500m
   #     memory: 512Mi
 
-  # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
-  # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
-  # into the Odiglet to ensure it can access the container runtime unix socket.
+  # @schema
+  # description: Configuration for the device plugin.
+  # @schema
+  deviceplugin:
+    resources:
+      requests:
+        cpu: 40m
+        memory: 200Mi
+      limits:
+        cpu: 100m
+        memory: 300Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+
+  # @schema
+  # description: |-
+  #   CSI driver resource configuration.
+  #   Only applied when instrumentor.mountMethod is "k8s-csi-driver"
+  # @schema
+  csidriver:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 100m
+        memory: 200Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 5
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+
+  # @schema
+  # description: |-
+  #   DaemonSet name. if you want the daemonset (and related pods) to have a specific name.
+  #   default is 'odiglet'
+  # @schema
+  # daemonsetName: 'odiglet'
+
+  # @schema
+  # description: |-
+  #   noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
+  #   for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
+  #   for k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.
+  # @schema
+  noHostNetwork: false
+
+  # @schema
+  # description: |-
+  #   Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
+  #   There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
+  # @schema
+  initContainerResources:
+    requests:
+      cpu: 200m
+      memory: 200Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+
+  # @schema
+  # description: |-
+  #   in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
+  #   In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
+  #   into the Odiglet to ensure it can access the container runtime unix socket.
+  # @schema
   customContainerRuntimeSocketPath: ''
 
+  # @schema
+  # description: |-
+  #   runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.
+  #   when true, each container uses the non-root USER declared in its image (e.g. 65532).
+  #   by default (false), all containers are forced to run as UID/GID 0.
+  #
+  #   This setting only changes the UID the containers run as. It does not change the Linux capabilities
+  #   granted to odiglet (those are controlled separately via the per-container privileged and capabilities values).
+  #   Operations relying on root's implicit filesystem access can fail as non-root:
+  #   e.g. writing agent files to root-owned host paths (/var/odigos).
+  # @schema
+  runAsNonRoot: false
+
+  # @schema
+  # description: |-
+  #   noHostPathMounts can be set to true to avoid using hostPath mounts in the odiglet daemonset.
+  #   When set to true, instrumentor.mountMethod must be set to "k8s-init-container", since that is the only mount method
+  #   that does not rely on host mounts to pass the required agents files to instrumented pods.
+  #   by default, odiglet will rely on hostPath mounts in /var/odigos
+  # @schema
+  noHostPathMounts: false
+
+  # @schema
+  # description: |-
+  #   noHostPid can be set to true to avoid using hostPID in the odiglet daemonset.
+  #   when set to true, odiglet will mount /proc from the host to be able scan running processes and instrument them.
+  #   when noHostPid and noHostPathMounts are set to true the /proc host mount must be allowed.
+  #   setting this to true (i.e avoiding hostPid) may limit some eBPF capabilities, depending on the instrumented workloads.
+  #   by default, odiglet will use hostPID to be able to scan running processes and instrument them.
+  # @schema
+  noHostPid: false
+
+  # @schema
+  # description: |-
+  #   When the code-attributes InstrumentationRule is enabled, you can choose to disable collecting code attributes for Go instrumentation.
+  #   Collecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.
+  #   Set this to true to turn off code attribute recording for Go instrumentation.
+  # @schema
+  disableGoCodeAttributes: false
+
+  # @schema
+  # description: |-
+  #   extended controls whether to use the extended odiglet image variant which includes legacy .NET and Ruby 2.7 instrumentation.
+  #   When true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).
+  #   Selecting those distros still requires the legacy-dotnet-instrumentation and legacy-ruby-instrumentation profiles.
+  #   Default: false
+  # @schema
+  extended: false
+
+# @schema
+# description: Configuration for the central proxy component.
+# @schema
 centralProxy:
-  enabled: false
-  # Central backend URL where this proxy will forward data
+
+  # @schema
+  # description: Central backend URL where this proxy will forward data
+  # @schema
   centralBackendURL: ''
+
+  # @schema
+  # description: |-
+  #   Maximum WebSocket message size in bytes for the central-proxy ↔ central-backend
+  #   link (default 33554432 = 32Mi). Must match central-backend maxMessageSize.
+  # @schema
+  maxMessageSize: '33554432'
+
   resources:
     requests:
       cpu: 100m
-      memory: 64Mi
+      memory: 256Mi
     limits:
       cpu: 500m
-      memory: 256Mi
+      memory: 512Mi
 
-  nodeSelector:
-    kubernetes.io/os: linux
+  # @schema
+  # description: TLS Configuration
+  # @schema
+  tls:
+
+    # @schema
+    # description: Skip TLS certificate verification (for testing/self-signed certificates)
+    # @schema
+    skipVerify: false
+
+    # @schema
+    # description: "Secret name containing CA certificate (key: 'ca.crt')"
+    # @schema
+    caSecretName: ''
+
+    # @schema
+    # description: "Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')"
+    # @schema
+    clientCertSecretName: ''
+
+  # @schema
+  # description: Override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
 
-# Pod Security Policy
+  # @schema
+  # description: Priority class name. Set to use your existing cluster priority classes.
+  # @schema
+  # priorityClassName: ''
+
+# @schema
+# description: |-
+#   Configuration for the Odigos Insights service (enterprise).
+#   When enabled, deploys a Go service that ingests OTLP traces, learns
+#   per-route baselines across multiple deviation classes (D1..D6), and
+#   serves anomaly queries to the UI. Requires an enterprise on-prem token
+#   (odigos-pro secret).
+# @schema
+insights:
+
+  # @schema
+  # description: |-
+  #   When true, deploys the insights service. Default false (off).
+  # @schema
+  enabled: false
+
+  # @schema
+  # description: |-
+  #   CPU-based HorizontalPodAutoscaler for insights (always on; requires
+  #   metrics-server). The HPA owns the replica count. min/max replicas default
+  #   to the gateway's values.
+  # @schema
+  autoscaling:
+    # @schema
+    # description: Target average CPU utilization percentage.
+    # minimum: 1
+    # maximum: 100
+    # @schema
+    cpuTargetUtilization: 80
+
+    # @schema
+    # description: Min replicas. Defaults to the gateway's minimum; uncomment to override.
+    # minimum: 1
+    # @schema
+    # minReplicas: 2
+
+    # @schema
+    # description: Max replicas. Defaults to the gateway's maximum; uncomment to override.
+    # minimum: 1
+    # @schema
+    # maxReplicas: 10
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  # @schema
+  # description: Override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
+  tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
+  affinity: {}
+
+  # @schema
+  # description: Priority class name. Set to use your existing cluster priority classes.
+  # @schema
+  # priorityClassName: ''
+
+  # @schema
+  # description: |-
+  #   Bundled ClickHouse for the insights service. Single replica, no
+  #   replication, no backups. Data is on a PVC by default
+  #   (insights.clickhouse.storage.persistence); set that to false for
+  #   emptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at
+  #   one replica. User and database name stay hardcoded (odigos_insights);
+  #   image, resources, scheduling, and storage are tunable.
+  # @schema
+  clickhouse:
+    # @schema
+    # description: |-
+    #   ClickHouse server image. Third-party image (not built by Odigos);
+    #   override repository/tag for private mirrors or version pins.
+    # @schema
+    image:
+      # @schema
+      # description: Container image repository.
+      # @schema
+      repository: clickhouse/clickhouse-server
+      # @schema
+      # description: Container image tag.
+      # @schema
+      tag: "24.8-alpine"
+      # @schema
+      # description: Image pull policy.
+      # @schema
+      pullPolicy: IfNotPresent
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+    # @schema
+    # description: |-
+    #   Override the global nodeSelector for ClickHouse. Use this to pin the
+    #   DB to nodes with suitable disk (e.g. SSD / stateful pool). Falls back
+    #   to values.nodeSelector when unset. Independent of insights.nodeSelector
+    #   so the stateful DB can be scheduled separately from the app pods.
+    # @schema
+    # nodeSelector:
+    #   kubernetes.io/os: linux
+
+    # @schema
+    # items:
+    #   description: |-
+    #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+    #     Common fields: key, operator, value, effect, tolerationSeconds.
+    #   type: object
+    #   properties:
+    #     key:
+    #       type: string
+    #     operator:
+    #       type: string
+    #     value:
+    #       type: string
+    #     effect:
+    #       type: string
+    # @schema
+    tolerations: []
+    # @schema
+    # additionalProperties: true
+    # @schema
+    affinity: {}
+
+    # @schema
+    # description: |-
+    #   Priority class name for ClickHouse. Prefer a higher priority than
+    #   general workloads so the single-replica DB is not evicted under pressure.
+    # @schema
+    # priorityClassName: ''
+
+    # @schema
+    # description: |-
+    #   Curated ClickHouse server settings mounted into config.d / users.d.
+    #   Defaults follow common Kubernetes guidance: leave headroom under the
+    #   pod memory limit, bound concurrent queries, and cap single-query memory.
+    # @schema
+    config:
+      # @schema
+      # description: |-
+      #   Fraction of detected RAM (pod limit) ClickHouse may use.
+      #   Leave headroom for the OS page cache and background merges so the
+      #   kubelet does not OOM-kill the pod.
+      # minimum: 0.1
+      # maximum: 1
+      # @schema
+      maxServerMemoryUsageToRamRatio: 0.85
+
+      # @schema
+      # description: |-
+      #   Max queries executing at once (server-wide). Caps concurrent load
+      #   from Insights flushes and UI reads.
+      # minimum: 1
+      # @schema
+      maxConcurrentQueries: 100
+
+      # @schema
+      # description: |-
+      #   ClickHouse logger level (trace, debug, information, warning, error).
+      # @schema
+      logLevel: information
+
+      # @schema
+      # description: |-
+      #   Per-query memory cap (users.xml). Examples: "1Gi"
+      #   Empty string keeps ClickHouse's default.
+      # @schema
+      maxMemoryUsagePerQuery: "1Gi"
+
+      # @schema
+      # description: |-
+      #   Optional raw XML merged as config.d/odigos-extra.xml. Escape hatch
+      #   for advanced tuning; prefer the curated knobs above when possible.
+      #   Example:
+      #     extraConfig: |
+      #       <clickhouse>
+      #         <timezone>UTC</timezone>
+      #       </clickhouse>
+      # @schema
+      extraConfig: ""
+
+    storage:
+      # @schema
+      # description: |-
+      #   When true (default), ClickHouse keeps Insights data on a persistent
+      #   volume so it survives pod restarts. Set to false only for
+      #   development or testing: ClickHouse then uses emptyDir, and all
+      #   Insights data is lost when the pod is recreated or rescheduled.
+      # @schema
+      persistence: true
+      # @schema
+      # description: |-
+      #   PVC size for the ClickHouse data volume. Growth is driven mainly by
+      #   transaction cardinality and trace_observations retention (TTL).
+      #   Expand only if the StorageClass supports volume expansion.
+      # @schema
+      size: 8Gi
+      # @schema
+      # description: |-
+      #   StorageClass for the ClickHouse PVC. Empty string uses the cluster
+      #   default. Prefer a class backed by fast local/SSD block storage;
+      #   avoid slow shared NFS for MergeTree. The class is fixed at PVC
+      #   creation — changing this value after install does not migrate an
+      #   existing volume. The PVC is kept across helm uninstall
+      #   (helm.sh/resource-policy: keep).
+      # @schema
+      storageClassName: ''
+
+# @schema
+# description: Pod Security Policy
+# @schema
 psp:
   enabled: false
 
+# @schema
+# description: Telemetry configuration for Odigos.
+# @schema
 telemetry:
   enabled: true
 
+# @schema
+# description: OpenShift-specific configuration.
+# @schema
 openshift:
+  # @schema
+  # description: Controls whether to use OpenShift-specific settings and images.
+  # @schema
   enabled: false
 
+  # @schema
+  # description: |-
+  #   Controls whether to use Red Hat certified image tags (-rhel-certified suffix).
+  #   By default, this is unset and will inherit the value of openshift.enabled.
+  #   Set to false to explicitly disable certified images even when openshift.enabled is true.
+  #   Set to true to explicitly enable certified images (requires openshift.enabled to also be true).
+  #   Note that certifiedImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry
+  #   (registry.connect.redhat.com) which is used when openshift.enabled is true.
+  #   Setting this to false is useful if you are hosting images in your own registry (with imagePrefix set) but
+  #   still deploying on OpenShift, which requires other settings that are applied by openshift.enabled for OpenShift compatibility.
+  # @schema
+  #certifiedImageTags: false
+
+# @schema
+# description: GKE-specific configuration.
+# @schema
 gke:
   enabled: false
+  # @schema
+  # description: |-
+  #   GKE Autopilot settings. When enabled, installs an AllowlistSynchronizer for the Odigos
+  #   odiglet allowlist and skips node label setup in the odiglet init phase.
+  #   Autopilot is auto-detected by the gk3- node name prefix; set this to true to force both behaviors.
+  # @schema
+  autopilot: false
 
+# @schema
+# description: |-
+#   Controls which OpenTelemetry resource detectors are enabled on the node collector's
+#   resourcedetection processor. Each detector can be individually enabled or disabled.
+#   By default all detectors are enabled except EKS which is disabled by default.
+# @schema
+resourceDetectors:
+  # @schema
+  # description: EC2 resource detector configuration.
+  # @schema
+  ec2:
+    # @schema
+    # description: Enable the EC2 resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: EKS resource detector configuration (disabled by default).
+  # @schema
+  eks:
+    # @schema
+    # description: Enable the EKS resource detector.
+    # @schema
+    enabled: false
+  # @schema
+  # description: Azure resource detector configuration.
+  # @schema
+  azure:
+    # @schema
+    # description: Enable the Azure resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: AKS resource detector configuration.
+  # @schema
+  aks:
+    # @schema
+    # description: Enable the AKS resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: GCP resource detector configuration.
+  # @schema
+  gcp:
+    # @schema
+    # description: Enable the GCP resource detector.
+    # @schema
+    enabled: true
+
+# @schema
+# description: "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}"
+# @schema
 profiles: []
 
-# Optional NodeSelector to apply to all Odigos components
-# Note: Odigos will only be able to instrument workloads on the same nodes.
-nodeSelector: {}
+# @schema
+# description: |-
+#   Global NodeSelector to apply to all Odigos components by default.
+#   Individual components can override this by uncommenting their specific nodeSelector configuration.
+#   Note: Odigos will only be able to instrument workloads on the same nodes.
+# additionalProperties: true
+# @schema
+nodeSelector:
+  kubernetes.io/os: linux
 
-
-# Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
-# to add the odigos-agent startupTaints configuration.
-# https://docs.odigos.io/setup/odigos-with-karpenter
+# @schema
+# description: |-
+#   Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
+#   to add the odigos-agent startupTaints configuration.
+#   https://docs.odigos.io/setup/odigos-with-karpenter
+# @schema
 karpenter:
   enabled: false
 
-
-# Refer to the official Kubernetes documentation for structure and field details:
-# https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
-#
-# Example: Odigos components should be evenly spread across zones.
-# No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
-# topologySpreadConstraints:
-#   - maxSkew: 1
-#     topologyKey: "topology.kubernetes.io/zone"
-#     whenUnsatisfiable: "ScheduleAnyway"
+# @schema
+# description: |-
+#   Refer to the official Kubernetes documentation for structure and field details:
+#   https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+#   Example: Odigos components should be evenly spread across zones.
+#   No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
+#   topologySpreadConstraints:
+#     - maxSkew: 1
+#       topologyKey: "topology.kubernetes.io/zone"
+#       whenUnsatisfiable: "ScheduleAnyway"
+# @schema
 topologySpreadConstraints: []
 
-
-# Auto rollback settings
-# The auto‐rollback feature provides a stability window to test instrumented apps.
-# After an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.
-# Once the grace period has passed and we are within the stability window, we can decide to uninstrument a crashing application.
+# @schema
+# description: |-
+#   Auto rollback settings
+#   The auto‐rollback feature provides a stability window to test instrumented apps.
+#   After an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.
+#   Once the grace period has passed and we are within the stability window, we can decide to uninstrument a crashing application.
+# @schema
 autoRollback:
   disabled: false
   graceTime: 5m
   stabilityWindowTime: 1h
 
+# @schema
+# description: |-
+#   Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
+#   If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
+#   When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
+#   Any new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)
+#   will still have the agent injected, regardless of this setting.
+#   When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
+# @schema
 rollout:
-# Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
-# If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
-# When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
-# Any new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)
-# will still have the agent injected, regardless of this setting.
-# When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
   automaticRolloutDisabled: false
+  # MaxConcurrentRollouts is the maximum number of concurrent rollouts allowed. 0 is unlimited, disabling the limit.
+  maxConcurrentRollouts: 0
 
+# @schema
+# description: |-
+#   Pod Disruption Budgets (PDBs) help ensure high availability during voluntary disruptions like node drains or upgrades.
+#   When enabled, Odigos will deploy PDBs for its components based on their importance:
+#   - Critical components (e.g., instrumentor) will be protected with stricter disruption limits.
+#   - Non-critical components will use more relaxed budgets to allow operational flexibility.
+#   This reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.
+#   PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
+# @schema
+pdb:
+  enabled: false
+
+# @schema
+# description: Setting for allowing Odigos to run concurrently with other agents
+# @schema
+allowConcurrentAgents:
+  enabled: false
+
+# @schema
+# description: |-
+#   Enable support for ClickHouse JSON column type when storing Odigos data.
+#   When set to true, Odigos will use a new schema with JSON-typed columns (requires ClickHouse v25.3+).
+#   If set to false, the default schema using Map-type columns will be used instead.
+# @schema
+clickhouseDestinationJsonType:
+  enabled: false
+
+# @schema
+# description: controls the wasp settings
+# @schema
+wasp:
+  # odiglet uses wasp automatically when the kernel requires it. set to true to opt out.
+  disabled: false
+
+# @schema
+# description: |-
+#   configuration for metrics sources (where odigos collects metrics from)
+#   only relevant when a metrics destination is enabled
+# @schema
+metricsSources:
+  # @schema
+  # description: Configuration for host metrics collection.
+  # @schema
+  hostMetrics:
+    # @schema
+    # description: disable host metrics collection globally
+    # @schema
+    # disabled: false
+
+    # @schema
+    # description: |-
+    #   set time interval for host metrics scraping
+    #   format is duration string (15s, 1m, etc)
+    # @schema
+    # interval: '10s'
+
+  # @schema
+  # description: Configuration for network flow and TCP stats metrics collection.
+  # @schema
+  networkMetrics:
+    # @schema
+    # description: |-
+    #   When enabled, network flow and TCP stats metrics can be collected per workload by applying a
+    #   networkMetrics InstrumentationRule. Enabling this requires odiglet to run with host network
+    #   access (hostNetwork) so it can observe traffic on the node's network interfaces; enable it
+    #   only if running odiglet on the host network is acceptable in your environment. Defaults to disabled.
+    # @schema
+    # enabled: false
+
+  # @schema
+  # description: Configuration for kubelet stats collection.
+  # @schema
+  kubeletStats:
+    # @schema
+    # description: disable kubelet stats collection globally
+    # @schema
+    # disabled: false
+
+    # @schema
+    # description: |-
+    #   set time interval for kubelet stats scraping
+    #   format is duration string (15s, 1m, etc)
+    # @schema
+    # interval: '10s'
+
+  # @schema
+  # description: Configuration for span metrics collection.
+  # @schema
+  spanMetrics:
+    # @schema
+    # description: disable span metrics collection globally
+    # @schema
+    # disabled: false
+
+    # @schema
+    # description: |-
+    #   set time interval for span metrics flushing
+    #   format is duration string (15s, 1m, etc)
+    #   default is 60s
+    # @schema
+    # interval: '60s'
+
+    # @schema
+    # description: |-
+    #   set the time to wait with no activity before expiring span metrics
+    #   format is duration string (15s, 1m, etc)
+    #   default is 5m
+    # @schema
+    # metricsExpiration: '5m'
+
+    # @schema
+    # description: |-
+    #   set additional dimensions for span metrics
+    #   format is a list of strings
+    # @schema
+    # additionalDimensions: ['some.attribute']
+
+    # @schema
+    # description: uncomment the next line to disable histogram metrics collection (while still recording non-histogram span metrics)
+    # @schema
+    # histogramDisabled: true
+
+    # @schema
+    # description: |-
+    #   set explicit histogram buckets for span metrics
+    #   format is duration string (1us, 2ms, 3s, 4m, 5h, 6d, etc)
+    # @schema
+    # explicitHistogramBuckets: ['2ms', '4ms', '6ms', '8ms', '10ms', '50ms', '100ms', '200ms', '400ms', '800ms', '1s', '1400ms', '2s', '5s', '10s', '15s']
+
+    # @schema
+    # description: |-
+    #   set if process level dimensions will be included in span metrics
+    #   by default, process level metrics are not included
+    #   when set to true - timeseries will be created for each process in a container
+    #   when unset or set to false - timeseries will aggregate all processes into a single value per series
+    # @schema
+    # includedProcessInDimensions: true
+
+    # @schema
+    # description: set resource attributes to exclude from the span metrics
+    # @schema
+    # excludedResourceAttributes: ['process.runtime.name', 'process.runtime.version']
+
+    # @schema
+    # description: |-
+    #   Advanced configuration - avoid using unless you know what you are doing.
+    #   This list controls which resource attributes are included in the metric stream identity.
+    #   These attributes are used to determines how span metrics are grouped.
+    # @schema
+    # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
+
+    # @schema
+    # description: |-
+    #   Controls the tradeoff between metric accuracy and resource usage.
+    #   Determines how sampling affects which spans are used to compute metrics.
+    #   Possible values:
+    #     - "sampled-spans-only" (default): metrics are computed only from sampled spans.
+    #       Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.
+    #     - "all-spans": metrics are computed from all spans, regardless of sampling.
+    #       Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+    #       resulting in higher accuracy at the cost of increased resource usage.
+    # enum: [sampled-spans-only, all-spans]
+    # @schema
+    # spanMetricsMode: sampled-spans-only
+
+  # @schema
+  # description: Configuration for Odigos own metrics collection.
+  # @schema
+  odigosOwnMetrics:
+
+    # @schema
+    # description: |-
+    #   set the interval at which odigos will scrape metrics from itself.
+    #   format: duration string (15s, 1m, etc).
+    #   default is 10s.
+    # @schema
+    # scrapeInterval: '10s'
+
+  # @schema
+  # description: Configuration for agent metrics collection.
+  # @schema
+  agentMetrics:
+
+    # @schema
+    # description: |-
+    #   uncomment the next section to enable computing and reporting
+    #   span metrics directly in agents that support it.
+    #   the configuration for agent span metrics is the same as the
+    #   span metrics collector settings.
+    #   agents have different capabilities and support different configuration options.
+    # @schema
+    # spanMetrics:
+    #   enabled: true
+
+    # @schema
+    # description: Configuration for runtime metrics collection.
+    # @schema
+    runtimeMetrics:
+      # @schema
+      # description: Configuration for Java runtime metrics.
+      # @schema
+      java:
+        # @schema
+        # description: Global enable/disable for all JVM metrics
+        # @schema
+        # disabled: true
+
+        # @schema
+        # description: |-
+        #   Individual metric configuration - each metric can be enabled/disabled
+        #   metrics:
+        #     # Class loading metrics
+        #     - name: jvm.gc.duration
+        #       disabled: true
+        #     - name: jvm.memory.used
+        #       disabled: true
+        # @schema
+
+# @schema
+# description: |-
+#   Configuration for trace correlations (service I/O metrics derived from complete traces).
+#   When enabled, the node collector runs the serviceio connector to correlate inbound and outbound
+#   spans and emit connection metrics.
+# @schema
+traceCorrelations:
+  # @schema
+  # description: Configuration for service I/O correlation metrics (serviceio connector).
+  # @schema
+  serviceIO:
+    # @schema
+    # description: |-
+    #   set to true to enable service I/O correlation metrics. disabled by default.
+    #   when enabled, odigos deploys a dedicated victoriametrics instance to store trace correlation metrics.
+    # @schema
+    # enabled: true
+
+    # @schema
+    # type: array
+    # items:
+    #   type: string
+    # description: |-
+    #   span attribute names read from inbound spans on the receiving side (e.g. server spans).
+    #   each name should refer to a low-cardinality attribute (e.g. http.route, rpc.service).
+    # @schema
+    inputSpanAttributes:
+      - rpc.system
+      - rpc.service
+      - rpc.method
+      - http.route
+      - http.status_code
+      - http.response.status_code	
+      - http.method
+      - http.request.method
+      - server.address
+
+    # @schema
+    # type: array
+    # items:
+    #   type: string
+    # description: |-
+    #   span attribute names read from outbound spans on the sending side (e.g. client/producer spans).
+    #   each name should refer to a low-cardinality attribute.
+    # @schema
+    outputSpanAttributes:
+      - rpc.system
+      - rpc.service
+      - rpc.method
+      - db.system.name
+      - db.system
+      - db.statement
+      - db.query.text
+      - db.operation
+      - db.operation.name
+      - db.name
+      - db.user
+      - url.template
+      - http.status_code
+      - http.response.status_code
+      - http.method
+      - http.request.method
+      - net.peer.name
+      - server.address
+
+    # @schema
+    # description: |-
+    #   interval at which service I/O metrics are flushed.
+    #   format is duration string (15s, 1m, etc). default is 60s.
+    # @schema
+    # metricsFlushInterval: '60s'
+
+# @schema
+# description: |-
+#   Enable automatic Go library offsets updates.
+#   See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
+#   cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
+#   Custom Offsets support is only available in Odigos pro tier.
+# @schema
+goAutoOffsetsCron: ''
+# @schema
+# description: |-
+#   mode for automatic Go offsets updates. Options include direct (pull from cloud server), image (pull from local image) and off (disabled).
+#   Custom Offsets support is only available in Odigos pro tier.
+# @schema
+goAutoOffsetsMode: 'off'
+
+# @schema
+# description: experimental configuration for own telemetry of odigos on itself
+# @schema
+ownTelemetry:
+  # @schema
+  # description: configuration for the victoriametrics instance that is shipped with odigos for own telemetry
+  # @schema
+  metricsStore:
+    # @schema
+    # description: set to true to disable the odigos victoriametrics own metrics store
+    # @schema
+    disabled: true
+
+# @schema
+# description: global configurations for sampling.
+# @schema
+sampling:
+
+  # @schema
+  # description: |-
+  #   Set to true to enable dry run mode for sampling.
+  #   When enabled, Odigos runs the sampling logic but does not drop any traces; metrics are still
+  #   calculated so you can evaluate rule effectiveness before committing to changes that might lose data.
+  #   Each span gets an attribute 'odigos.sampling.dry_run.kept' indicating whether it would be kept or dropped once dry run is off.
+  #   With spanSamplingAttributes enabled, dry-run decisions are also visible as span attributes on each span.
+  # @schema
+  # dryRun: true
+
+  # @schema
+  # description: |-
+  #   Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+  #   These attributes add context when viewing traces and inspecting costs, so you can understand
+  #   how sampling decisions were made for an individual span and apply changes to fine-tune rules.
+  #   When dry run is enabled, each span includes the sampling decision (kept or dropped) as it
+  #   would apply once dry run is disabled.
+  # @schema
+  spanSamplingAttributes:
+
+    # @schema
+    # description: |-
+    #   set to true to disable span sampling attributes.
+    #   when disabled, odigos will not set span attributes for sampling decisions
+    #   (unless explicitly enabled for specific attributes set).
+    # @schema
+    # disabled: true
+
+    # @schema
+    # description: |-
+    #   set to true to disable recording the sampling category as a span attribute.
+    #   attributes:
+    #     - odigos.sampling.category (noise, highly relevant, cost reduction, or empty)
+    # @schema
+    # samplingCategoryDisabled: true
+
+    # @schema
+    # description: |-
+    #   Set to true to disable recording the trace-level deciding rule as span attributes.
+    #   When a trace matches an enabled sampling rule for a category, the most "severe" rule
+    #   is chosen as the "deciding rule" and recorded as span attributes on all spans in the trace.
+    #   If multiple rules with the same percentage match, one is chosen arbitrarily.
+    #   Use these attributes to find rules that are too permissive (high cost) or too strict (dropping important traces).
+    #   For example, if a rare and important trace is dropped by a rule that is too strict, increase its keep percentage
+    #   or add a separate rule for that use case. If cost analysis shows expensive traces, find rules that are too permissive
+    #   and decrease their percentage or remove them.
+    #   attributes:
+    #     - odigos.sampling.trace.deciding_rule.id
+    #     - odigos.sampling.trace.deciding_rule.name
+    #     - odigos.sampling.trace.deciding_rule.keep_percentage
+    # @schema
+    # traceDecidingRuleDisabled: true
+
+    # @schema
+    # description: |-
+    #   Set to true to disable recording the span-level deciding rule as span attributes.
+    #   The trace-level decision is an aggregation of all spans in the trace; these attributes record
+    #   which spans contributed to it and how, so you can link decisions back to the specific spans and operations.
+    #   For example, if a trace is kept due to high duration, the attributes pinpoint the span(s) that drove that decision.
+    #   attributes:
+    #     - odigos.sampling.span.deciding_rule.id
+    #     - odigos.sampling.span.deciding_rule.name
+    #     - odigos.sampling.span.deciding_rule.keep_percentage
+    # @schema
+    # spanDecisionAttributesDisabled: true
+
+  # @schema
+  # description: configuration for tail sampling.
+  # @schema
+  tailSampling:
+
+    # @schema
+    # description: |-
+    #   if set to true, tail sampling will be disabled globally
+    #   regardless of any other configurations or rules set.
+    #   can be used to reduce collectors resource usage, troubleshooting, etc,
+    #   or when tail-sampling is not needed or desired and should be shut off.
+    # @schema
+    # disabled: true
+
+    # @schema
+    # description: |-
+    #   time to wait from the first span of a trace until a trace is considered completed.
+    #   at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+    #   introduces this amount of latency in the pipeline and for trace to hit the destination.
+    #   also increases memory usage for keeping spans in memory until the wait duration time is reached.
+    #   setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+    #   and broken traces due to sampling each trace in few pieces.
+    # @schema
+    # traceAggregationWaitDuration: '30s'
+
+    # @schema
+    # enum: [auto, always]
+    # description: |-
+    #   Controls when the collector enforces noisy-operations rules via tail sampling.
+    #   auto (default): only for sources whose agent does not support head sampling.
+    #   always: for every source, even when the agent already applied them at head.
+    #   Use always when applications emit OpenTelemetry themselves so Odigos head sampling never runs on their spans.
+    # @schema
+    # noisyOperationsEnforcement: auto
+
+  # @schema
+  # description: |-
+  #   configuration for odigos auto-kubelet-probes detection and sampling.
+  #   odigos can automatically pick up health probes from the k8s manifest,
+  #   and treat them as "noisy endpoints" to be sampled out.
+  #   most users get little or no value from tracing health probes,
+  #   and it is recommended to enable and use it.
+  #   it will be used with head sampling where the agent support it.
+  #   when tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.
+  # @schema
+  k8sHealthProbesSampling:
+
+    # @schema
+    # description: |-
+    #   if set to true, odigos will automatically detect and sample out health probes.
+    #   this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
+    #   users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
+    # @schema
+    # enabled: true
+
+    # @schema
+    # description: percentage % (0-100) of health probes to keep.
+    # @schema
+    # keepPercentage: 2
+
+# @schema
+# description: |-
+#   On-prem token for Odigos Pro/Enterprise features.
+#   When set, Odigos will create a secret with this token to enable Pro features.
+#   Leave empty for community edition.
+# @schema
+# onPremToken: ''
+
+# @schema
+# description: |-
+#   Set to true if you are providing the odigos-pro secret externally (not managed by this chart).
+#   When true, the chart will not create the odigos-pro secret but will still enable Pro features if the secret exists.
+#   This is useful for GitOps workflows where secrets are managed separately.
+# @schema
+# externalOnpremTokenSecret: false
+
+# @schema
+# description: |-
+#   Set to true if you are providing the odigos-enterprise-registry pull secret externally (not managed by this chart).
+#   When true, the chart will not create the pull secret but will still mount odigos-enterprise-registry on Odigos workloads
+#   when pulling from registry.odigos.io. Use with externalOnpremTokenSecret for GitOps installs where Helm cannot read secrets at template time.
+# @schema
+# externalOnpremPullSecret: false

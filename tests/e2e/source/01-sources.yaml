@@ -95,3 +95,20 @@ spec:
     namespace: default
     kind: Deployment
   otelServiceName: geolocation-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: shipping
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: shipping
+    namespace: default
+    kind: Deployment
+  otelServiceName: shipping-reported
+  containerOverrides:
+    - containerName: shipping
+      otelDistroName: opentelemetry-ebpf-instrumentation

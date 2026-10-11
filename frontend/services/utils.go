@@ -9,9 +9,10 @@ import (
 	"net/http"
 	"path"
 	"slices"
-	"sort"
+	"strings"
 	"time"
 
+	"github.com/distribution/reference"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -38,18 +39,18 @@ func GetPageLimit(ctx context.Context) (int, error) {
 	defaultValue := 100
 	odigosNs := env.GetCurrentNamespace()
 
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 	if err != nil {
 		return defaultValue, err
 	}
 
-	var odigosConfig common.OdigosConfiguration
-	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
+	var odigosConfiguration common.OdigosConfiguration
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
 		return defaultValue, err
 	}
 
-	configValue := odigosConfig.UiPaginationLimit
+	configValue := odigosConfiguration.UiPaginationLimit
 	if configValue > 0 {
 		return configValue, nil
 	}
@@ -57,18 +58,50 @@ func GetPageLimit(ctx context.Context) (int, error) {
 	return defaultValue, nil
 }
 
+func ConvertConditions(conditions []metav1.Condition) []*model.Condition {
+	var result []*model.Condition
+	for _, c := range conditions {
+		if c.Type != "AppliedInstrumentationDevice" {
+			reason := c.Reason
+			message := c.Message
+			if message == "" {
+				message = string(c.Reason)
+			}
+
+			result = append(result, &model.Condition{
+				Status:  TransformConditionStatus(c.Status, c.Type, reason),
+				Type:    c.Type,
+				Reason:  &reason,
+				Message: &message,
+			})
+		}
+	}
+	return result
+}
+
 func ConvertSignals(signals []model.SignalType) ([]common.ObservabilitySignal, error) {
 	var result []common.ObservabilitySignal
+	seen := make(map[common.ObservabilitySignal]bool)
+
 	for _, s := range signals {
+		var signal common.ObservabilitySignal
 		switch s {
 		case model.SignalTypeTraces:
-			result = append(result, common.TracesObservabilitySignal)
+			signal = common.TracesObservabilitySignal
 		case model.SignalTypeMetrics:
-			result = append(result, common.MetricsObservabilitySignal)
+			signal = common.MetricsObservabilitySignal
 		case model.SignalTypeLogs:
-			result = append(result, common.LogsObservabilitySignal)
+			signal = common.LogsObservabilitySignal
+		case model.SignalTypeProfiles:
+			signal = common.ProfilesObservabilitySignal
 		default:
 			return nil, fmt.Errorf("unknown signal type: %v", s)
+		}
+
+		// Deduplicate: only add if not already seen
+		if !seen[signal] {
+			seen[signal] = true
+			result = append(result, signal)
 		}
 	}
 	return result, nil
@@ -81,8 +114,67 @@ func DerefString(s *string) string {
 	return ""
 }
 
+func DerefBool(b *bool) bool {
+	if b != nil {
+		return *b
+	}
+	return false
+}
+
 func StringPtr(s string) *string {
 	return &s
+}
+
+func StringPtrIfNotEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func DerefK8sResourceKind(k *model.K8sResourceKind) string {
+	if k != nil {
+		return string(*k)
+	}
+	return ""
+}
+
+func K8sResourceKindPtrIfNotEmpty(s string) *model.K8sResourceKind {
+	if s == "" {
+		return nil
+	}
+	k := model.K8sResourceKind(s)
+	return &k
+}
+
+func DerefProgrammingLanguage(p *model.ProgrammingLanguage) common.ProgrammingLanguage {
+	if p != nil {
+		return common.ProgrammingLanguage(*p)
+	}
+	return ""
+}
+
+func ProgrammingLanguagePtrIfNotEmpty(p common.ProgrammingLanguage) *model.ProgrammingLanguage {
+	if p == "" {
+		return nil
+	}
+	pl := model.ProgrammingLanguage(p)
+	return &pl
+}
+
+func DerefSamplingWorkloadLanguage(p *model.SamplingWorkloadLanguage) common.ProgrammingLanguage {
+	if p != nil {
+		return common.ProgrammingLanguage(*p)
+	}
+	return ""
+}
+
+func SamplingWorkloadLanguagePtrIfNotEmpty(p common.ProgrammingLanguage) *model.SamplingWorkloadLanguage {
+	if p == "" {
+		return nil
+	}
+	lang := model.SamplingWorkloadLanguage(p)
+	return &lang
 }
 
 func Metav1TimeToString(latestStatusTime metav1.Time) string {
@@ -124,29 +216,6 @@ func TransformConditionStatus(condStatus metav1.ConditionStatus, condType string
 	}
 
 	return status
-}
-
-func SortConditions(conditions []*model.Condition) {
-	sort.Slice(conditions, func(i, j int) bool {
-		if conditions[i].LastTransitionTime == nil {
-			return false
-		}
-		if conditions[j].LastTransitionTime == nil {
-			return true
-		}
-
-		timeI, errI := time.Parse(time.RFC3339, *conditions[i].LastTransitionTime)
-		timeJ, errJ := time.Parse(time.RFC3339, *conditions[j].LastTransitionTime)
-
-		if errI != nil {
-			return false
-		}
-		if errJ != nil {
-			return true
-		}
-
-		return timeI.Before(timeJ)
-	})
 }
 
 func randString(nByte int) (string, error) {
@@ -224,4 +293,34 @@ func getKubeVersion() (*version.Version, error) {
 	}
 
 	return parsedVer, nil
+}
+
+func k8sLastTransitionTimeToGql(t metav1.Time) *string {
+	if t.IsZero() {
+		return nil
+	}
+	str := t.UTC().Format(time.RFC3339)
+	return &str
+}
+
+// ExtractImageVersion extracts the tag (version) from a full container image reference.
+func ExtractImageVersion(image string) string {
+	if image == "" {
+		return ""
+	}
+
+	if idx := strings.Index(image, "@"); idx >= 0 {
+		image = image[:idx]
+	}
+
+	ref, err := reference.ParseNormalizedNamed(image)
+	if err != nil {
+		return ""
+	}
+
+	if tagged, ok := ref.(reference.Tagged); ok {
+		return tagged.Tag()
+	}
+
+	return ""
 }

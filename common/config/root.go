@@ -15,6 +15,7 @@ var availableConfigers = []Configer{
 	&AWSXRay{},
 	&Axiom{},
 	&AzureBlobStorage{},
+	&AzureMonitor{},
 	&BetterStack{},
 	&Bonree{},
 	&Causely{},
@@ -31,6 +32,7 @@ var availableConfigers = []Configer{
 	&Elasticsearch{},
 	&GenericOTLP{},
 	&GoogleCloud{},
+	&GoogleCloudOTLP{},
 	&GoogleCloudStorage{},
 	&GrafanaCloudLoki{},
 	&GrafanaCloudPrometheus{},
@@ -56,7 +58,6 @@ var availableConfigers = []Configer{
 	&Observe{},
 	&OneUptime{},
 	&OpenObserve{},
-	&OpsVerse{},
 	&Oracle{},
 	&OTLPHttp{},
 	&Prometheus{},
@@ -65,6 +66,7 @@ var availableConfigers = []Configer{
 	&Quickwit{},
 	&Sentry{},
 	&Seq{},
+	&SignalFx{},
 	&Signoz{},
 	&Splunk{},
 	&SplunkOTLP{},
@@ -75,6 +77,7 @@ var availableConfigers = []Configer{
 	&Traceloop{},
 	&Uptrace{},
 	&VictoriaMetricsCloud{},
+	&Pyroscope{},
 }
 
 type Configer interface {
@@ -119,6 +122,21 @@ func isMetricsEnabled(dest SignalSpecific) bool {
 
 func isLoggingEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.LogsObservabilitySignal)
+}
+
+func isProfilingEnabled(dest SignalSpecific) bool {
+	return isSignalExists(dest, common.ProfilesObservabilitySignal)
+}
+
+// addProfilesPipeline registers a "profiles/<prefix>-<id>" destination pipeline (exporter only) and
+// returns its name. Like traces/metrics/logs destination pipelines, its receiver (the forward
+// connector) is attached by the gateway builder, so it flows through the odigosrouterconnector.
+func addProfilesPipeline(currentConfig *Config, prefix, destID, exporterName string) string {
+	name := fmt.Sprintf("profiles/%s-%s", prefix, destID)
+	currentConfig.Service.Pipelines[name] = Pipeline{
+		Exporters: []string{exporterName},
+	}
+	return name
 }
 
 func addProtocol(s string) string {

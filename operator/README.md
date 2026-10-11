@@ -3,116 +3,79 @@ The Odigos Operator is another installation, management, and upgrade method for 
 
 Currently, the Operator is designed specifically for OpenShift users. It may not function as expected in other Kubernetes clusters.
 
-## Getting Started
+## Overview
 
-### Prerequisites
-- go version v1.22.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+The main function of the Operator is to install, manage, upgrade, and uninstall Odigos in a cluster.
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+The operator uses a CRD called [`operator.odigos.io/odigos`](api/v1alpha1/odigos_types.go) to represent a single installation of Odigos. 
+This CRD essentially contains all of the system config options available through the Odigos configmap.
 
-```sh
-make docker-build docker-push IMG=<some-registry>/odigos-operator:tag
-```
+When an `Odigos` CRD object is created or updated, the Operator resolves it in [`internal/controller/odigos_controller.go`](internal/controller/odigos_controller.go),
+using the same packages used by the CLI installer (ie, resource managers). The operator makes each installed resource have
+an OwnerReference pointing to that CRD object. It also adds a finalizer to the `Odigos` object to handle uninstalling.
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
+When an `Odigos` object is deleted, the finalizer allows the operator to uninstall Odigos. Note that this means deleting the _operator_
+without first deleting the `Odigos` object may leave the Odigos install hanging on that finalizer.
 
-**Install the CRDs into the cluster:**
+### Operator Framework SDK
 
-```sh
-make install
-```
+The operator was set up using the [Operator Framework `operator-sdk` for Go](https://sdk.operatorframework.io/), and many of the
+Makefile commands provided are scaffolded by that tool. The `operator-sdk` tool and patterns should be used with this operator.
+This tool is essentially a wrapper around Kubebuilder with some added functionality (mainly around building and packaging), so
+it shares much of the support for Kubebuilder.
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
+### Manifests, CSV, and Bundle
 
-```sh
-make deploy IMG=<some-registry>/odigos-operator:tag
-```
+Operator manifests are defined under the [`config/`](config) directory as Kustomize files. Many of these were scaffolded by default
+with `operator-sdk` and are open for review.
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
+When packaging the operator for distribution on OpenShift, two things are created: the ClusterServiceVersion (CSV) and Bundle.
 
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
+The CSV is a CoreOS/Operator Framework concept that defines metadata about the operator, its dependent images, CRDs, manifests, etc.
+It is essentially a single YAML file that allows the Operator to be installed and managed by the [Operator Lifecycle Manager (OLM)](https://olm.operatorframework.io/).
 
-```sh
-kubectl apply -k config/samples/
-```
+The base CSV file is at [`config/manifests/bases/odigos-operator.clusterserviceversion.yaml`](config/manifests/bases/odigos-operator.clusterserviceversion.yaml).
+This file can be edited to update fixed metadata like description, keywords, maintainer info, etc.
 
->**NOTE**: Ensure that the samples has default values to test it out.
+Running `make bundle` uses the base CSV and all other manifest Kustomize files to generate the final CSV in [`bundle/manifests/odigos-operator.clusterserviceversion.yaml`](bundle/manifests/odigos-operator.clusterserviceversion.yaml).
+This final CSV is what is distributed to OperatorHub on OpenShift (see [DEVELOPMENT.md](DEVELOPMENT.md#publishing-the-release-to-openshift)).
 
-Label the installed namespace with:
+### Versioning
 
-```
-kubectl label ns/<namespace> odigos.io/system-object=true
-```
+Currently, the operator is pinned to the same version of Odigos. Meaning `v1.0.205` of the Operator will only install `v1.0.205` of Odigos.
+To upgrade Odigos through the Operator, you only need to update the Operator itself. When the new operator pod spins up, it will re-list any existing
+`odigos` objects and follow the same upgrade path as the CLI.
 
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
+The version is pinned through a ConfigMap, which is generated in [`config/manager/kustomization.yaml`](config/manager/kustomization.yaml) with a `configMapGenerator`
+directive. This allows the version to be generated as part of the release flow through the Makefile. The generated ConfigMap is automatically
+referenced by the operator pod generated by Kustomize when following the release flow in [DEVELOPMENT.md](DEVELOPMENT.md#preparing-a-new-release).
+This isn't ideal, and leads to a new ConfigMap object being added to the bundle with each release, but Kustomize doesn't seem to support
+simpler methods like environment variable templating.
 
-```sh
-kubectl delete -k config/samples/
-```
+### Permissions
 
-**Delete the APIs(CRDs) from the cluster:**
+The Odigos Operator requires all RBAC permissions used by any Odigos components, because the Operator is installing these components
+and granting them their permissions. These are currently all granted as auto-generated ClusterRoles using `//+kubebuilder` markers
+in `odigos_controller.go`.
 
-```sh
-make uninstall
-```
+If new RBAC permissions are granted to a component, but not the operator, then the operator will fail to install Odigos due to lacking
+those permissions. To help prevent this, we have a [CI check](../.github/workflows/check-operator-rbac.yml) which fails if changes are made to
+any component RBAC without any changes to `odigos_controller.go`. This is a simple approach, and it's possible that RBAC changes to
+components don't need an update to the operator (for example, if the operator already has that permission, or if a permission was removed.)
 
-**UnDeploy the controller from the cluster:**
+If you are sure that the operator does not need an RBAC update, you can add the `operator-rbac-approved` label to your PR to bypass this check.
+The check is not required however.
 
-```sh
-make undeploy
-```
+Otherwise, to add new permissions to the operator, update the `//+kubebuilder` markers in `odigos_controller.go` and run `USE_IMAGE_DIGESTS=true make generate manifests bundle`
+from this directory. This will update the operator manifests and generate a new operator bundle (which may include other irrelevant generated changes such
+as image references and timestamps -- this is normal).
 
-## Project Distribution
+#### Why ClusterRoles?
 
-Following are the steps to build the installer and distribute this project to users.
+In the interest of generating as much code as possible, we use `kubebuilder` markers to define operator permissions. These markers support
+generating namespaced Roles, but the namespace must be coded into the marker to do so. Since the operator can be installed in any namespace,
+this makes it currently infeasible to generate namespaced Roles. This is a TODO to be improved.
 
-1. Build the installer for the image built and published in the registry:
+## Building and development
 
-```sh
-make build-installer IMG=<some-registry>/odigos-operator:tag
-```
-
-NOTE: The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without
-its dependencies.
-
-2. Using the installer
-
-Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/odigos-operator/<tag or branch>/dist/install.yaml
-```
-
-## Contributing
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
-## License
-
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
+See [DEVELOPMENT.md](DEVELOPMENT.md)

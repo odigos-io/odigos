@@ -11,9 +11,10 @@ Simply merge in this PR and your documentation will be connected!
 The documentation is build on [Mintlify](https://www.npmjs.com/package/mintlify). To preview the documentation changes locally:
 
 ```
-# make sure you're in `/docs` folder, where `mint.json` and `package.json` files are
-yarn install
-yarn dev
+# make sure you're in `/docs` folder, where `docs.json` and `package.json` files are
+# install the mintlify npm package (if you don't already have it)
+npm i -g mint
+mint dev
 ```
 
 ### 😎 Publishing Changes

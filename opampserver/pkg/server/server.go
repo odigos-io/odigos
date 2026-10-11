@@ -4,31 +4,36 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/go-logr/logr"
-	commonconsts "github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
-	"github.com/odigos-io/odigos/opampserver/pkg/connection"
-	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
-	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonconsts "github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
+	"github.com/odigos-io/odigos/opampserver/pkg/agent"
+	"github.com/odigos-io/odigos/opampserver/pkg/connection"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
+	"github.com/odigos-io/odigos/opampserver/protobufs"
 )
 
-func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
+func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
+	logger := commonlogger.LoggerCompat().With("subsystem", "opampserver")
 	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", commonconsts.OpAMPPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
 	connectionCache := connection.NewConnectionsCache()
-
-	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, connectionCache, odigosNs)
+	sdkConfig := sdkconfig.NewSdkConfigManager(mgr, connectionCache, odigosNs)
 
 	handlers := &ConnectionHandlers{
-		logger:        logger,
+		logger:        commonlogger.LoggerCompat().With("subsystem", "opamphandlers"),
 		sdkConfig:     sdkConfig,
 		kubeclient:    mgr.GetClient(),
 		kubeClientSet: kubeClientSet,
@@ -59,14 +64,14 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		var agentToServer protobufs.AgentToServer
 		err = proto.Unmarshal(bytes, &agentToServer)
 		if err != nil {
-			logger.Error(err, "Cannot decode opamp message from HTTP Body")
+			logger.Error("Cannot decode opamp message from HTTP Body", "err", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		instanceUid := string(agentToServer.InstanceUid)
 		if instanceUid == "" {
-			logger.Error(err, "InstanceUid is missing")
+			logger.Error("InstanceUid is missing")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -78,7 +83,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		if !exists {
 			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, &agentToServer)
 			if err != nil {
-				logger.Error(err, "Failed to process new connection")
+				logger.Error("Failed to process new connection", "err", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -88,7 +93,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		} else {
 			serverToAgent, err = handlers.OnAgentToServerMessage(ctx, &agentToServer, connectionInfo)
 			if err != nil {
-				logger.Error(err, "Failed to process opamp message")
+				logger.Error("Failed to process opamp message", "err", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -100,12 +105,12 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			select {
 			case updateChannel <- InstrumentationUpdateTask{ctx, UpdateInstance, &agentToServer, connectionInfo}:
 			default:
-				logger.Error(nil, "Update channel is full, dropping task")
+				logger.Error("Update channel is full, dropping task")
 			}
 		}
 
 		if serverToAgent == nil {
-			logger.Error(err, "No response from opamp handler")
+			logger.Error("No response from opamp handler", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -114,14 +119,19 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 
 			// This may occurs when Odiglet restarts, and a previously connected pod sends a disconnect message right after reconnecting.
 			if connectionInfo != nil {
-				logger.Info("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+				logger.Debug("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
 			}
 			// if agent disconnects, remove the connection from the cache
 			// as it is not expected to send additional messages
 			connectionCache.RemoveConnection(instanceUid)
 		} else {
 			// keep record in memory of last message time, to detect stale connections
-			connectionCache.RecordMessageTime(instanceUid)
+			// Check if agentToServer.Health is nil; if so, use HealthStatusUnknown
+			healthStatus := agent.HealthStatusUnknown
+			if agentToServer.Health != nil {
+				healthStatus = agent.GetAgentHealthStatus(agentToServer.Health.Status)
+			}
+			connectionCache.RecordMessageTime(instanceUid, healthStatus)
 		}
 
 		serverToAgent.InstanceUid = agentToServer.InstanceUid
@@ -138,7 +148,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		_, err = w.Write(bytes)
 
 		if err != nil {
-			logger.Error(err, "Failed to write response")
+			logger.Error("Failed to write response", "err", err)
 		}
 	})
 
@@ -149,14 +159,25 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		ProcessInstrumentationUpdates(ctx, updateChannel, handlers, logger)
+		ProcessInstrumentationUpdates(ctx, updateChannel, handlers)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		logger.Info("opamp HTTP transport listening", "listenEndpoint", listenEndpoint)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error(err, "Error starting opamp server")
+			logger.Error("Error starting opamp server", "err", err)
+		}
+	}()
+
+	// Second listener: a node-local unix socket. Both listeners share the same
+	// *http.Server (and DefaultServeMux); a single server.Shutdown drains both.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := serveUnix(ctx, server, logger); err != nil && ctx.Err() == nil {
+			logger.Error("Error starting opamp Unix server", "err", err)
 		}
 	}()
 
@@ -174,7 +195,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				close(updateChannel)
 
 				if err := server.Shutdown(ctx); err != nil {
-					logger.Error(err, "Failed to shut down the http server for incoming connections")
+					logger.Error("Failed to shut down the http server for incoming connections", "err", err)
 				}
 				logger.Info("Shutting down live connections timeout monitor")
 				return
@@ -185,7 +206,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 					select {
 					case updateChannel <- InstrumentationUpdateTask{ctx, DeleteInstance, &protobufs.AgentToServer{}, &conn}:
 					default:
-						logger.Error(nil, "Update channel is full, dropping task")
+						logger.Error("Update channel is full, dropping task")
 					}
 
 				}
@@ -194,6 +215,36 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	}()
 
 	wg.Wait()
+	return nil
+}
+
+// serveUnix starts a unix-socket HTTP listener under /var/odigos/exchange/exchange.sock.
+// The socket file is recreated on startup and removed on shutdown.
+func serveUnix(ctx context.Context, srv *http.Server, logger *commonlogger.OdigosLogger) error {
+	socketPath := k8sconsts.OdigosOpampUnixSocketPath
+	if err := os.MkdirAll(k8sconsts.OdigosOpampExchangeDir, 0o755); err != nil {
+		return fmt.Errorf("mkdir exchange dir: %w", err)
+	}
+	_ = os.Remove(socketPath)
+
+	var lc net.ListenConfig
+	listener, err := lc.Listen(ctx, "unix", socketPath)
+	if err != nil {
+		return fmt.Errorf("listen on %s: %w", socketPath, err)
+	}
+	defer func() {
+		if err := os.Remove(socketPath); err != nil && !os.IsNotExist(err) {
+			logger.Error("Failed to remove Unix opamp socket", "err", err, "socket", socketPath)
+		}
+	}()
+	if err := os.Chmod(socketPath, 0o666); err != nil {
+		logger.Error("Failed to chmod unix socket", "err", err, "socket", socketPath)
+	}
+	logger.Info("opamp Unix transport listening", "socket", socketPath)
+
+	if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
+		return err
+	}
 	return nil
 }
 
@@ -211,7 +262,8 @@ const (
 	DeleteInstance
 )
 
-func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan InstrumentationUpdateTask, handlers *ConnectionHandlers, logger logr.Logger) {
+func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan InstrumentationUpdateTask, handlers *ConnectionHandlers) {
+	logger := commonlogger.LoggerCompat().With("subsystem", "opampserver")
 	logger.Info("Starting instrumentation instance update worker")
 
 	for task := range updateChannel {
@@ -219,16 +271,22 @@ func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan Instr
 		case UpdateInstance:
 			err := handlers.UpdateInstrumentationInstanceStatus(task.ctx, task.agentToServer, task.connectionInfo)
 			if err != nil {
-				logger.Error(err, "Failed to update instrumentation instance")
+				logger.Error("Failed to update instrumentation instance", "err", err)
 			}
 		case DeleteInstance:
+			// Do not delete the instrumentation instance if the connection failed;
+			// Instead, retain it in an unhealthy state so the UI can display relevant information.
+			if task.connectionInfo.Status == agent.HealthStatusNoConnectionToOpAMPServer {
+				logger.Info("Skipping deletion of instrumentation instance on connection failure to opamp server", "connectionInfo", task.connectionInfo)
+				continue
+			}
 			err := instrumentation_instance.DeleteInstrumentationInstance(ctx, task.connectionInfo.Pod, task.connectionInfo.ContainerName,
 				handlers.kubeclient, int(task.connectionInfo.Pid))
 			if err != nil {
-				logger.Error(err, "failed to delete instrumentation instance on connection timedout")
+				logger.Error("failed to delete instrumentation instance on connection timedout", "err", err)
 			}
 		default:
-			logger.Error(nil, "Unknown task type received", "taskType", task.taskType)
+			logger.Error("Unknown task type received", "taskType", task.taskType)
 
 		}
 	}

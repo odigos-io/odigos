@@ -1,24 +1,47 @@
-.PHONY: build-odiglet generate
+.PHONY: build-odiglet generate compile-odiglet debug-build-odiglet tools go-licenses licenses
 
+include obi.mk
+
+# Libraries with a generate target in the module cache
 LIBRARIES := go.opentelemetry.io/auto \
 			github.com/odigos-io/runtime-detector
 
-build-odiglet: generate
+go-mod: go-mod-replace
+	@go mod download
+
+# go-mod + each $(LIBRARIES) upstream `make generate` in parallel. Does not clone/materialize OBI.
+generate: go-mod
+	@pids=""; \
+	for lib in $(LIBRARIES); do \
+		( \
+			LIB_PATH=$$(go list -m -f '{{.Dir}}' $${lib%@*}) && \
+			chmod -R +w $$LIB_PATH && \
+			$(MAKE) -C "$$LIB_PATH" generate \
+		) & \
+		pids="$$pids $$!"; \
+	done; \
+	fail=0; \
+	for pid in $$pids; do \
+		wait $$pid || fail=1; \
+	done; \
+	exit $$fail
+
+# Compile only — no materialize / generate / go-mod. For Docker after those layers have run.
+compile-odiglet:
 	CGO_ENABLED=0 go build -ldflags="$(LD_FLAGS)" -o odiglet cmd/main.go
 
-debug-build-odiglet: generate
+build-odiglet:
+	$(MAKE) materialize-obi
+	$(MAKE) generate
+	$(MAKE) compile-odiglet
+
+debug-build-odiglet:
+	$(MAKE) materialize-obi
+	$(MAKE) generate
 	go build -o odiglet -gcflags "all=-N -l" cmd/main.go
 
-generate:
-	go mod download
-	@for lib in $(LIBRARIES); do \
-		LIB_PATH=$$(go list -m -f '{{.Dir}}' $${lib%@*}) && \
-		chmod -R +w $$LIB_PATH && \
-		make -C "$$LIB_PATH" generate; \
-	done
-
-test: generate
-	go test -v ./...
+test: materialize-obi generate
+	go test -a -v ./...
 
 TOOLS := $(PWD)/.tools
 

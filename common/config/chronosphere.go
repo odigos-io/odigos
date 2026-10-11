@@ -30,7 +30,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 
 	company := c.getCompanyNameFromURL(url)
 
-	chronosphereExporterName := "otlp/chronosphere-" + dest.GetID()
+	chronosphereExporterName := "otlp_grpc/chronosphere-" + dest.GetID()
 	currentConfig.Exporters[chronosphereExporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s.chronosphere.io:443", company),
 		"retry_on_failure": GenericMap{
@@ -38,7 +38,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 		},
 		"compression": "gzip",
 		"headers": GenericMap{
-			"API-Token": "${CHRONOSPHERE_API_TOKEN}",
+			"API-Token": SecretEnvPlaceholder("CHRONOSPHERE_API_TOKEN", dest),
 		},
 	}
 	var pipelineNames []string

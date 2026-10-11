@@ -4,19 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/collector/receiver/otlpreceiver"
-	"go.opentelemetry.io/collector/receiver/receivertest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -25,11 +20,20 @@ const (
 	traceSizeMetricName  = "otelcol_odigos_trace_data_size_bytes_total"
 	metricSizeMetricName = "otelcol_odigos_metric_data_size_bytes_total"
 	logSizeMetricName    = "otelcol_odigos_log_data_size_bytes_total"
+
+	// Collector 0.159 applies its Prometheus reader defaults to explicitly configured
+	// readers. In particular, units and type suffixes are omitted, so these metrics
+	// no longer necessarily have the legacy "_bytes_total" suffix. Keep accepting
+	// both forms to support rolling upgrades with mixed collector versions.
+	traceSizeMetricNameRaw  = "otelcol_odigos_trace_data_size"
+	metricSizeMetricNameRaw = "otelcol_odigos_metric_data_size"
+	logSizeMetricNameRaw    = "otelcol_odigos_log_data_size"
 )
 
 var (
-	errNoSenderPod   = errors.New("no sender pod found in the resource attributes")
-	errUnKnownSender = errors.New("unknown OTLP sender")
+	errNoSenderPod     = errors.New("no sender pod found in the resource attributes")
+	errNoCollectorRole = errors.New("no collector role found in the resource attributes")
+	errUnKnownSender   = errors.New("unknown OTLP sender")
 )
 
 type trafficMetrics struct {
@@ -66,23 +70,17 @@ func (tm *trafficMetrics) String() string {
 }
 
 type OdigosMetricsConsumer struct {
-	sources      sourcesMetrics
-	destinations destinationsMetrics
-	deletedChan  chan notification
+	sources                 sourcesMetrics
+	clusterCollectorMetrics clusterCollectorMetrics
+	deletedChan             chan notification
 }
-
-var (
-	K8SNamespaceNameKey   = string(semconv.K8SNamespaceNameKey)
-	K8SDeploymentNameKey  = string(semconv.K8SDeploymentNameKey)
-	K8SStatefulSetNameKey = string(semconv.K8SStatefulSetNameKey)
-	K8SDaemonSetNameKey   = string(semconv.K8SDaemonSetNameKey)
-)
 
 func (c *OdigosMetricsConsumer) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
 
 func newTrafficMetrics(metricName string, dp pmetric.NumberDataPoint) *trafficMetrics {
+	metricName = normalizeTrafficMetricName(metricName)
 	tm := &trafficMetrics{
 		lastUpdate: dp.Timestamp().AsTime(),
 	}
@@ -99,6 +97,19 @@ func newTrafficMetrics(metricName string, dp pmetric.NumberDataPoint) *trafficMe
 	return tm
 }
 
+func normalizeTrafficMetricName(metricName string) string {
+	switch metricName {
+	case traceSizeMetricNameRaw:
+		return traceSizeMetricName
+	case metricSizeMetricNameRaw:
+		return metricSizeMetricName
+	case logSizeMetricNameRaw:
+		return logSizeMetricName
+	default:
+		return metricName
+	}
+}
+
 func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 	for {
 		select {
@@ -110,9 +121,9 @@ func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 			case nodeCollector:
 				c.sources.removeNodeCollector(n.object)
 			case clusterCollector:
-				c.destinations.removeClusterCollector(n.object)
+				c.clusterCollectorMetrics.removeClusterCollector(n.object)
 			case destination:
-				c.destinations.removeDestination(n.object)
+				c.clusterCollectorMetrics.removeDestination(n.object)
 			case source:
 				switch n.eventType {
 				case watch.Deleted:
@@ -130,7 +141,16 @@ func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 	}
 }
 
-func senderPodFromResource(md pmetric.Metrics) (string, error) {
+func collectorRoleFromResource(md pmetric.Metrics) (k8sconsts.CollectorRole, error) {
+	v, ok := md.ResourceMetrics().At(0).Resource().Attributes().Get("odigos.collector.role")
+	if !ok {
+		return "", errNoCollectorRole
+	}
+
+	return k8sconsts.CollectorRole(v.Str()), nil
+}
+
+func getSenderPod(md pmetric.Metrics) (string, error) {
 	v, ok := md.ResourceMetrics().At(0).Resource().Attributes().Get(string(semconv.K8SPodNameKey))
 	if !ok {
 		return "", errNoSenderPod
@@ -140,18 +160,22 @@ func senderPodFromResource(md pmetric.Metrics) (string, error) {
 }
 
 func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
-	senderPod, err := senderPodFromResource(md)
+	collectorRole, err := collectorRoleFromResource(md)
+	if err != nil {
+		return err
+	}
+	senderPod, err := getSenderPod(md)
 	if err != nil {
 		return err
 	}
 
-	if strings.HasPrefix(senderPod, k8sconsts.OdigosNodeCollectorDaemonSetName) {
+	if collectorRole == k8sconsts.CollectorsRoleNodeCollector {
 		c.sources.handleNodeCollectorMetrics(senderPod, md)
 		return nil
 	}
 
-	if strings.HasPrefix(senderPod, k8sconsts.OdigosClusterCollectorDeploymentName) {
-		c.destinations.handleClusterCollectorMetrics(senderPod, md)
+	if collectorRole == k8sconsts.CollectorsRoleClusterGateway {
+		c.clusterCollectorMetrics.handleClusterCollectorMetrics(senderPod, md)
 		return nil
 	}
 
@@ -160,14 +184,17 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 
 func NewOdigosMetrics() *OdigosMetricsConsumer {
 	return &OdigosMetricsConsumer{
-		sources:      newSourcesMetrics(),
-		destinations: newDestinationsMetrics(),
-		deletedChan:  make(chan notification),
+		sources:                 newSourcesMetrics(),
+		clusterCollectorMetrics: newClusterCollectorMetrics(),
+		deletedChan:             make(chan notification, 256),
 	}
 }
 
-// Run starts the OTLP receiver and the notifications loop for receiving and processing the metrics from different Odigos collectors
-func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
+// RunDeleteWatcherAndNotifications runs the Kubernetes delete watcher and
+// the in-process loop that applies deletion notifications to in-memory metrics maps.
+func (c *OdigosMetricsConsumer) RunDeleteWatcherAndNotifications(ctx context.Context, odigosNS string) {
+	log := commonlogger.LoggerCompat().With("subsystem", "collector-metrics", "component", "notifications")
+
 	var closeWg sync.WaitGroup
 	// launch the notifications loop
 	closeWg.Add(1)
@@ -182,31 +209,13 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		defer closeWg.Done()
 		err := runWatcher(ctx, &deleteWatcher{
 			odigosNS:            odigosNS,
-			deleteNotifications: c.deletedChan})
+			deleteNotifications: c.deletedChan,
+		})
 		if err != nil {
-			log.Printf("Collector metrics: Error running delete watcher: %v\n", err)
+			log.Error("Error running delete watcher", "err", err)
 		}
 	}()
 
-	// setup the OTLP receiver
-	f := otlpreceiver.NewFactory()
-
-	cfg, ok := f.CreateDefaultConfig().(*otlpreceiver.Config)
-	if !ok {
-		panic("failed to cast default config to otlpreceiver.Config")
-	}
-
-	cfg.GRPC.NetAddr.Endpoint = fmt.Sprintf("0.0.0.0:%d", consts.OTLPPort)
-
-	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
-	if err != nil {
-		panic("failed to create receiver")
-	}
-
-	r.Start(ctx, componenttest.NewNopHost())
-	defer r.Shutdown(ctx)
-
-	log.Println("OTLP receiver is running")
 	<-ctx.Done()
 	closeWg.Wait()
 }
@@ -216,7 +225,7 @@ func (c *OdigosMetricsConsumer) GetSingleSourceMetrics(sID common.SourceID) (tra
 }
 
 func (c *OdigosMetricsConsumer) GetSingleDestinationMetrics(dID string) (trafficMetrics, bool) {
-	return c.destinations.metricsByID(dID)
+	return c.clusterCollectorMetrics.metricsByID(dID)
 }
 
 func (c *OdigosMetricsConsumer) GetSourcesMetrics() map[common.SourceID]trafficMetrics {
@@ -224,5 +233,30 @@ func (c *OdigosMetricsConsumer) GetSourcesMetrics() map[common.SourceID]trafficM
 }
 
 func (c *OdigosMetricsConsumer) GetDestinationsMetrics() map[string]trafficMetrics {
-	return c.destinations.metrics()
+	return c.clusterCollectorMetrics.destinationsMetrics()
+}
+
+func (c *OdigosMetricsConsumer) GetServiceGraphEdges() map[string]map[string]ServiceGraphEdge {
+	return c.clusterCollectorMetrics.serviceGraphEdges()
+}
+
+func (c *OdigosMetricsConsumer) NotifySourceAdded(sID common.SourceID) {
+	select {
+	case c.deletedChan <- notification{notificationType: source, eventType: watch.Added, sourceID: sID}:
+	default:
+	}
+}
+
+func (c *OdigosMetricsConsumer) NotifySourceDeleted(sID common.SourceID) {
+	select {
+	case c.deletedChan <- notification{notificationType: source, eventType: watch.Deleted, sourceID: sID}:
+	default:
+	}
+}
+
+func (c *OdigosMetricsConsumer) NotifyDestinationDeleted(name string) {
+	select {
+	case c.deletedChan <- notification{notificationType: destination, eventType: watch.Deleted, object: name}:
+	default:
+	}
 }

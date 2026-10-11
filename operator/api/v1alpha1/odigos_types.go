@@ -32,7 +32,7 @@ type OdigosSpec struct {
 	// In "normal" mode the UI is fully interactive, allowing users to view and edit
 	// Odigos configuration and settings. In "readonly" mode, the UI can only be
 	// used to view current Odigos configuration and is not interactive.
-	// Default=normal
+	// Default=default
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode",order=2
 	UIMode common.UiMode `json:"uiMode,omitempty"`
 
@@ -56,7 +56,6 @@ type OdigosSpec struct {
 	// (Optional) AgentEnvVarsInjectionMethod is the method to inject the Odigos agent env vars into the pod.
 	// Default=pod-manifest
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
-	// +kubebuilder:default=pod-manifest
 	AgentEnvVarsInjectionMethod common.EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
 
 	// (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
@@ -76,10 +75,16 @@ type OdigosSpec struct {
 
 	// (Optional) ImagePrefix is a prefix for all container images.
 	// This should only be used if you are pulling Odigos images from the non-default registry.
-	// Default: registry.odigos.io
-	// Default (OpenShift): registry.connect.redhat.com
+	// Default (community): docker.io/keyval
+	// Default (enterprise): registry.odigos.io
+	// Default (OpenShift): registry.connect.redhat.com/odigos
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePrefix string `json:"imagePrefix,omitempty"`
+
+	// (Optional) LogLevel sets the default log level for all Odigos components (e.g. instrumentor, odiglet, collector).
+	// Accepted values: debug, info, warn, error. Default=info when unset.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Log Level"
+	LogLevel string `json:"logLevel,omitempty"`
 
 	// (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
 	// One of "k8s-virtual-device" (default) or "k8s-host-path".

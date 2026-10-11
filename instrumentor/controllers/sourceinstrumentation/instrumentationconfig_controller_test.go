@@ -25,7 +25,7 @@ var _ = Describe("deleteInstrumentationConfig InstrumentationConfig controller",
 				namespace = testutil.NewMockNamespace()
 				Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
 
-				deployment = testutil.SetOdigosInstrumentationDisabled(testutil.NewMockTestDeployment(namespace, "test-deployment"))
+				deployment = testutil.NewMockTestDeployment(namespace, "test-deployment")
 				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 			})
 
@@ -37,6 +37,47 @@ var _ = Describe("deleteInstrumentationConfig InstrumentationConfig controller",
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 			})
 
+		})
+
+		When("InstrumentationConfig is deleted while namespace Source is active", func() {
+			It("Recreates InstrumentationConfig via syncWorkload", func() {
+				namespace = testutil.NewMockNamespace()
+				Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
+
+				source := testutil.NewMockSource(namespace, false)
+				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
+
+				deployment = testutil.NewMockTestDeployment(namespace, "test-deployment")
+				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
+
+				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
+				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
+
+				Expect(k8sClient.Delete(ctx, instrumentationConfig)).Should(Succeed())
+				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
+
+				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
+			})
+		})
+
+		When("InstrumentationConfig is deleted when no source applies", func() {
+			It("Does not recreate InstrumentationConfig", func() {
+				namespace = testutil.NewMockNamespace()
+				Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
+
+				source := testutil.NewMockSource(namespace, false)
+				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
+
+				deployment = testutil.NewMockTestDeployment(namespace, "test-deployment")
+				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
+
+				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
+				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
+
+				Expect(k8sClient.Delete(ctx, source)).Should(Succeed())
+				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
+				testutil.AssertInstrumentationConfigNotCreated(ctx, k8sClient, instrumentationConfig)
+			})
 		})
 
 	})

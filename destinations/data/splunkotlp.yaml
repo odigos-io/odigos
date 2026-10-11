@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: SPLUNK_ACCESS_TOKEN
       displayName: Access Token
@@ -37,8 +39,8 @@ spec:
           - none
           - gzip
         required: false
-        tooltip: 'Compression type to use for the destination. The default is `none`.'
-      initialValue: 'none'
+        tooltip: "Compression type to use for the destination. The default is `none`."
+      initialValue: "none"
 
     - name: SPLUNK_OTLP_TLS_ENABLED
       displayName: Enable TLS
@@ -46,28 +48,28 @@ spec:
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Secure connection'
+        tooltip: "Secure connection"
       customReadDataLabels:
-        - condition: 'true'
-          title: 'TLS'
-          value: 'Encrypted'
-        - condition: 'false'
-          title: 'TLS'
-          value: 'Unencrypted'
+        - condition: "true"
+          title: "TLS"
+          value: "Encrypted"
+        - condition: "false"
+          title: "TLS"
+          value: "Unencrypted"
     - name: SPLUNK_OTLP_CA_PEM
       displayName: Certificate Authority
       componentType: textarea
       componentProps:
         required: false
-        placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
-      renderCondition: ['SPLUNK_OTLP_TLS_ENABLED', '==', 'true']
-      hideFromReadData: ['true']
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA"
+      renderCondition: ["SPLUNK_OTLP_TLS_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]
     - name: SPLUNK_OTLP_INSECURE_SKIP_VERIFY
       displayName: Insecure Skip Verify
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Skip TLS certificate verification'
-      renderCondition: ['SPLUNK_OTLP_TLS_ENABLED', '==', 'true']
+        tooltip: "Skip TLS certificate verification"
+      renderCondition: ["SPLUNK_OTLP_TLS_ENABLED", "==", "true"]

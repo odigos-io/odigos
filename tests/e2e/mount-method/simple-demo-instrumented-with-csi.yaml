@@ -1,0 +1,230 @@
+### Simple-demo Pods with CSI Volumes ###
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: frontend
+spec:
+  volumes:
+    - (name != null): true
+    - name: odigos-agent
+      csi:
+        driver: odigos.csi.driver
+        volumeAttributes:
+          type: instrumentation
+  containers:
+    - name: frontend
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/java
+          name: odigos-agent
+          readOnly: true
+          subPath: java
+        - mountPath: /var/odigos/loader
+          name: odigos-agent
+          readOnly: true
+          subPath: loader
+status:
+  containerStatuses:
+    - name: frontend
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: coupon
+spec:
+  volumes:
+    - (name != null): true
+    - name: odigos-agent
+      csi:
+        driver: odigos.csi.driver
+        volumeAttributes:
+          type: instrumentation
+  containers:
+    - name: coupon
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/nodejs-community
+          name: odigos-agent
+          readOnly: true
+          subPath: nodejs-community
+        - mountPath: /var/odigos/opentelemetry-node
+          name: odigos-agent
+          readOnly: true
+          subPath: opentelemetry-node
+        - mountPath: /var/odigos/loader
+          name: odigos-agent
+          readOnly: true
+          subPath: loader
+status:
+  containerStatuses:
+    - name: coupon
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: inventory
+spec:
+  volumes:
+    - (name != null): true
+    - name: odigos-agent
+      csi:
+        driver: odigos.csi.driver
+        volumeAttributes:
+          type: instrumentation
+  containers:
+    - name: inventory
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/python
+          name: odigos-agent
+          readOnly: true
+          subPath: python
+        - mountPath: /var/odigos/loader
+          name: odigos-agent
+          readOnly: true
+          subPath: loader
+status:
+  containerStatuses:
+    - name: inventory
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: membership
+spec:
+  volumes:
+    - (name != null): true
+  containers:
+    - name: membership
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+status:
+  containerStatuses:
+    - name: membership
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: pricing
+spec:
+  volumes:
+    - (name != null): true
+    - name: odigos-agent
+      csi:
+        driver: odigos.csi.driver
+        volumeAttributes:
+          type: instrumentation
+  containers:
+    - name: pricing
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/dotnet
+          name: odigos-agent
+          readOnly: true
+          subPath: dotnet
+status:
+  containerStatuses:
+    - name: pricing
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: currency
+spec:
+  volumes:
+    - (name != null): true
+    - (name != null): true
+    - name: odigos-agent
+      csi:
+        driver: odigos.csi.driver
+        volumeAttributes:
+          type: instrumentation
+  containers:
+    - name: currency
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/php
+          name: odigos-agent
+          readOnly: true
+          subPath: php
+    - name: nginx
+status:
+  containerStatuses:
+    - name: currency
+      ready: true
+      restartCount: 0
+      started: true
+    - name: nginx
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: geolocation
+spec:
+  volumes:
+    - (name != null): true
+    - name: odigos-agent
+      csi:
+        driver: odigos.csi.driver
+        volumeAttributes:
+          type: instrumentation
+  containers:
+    - name: geolocation
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/ruby
+          name: odigos-agent
+          readOnly: true
+          subPath: ruby
+status:
+  containerStatuses:
+    - name: geolocation
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running

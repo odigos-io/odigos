@@ -19,20 +19,41 @@ package v1alpha1
 
 import (
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	common "github.com/odigos-io/odigos/common"
 )
 
 // ActionSpecApplyConfiguration represents a declarative configuration of the ActionSpec type for use
 // with apply.
 type ActionSpecApplyConfiguration struct {
-	ActionName      *string                                `json:"actionName,omitempty"`
-	Notes           *string                                `json:"notes,omitempty"`
-	Disabled        *bool                                  `json:"disabled,omitempty"`
-	Signals         []common.ObservabilitySignal           `json:"signals,omitempty"`
-	AddClusterInfo  *actionsv1alpha1.AddClusterInfoConfig  `json:"addClusterInfo,omitempty"`
+	// Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
+	ActionName *string `json:"actionName,omitempty"`
+	// A free-form text field that allows you to attach notes regarding the action for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes *string `json:"notes,omitempty"`
+	// A boolean field allowing to temporarily disable the action, but keep it around for future use
+	Disabled *bool `json:"disabled,omitempty"`
+	// Which signals should this action operate on.
+	Signals []common.ObservabilitySignal `json:"signals,omitempty"`
+	// AddClusterInfo is the config for the AddClusterInfo Action.
+	AddClusterInfo *actionsv1alpha1.AddClusterInfoConfig `json:"addClusterInfo,omitempty"`
+	// DeleteAttribute is the config for the DeleteAttribute Action.
 	DeleteAttribute *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
+	// RenameAttribute is the config for the RenameAttribute Action.
 	RenameAttribute *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
-	PiiMasking      *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
+	// PiiMasking is the config for the PiiMasking Action.
+	PiiMasking *actions.PiiMaskingConfig `json:"piiMasking,omitempty"`
+	// K8sAttributes is the config for the K8sAttributes Action.
+	K8sAttributes *actionsv1alpha1.K8sAttributesConfig `json:"k8sAttributes,omitempty"`
+	// URLTemplatization is the config for the URLTemplatization Action.
+	URLTemplatization *actions.URLTemplatizationConfig `json:"urlTemplatization,omitempty"`
+	// SpanRenamer is the config for the SpanRenamer Action.
+	SpanRenamer *actions.SpanRenamerConfig `json:"spanRenamer,omitempty"`
+	// ExtractAttribute is the config for the ExtractAttribute Action.
+	ExtractAttribute *actions.ExtractAttributeConfig `json:"extractAttribute,omitempty"`
+	// DbQueryTemplatization is the config for the DbQueryTemplatization Action.
+	DbQueryTemplatization *actions.DbQueryTemplatizationConfig `json:"dbQueryTemplatization,omitempty"`
+	// InferDbAttributes is the config for the InferDbAttributes Action.
+	InferDbAttributes *actions.InferDbAttributesConfig `json:"inferDbAttributes,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -102,7 +123,55 @@ func (b *ActionSpecApplyConfiguration) WithRenameAttribute(value actionsv1alpha1
 // WithPiiMasking sets the PiiMasking field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the PiiMasking field is set to the value of the last call.
-func (b *ActionSpecApplyConfiguration) WithPiiMasking(value actionsv1alpha1.PiiMaskingConfig) *ActionSpecApplyConfiguration {
+func (b *ActionSpecApplyConfiguration) WithPiiMasking(value actions.PiiMaskingConfig) *ActionSpecApplyConfiguration {
 	b.PiiMasking = &value
+	return b
+}
+
+// WithK8sAttributes sets the K8sAttributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the K8sAttributes field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithK8sAttributes(value actionsv1alpha1.K8sAttributesConfig) *ActionSpecApplyConfiguration {
+	b.K8sAttributes = &value
+	return b
+}
+
+// WithURLTemplatization sets the URLTemplatization field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the URLTemplatization field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithURLTemplatization(value actions.URLTemplatizationConfig) *ActionSpecApplyConfiguration {
+	b.URLTemplatization = &value
+	return b
+}
+
+// WithSpanRenamer sets the SpanRenamer field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SpanRenamer field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithSpanRenamer(value actions.SpanRenamerConfig) *ActionSpecApplyConfiguration {
+	b.SpanRenamer = &value
+	return b
+}
+
+// WithExtractAttribute sets the ExtractAttribute field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExtractAttribute field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithExtractAttribute(value actions.ExtractAttributeConfig) *ActionSpecApplyConfiguration {
+	b.ExtractAttribute = &value
+	return b
+}
+
+// WithDbQueryTemplatization sets the DbQueryTemplatization field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DbQueryTemplatization field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithDbQueryTemplatization(value actions.DbQueryTemplatizationConfig) *ActionSpecApplyConfiguration {
+	b.DbQueryTemplatization = &value
+	return b
+}
+
+// WithInferDbAttributes sets the InferDbAttributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the InferDbAttributes field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithInferDbAttributes(value actions.InferDbAttributesConfig) *ActionSpecApplyConfiguration {
+	b.InferDbAttributes = &value
 	return b
 }

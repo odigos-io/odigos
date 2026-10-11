@@ -7,6 +7,7 @@ import (
 )
 
 type ProcessEvent = detector.ProcessEvent
+type ExecDetails = detector.ProcessExecDetails
 
 type DetectorOption = detector.DetectorOption
 
@@ -20,6 +21,7 @@ const (
 // Detector is used to report process events.
 type Detector interface {
 	Run(ctx context.Context) error
+	TrackProcesses(pids []int) error
 }
 
 // NewDetector creates a new Detector.

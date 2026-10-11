@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: UPTRACE_DSN
       displayName: Data Source Name (DSN)
@@ -23,8 +25,8 @@ spec:
     - name: UPTRACE_ENDPOINT
       displayName: Endpoint
       componentType: input
-      initialValue: 'https://otlp.uptrace.dev:4317'
+      initialValue: "https://otlp.uptrace.dev:4317"
       componentProps:
         type: text
         required: false
-        tooltip: 'Overwrite Uptrace endpoint when self-hosting'
+        tooltip: "Overwrite Uptrace endpoint when self-hosting"

@@ -3,11 +3,12 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
@@ -24,8 +25,8 @@ import (
 )
 
 type ConnectionHandlers struct {
+	logger        *commonlogger.OdigosLogger
 	sdkConfig     *sdkconfig.SdkConfigManager
-	logger        logr.Logger
 	kubeclient    client.Client
 	kubeClientSet *kubernetes.Clientset
 	scheme        *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
@@ -45,7 +46,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		// first message must be agent description.
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
 		// in which case we send back flag and request full status update.
-		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update")
+		c.logger.Debug("Agent description is missing in the first OpAMP message, requesting full state update")
 		serverToAgent := &protobufs.ServerToAgent{
 			Flags: uint64(protobufs.ServerToAgentFlags_ServerToAgentFlags_ReportFullState),
 		}
@@ -82,7 +83,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
 	instrumentationConfig, err := configsections.GetWorkloadInstrumentationConfig(ctx, c.kubeclient, instrumentedAppName, podWorkload.Namespace)
 	if err != nil {
-		c.logger.Error(err, "failed to get instrumentation config", "instrumentedAppName", instrumentedAppName, "namespace", podWorkload.Namespace)
+		c.logger.Error("failed to get instrumentation config", "err", err, "instrumentedAppName", instrumentedAppName, "namespace", podWorkload.Namespace)
 		return nil, nil, err
 	}
 
@@ -92,20 +93,28 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 	}
 	remoteResourceAttributes, err := configresolvers.CalculateServerAttributes(k8sAttributes, c.nodeName, serviceName)
 	if err != nil {
-		c.logger.Error(err, "failed to calculate server attributes", "k8sAttributes", k8sAttributes)
+		c.logger.Error("failed to calculate server attributes", "err", err, "k8sAttributes", k8sAttributes)
 		return nil, nil, err
 	}
 
-	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName, attrs.ProgrammingLanguage, instrumentationConfig)
+	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName, attrs.ProgrammingLanguage, instrumentationConfig, k8sAttributes.ContainerName)
 	if err != nil {
-		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
+		c.logger.Error("failed to get full config", "err", err, "k8sAttributes", k8sAttributes)
 		return nil, nil, err
 	}
-	c.logger.Info("new OpAMP client connected", "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
+	c.logger.Debug("new OpAMP client connected", "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
 
 	connectionInfo := &connection.ConnectionInfo{
-		Workload:                 podWorkload,
-		Pod:                      pod,
+		Workload: podWorkload,
+		// Store only the minimal pod metadata needed for owner references and identification.
+		// The full pod object (containers, volumes, etc.) is not cached to reduce memory and GC pressure.
+		Pod: &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      pod.Name,
+				Namespace: pod.Namespace,
+				UID:       pod.UID,
+			},
+		},
 		ContainerName:            k8sAttributes.ContainerName,
 		Pid:                      vpid,
 		ProgrammingLanguage:      attrs.ProgrammingLanguage,
@@ -127,7 +136,8 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 	// If the remote config changed, send the new config to the agent on the response
 	if request.RemoteConfigStatus == nil {
 		// this is to support older agents which do not send remote config status
-		c.logger.Info("missing remote config status in agent to server message", "workload", connectionInfo.Workload)
+		c.logger.Info("missing remote config status in agent to server message, sending full remote config", "workload", connectionInfo.Workload)
+		response.RemoteConfig = connectionInfo.AgentRemoteConfig
 	} else {
 		if !bytes.Equal(request.RemoteConfigStatus.LastRemoteConfigHash, connectionInfo.AgentRemoteConfig.ConfigHash) {
 			c.logger.Info("Remote config changed, sending new config to agent", "workload", connectionInfo.Workload)
@@ -136,10 +146,6 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 	}
 
 	return &response, nil
-}
-
-func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *connection.ConnectionInfo) {
-	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
 }
 
 func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) error {
@@ -155,7 +161,7 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 		}
 		// [1] - agent disconnects with healthy status, delete the instrumentation instance CR
 		if message.Health.Healthy {
-			c.logger.Info("Agent disconnected with healthy status, deleting instrumentation instance", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+			c.logger.Debug("Agent disconnected with healthy status, deleting instrumentation instance", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
 			return instrumentation_instance.DeleteInstrumentationInstance(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, int(connectionInfo.Pid))
 		}
 
@@ -183,6 +189,42 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 		// always record healthy status into the CRD, to reflect the current state
 		healthy := message.Health.Healthy
 		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithHealthy(&healthy, message.Health.Status, &message.Health.LastError))
+
+		if len(message.Health.ComponentHealthMap) > 0 {
+			components := make([]odigosv1.InstrumentationLibraryStatus, 0, len(message.Health.ComponentHealthMap))
+			for name, comp := range message.Health.ComponentHealthMap {
+				libStatus := odigosv1.InstrumentationLibraryStatus{
+					Name:           name,
+					Type:           odigosv1.InstrumentationLibraryTypeInstrumentation,
+					Healthy:        &comp.Healthy,
+					LastStatusTime: metav1.Now(),
+				}
+
+				// Try parsing comp.Status JSON string into NonIdentifyingAttributes
+				if comp.Status != "" {
+					var parsed map[string]interface{}
+					err := json.Unmarshal([]byte(comp.Status), &parsed)
+					if err != nil {
+						// fallback to setting it as plain message if parsing fails
+						libStatus.Reason = "instrumentation.details"
+						libStatus.Message = comp.Status
+					} else {
+						// set key-value pairs as NonIdentifyingAttributes
+						attrs := make([]odigosv1.Attribute, 0, len(parsed))
+						for k, v := range parsed {
+							attrs = append(attrs, odigosv1.Attribute{
+								Key:   k,
+								Value: fmt.Sprintf("%v", v),
+							})
+						}
+						libStatus.NonIdentifyingAttributes = attrs
+					}
+				}
+
+				components = append(components, libStatus)
+			}
+			dynamicOptions = append(dynamicOptions, instrumentation_instance.WithComponents(components))
+		}
 	}
 
 	if len(dynamicOptions) > 0 {
@@ -239,7 +281,7 @@ func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributes
 
 	ownerRefs := pod.GetOwnerReferences()
 	for _, ownerRef := range ownerRefs {
-		workloadName, workloadKind, err = workload.GetWorkloadFromOwnerReference(ownerRef)
+		workloadName, workloadKind, err = workload.GetWorkloadFromOwnerReference(ownerRef, pod)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get workload from owner reference: %w", err)
 		}

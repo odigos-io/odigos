@@ -17,7 +17,6 @@ exporters:
     verbosity: basic
 processors:
   batch/generic-batch-processor: {}
-  memory_limiter: {}
   resource/odigos-version:
     attributes:
     - action: upsert
@@ -30,8 +29,7 @@ extensions:
     endpoint: 0.0.0.0:1777
 connectors:
   forward/logs/debug-d1: {}
-  odigosrouterconnector/logs:
-    datastreams: []
+  odigosrouterconnector/logs: {}
 service:
   extensions:
   - health_check
@@ -48,10 +46,12 @@ service:
       receivers:
       - otlp
       processors:
-      - memory_limiter
       - resource/odigos-version
       exporters:
       - odigosrouterconnector/logs
   telemetry:
-    metrics: {}
-    resource: {}
+    metrics:
+      level: ""
+      readers: []
+    logs:
+      level: ""

@@ -21,6 +21,9 @@ export const GET_DESTINATION_CATEGORIES = gql`
             traces {
               supported
             }
+            profiles {
+              supported
+            }
           }
           fields {
             name
@@ -58,12 +61,14 @@ export const GET_DESTINATIONS = gql`
       destinations {
         id
         name
+        disabled
         dataStreamNames
         fields
         exportedSignals {
           logs
           metrics
           traces
+          profiles
         }
         destinationType {
           type
@@ -79,6 +84,9 @@ export const GET_DESTINATIONS = gql`
             traces {
               supported
             }
+            profiles {
+              supported
+            }
           }
         }
         conditions {
@@ -86,7 +94,6 @@ export const GET_DESTINATIONS = gql`
           type
           reason
           message
-          lastTransitionTime
         }
       }
     }

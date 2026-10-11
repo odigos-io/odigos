@@ -1,0 +1,113 @@
+# Instrumentation Lifecycle Assertions - Only for the 4 workloads in this test
+
+# nodejs-minimum-version - should be instrumented successfully
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-nodejs-minimum-version
+status:
+  (conditions[?type == 'MarkedForInstrumentation']):
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
+    - message: "agent enabled in 1 containers: [nodejs-minimum-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
+      status: "True"
+      type: WorkloadRollout
+---
+# nodejs-latest-version - should be instrumented successfully
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-nodejs-latest-version
+status:
+  (conditions[?type == 'MarkedForInstrumentation']):
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
+    - message: "agent enabled in 1 containers: [nodejs-latest-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
+      status: "True"
+      type: WorkloadRollout
+---
+# java-supported-version - should be instrumented successfully
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-java-supported-version
+status:
+  (conditions[?type == 'MarkedForInstrumentation']):
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
+    - message: "agent enabled in 1 containers: [java-supported-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
+      status: "True"
+      type: WorkloadRollout
+---
+# python-latest-version - should be instrumented successfully
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-python-latest-version
+status:
+  (conditions[?type == 'MarkedForInstrumentation']):
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
+    - message: "agent enabled in 1 containers: [python-latest-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
+      status: "True"
+      type: WorkloadRollout

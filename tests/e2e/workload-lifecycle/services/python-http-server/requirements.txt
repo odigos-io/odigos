@@ -1,7 +1,0 @@
-Django
-protobuf==6.30.2
-importlib_metadata
-packaging
-asgiref
-asyncio
-django-health-check

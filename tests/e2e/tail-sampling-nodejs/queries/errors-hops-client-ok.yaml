@@ -1,0 +1,21 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: errors /hops?hops=3 outer server span — trace decided by high-relevance-error (no span.matching_rule)
+query: |
+  length([?
+    span.serviceName == 'tail-sampling-errors' &&
+    span.kind == 'server' &&
+    span.spanAttributes."http.route" == '/hops' &&
+    span.spanAttributes."odigos.sampling.category" == 'highly relevant' &&
+    span.spanAttributes."odigos.sampling.dry_run" == `true` &&
+    span.spanAttributes."odigos.sampling.trace.deciding_rule.name" == 'high-relevance-error' &&
+    span.spanAttributes."odigos.sampling.trace.deciding_rule.keep_percentage" == `100` &&
+    span.spanAttributes."odigos.sampling.trace.kept" == `true` &&
+    !(span.spanAttributes."odigos.sampling.span.matching_rule.name") &&
+    (
+      contains(span.spanAttributes."url.query" || '', 'hops=3') ||
+      contains(span.spanAttributes."http.target" || '', 'hops=3')
+    )
+  ]) > `0`
+expected:
+  count: 1

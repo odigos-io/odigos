@@ -1,0 +1,88 @@
+---
+title: 'Instrument Cloud Workloads'
+description: 'Create Sources from discovered cloud workloads, configure an OTLP destination, and track instrumentation progress.'
+sidebarTitle: 'Instrument Workloads'
+---
+
+Once a Cloud Connector is online, browse the workloads it discovered and create **Sources** for the ones you want to observe. Enabling a Source tells the connector to apply provider-specific instrumentation and export telemetry to the OTLP destination(s) on that connector.
+
+## Prerequisites
+
+<Steps>
+  <Step title="Healthy connector">
+    A Cloud Connector with discovery enabled for the workload types you want.
+  </Step>
+  <Step title="OTLP destination">
+    At least one **OTLP destination** on that connector. See [Add an OTLP destination](#add-an-otlp-destination). Workload instrumentation is destination-gated; without a usable OTLP endpoint the connector will not attach instrumentation.
+  </Step>
+  <Step title="Reachable endpoint">
+    Instrumented workloads export OTLP to that destination from the cloud environment (for example from Lambda or Cloud Run). Point the destination at an endpoint those workloads can reach — for example a collector or backend with appropriate public or VPC access. See [Telemetry export](/cloud-connectors/overview#telemetry-export).
+  </Step>
+</Steps>
+
+## Add an OTLP destination
+
+Before you create Sources, add at least one destination on the connector so instrumented workloads have somewhere to export telemetry.
+
+Lambda and Cloud Run support OTLP destinations only. For more information, see [Telemetry export](/cloud-connectors/overview#telemetry-export).
+
+Follow the [Destinations overview](/enterprise/backends-overview) for how to add and configure a destination, then apply that setup on the connector in Central. The endpoint must be reachable from the cloud workloads themselves (not only from the Central cluster).
+
+## Browse discovered workloads
+
+Open the connector in Central and review discovered workloads. Each candidate typically includes kind, name, region/location, and whether it is already a Source or instrumented.
+
+## Create Sources
+
+Select the workloads to instrument and create Sources. A Source is the instrumentation intent for one cloud resource. Identity includes:
+
+- **Name**: the provider resource name
+- **Kind**: for example `aws.lambda` or `gcp.cloud-run`
+- **Region**: the resource's region or location
+
+Enable the Source so the connector applies instrumentation to that workload. That typically means adding the Odigos OTEL SDK and collector components the runtime needs, configuring them for the workload, and configuring where telemetry is sent (the OTLP destination on the connector).
+
+See [Supported languages](/cloud-connectors/overview#supported-languages) for which runtimes each workload type can instrument.
+
+## Check Source status
+
+After you create a Source, it appears under **Sources** in Central. Open it to see details and health.
+
+The Source details typically include:
+
+- **Identity**: kind (e.g. AWS Lambda), name, region, and service name, plus whether the Source is **Enabled**
+- **Health**: a status banner such as **Success And Emitting Telemetry** when the Source is instrumented, healthy, and telemetry has been observed
+- **Instrumentation**: detected language and version (e.g. `python • 3.13`), and whether the workload is **Instrumented**
+
+If something is wrong (for example missing permissions), use the health message on the Source details to diagnose.
+
+## Uninstrument workloads
+
+To remove instrumentation from one or more Sources, select them with the checkboxes and click **Uninstrument**. The connector removes the Odigos OTEL SDK, collector components, and related configuration it applied earlier, so the workloads stop exporting telemetry through that Source.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No instrumentation applied">
+    Confirm an [OTLP destination](#add-an-otlp-destination) exists on the connector and the Source is enabled. See [Destinations overview](/enterprise/backends-overview) for how to add and configure destinations.
+  </Accordion>
+  <Accordion title="GCP: permission denied on update">
+    Grant `iam.serviceAccounts.actAs` (or `roles/iam.serviceAccountUser` on the runtime service account). See [Add GCP connector](/cloud-connectors/add-connectors/add-gcp-connector).
+  </Accordion>
+  <Accordion title="GCP: traces missing intermittently">
+    Cloud Run CPU throttling or scale-to-zero can delay or drop background OTLP export. Prefer a reachable destination and, if needed, keep CPU allocated or a minimum instance warm on low-traffic services.
+  </Accordion>
+  <Accordion title="AWS: test connection passed but instrumentation fails">
+    Test connection validates discovery permissions. Grant the Lambda instrumentation IAM actions listed on the [Add AWS](/cloud-connectors/add-connectors/add-aws-connector) page.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<Card
+  title="Manage and remove"
+  icon="trash"
+  href="/cloud-connectors/manage-and-remove"
+>
+  Understand connector health and how deletion policies affect cloud instrumentation.
+</Card>

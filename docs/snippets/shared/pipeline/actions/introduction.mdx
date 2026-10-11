@@ -1,0 +1,42 @@
+## What are Processors?
+
+Under the hood, Odigos uses the [OpenTelemetry Collector Processors](https://opentelemetry.io/docs/collector/configuration/#processors) to implement actions.
+
+Processors are a class of OpenTelemetry Collector component. They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your [destinations](../../backends-overview).
+
+## Benefits
+
+- Odigos Actions are language agnostic. They run in the OpenTelemetry collectors and can act on any data type (traces, metrics, logs) no matter the source or the programming language of your service.
+- Processing the data on the k8s node or the cluster level reduces the load on your services and allows you to apply the same processing rules to all your services and signals.
+- Applying actions in your cluster can reduce the volume of data sent to your backend, which can reduce your costs.
+- OpenTelemetry maintains a large collection of processors, which are ready to use and can be configured to your needs.
+
+Actions are a powerful tool to help you manage your observability data and ensure that you are sending the right data to your backend.
+
+## Action Types
+
+### Attribute Actions
+
+Attribute Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your destinations.
+  - [Add Cluster Info](../../pipeline/actions/attributes/addclusterinfo)
+  - [Delete Attribute](../../pipeline/actions/attributes/deleteattribute)
+  - [Rename Attribute](../../pipeline/actions/attributes/renameattribute)
+  - [Pii Masking](../../pipeline/actions/attributes/piimasking)
+  - [Kubernetes Attributes](../../pipeline/actions/attributes/k8sattributes)
+  - [Extract Attribute](../../pipeline/actions/attributes/extractattribute)
+  - [DB Query Templatization](../../pipeline/actions/attributes/dbquerytemplatization)
+  - [Infer DB Attributes](../../pipeline/actions/attributes/inferdbattributes)
+
+### Sampling Actions
+
+Sampling Actions decide which traces are kept and which are dropped before they reach your destinations. Rules are organized into three categories, evaluated in order—**Noisy Operation → Highly Relevant → Cost Reduction**—so you can drop noise early, guarantee retention for important traffic, and cap everything else for cost.
+
+  - [Sampling overview](../../pipeline/sampling/introduction)
+  - [Head and tail sampling](../../pipeline/sampling/head-and-tail-sampling)
+  - [Rules overview](../../pipeline/sampling/rules/overview)
+  - [Configuration reference](../../pipeline/sampling/configuration) 
+  - [Examples](../../pipeline/sampling/examples)
+
+### Custom Actions
+
+Odigos also supports adding OpenTelemetry processors with [Kubernetes CRDs](../../pipeline/actions/crd) which you can apply manually, or through a GitOps workflow.

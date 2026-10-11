@@ -2,4 +2,4 @@ apiVersion: odigos.io/v1alpha1
 kind: Action
 metadata:
   name: 01-action-no-config
-  namespace: default
+  namespace: odigos-test

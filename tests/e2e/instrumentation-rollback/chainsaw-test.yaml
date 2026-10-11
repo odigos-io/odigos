@@ -14,21 +14,21 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 3m
+            timeout: 2m
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux --set autoRollback.graceTime=90s
               else
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux --set autoRollback.graceTime=90s
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
 
     - name: Verify Odigos Installation
       try:
         - script:
-            timeout: 6m
+            timeout: 5m
             content: |
               echo "Starting Odigos version check..."
               export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
@@ -50,7 +50,7 @@ spec:
 
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
       catch:
         - script:
@@ -69,7 +69,7 @@ spec:
     - name: Assert Trace DB is up
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: Install - crash demo app
@@ -77,9 +77,48 @@ spec:
         - apply:
             file: ../../common/apply/install-crash-demo.yaml
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
-              kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=120s
+              echo "Waiting for 5 seconds before checking deployment status..."
+              sleep 5
+
+              # Try to wait for rollout, but don't fail if it doesn't work
+              echo "=== Attempting deployment rollout ==="
+              if ! kubectl rollout status deployment/otel-crash-demo --timeout=120s; then
+                echo "❌ Deployment rollout failed, debugging..."
+              else
+                echo "✅ Deployment rollout succeeded"
+              fi
+
+              # Try to wait for pod ready, but don't fail if it doesn't work
+              echo "=== Attempting to wait for pod ready ==="
+              if ! kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=30s; then
+                echo "❌ Pod ready condition failed, debugging..."
+              else
+                echo "✅ Pod ready condition succeeded"
+                exit 0  # Success, no need to debug
+              fi
+
+              echo "=== Debugging crash demo startup ==="
+              kubectl get pods -l app=otel-crash-demo -o wide
+
+              echo "=== Pod describe ==="
+              kubectl describe pods -l app=otel-crash-demo
+
+              echo "=== Container logs ==="
+              POD_NAME=$(kubectl get pods -l app=otel-crash-demo -o jsonpath='{.items[0].metadata.name}')
+              if [ ! -z "$POD_NAME" ]; then
+                echo "--- Previous logs ---"
+                kubectl logs $POD_NAME --previous || echo "No previous logs"
+                echo "--- Current logs ---"
+                kubectl logs $POD_NAME || echo "No current logs"
+              fi
+
+              echo "=== Events ==="
+              kubectl get events --field-selector involvedObject.kind=Pod --sort-by='.lastTimestamp' | grep otel-crash-demo || echo "No pod events"
+
+              # Exit with failure since debugging was triggered
+              exit 1
         - assert:
             file: ../../common/assert/crash-demo/crash-demo-installed.yaml
 
@@ -96,29 +135,23 @@ spec:
     - name: Odigos pipeline ready
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
-    - name: Update rollback values
+    - name: Assert rollback grace time configured
       try:
         - script:
-            content: ../../../cli/odigos config set instrumentation-auto-rollback-grace-time 90s
-
-    # Some services restart after updating configs
-    - name: Odigos pipeline ready
-      try:
-        - assert:
-            timeout: 1m
-            file: ../../common/assert/pipeline-ready.yaml
+            timeout: 1m10s
+            content: ../../common/assert_config_value.sh -k rollbackGraceTime -v 90s
 
     - name: Test crash demo in crashloop
       try:
         - assert:
-            timeout: 2m
+            timeout: 1m20s
             file: ../../common/assert/crash-demo/crash-demo-in-crashloop.yml
 
     - name: Test crash demo uninstrumented
       try:
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/crash-demo/crash-demo-uninstrumented.yaml

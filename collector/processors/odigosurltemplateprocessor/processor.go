@@ -5,37 +5,69 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
 	deprecatedsemconv "go.opentelemetry.io/collector/semconv/v1.18.0"
 	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
 	"go.uber.org/zap"
+
+	commonapi "github.com/odigos-io/odigos/common/api"
+	commonactionsapi "github.com/odigos-io/odigos/common/api/actions"
+	"github.com/odigos-io/odigos/common/collector"
+	"github.com/odigos-io/odigos/common/odigosattributes"
+	"github.com/odigos-io/odigos/common/urltemplate"
 )
+
+// Ensure urlTemplateProcessor implements the callback interface used by the extension.
+var _ collector.WorkloadConfigCacheCallback = (*urlTemplateProcessor)(nil)
+
+// internalCustomIdConfig holds a compiled custom-id regexp and template name for default templatization.
+type internalCustomIdConfig struct {
+	Regexp regexp.Regexp
+	Name   string
+}
+
+// workloadUrlTemplatizationConfig holds the result of parsing URL templatization rules for one workload/container.
+// Stored in processorURLTemplateParsedRulesCache so we parse once per entry, not per batch.
+type workloadUrlTemplatizationConfig struct {
+
+	// the rules to apply for templatization for this workload.
+	parsedRules map[int][]urltemplate.PathRule // nil means heuristic-only (no explicit rules)
+
+	// configurations for default templatization.
+	// this will be applied if no custom templatization rules matched.
+	// if not set, the default config for default templatization will be used.
+	defaultTemplatizationConfig *commonactionsapi.DefaultTemplatizationConfig
+}
 
 type urlTemplateProcessor struct {
 	logger              *zap.Logger
-	templatizationRules []TemplatizationRule
+	cfg                 *Config
+	templatizationRules map[int][]urltemplate.PathRule // group templatization rules by segments length
 	customIds           []internalCustomIdConfig
 
-	excludeMatcher *PropertiesMatcher
-	includeMatcher *PropertiesMatcher
+	// provider is set in Start() when odigos_config_extension is present (the default in Odigos-managed configs).
+	// Per-workload rules come from the extension cache.
+	provider collector.OdigosConfigExtension
+
+	// processorURLTemplateParsedRulesCache caches parsed rules per workload key; updated via extension callback.
+	parsedRulesCache *processorURLTemplateParsedRulesCache
 }
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
 
-	excludeMatcher := NewPropertiesMatcher(config.Exclude)
-	includeMatcher := NewPropertiesMatcher(config.Include)
-
-	parsedRules := make([]TemplatizationRule, 0, len(config.TemplatizationRules))
+	parsedRules := map[int][]urltemplate.PathRule{}
 	for _, rule := range config.TemplatizationRules {
-		parsedRule, err := parseUserInputRuleString(rule)
+		parsedRule, err := urltemplate.ParseUserInputRuleString(rule, false)
 		if err != nil {
 			return nil, err
 		}
-		parsedRules = append(parsedRules, parsedRule)
+		urltemplate.AppendRuleBySegmentCount(parsedRules, parsedRule)
 	}
 
 	customIdsRegexp := make([]internalCustomIdConfig, 0, len(config.CustomIds))
@@ -57,34 +89,120 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 
 	return &urlTemplateProcessor{
 		logger:              set.Logger,
+		cfg:                 config,
 		templatizationRules: parsedRules,
 		customIds:           customIdsRegexp,
-		excludeMatcher:      excludeMatcher,
-		includeMatcher:      includeMatcher,
+		parsedRulesCache:    newProcessorURLTemplateParsedRulesCache(),
 	}, nil
 }
 
+// Start resolves odigos_config_extension (default in Odigos) and registers for workload config updates.
+func (p *urlTemplateProcessor) Start(ctx context.Context, host component.Host) error {
+	if p.cfg.OdigosConfigExtension == nil {
+		p.logger.Warn("odigos_config_extension unset, ensure processor contains the templatization rules")
+		return nil
+	}
+	extID := p.cfg.OdigosConfigExtension
+	extensions := host.GetExtensions()
+	if ext, ok := extensions[*extID]; ok {
+		return p.registerOdigosConfigExtension(ctx, ext, extID.String())
+	}
+	return fmt.Errorf("odigos config extension %q not found or no instance implements OdigosConfigExtension", extID.String())
+}
+
+func (p *urlTemplateProcessor) registerOdigosConfigExtension(ctx context.Context, ext component.Component, extensionID string) error {
+	odigosExt, ok := ext.(collector.OdigosConfigExtension)
+	if !ok {
+		return fmt.Errorf("extension %q is not an OdigosConfigExtension (got %T)", extensionID, ext)
+	}
+	p.provider = odigosExt
+	odigosExt.RegisterWorkloadConfigCacheCallback(p)
+	if !p.provider.WaitForCacheSync(ctx) {
+		p.logger.Warn("odigos config extension cache sync did not complete; some spans may be missed on startup")
+	}
+	return nil
+}
+
+// Shutdown unregisters from the extension and clears local caches.
+func (p *urlTemplateProcessor) Shutdown(context.Context) error {
+	if p.provider != nil {
+		p.provider.UnregisterWorkloadConfigCacheCallback(p)
+		p.provider = nil
+	}
+	p.parsedRulesCache.clear()
+	return nil
+}
+
+// OnSet implements collector.WorkloadConfigCacheCallback; called when the extension cache adds/updates an entry.
+// Empty or nil rules: store entry with parsedRules=nil so the workload gets default heuristic templatization (same as when extension is disabled).
+func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
+
+	if cfg.UrlTemplatization == nil {
+		p.parsedRulesCache.delete(key)
+		return
+	}
+
+	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.Templates)
+	p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
+		parsedRules:                 parsedRules,
+		defaultTemplatizationConfig: cfg.UrlTemplatization.Default,
+	})
+	p.logger.Debug("workload config cache OnSet", zap.String("key", key))
+}
+
+// OnDeleteKey implements collector.WorkloadConfigCacheCallback; called when the extension cache removes an entry.
+func (p *urlTemplateProcessor) OnDeleteKey(key string) {
+	p.parsedRulesCache.delete(key)
+	p.logger.Debug("workload config cache OnDeleteKey", zap.String("key", key))
+}
+
+// parseRuleStrings parses a slice of rule strings into a map of segment-count → rules.
+// Each string is parsed via urltemplate.ParseUserInputRuleString; invalid rules are skipped with a warning.
+func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]urltemplate.PathRule {
+	parsed := map[int][]urltemplate.PathRule{}
+	for _, rule := range ruleStrings {
+		parsedRule, err := urltemplate.ParseUserInputRuleString(rule, false)
+		if err != nil {
+			p.logger.Warn("invalid templatization rule; skipping", zap.String("rule", rule), zap.Error(err))
+			continue
+		}
+		urltemplate.AppendRuleBySegmentCount(parsed, parsedRule)
+	}
+	return parsed
+}
+
 func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
-	for i := 0; i < td.ResourceSpans().Len(); i++ {
+	resourceSpanCount := td.ResourceSpans().Len()
+	p.logger.Debug("processTraces started", zap.Int("resource_spans", resourceSpanCount))
+	for i := 0; i < resourceSpanCount; i++ {
 		resourceSpans := td.ResourceSpans().At(i)
 
-		// before processing the spans, first check if it should be processed according to the include/exclude matchers
-		if p.excludeMatcher != nil && p.excludeMatcher.Match(resourceSpans.Resource()) {
-			// always skip the resource spans if it matches the exclude matcher
-			continue
-		}
-		// it doesn't make sense to have both include and exclude matchers, but we support it anyway
-		if p.includeMatcher != nil && !p.includeMatcher.Match(resourceSpans.Resource()) {
-			// if we have an include matcher, it must match the resource for it to be processed
-			continue
-		}
-		// it is ok that both include and exclude matchers are nil, in that case we process all spans
-
-		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
-			scopeSpans := resourceSpans.ScopeSpans().At(j)
-			for k := 0; k < scopeSpans.Spans().Len(); k++ {
-				span := scopeSpans.Spans().At(k)
-				p.processSpan(span)
+		if p.provider != nil {
+			key, err := p.provider.GetWorkloadCacheKey(resourceSpans.Resource())
+			if err != nil {
+				p.logger.Debug("processTraces skip resource: GetWorkloadCacheKey failed", zap.Error(err))
+				continue
+			}
+			spanUrlTemplatizationConfig, ok := p.parsedRulesCache.get(key)
+			if !ok {
+				// Rely entirely on the extension callback to populate the cache; skip this resource until we have an entry.
+				continue
+			}
+			// entry.parsedRules may be nil: extension sent no rules → use default heuristic only (defaultTemplatizeURLPath).
+			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+				scopeSpans := resourceSpans.ScopeSpans().At(j)
+				for k := 0; k < scopeSpans.Spans().Len(); k++ {
+					span := scopeSpans.Spans().At(k)
+					p.processSpanWithRules(span, spanUrlTemplatizationConfig)
+				}
+			}
+		} else {
+			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+				scopeSpans := resourceSpans.ScopeSpans().At(j)
+				for k := 0; k < scopeSpans.Spans().Len(); k++ {
+					span := scopeSpans.Spans().At(k)
+					p.processSpanWithStaticRules(span)
+				}
 			}
 		}
 	}
@@ -142,91 +260,150 @@ func getFullUrl(attr pcommon.Map) (string, bool) {
 	return "", false
 }
 
-func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
-	hasLeadingSlash := strings.HasPrefix(path, "/")
-	if !hasLeadingSlash {
-		path = "/" + path
-	}
-
-	inputPathSegments := strings.Split(path, "/")
-	inputPathSegments = inputPathSegments[1:]
-	if len(inputPathSegments) == 1 && inputPathSegments[0] == "" {
-		// if the path is empty, we can't generate a templated url
-		return "/" // always set a leading slash even if missing
-	}
-
-	for _, rule := range p.templatizationRules {
-		// apply the rule on the path and return the result if it matches
-		if templatedUrl, matched := attemptTemplateWithRule(inputPathSegments, rule); matched {
-			if hasLeadingSlash {
-				// if the path has a leading slash, we need to add it back
-				templatedUrl = "/" + templatedUrl
-			}
-			return templatedUrl
-		}
-	}
-	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIds)
-	if isTemplated {
-		if hasLeadingSlash {
-			// if the path has a leading slash, we need to add it back
-			templatedPath = "/" + templatedPath
-		}
-		return templatedPath
-	} else {
-		// if no templated url is generated, we return the original path
-		return path
-	}
-}
-
-func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttr(attr pcommon.Map) (string, bool) {
-	// this processor enhances url template value, which it extracts from full url or url path.
-	// one of these is required for this processor to handle this span.
+// resolves a url path from path attribute or full url attribute.
+func resolveUrlPath(attr pcommon.Map) (string, bool) {
 	urlPath, urlPathFound := getUrlPath(attr)
 	if urlPathFound {
-		// if url path is available, we can use it to generate the templated url
-		// in case of query string, we only want the path part of the url (used with deprecated "http.target" attribute)
-		templatedUrl := p.applyTemplatizationOnPath(urlPath)
-		return templatedUrl, true
+		return urlPath, true
 	}
-
 	fullUrl, fullUrlFound := getFullUrl(attr)
 	if fullUrlFound {
 		parsed, err := url.Parse(fullUrl)
 		if err != nil {
-			// if we are unable to parse the url, we can't generate the templated url
-			// so we skip this span
 			return "", false
 		}
-		templatedUrl := p.applyTemplatizationOnPath(parsed.Path)
-		return templatedUrl, true
+		return parsed.Path, true
 	}
-
 	return "", false
 }
 
-func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string) {
-	currentName := span.Name()
-	if currentName != httpMethod {
-		// be conservative and only update the name for the use case "GET" => "GET /user/{id}"
-		// if the span name is set to something else, keep it and don't override it.
-		// we might want to revisit this in the future based on real world feedback.
-		return
+func getHttpResponseStatusCode(attr pcommon.Map) (int, bool) {
+	if statusCode, found := attr.Get(semconv.AttributeHTTPResponseStatusCode); found {
+		if statusCode.Type() != pcommon.ValueTypeInt {
+			return 0, false
+		}
+		return int(statusCode.Int()), true
+	}
+	// fallback to the old "http.status_code" attribute which might still be used
+	if statusCode, found := attr.Get(deprecatedsemconv.AttributeHTTPStatusCode); found {
+		if statusCode.Type() != pcommon.ValueTypeInt {
+			return 0, false
+		}
+		return int(statusCode.Int()), true
+	}
+	return 0, false
+}
+
+// calculateTemplatedUrlFromAttrWithRules calculates a templated URL using the given rules.
+// returns the templated path and a method indicating how it was produced.
+// a nil method means templatization was skipped and the route attribute should not be set.
+func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, config workloadUrlTemplatizationConfig, spanKind ptrace.SpanKind) (string, *odigosattributes.UrlTemplatizationResult) {
+	urlPath, urlPathFound := resolveUrlPath(attr)
+	if !urlPathFound {
+		p.logger.Debug("calculateTemplatedUrlFromAttrWithRules: no url/path in attributes, skip templatization")
+		return "", nil
 	}
 
+	// normalize paths that are all slashes (e.g. "//", "///") to "/"
+	if strings.Trim(urlPath, "/") == "" {
+		p.logger.Debug("applyTemplatizationOnPath: all-slashes normalized to /", zap.String("path", urlPath))
+		return "/", odigosattributes.UrlTemplatizationResultPathNormalization.Ptr()
+	}
+
+	inputPathSegments, hadLeadingSlash := urltemplate.SplitPath(urlPath)
+	if len(inputPathSegments) == 1 && inputPathSegments[0] == "" {
+		// if the path is empty, we can't generate a templated url
+		return "/", odigosattributes.UrlTemplatizationResultPathNormalization.Ptr()
+	}
+
+	// attempt the rules if we have any
+	if len(config.parsedRules) > 0 {
+		templatedUrl, matched := applyCustomRulesForTemplatization(inputPathSegments, config.parsedRules, hadLeadingSlash)
+		if matched {
+			return templatedUrl, odigosattributes.UrlTemplatizationResultCustomRule.Ptr()
+		}
+	}
+
+	// skip default templatization if the config is unset or disabled.
+	if config.defaultTemplatizationConfig == nil || config.defaultTemplatizationConfig.Disabled {
+		return "", nil
+	}
+
+	// check for malicious bots routes so not to templatize them.
+	// do it after the custom rules to allow legitimate routes to be templatized even for services with http errors.
+	// skip policy is only applied to server spans, since it protects against garbage incoming requests, while outgoing requests are expected to be valid and not malicious.
+	if config.defaultTemplatizationConfig.SkipPolicy != nil && spanKind != ptrace.SpanKindClient {
+		skipPolicyConfig := config.defaultTemplatizationConfig.SkipPolicy
+		statusCode, found := getHttpResponseStatusCode(attr)
+		if found {
+			if skipPolicyConfig.SkipForNonSuccessCodes {
+				if statusCode < 200 || statusCode >= 300 {
+					p.logger.Debug("applyTemplatizationOnPath: non-success http status code on span, skip default templatization", zap.Int("status_code", statusCode))
+					return "", nil
+				}
+			}
+
+			if len(skipPolicyConfig.SkipHttpStatusCodes) > 0 {
+				if slices.Contains(skipPolicyConfig.SkipHttpStatusCodes, statusCode) {
+					p.logger.Debug("applyTemplatizationOnPath: http status code on span is in skip list, skip default templatization", zap.Int("status_code", statusCode))
+					return "", nil
+				}
+			}
+		}
+	}
+
+	// at this point no custom rules matched, default templatization is enabled, and no skip on error was triggered.
+	// so we apply default templatization.
+	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIds)
+	if isTemplated {
+		if hadLeadingSlash {
+			// if the path has a leading slash, we need to add it back
+			templatedPath = "/" + templatedPath
+		}
+		return templatedPath, odigosattributes.UrlTemplatizationResultDefaultHeuristic.Ptr()
+	}
+
+	p.logger.Debug("applyTemplatizationOnPath: no match, path unchanged", zap.String("path", urlPath))
+	return urlPath, odigosattributes.UrlTemplatizationResultStaticPath.Ptr()
+}
+
+func updateHttpSpanName(span ptrace.Span, httpMethod string, originalPath string, templatedUrl string) {
 	// if the templated url is not available, we keep the span name as is.
 	if templatedUrl == "" {
 		return
 	}
 
-	// generate span name based on semantic conventions:
-	// HTTP span names SHOULD be {method} {target} if there is a (low-cardinality) target available.
-	// the "target" in our case is the templated url (which is either http.route or url.template attributes).
-	newSpanName := fmt.Sprintf("%s %s", httpMethod, templatedUrl)
-	span.SetName(newSpanName)
+	currentName := span.Name()
+	if currentName == httpMethod {
+		// generate span name based on semantic conventions:
+		// HTTP span names SHOULD be {method} {target} if there is a (low-cardinality) target available.
+		// the "target" in our case is the templated url (which is either http.route or url.template attributes).
+		span.SetName(fmt.Sprintf("%s %s", httpMethod, templatedUrl))
+		return
+	}
+
+	// if the original path appears in the span name, replace it with the templated path.
+	// skip "/" to avoid matching arbitrary slashes in unrelated names.
+	if originalPath == "" || originalPath == "/" || originalPath == templatedUrl {
+		return
+	}
+	idx := strings.Index(currentName, originalPath)
+	if idx < 0 {
+		return
+	}
+	end := idx + len(originalPath)
+	// only replace when the path is a complete match (end of name, or followed by a non-path char).
+	// avoids treating "/user/1234" as a match inside "/user/12345".
+	if end < len(currentName) {
+		next := currentName[end]
+		if next != ' ' && next != '?' && next != '#' {
+			return
+		}
+	}
+	span.SetName(currentName[:idx] + templatedUrl + currentName[end:])
 }
 
-func (p *urlTemplateProcessor) enhanceSpan(span ptrace.Span, httpMethod string, targetAttribute string) {
-
+func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod string, targetAttribute string, config workloadUrlTemplatizationConfig) {
 	attr := span.Attributes()
 
 	// edge case: target attribute (http.route) exists but is empty (e.g. no path)
@@ -237,25 +414,28 @@ func (p *urlTemplateProcessor) enhanceSpan(span ptrace.Span, httpMethod string, 
 			return
 		}
 		if val.Str() == "" {
-			updateHttpSpanName(span, httpMethod, "/")
+			updateHttpSpanName(span, httpMethod, "", "/")
 		}
 		// avoid overriding the attribute if it is already set
 		return
 	}
 
-	templatedUrl, found := p.calculateTemplatedUrlFromAttr(attr)
-	if !found {
-		// don't modify the span if we are unable to calculate the templated url
+	templatedUrl, templatizationResult := p.calculateTemplatedUrlFromAttrWithRules(attr, config, span.Kind())
+	if templatizationResult == nil {
 		return
 	}
 
+	originalPath, _ := resolveUrlPath(attr)
+
 	// set the templated url in the target attribute and update the span name if needed
 	attr.PutStr(targetAttribute, templatedUrl)
-	updateHttpSpanName(span, httpMethod, templatedUrl)
+	attr.PutStr(odigosattributes.UrlTemplatizationResultAttribute, string(*templatizationResult))
+	updateHttpSpanName(span, httpMethod, originalPath, templatedUrl)
 }
 
-func (p *urlTemplateProcessor) processSpan(span ptrace.Span) {
-
+// processSpanWithRules enhances an HTTP span with templated URL using the given rules.
+// processSpanWithStaticRules uses static config rules; extension path uses per-workload rules.
+func (p *urlTemplateProcessor) processSpanWithRules(span ptrace.Span, config workloadUrlTemplatizationConfig) {
 	attr := span.Attributes()
 
 	httpMethod, found := getHttpMethod(attr)
@@ -268,13 +448,19 @@ func (p *urlTemplateProcessor) processSpan(span ptrace.Span) {
 
 	case ptrace.SpanKindClient:
 		// client spans write the url templated value in "url.template" attribute.
-		p.enhanceSpan(span, httpMethod, semconv.AttributeURLTemplate)
+		p.enhanceSpanWithRules(span, httpMethod, semconv.AttributeURLTemplate, config)
 	case ptrace.SpanKindServer:
 		// server spans write the url templated value in "http.route" attribute.
-		p.enhanceSpan(span, httpMethod, semconv.AttributeHTTPRoute)
+		p.enhanceSpanWithRules(span, httpMethod, semconv.AttributeHTTPRoute, config)
 	default:
 		// http spans are either client or server
 		// all other spans are ignored and never enhanced
 		return
 	}
+}
+
+func (p *urlTemplateProcessor) processSpanWithStaticRules(span ptrace.Span) {
+	// for static mode, we use the default config for default templatization.
+	// this code will be removed once we fully migrate to extension mode.
+	p.processSpanWithRules(span, workloadUrlTemplatizationConfig{parsedRules: p.templatizationRules, defaultTemplatizationConfig: &commonactionsapi.DefaultTemplatizationConfig{}})
 }

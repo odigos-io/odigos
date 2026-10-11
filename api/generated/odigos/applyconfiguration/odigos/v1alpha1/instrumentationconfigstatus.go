@@ -25,11 +25,21 @@ import (
 // InstrumentationConfigStatusApplyConfiguration represents a declarative configuration of the InstrumentationConfigStatus type for use
 // with apply.
 type InstrumentationConfigStatusApplyConfiguration struct {
+	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
-	Conditions                []v1.ConditionApplyConfiguration              `json:"conditions,omitempty"`
-	WorkloadRolloutHash       *string                                       `json:"workloadRolloutHash,omitempty"`
-	RollbackOccurred          *bool                                         `json:"rollbackOccurred,omitempty"`
-	InstrumentationTime       *metav1.Time                                  `json:"instrumentationTime,omitempty"`
+	// Represents the observations of a InstrumentationConfig's current state.
+	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	// This hash is recorded only after the rollout took place.
+	// it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
+	// if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.
+	WorkloadRolloutHash *string `json:"workloadRolloutHash,omitempty"`
+	// Check if rollback happened to an application
+	RollbackOccurred *bool `json:"rollbackOccurred,omitempty"`
+	// This time recorded only after the rollout took place.
+	// This allows us to determine whether a crashing application should be rolled back or not
+	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
+	// Represents the status of odigos MANIFEST injection to existing pods template.
+	PodsManifestInjectionStatus *PodsManifestInjectionStatusApplyConfiguration `json:"podsManifestInjectionStatus,omitempty"`
 }
 
 // InstrumentationConfigStatusApplyConfiguration constructs a declarative configuration of the InstrumentationConfigStatus type for use with
@@ -85,5 +95,13 @@ func (b *InstrumentationConfigStatusApplyConfiguration) WithRollbackOccurred(val
 // If called multiple times, the InstrumentationTime field is set to the value of the last call.
 func (b *InstrumentationConfigStatusApplyConfiguration) WithInstrumentationTime(value metav1.Time) *InstrumentationConfigStatusApplyConfiguration {
 	b.InstrumentationTime = &value
+	return b
+}
+
+// WithPodsManifestInjectionStatus sets the PodsManifestInjectionStatus field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PodsManifestInjectionStatus field is set to the value of the last call.
+func (b *InstrumentationConfigStatusApplyConfiguration) WithPodsManifestInjectionStatus(value *PodsManifestInjectionStatusApplyConfiguration) *InstrumentationConfigStatusApplyConfiguration {
+	b.PodsManifestInjectionStatus = value
 	return b
 }

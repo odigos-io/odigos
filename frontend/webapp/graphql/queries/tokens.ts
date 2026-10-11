@@ -8,6 +8,7 @@ export const GET_TOKENS = gql`
         name
         issuedAt
         expiresAt
+        message
       }
     }
   }

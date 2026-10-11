@@ -24,16 +24,34 @@ import (
 // K8sAttributesSpecApplyConfiguration represents a declarative configuration of the K8sAttributesSpec type for use
 // with apply.
 type K8sAttributesSpecApplyConfiguration struct {
-	ActionName                  *string                                    `json:"actionName,omitempty"`
-	Notes                       *string                                    `json:"notes,omitempty"`
-	Disabled                    *bool                                      `json:"disabled,omitempty"`
-	Signals                     []common.ObservabilitySignal               `json:"signals,omitempty"`
-	CollectContainerAttributes  *bool                                      `json:"collectContainerAttributes,omitempty"`
-	CollectReplicaSetAttributes *bool                                      `json:"collectReplicaSetAttributes,omitempty"`
-	CollectWorkloadUID          *bool                                      `json:"collectWorkloadUID,omitempty"`
-	CollectClusterUID           *bool                                      `json:"collectClusterUID,omitempty"`
-	LabelsAttributes            []K8sLabelAttributeApplyConfiguration      `json:"labelsAttributes,omitempty"`
-	AnnotationsAttributes       []K8sAnnotationAttributeApplyConfiguration `json:"annotationsAttributes,omitempty"`
+	ActionName *string                      `json:"actionName,omitempty"`
+	Notes      *string                      `json:"notes,omitempty"`
+	Disabled   *bool                        `json:"disabled,omitempty"`
+	Signals    []common.ObservabilitySignal `json:"signals,omitempty"`
+	// Collect the following container related attributes:
+	// k8s.container.name
+	// container.id
+	// container.image.name
+	// container.image.tag
+	CollectContainerAttributes *bool `json:"collectContainerAttributes,omitempty"`
+	// collect replicaset related attributes (when relevant, e.g. for deployments):
+	// k8s.replicaset.name
+	// if CollectWorkloadUID is set, also collect:
+	// k8s.replicaset.uid
+	// DEPRECATED: ReplicaSet attributes are now collected by default during instrumentation.
+	CollectReplicaSetAttributes *bool `json:"collectReplicaSetAttributes,omitempty"`
+	// Collect the following workload UID attributes:
+	// k8s.deployment.uid
+	// k8s.daemonset.uid
+	// k8s.statefulset.uid
+	// DEPRECATED: Workload UID attributes are now collected by default during instrumentation.
+	CollectWorkloadUID *bool `json:"collectWorkloadUID,omitempty"`
+	// Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace "kube-system"
+	CollectClusterUID *bool `json:"collectClusterUID,omitempty"`
+	// list of labels to be extracted from the pod, and the attribute key to be used for the resource attribute created from each label.
+	LabelsAttributes []K8sLabelAttributeApplyConfiguration `json:"labelsAttributes,omitempty"`
+	// list of annotations to be extracted from the pod, and the attribute key to be used for the resource attribute created from each annotation.
+	AnnotationsAttributes []K8sAnnotationAttributeApplyConfiguration `json:"annotationsAttributes,omitempty"`
 }
 
 // K8sAttributesSpecApplyConfiguration constructs a declarative configuration of the K8sAttributesSpec type for use with

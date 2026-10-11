@@ -19,13 +19,18 @@ spec:
     spec:
       containers:
         - name: coupon
-          image: registry.odigos.io/odigos-demo-coupon:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-coupon:v0.1.39
           imagePullPolicy: IfNotPresent
           env:
             - name: MEMBERSHIP_SERVICE_HOST
               value: membership:8080
           ports:
             - containerPort: 8080
+      # coupon container should run with non root user
+      # adding runAsNonRoot requirement here to test cases where we might
+      # add addition container and make sure we handle this
+      securityContext:
+        runAsNonRoot: true
 ---
 kind: Service
 apiVersion: v1
@@ -62,7 +67,7 @@ spec:
     spec:
       containers:
         - name: currency
-          image: registry.odigos.io/odigos-demo-currency:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-currency:v0.1.39
           imagePullPolicy: IfNotPresent
           env:
             - name: GEOLOCATION_SERVICE_HOST
@@ -135,7 +140,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: registry.odigos.io/odigos-demo-frontend:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.39
           imagePullPolicy: IfNotPresent
           env:
             - name: INVENTORY_SERVICE_HOST
@@ -148,6 +153,8 @@ spec:
               value: currency:8080
             - name: GEOLOCATION_SERVICE_HOST
               value: geolocation:8080
+            - name: SHIPPING_SERVICE_HOST
+              value: shipping:8080
           ports:
             - containerPort: 8080
 ---
@@ -185,18 +192,35 @@ spec:
     spec:
       containers:
         - name: geolocation
-          image: registry.odigos.io/odigos-demo-geolocation:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-geolocation:v0.1.39
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
             - name: RAILS_ENV
-              value: 'production'
+              value: "production"
             - name: RAILS_MASTER_KEY
               valueFrom:
                 secretKeyRef:
                   name: rails-master-key
                   key: master.key
+          livenessProbe:
+            httpGet:
+              path: /up
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /up
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
 ---
 apiVersion: v1
 kind: Secret
@@ -205,7 +229,7 @@ metadata:
   namespace: default
 type: Opaque
 stringData:
-  master.key: 'df0300c20246e24d331787f6540a72fa'
+  master.key: "df0300c20246e24d331787f6540a72fa"
 ---
 apiVersion: v1
 kind: Service
@@ -219,7 +243,6 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 3000
-  type: LoadBalancer
 
 ---
 ##################################################
@@ -243,7 +266,7 @@ spec:
     spec:
       containers:
         - name: inventory
-          image: registry.odigos.io/odigos-demo-inventory:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.39
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -283,10 +306,13 @@ spec:
     spec:
       containers:
         - name: membership
-          image: registry.odigos.io/odigos-demo-membership:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.39
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          env:
+            - name: PRICING_SERVICE_HOST
+              value: pricing:8080
 ---
 kind: Service
 apiVersion: v1
@@ -323,7 +349,7 @@ spec:
     spec:
       containers:
         - name: pricing
-          image: registry.odigos.io/odigos-demo-pricing:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-pricing:v0.1.39
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -336,6 +362,49 @@ metadata:
 spec:
   selector:
     app: pricing
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+##################################################
+# Shipping (C++)
+##################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping
+  namespace: default
+  labels:
+    app: shipping
+spec:
+  selector:
+    matchLabels:
+      app: shipping
+  template:
+    metadata:
+      labels:
+        app: shipping
+    spec:
+      containers:
+        - name: shipping
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-shipping:v0.1.39
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: shipping
+  namespace: default
+spec:
+  selector:
+    app: shipping
   ports:
     - protocol: TCP
       port: 8080

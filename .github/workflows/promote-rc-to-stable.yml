@@ -1,0 +1,275 @@
+name: Promote Release-Candidate to Stable
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to promote"
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+  id-token: 'write'
+
+env:
+  DOCKERHUB_REPO: "keyval"
+  GCR_REPO: "us-central1-docker.pkg.dev/odigos-cloud/components"
+  GCR_PRIVATE_REPO: "us-central1-docker.pkg.dev/odigos-cloud/components-private"
+  GHCR_REPO: "ghcr.io/odigos-io"
+
+jobs:
+  promote-rc-to-stable:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify the tag is a release candidate
+        run: |
+          # =~ is a bash operator that checks if a string matches a regular expression pattern
+          # Here we check if the tag matches the format vX.Y.Z-rcN where X,Y,Z,N are numbers
+          if [[ "${{ github.event.inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
+            echo "Tag is a release candidate"
+            echo "RC_TAG=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            echo "Tag is not a release candidate"
+            exit 1
+          fi
+
+      - name: Get sts tokens
+        id: sts-this-repo
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: push-tags
+          output-git-config: "true"
+
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.sts-this-repo.outputs.GH_TOKEN }}
+          fetch-depth: 0 # need to fetch all tags for goreleaser to calculate the changelog
+          ref: ${{ env.RC_TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
+
+      - name: Get Stable Tag From Release Candidate
+        run: |
+            # remove the -rc part and number from the tag
+            STABLE_TAG=$(echo "${{ env.RC_TAG }}" | sed 's/-rc[0-9]*$//')
+
+            # Validate the stable tag format
+            if [[ ! "$STABLE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "ERROR: Invalid stable tag format: $STABLE_TAG"
+              exit 1
+            fi
+
+            echo "STABLE_TAG=${STABLE_TAG}" >> $GITHUB_ENV
+            echo "Extracted stable tag: $STABLE_TAG"
+
+      - name: Check if stable tag already exists
+        run: |
+            if git tag -l | grep -q "^${{ env.STABLE_TAG }}$"; then
+                echo "ERROR: Stable tag ${{ env.STABLE_TAG }} already exists"
+                echo "This workflow has likely already been run for this release candidate"
+                exit 1
+            else
+                echo "Stable tag ${{ env.STABLE_TAG }} does not exist, proceeding with promotion"
+            fi
+
+
+      - name: Notify Slack Start
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Starting to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          failure-description: "ERROR: Failed to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          tag: ${{ env.RC_TAG }}
+
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.4
+
+      # oras is used for the cross-repo mirrors: `oras copy -r` carries the
+      # cosign signature and SBOM referrers with the image, which `crane copy`
+      # drops. The same-repo RC->stable retags keep crane — referrers attach
+      # to the digest, so a retag inside one repo never loses them.
+      - name: Install oras
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+
+      - id: gcp-auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Retag existing images to stable
+        run: |
+            # Define which images go to which registries
+            # All non-RHEL component images (OSS + enterprise). Each is promoted in components
+            # and mirrored to components-private.
+            GCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-instrumentor" "odigos-scheduler" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-cli" "odigos-victoria-metrics" "odigos-cache" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-ui" "odigos-enterprise-agents" "odigos-enterprise-collector" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet" "odigos-enterprise-insights" "odigos-enterprise-connector-runtime" "odigos-enterprise-connector-aws" "odigos-enterprise-connector-azure" "odigos-enterprise-connector-gcp" "odigos-enterprise-connector-postgres")
+
+            GHCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-instrumentor" "odigos-scheduler" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
+
+            DOCKERHUB_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-instrumentor" "odigos-scheduler" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-collector" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet" "odigos-enterprise-connector-runtime" "odigos-enterprise-connector-aws" "odigos-enterprise-connector-azure" "odigos-enterprise-connector-gcp" "odigos-enterprise-connector-postgres")
+
+            # Keep this empty for now to support another image SUFFIXES in the future if needed (e.g. rhel-certified)
+            IMAGE_SUFFIXES=("")
+            # Track failed copies for potential rollback
+            FAILED_COPIES=()
+
+            for SUFFIX in "${IMAGE_SUFFIXES[@]}"; do
+              # Process GCR images
+              for IMAGE_NAME in "${GCR_IMAGE_NAMES[@]}"; do
+                REPO=${GCR_REPO}
+                echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
+              done
+
+              # Mirror all GCR images into the private registry (components-private).
+              for IMAGE_NAME in "${GCR_IMAGE_NAMES[@]}"; do
+                echo "Mirroring ${GCR_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }} to ${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! oras copy -r ${GCR_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }} ${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to mirror ${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully mirrored ${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
+              done
+
+              # Process GHCR images
+              for IMAGE_NAME in "${GHCR_IMAGE_NAMES[@]}"; do
+                REPO=${GHCR_REPO}
+                echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
+              done
+
+              # Process DockerHub images
+              for IMAGE_NAME in "${DOCKERHUB_IMAGE_NAMES[@]}"; do
+                REPO=${DOCKERHUB_REPO}
+                echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
+              done
+            done
+
+            # Handle extended tag variants for agents and odiglet (e.g. v1.0.0-rc1-extended -> v1.0.0-extended).
+            # Only the enterprise variants are built with an -extended tag; the OSS odigos-agents/odigos-odiglet
+            # images never get an -extended tag, so they must not be listed here.
+            EXTENDED_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-odiglet")
+            ENTERPRISE_EXTENDED_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-odiglet")
+            for IMAGE_NAME in "${EXTENDED_IMAGE_NAMES[@]}"; do
+              echo "Copying ${GCR_REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended to ${GCR_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended"
+              if ! crane copy ${GCR_REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended ${GCR_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended; then
+                echo "ERROR: Failed to copy ${GCR_REPO}/${IMAGE_NAME} extended"
+                FAILED_COPIES+=("${GCR_REPO}/${IMAGE_NAME}-extended")
+              else
+                echo "Successfully copied ${GCR_REPO}/${IMAGE_NAME} extended"
+              fi
+
+              echo "Mirroring ${GCR_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended to ${GCR_PRIVATE_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended"
+              if ! oras copy -r ${GCR_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended ${GCR_PRIVATE_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended; then
+                echo "ERROR: Failed to mirror ${GCR_PRIVATE_REPO}/${IMAGE_NAME} extended"
+                FAILED_COPIES+=("${GCR_PRIVATE_REPO}/${IMAGE_NAME}-extended")
+              else
+                echo "Successfully mirrored ${GCR_PRIVATE_REPO}/${IMAGE_NAME} extended"
+              fi
+            done
+
+            for IMAGE_NAME in "${ENTERPRISE_EXTENDED_IMAGE_NAMES[@]}"; do
+              echo "Copying ${DOCKERHUB_REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended to ${DOCKERHUB_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended"
+              if ! crane copy ${DOCKERHUB_REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended ${DOCKERHUB_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended; then
+                echo "ERROR: Failed to copy ${DOCKERHUB_REPO}/${IMAGE_NAME} extended"
+                FAILED_COPIES+=("${DOCKERHUB_REPO}/${IMAGE_NAME}-extended")
+              else
+                echo "Successfully copied ${DOCKERHUB_REPO}/${IMAGE_NAME} extended"
+              fi
+            done
+
+            # Check if any copies failed
+            if [ ${#FAILED_COPIES[@]} -gt 0 ]; then
+              echo "ERROR: The following image copies failed:"
+              printf '%s\n' "${FAILED_COPIES[@]}"
+              echo "Stable tag creation will be aborted"
+              exit 1
+            fi
+
+            echo "All image copies completed successfully"
+
+      - name: Tag Stable Release in GitHub
+        run: |
+            # Double-check that the tag doesn't exist before creating it
+            if git tag -l | grep -q "^${{ env.STABLE_TAG }}$"; then
+                echo "ERROR: Stable tag ${{ env.STABLE_TAG }} already exists - this should not happen"
+                exit 1
+            fi
+
+            git tag ${{ env.STABLE_TAG }}
+            echo "Successfully created stable tag ${{ env.STABLE_TAG }} (not pushed yet)"
+
+      - name: Tag Modules
+        uses: ./.github/actions/tag-modules
+        with:
+          tag: ${{ env.STABLE_TAG }}
+
+      - name: Push All Tags
+        run: |
+            echo "Pushing all tags (stable + module tags) at once"
+            git push origin --tags
+            echo "Successfully pushed all tags"
+
+      - name: Get cli release sts tokens
+        id: sts-cli-release
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: trigger-release
+          output-git-config: "true"
+
+      - name: Trigger Release Workflow
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ steps.sts-cli-release.outputs.GH_TOKEN }}
+          repository: odigos-io/odigos
+          event-type: release_cli
+          client-payload: '{"tag": "${{ env.STABLE_TAG }}"}'
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully re-tagged release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          failure-description: "ERROR: Failed to re-tag release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          tag: ${{ env.STABLE_TAG }}

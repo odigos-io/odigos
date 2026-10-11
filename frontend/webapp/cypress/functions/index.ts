@@ -1,6 +1,39 @@
 export * from './cy-alias';
 import { DATA_IDS } from '../constants';
 
+// Apollo may send a single object or a batch array.
+const graphqlOperationName = (raw: unknown): string | undefined => {
+  if (raw == null) return undefined;
+  if (typeof raw === 'string') {
+    try {
+      return graphqlOperationName(JSON.parse(raw));
+    } catch {
+      return undefined;
+    }
+  }
+  if (typeof raw !== 'object') return undefined;
+  if (Array.isArray(raw)) {
+    const first = raw[0] as { operationName?: string } | undefined;
+    return first?.operationName;
+  }
+  return (raw as { operationName?: string }).operationName;
+};
+
+// Resolves only when the named operation completes.
+// Plain cy.wait('@gql') races with other /graphql traffic (e.g. GetActions after a prior create), which can yield no toast.
+export const waitForGraphqlOperation = (operationName: string, maxSkips = 40): Cypress.Chainable => {
+  return cy.wait('@gql', { timeout: 120000 }).then((interception) => {
+    const op = graphqlOperationName(interception.request.body);
+    if (op === operationName) {
+      return cy.wrap(interception);
+    }
+    if (maxSkips <= 0) {
+      throw new Error(`waitForGraphqlOperation: expected "${operationName}", got "${op ?? 'unknown'}" (no more skips)`);
+    }
+    return waitForGraphqlOperation(operationName, maxSkips - 1);
+  });
+};
+
 export const visitPage = (path: string, callback?: () => void) => {
   cy.visit(path);
 
@@ -8,6 +41,84 @@ export const visitPage = (path: string, callback?: () => void) => {
   // On rare occasions, the page might still be blank, and cypress would attempt to interact with it, triggering false errors...
   cy.wait(1000).then(() => {
     if (!!callback) callback();
+  });
+};
+
+// Click without an intervening `.should('exist')`, which settles the subject and
+// disables Cypress query re-resolution — a common flake when overview rows re-render
+// (SSE / GraphQL refetch) mid-click ("the page updated while this command was executing").
+export const clickRetryable = (selector: string, contains?: string) => {
+  if (contains != null) {
+    cy.contains(selector, contains).click();
+  } else {
+    cy.get(selector).click();
+  }
+};
+
+export const waitForDrawerClosed = () => {
+  cy.get(DATA_IDS.DRAWER).should('not.exist');
+};
+
+export type CyExecResult = { code: number; stdout: string; stderr: string };
+
+/** Drop-in for removed Cypress 16 `cy.exec()` — runs via `cy.task('exec')`. */
+export const cyExec = (command: string, options?: { failOnNonZeroExit?: boolean }) => cy.task<CyExecResult>('exec', { command, failOnNonZeroExit: options?.failOnNonZeroExit ?? true });
+
+const openOverviewEntity = ({ nodeId, nodeContains }: { nodeId: string; nodeContains?: string }) => {
+  clickRetryable(nodeId, nodeContains);
+  cy.get(DATA_IDS.DRAWER).should('exist');
+};
+
+interface WaitForCrdCountOptions {
+  namespace: string;
+  crdName: string;
+  minCount: number;
+  maxAttempts?: number;
+  intervalMs?: number;
+}
+
+// Poll until CRD count is >= minCount (create path can lag behind the UI toast on slower clusters).
+export const waitForCrdCount = ({ namespace, crdName, minCount, maxAttempts = 15, intervalMs = 2000 }: WaitForCrdCountOptions) => {
+  const attempt = (remaining: number): Cypress.Chainable<string[]> => {
+    return cyExec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`, { failOnNonZeroExit: false }).then(({ stdout }) => {
+      const crdIds = stdout.split('\n').filter((s) => !!s);
+      if (crdIds.length >= minCount) {
+        return cy.wrap(crdIds);
+      }
+      if (remaining <= 0) {
+        expect(crdIds.length).to.be.gte(minCount);
+        return cy.wrap(crdIds);
+      }
+      return cy.wait(intervalMs).then(() => attempt(remaining - 1));
+    });
+  };
+  return attempt(maxAttempts);
+};
+
+interface FindCrdOptions {
+  namespace: string;
+  crdName: string;
+  targetKey: string;
+  targetValue: string;
+}
+
+// this is not a test, it's a helper function to find a CRD to use in a test
+export const findCrdId = ({ namespace, crdName, targetKey, targetValue }: FindCrdOptions, callback: (crdId: string) => void) => {
+  const [parentKey, childKey] = targetKey.split('.');
+
+  cyExec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
+    const crdIds = stdout.split('\n').filter((str) => !!str);
+
+    crdIds.forEach((crdId) => {
+      cyExec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stdout }) => {
+        const parsed = JSON.parse(stdout);
+        const { spec } = parsed?.items?.[0] || parsed || {};
+        expect(spec).to.not.be.empty;
+
+        const value = childKey ? spec[parentKey][childKey] : spec[parentKey];
+        if (value === targetValue) callback(crdId);
+      });
+    });
   });
 };
 
@@ -19,7 +130,7 @@ interface GetCrdIdsOptions {
 }
 
 export const getCrdIds = ({ namespace, crdName, expectedError, expectedLength }: GetCrdIdsOptions, callback?: (crdIds: string[]) => void) => {
-  cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stderr, stdout }) => {
+  cyExec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stderr, stdout }) => {
     expect(stderr).to.eq(expectedError);
 
     if (!!expectedError) {
@@ -42,10 +153,19 @@ interface GetCrdByIdOptions {
   expectedError: string;
   expectedKey: string;
   expectedValue: string | boolean;
+  // When true, asserts `spec[expectedKey]` *contains* `expectedValue` (substring)
+  // instead of equalling it. Used when CRDs are renamed to per-entity unique
+  // values (e.g. `${UPDATED_NAME} ${actionType}`) but the test only needs to
+  // verify the shared marker substring landed on every CRD.
+  expectedValueContains?: boolean;
 }
 
-export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedKey, expectedValue }: GetCrdByIdOptions, callback?: () => void) => {
-  cy.exec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stderr, stdout }) => {
+export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedKey, expectedValue, expectedValueContains }: GetCrdByIdOptions, callback?: () => void) => {
+  if (!crdId) {
+    throw new Error('No CRD ID provided to getCrdById');
+  }
+
+  cyExec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stderr, stdout }) => {
     expect(stderr).to.eq(expectedError);
 
     if (!!expectedError) {
@@ -58,7 +178,11 @@ export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedK
     const { spec } = parsed?.items?.[0] || parsed || {};
 
     expect(spec).to.not.be.empty;
-    expect(spec[expectedKey]).to.eq(expectedValue);
+    if (expectedValueContains) {
+      expect(spec[expectedKey]).to.include(expectedValue);
+    } else {
+      expect(spec[expectedKey]).to.eq(expectedValue);
+    }
 
     if (!!callback) callback();
   });
@@ -72,44 +196,16 @@ interface UpdateEntityOptions {
 }
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
-  if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).should('exist').click();
-  } else {
-    cy.get(nodeId).should('exist').click();
-  }
-
-  cy.get(DATA_IDS.DRAWER).should('exist');
+  openOverviewEntity({ nodeId, nodeContains });
   cy.get(DATA_IDS.DRAWER_EDIT).click();
 
   cy.get(fieldKey).click().focused().clear().type(fieldValue);
   cy.get(fieldKey).should('have.value', fieldValue);
 
-  // The awaits below are an attempt to fix the following flake:
-  //
-  // CypressError: Timed out retrying after 4050ms: `cy.click()` failed because this element:
-  // `<div data-id="Source-2" class="sc-jFQJiD jLKqqL nowheel nodrag">...</div>`
-  // is being covered by another element:
-  // `<div class="sc-dUwGTt WdrMZ" style="opacity: 0;"></div>`
-  //
-  // This flake is caused by the fact that the "cancel warning modal" is shown when the user clicks on the "save" or "close" button.
-  // This failed to reproduce by user interaction, this could be an issue only for Cypress.
-
-  cy.wait(500).then(() => {
-    cy.get(DATA_IDS.DRAWER_SAVE).click();
-
-    cy.wait(500).then(() => {
-      cy.get(DATA_IDS.DRAWER_CLOSE).click();
-
-      cy.wait(500).then(() => {
-        // press enter to close the warn modal (if any)
-        cy.get('body').trigger('keydown', { keyCode: 13 });
-        cy.wait(500);
-        cy.get('body').trigger('keyup', { keyCode: 13 });
-
-        if (!!callback) callback();
-      });
-    });
-  });
+  cy.get(DATA_IDS.DRAWER_SAVE).click();
+  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+  waitForDrawerClosed();
+  if (!!callback) callback();
 };
 
 interface DeleteEntityOptions {
@@ -120,8 +216,7 @@ interface DeleteEntityOptions {
 }
 
 export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNote }: DeleteEntityOptions, callback?: () => void) => {
-  cy.contains(nodeId, nodeContains).should('exist').click();
-  cy.get(DATA_IDS.DRAWER).should('exist');
+  openOverviewEntity({ nodeId, nodeContains });
   cy.get(DATA_IDS.DRAWER_DELETE).click();
 
   if (!!warnModalTitle) cy.get(DATA_IDS.MODAL).contains(warnModalTitle).should('exist');
@@ -130,6 +225,71 @@ export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNo
   cy.get(DATA_IDS.APPROVE).click();
 
   if (!!callback) callback();
+
+  waitForDrawerClosed();
+};
+
+interface UpdateV2EntityOptions {
+  // Where to click to open the drawer — either a selector or, when paired with `nodeContains`,
+  // an HTML tag passed to `cy.contains()` (e.g. `'div'`).
+  nodeId: string;
+  nodeContains?: string;
+
+  // Drawer convention prefix. Together with the `{prefix}-btn-{edit,delete,save,cancel}` naming,
+  // this identifies the dropdown options and footer buttons rendered by a v2 edit drawer.
+  // E.g. `'edit-rule'`, `'edit-action'`, `'edit-source'`, `'edit-destination'`.
+  prefix: string;
+
+  // Selector + value of the form field to update inside the drawer.
+  fieldKey: string;
+  fieldValue: string;
+}
+
+// v2 edit-drawer flow:
+// 1. open the entity's drawer by clicking its data-flow row
+// 2. open the drawer header's actions dropdown and click "Edit"
+// 3. update the named field and click "Save"
+// 4. close the drawer (it does not auto-close after save) and wait for Overlay unmount
+export const updateV2Entity = ({ nodeId, nodeContains, prefix, fieldKey, fieldValue }: UpdateV2EntityOptions, callback?: () => void) => {
+  openOverviewEntity({ nodeId, nodeContains });
+
+  cy.get(DATA_IDS.DRAWER_ACTIONS).click();
+  cy.get(DATA_IDS.DROPDOWN_OPTION(`${prefix}-btn-edit`)).click();
+
+  cy.get(fieldKey).click().focused().clear().type(fieldValue);
+  cy.get(fieldKey).should('have.value', fieldValue);
+
+  cy.get(`[data-id=${prefix}-btn-save]`).click();
+
+  if (!!callback) callback();
+
+  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+  waitForDrawerClosed();
+};
+
+interface DeleteV2EntityOptions {
+  nodeId: string;
+  nodeContains?: string;
+  prefix: string;
+  warnModalTitle?: string;
+  warnModalNote?: string;
+}
+
+// v2 edit-drawer flow: open drawer → actions dropdown → "Delete" → confirm modal.
+export const deleteV2Entity = ({ nodeId, nodeContains, prefix, warnModalTitle, warnModalNote }: DeleteV2EntityOptions, callback?: () => void) => {
+  openOverviewEntity({ nodeId, nodeContains });
+
+  cy.get(DATA_IDS.DRAWER_ACTIONS).click();
+  cy.get(DATA_IDS.DROPDOWN_OPTION(`${prefix}-btn-delete`)).click();
+
+  if (!!warnModalTitle) cy.get(DATA_IDS.MODAL).contains(warnModalTitle).should('exist');
+  if (!!warnModalNote) cy.get(DATA_IDS.MODAL).contains(warnModalNote).should('exist');
+
+  cy.get(DATA_IDS.APPROVE).click();
+
+  if (!!callback) callback();
+
+  waitForDrawerClosed();
 };
 
 interface AwaitToastOptions {
@@ -137,11 +297,38 @@ interface AwaitToastOptions {
 }
 
 export const awaitToast = ({ message }: AwaitToastOptions, callback?: () => void) => {
-  cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
-  cy.get('@toast-msg').should('exist');
-  cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
+  // ui-kit >=0.0.244 dropped the stable `data-id=toast` wrapper, so we anchor
+  // on the close button (the only stable selector left) and filter to the
+  // toast whose subtree contains the expected message. This avoids matching
+  // unrelated elements that happen to render the same text (e.g. the
+  // token-status banner in token-tracker.cy.ts).
+  cy.get(DATA_IDS.TOAST_CLOSE, { timeout: 10000 })
+    .filter(
+      (_, el) =>
+        Cypress.$(el)
+          .parents()
+          .filter((__, p) => (Cypress.$(p).text() || '').includes(message)).length > 0,
+    )
+    .first()
+    .as('toast-close');
 
-  if (!!callback) callback();
+  cy.get('@toast-close').should('exist');
+  cy.get('@toast-close').click({ force: true });
+
+  callback?.();
+};
+
+// The sampling page in @odigos/ui-kit auto-opens an onboarding modal whenever
+// it renders with zero sampling CRDs. The cypress sampling spec begins by
+// wiping all sampling CRDs, so the modal pops up on the very first visit and
+// blocks the create-rule button. Click "Skip" if the modal is currently
+// rendered, otherwise no-op.
+export const dismissSamplingOnboardingModal = () => {
+  cy.get('body').then(($body) => {
+    if ($body.find(DATA_IDS.SAMPLING_ONBOARDING_BTN_SKIP).length > 0) {
+      cy.get(DATA_IDS.SAMPLING_ONBOARDING_BTN_SKIP).click();
+    }
+  });
 };
 
 export const handleExceptions = () => {

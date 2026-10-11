@@ -33,11 +33,11 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 		return nil, err
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authorization": "LumigoToken ${LUMIGO_TOKEN}",
+			"Authorization": "LumigoToken " + SecretEnvPlaceholder("LUMIGO_TOKEN", dest),
 		},
 	}
 

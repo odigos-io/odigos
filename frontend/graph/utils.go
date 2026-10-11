@@ -1,0 +1,352 @@
+package graph
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
+	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/graph/status"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+func isOnprem(ctx context.Context) (bool, error) {
+	odigosNs := env.GetCurrentNamespace()
+	var configMap corev1.ConfigMap
+	err := kube.CacheClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosDeploymentConfigMapName}, &configMap)
+	if err != nil {
+		return false, err
+	}
+
+	tier := configMap.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
+	return tier == string(common.OnPremOdigosTier), nil
+}
+
+func RequireOnprem(ctx context.Context) error {
+	isOnprem, err := isOnprem(ctx)
+	if err != nil {
+		return err
+	}
+	if !isOnprem {
+		return fmt.Errorf("this feature is only supported for onprem installations")
+	}
+	return nil
+}
+
+func emptyStrToNil(str string) *string {
+	if str == "" {
+		return nil
+	}
+	return &str
+}
+
+func distroParamsToModel(distroParams map[string]string) []*model.DistroParam {
+	modelDistroParams := make([]*model.DistroParam, 0, len(distroParams))
+	for name, value := range distroParams {
+		modelDistroParams = append(modelDistroParams, &model.DistroParam{
+			Name:  name,
+			Value: value,
+		})
+	}
+	return modelDistroParams
+}
+
+func envVarsToModel(envVars []v1alpha1.EnvVar) []*model.EnvVar {
+	modelEnvVars := make([]*model.EnvVar, len(envVars))
+	for i, envVar := range envVars {
+		modelEnvVars[i] = &model.EnvVar{
+			Name:  envVar.Name,
+			Value: envVar.Value,
+		}
+	}
+	return modelEnvVars
+}
+
+func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByContainer) *model.K8sWorkloadRuntimeInfoContainer {
+	containerName := runtimeDetails.ContainerName
+
+	var runtimeVersion *string
+	if runtimeDetails.RuntimeVersion != "" {
+		runtimeVersion = &runtimeDetails.RuntimeVersion
+	}
+	otherAgentNames := make([]string, 0, len(runtimeDetails.OtherAgents))
+	for _, a := range runtimeDetails.OtherAgents {
+		otherAgentNames = append(otherAgentNames, a.Name)
+	}
+	var libcType *string
+	if runtimeDetails.LibCType != nil {
+		libcTypeStr := string(*runtimeDetails.LibCType)
+		libcType = &libcTypeStr
+	}
+	return &model.K8sWorkloadRuntimeInfoContainer{
+		ContainerName:           containerName,
+		Language:                model.ProgrammingLanguage(runtimeDetails.Language),
+		RuntimeVersion:          runtimeVersion,
+		ProcessEnvVars:          envVarsToModel(runtimeDetails.EnvVars),
+		ContainerRuntimeEnvVars: envVarsToModel(runtimeDetails.EnvFromContainerRuntime),
+		CriErrorMessage:         runtimeDetails.CriErrorMessage,
+		LibcType:                libcType,
+		SecureExecutionMode:     runtimeDetails.SecureExecutionMode,
+		OtherAgentNames:         otherAgentNames,
+	}
+}
+
+func containerOverrideToModel(containerOverride *v1alpha1.ContainerOverride) *model.K8sWorkloadContainerOverrides {
+	overrides := &model.K8sWorkloadContainerOverrides{
+		ContainerName:         containerOverride.ContainerName,
+		OtelDistroName:        containerOverride.OtelDistroName,
+		AllowConcurrentAgents: containerOverride.AllowConcurrentAgents,
+	}
+	if containerOverride.RuntimeInfo != nil {
+		overrides.RuntimeInfo = runtimeDetailsContainersToModel(containerOverride.RuntimeInfo)
+	}
+	return overrides
+}
+
+func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgentConfig) *model.K8sWorkloadAgentEnabledContainer {
+	var envInjectionMethodStr *string
+	if containerAgentConfig.EnvInjectionMethod != nil {
+		asStr := string(*containerAgentConfig.EnvInjectionMethod)
+		envInjectionMethodStr = &asStr
+	}
+
+	var traces *model.K8sWorkloadAgentEnabledContainerTraces
+	if containerAgentConfig.Traces != nil {
+		traces = &model.K8sWorkloadAgentEnabledContainerTraces{
+			Enabled: true,
+		}
+	}
+	var metrics *model.K8sWorkloadAgentEnabledContainerMetrics
+	if containerAgentConfig.Metrics != nil {
+		metrics = &model.K8sWorkloadAgentEnabledContainerMetrics{
+			Enabled: true,
+		}
+	}
+	var logs *model.K8sWorkloadAgentEnabledContainerLogs
+	if containerAgentConfig.Logs != nil {
+		logs = &model.K8sWorkloadAgentEnabledContainerLogs{
+			Enabled: true,
+		}
+	}
+
+	return &model.K8sWorkloadAgentEnabledContainer{
+		ContainerName:      containerAgentConfig.ContainerName,
+		AgentEnabled:       containerAgentConfig.AgentEnabled,
+		AgentEnabledStatus: status.CalculateAgentInjectionEnabledStatusForContainer(containerAgentConfig),
+		OtelDistroName:     emptyStrToNil(containerAgentConfig.OtelDistroName),
+		EnvInjectionMethod: envInjectionMethodStr,
+		DistroParams:       distroParamsToModel(containerAgentConfig.DistroParams),
+		Traces:             traces,
+		Metrics:            metrics,
+		Logs:               logs,
+	}
+}
+
+func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.K8sWorkloadID, optionalPodManifestInjectionContainerNames map[string]struct{}) (*model.DesiredConditionStatus, error) {
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, *workloadId)
+	if err != nil {
+		return nil, err
+	}
+
+	foundAgentOnAnyContainer := false
+	foundReadyInstrumentedContainer := false
+	foundExpectedInstrumentationInstances := false
+	containersWithMissingInstances := false
+	numUnhealthyProcesses := 0
+	numUnhealthyInstrumentationLibraries := 0
+	numStartingProcesses := 0
+	numHealthyProcesses := 0
+	var unhealthyProcessMessages []string
+	var unhealthyInstrumentationLibraryMessages []string
+	for _, pod := range pods {
+		for _, container := range pod.Containers {
+			_, containerPodManifestInjectionOptional := optionalPodManifestInjectionContainerNames[container.ContainerName]
+			if containerPodManifestInjectionOptional {
+				foundAgentOnAnyContainer = true
+			} else {
+				if container.OtelDistroName == nil {
+					continue
+				}
+				foundAgentOnAnyContainer = true
+				if !container.ExpectingInstrumentationInstances {
+					continue
+				}
+			}
+
+			foundExpectedInstrumentationInstances = true
+
+			if !container.IsReady {
+				// only take into account containers that are ready
+				// starting containers might not have the agent ready yet
+				continue
+			}
+			foundReadyInstrumentedContainer = true
+
+			containerId := loaders.PodContainerId{
+				Namespace:     pod.PodNamespace,
+				PodName:       pod.PodName,
+				ContainerName: container.ContainerName,
+			}
+			podIIs, err := l.GetInstrumentationInstancesForContainer(ctx, containerId)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(podIIs) == 0 {
+				// expecting instrumentation instances, but none are found.
+				containersWithMissingInstances = true
+				continue
+			}
+
+			for _, instrumentationInstance := range podIIs {
+				if instrumentationInstance.Status.Healthy == nil {
+					numStartingProcesses++
+				} else if *instrumentationInstance.Status.Healthy {
+					for _, c := range instrumentationInstance.Status.Components {
+						if c.Healthy != nil && !*c.Healthy {
+							numUnhealthyInstrumentationLibraries++
+							if c.Message != "" {
+								unhealthyInstrumentationLibraryMessages = append(unhealthyInstrumentationLibraryMessages, c.Message)
+							}
+							break
+						}
+						numHealthyProcesses++
+					}
+				} else {
+					numUnhealthyProcesses++
+					if instrumentationInstance.Status.Message != "" {
+						unhealthyProcessMessages = append(unhealthyProcessMessages, instrumentationInstance.Status.Message)
+					}
+				}
+			}
+		}
+	}
+
+	// check for any unhealthy first, regardless of any other conditions
+	if numUnhealthyProcesses > 0 {
+		reasonStr := string(status.ProcessesHealthStatusReasonOdigosUnhealthyInSomeProcesses)
+		message := fmt.Sprintf("Found %d processes with unhealthy agent", numUnhealthyProcesses)
+		if len(unhealthyProcessMessages) > 0 {
+			message = fmt.Sprintf("%s: %s", message, strings.Join(unhealthyProcessMessages, "; "))
+		}
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressFailure,
+			ReasonEnum: &reasonStr,
+			Message:    message,
+		}, nil
+	}
+
+	if numUnhealthyInstrumentationLibraries > 0 {
+		reasonStr := string(status.ProcessesHealthStatusReasonOdigosUnhealthyInSomeProcesses)
+		message := fmt.Sprintf("unhealthy instrumentation libraries in %d processes", numUnhealthyInstrumentationLibraries)
+		if len(unhealthyInstrumentationLibraryMessages) > 0 {
+			message = fmt.Sprintf("%s: %s", message, strings.Join(unhealthyInstrumentationLibraryMessages, "; "))
+		}
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressFailure,
+			ReasonEnum: &reasonStr,
+			Message:    message,
+		}, nil
+	}
+
+	if !foundAgentOnAnyContainer {
+		reasonStr := string(status.ProcessesHealthStatusReasonNoAgentInjected)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressIrrelevant,
+			ReasonEnum: &reasonStr,
+			Message:    "none of the running pods is instrumented with odigos agent",
+		}, nil
+	}
+
+	if !foundExpectedInstrumentationInstances {
+		reasonStr := string(status.ProcessesHealthStatusReasonUnsupported)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressIrrelevant,
+			ReasonEnum: &reasonStr,
+			Message:    "agents used in this workload does not support health status reporting",
+		}, nil
+	}
+
+	if !foundReadyInstrumentedContainer {
+		reasonStr := string(status.ProcessesHealthStatusReasonContainersNotReady)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressWaiting, // for container to start and become ready
+			ReasonEnum: &reasonStr,
+			Message:    "agent not yet started in any instrumented containers",
+		}, nil
+	}
+
+	if containersWithMissingInstances {
+		reasonStr := string(status.ProcessesHealthStatusReasonNoProcesses)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressWaiting, // instance expected to show up soon
+			ReasonEnum: &reasonStr,
+			Message:    "agent not yet started in all instrumented containers",
+		}, nil
+	}
+
+	if numStartingProcesses > 0 {
+		reasonStr := string(status.ProcessesHealthStatusReasonStarting)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressWaiting,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("Found %d processes with starting agent", numStartingProcesses),
+		}, nil
+	}
+
+	if numHealthyProcesses > 0 {
+		reasonStr := string(status.ProcessesHealthStatusReasonAllHealthy)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("All %d agents in instrumented processes are healthy", numHealthyProcesses),
+		}, nil
+	}
+
+	return nil, nil
+}
+
+func getContainerNamesWithOptionalPodManifestInjection(ic *v1alpha1.InstrumentationConfig) map[string]struct{} {
+	containerNamesWithOptionalPodManifestInjection := map[string]struct{}{}
+	if ic == nil {
+		return containerNamesWithOptionalPodManifestInjection
+	}
+
+	if ic.Spec.PodManifestInjectionOptional {
+		for _, container := range ic.Spec.Containers {
+			if container.PodManifestInjectionOptional {
+				containerNamesWithOptionalPodManifestInjection[container.ContainerName] = struct{}{}
+			}
+		}
+	}
+	return containerNamesWithOptionalPodManifestInjection
+}
+
+func getContainerConfigByName(ic *v1alpha1.InstrumentationConfig, containerName string) *v1alpha1.ContainerAgentConfig {
+	if ic == nil {
+		return nil
+	}
+	for _, container := range ic.Spec.Containers {
+		if container.ContainerName == containerName {
+			return &container
+		}
+	}
+	return nil
+}

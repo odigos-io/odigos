@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-ui
     odigos.io/system-object: "true"
-  name: odigos-ui
+  name: {{ .Values.ui.deploymentName | default "odigos-ui" }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
@@ -18,7 +18,12 @@ spec:
       labels:
         app: odigos-ui
     spec:
-      {{- if .Values.nodeSelector }}
+      {{- if .Values.ui.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.ui.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
@@ -33,10 +38,15 @@ spec:
               app.kubernetes.io/name: odigos-ui
         {{- end }}
       {{- end }}
+      {{- if .Values.ui.priorityClassName }}
+      priorityClassName: {{ .Values.ui.priorityClassName }}
+      {{- end }}
       containers:
       - name: ui
-        {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "ui" "Tag" $imageTag) }}
+        {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        {{- $isEnterprise := not (empty (include "odigos.secretExists" .)) }}
+        {{- $uiComponent := ternary "enterprise-ui" "ui" $isEnterprise }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" $uiComponent "Tag" $imageTag) }}
         args:
           - --namespace=$(CURRENT_NS)
           - --address=0.0.0.0
@@ -45,27 +55,37 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-          {{- if .Values.ui.centralBackendURL }}
-          - name: CENTRAL_BACKEND_WS_URL
+          - name: ODIGOS_LOG_LEVEL
+            value: {{ .Values.ui.logLevel | default .Values.logLevel | default "info" | quote }}
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.ui.resources) }}
+          {{- if $isEnterprise }}
+          # Consumed by the enterprise UI at startup; ignored by the community image.
+          - name: ODIGOS_ONPREM_TOKEN
             valueFrom:
-              configMapKeyRef:
-                name: odigos-config
-                key: centralBackendURL
+              secretKeyRef:
+                name: odigos-pro
+                key: odigos-onprem-token
           {{- end }}
         ports:
           - containerPort: 3000
             name: ui
+          - containerPort: 4317
+            name: otlp-grpc
+            protocol: TCP
         livenessProbe:
           httpGet:
             path: /healthz
             port: 3000
           initialDelaySeconds: 15
           periodSeconds: 20
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /readyz
             port: 3000
           periodSeconds: 10
+          timeoutSeconds: 5
         resources:
 {{ toYaml .Values.ui.resources | indent 10 }}
         securityContext:
@@ -81,14 +101,8 @@ spec:
         - name: ui-db-storage
           emptyDir:
             sizeLimit: 50Mi
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.ui }}
-  {{- if .nodeSelector }}
-      nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
-  {{- end }}
   {{- if .tolerations }}
       tolerations: {{ toYaml .tolerations | nindent 8 }}
   {{- end }}

@@ -17,13 +17,13 @@ func (j *OneUptime) DestType() common.DestinationType {
 func (j *OneUptime) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	uniqueUri := "oneuptime-" + dest.GetID()
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": "https://oneuptime.com/otlp",
 		"encoding": "json",
 		"headers": GenericMap{
 			"Content-Type":      "application/json",
-			"x-oneuptime-token": "${ONEUPTIME_INGESTION_KEY}",
+			"x-oneuptime-token": SecretEnvPlaceholder("ONEUPTIME_INGESTION_KEY", dest),
 		},
 	}
 

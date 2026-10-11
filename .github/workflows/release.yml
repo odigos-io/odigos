@@ -13,12 +13,16 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
 
 env:
   DOCKERHUB_ORG: "keyval"
+  VICTORIA_METRICS_VERSION: "v1.144.0"
+  # Upstream Redis tag re-hosted as odigos-cache:<odigos-tag> (same pattern as VictoriaMetrics).
+  REDIS_VERSION: "8.10.2"
 
 jobs:
-  release-cli:
+  package-helm:
     runs-on: ubuntu-latest
     steps:
       - name: Determine Tag Value
@@ -32,10 +36,93 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ env.TAG }}
+          ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: v3.15.2
+
+      - name: Package Helm charts
+        run: bash ./scripts/package-charts.sh
+
+      - name: Upload packaged chart artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: odigos-chart
+          path: helm/odigos-*.tgz
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Helm charts packaged successfully"
+          failure-description: "ERROR: Failed to package Helm charts"
+          tag: ${{ env.TAG }}
+
+  build-cli:
+    needs: [package-helm]
+    runs-on: depot-ubuntu-24.04-8
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      is_feature_release: ${{ steps.release_type.outputs.is_feature_release }}
+      start_sha: ${{ steps.release_notes.outputs.start_sha }}
+    steps:
+      - name: Determine Tag Value
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+            echo "tag=${{ github.event.client_payload.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
+      - name: Check Release Type
+        id: release_type
+        run: |
+          TAG="${{ env.TAG }}"
+
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-feat\. ]]; then
+            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=true" >> $GITHUB_ENV
+            echo "is_feature_release=true" >> $GITHUB_OUTPUT
+            echo "This is a feature release: $TAG"
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=false" >> $GITHUB_ENV
+            echo "This is a pre-release: $TAG"
+          else
+            echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=false" >> $GITHUB_ENV
+            echo "This is a stable release: $TAG"
+          fi
+
+          # Release branch for tag: v1.17.6 -> releases/v1.17.0
+          VERSION="${TAG#v}"
+          MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
+          echo "RELEASE_BRANCH=releases/v${MAJOR_MINOR}.0" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
+
+      # Ensure the chart is here to be embedded in the CLI
+      - name: Download packaged chart artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: odigos-chart
+          path: cli/pkg/helm/embedded
 
       - name: Set env
         id: vars
@@ -45,26 +132,48 @@ jobs:
           echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos CLI release", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Starting Odigos CLI release for tag ${{ env.TAG }}"
+          failure-description: "ERROR: Failed to start Odigos CLI release"
+          tag: ${{ env.TAG }}
 
       - name: Verify Components Image Ready
         run: |
-          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui")
+          declare -a REPOS=("odigos-autoscaler" "odigos-instrumentor" "odigos-scheduler" "odigos-odiglet" "odigos-collector" "odigos-enterprise-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-insights" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-connector-runtime" "odigos-enterprise-connector-aws" "odigos-enterprise-connector-azure" "odigos-enterprise-connector-gcp" "odigos-enterprise-connector-postgres")
+
           TAG_TO_CHECK=${{ env.TAG }}
 
           for REPO in "${REPOS[@]}"; do
             echo "Checking tag $TAG_TO_CHECK in $REPO..."
-            TAGS_JSON=$(curl -s "https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_ORG }}/$REPO/tags/")
-            if echo "$TAGS_JSON" | grep -q "\"name\":\"$TAG_TO_CHECK\""; then
-                echo "Tag $TAG_TO_CHECK exists in Docker Hub repository $REPO."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://artifactregistry.us-central1.rep.googleapis.com/v1/projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags/$TAG_TO_CHECK")
+
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Tag $TAG_TO_CHECK exists in $REPO."
             else
-                echo "Tag $TAG_TO_CHECK does not exist in Docker Hub repository $REPO."
-                exit 1
+              echo "Tag $TAG_TO_CHECK does NOT exist in $REPO. HTTP status: $HTTP_STATUS"
+              exit 1
             fi
           done
+
+      - id: gcp-auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
+
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -72,32 +181,459 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.24"
+          go-version: "1.26.6"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 18
+
+      - name: Check if Homebrew tap should be updated
+        run: |
+          # Feature drops are not an official channel; do not move the RC tap.
+          if [ "${{ env.IS_FEATURE_RELEASE }}" = "true" ]; then
+            echo "Feature release $TAG — skipping Homebrew tap update"
+            echo "SKIP_HOMEBREW_UPDATE=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # Pre-releases always update their respective tap (homebrew-odigos-cli-rc)
+          if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
+            echo "Pre-release detected, will update Homebrew RC tap"
+            echo "SKIP_HOMEBREW_UPDATE=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # For stable releases, check if this version is newer than what's currently in the tap.
+          # This prevents older patch releases (e.g. v1.16.9) from overwriting a newer version (e.g. v1.17.0).
+          CURRENT_TAP_VERSION=$(curl -sf https://raw.githubusercontent.com/odigos-io/homebrew-odigos-cli/main/odigos.rb \
+            | grep 'version "' | head -1 | sed 's/.*version "\(.*\)"/\1/')
+
+          if [ -z "$CURRENT_TAP_VERSION" ]; then
+            echo "Could not fetch current tap version, will update Homebrew tap"
+            echo "SKIP_HOMEBREW_UPDATE=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # Strip 'v' prefix from release tag for comparison
+          RELEASE_VERSION="${TAG#v}"
+
+          echo "Current Homebrew tap version: $CURRENT_TAP_VERSION"
+          echo "New release version: $RELEASE_VERSION"
+
+          # Use sort -V (version sort) to determine which version is greater
+          HIGHEST=$(printf '%s\n%s' "$CURRENT_TAP_VERSION" "$RELEASE_VERSION" | sort -V | tail -1)
+
+          if [ "$HIGHEST" = "$RELEASE_VERSION" ] && [ "$CURRENT_TAP_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "Release version $RELEASE_VERSION is newer than tap version $CURRENT_TAP_VERSION — will update Homebrew tap"
+            echo "SKIP_HOMEBREW_UPDATE=false" >> $GITHUB_ENV
+          else
+            echo "Release version $RELEASE_VERSION is NOT newer than tap version $CURRENT_TAP_VERSION — skipping Homebrew tap update"
+            echo "SKIP_HOMEBREW_UPDATE=true" >> $GITHUB_ENV
+          fi
+      - name: Check if the :latest image tag should move
+        run: |
+          # Decide whether this release owns :latest, i.e. whether the tag
+          # being released is the newest version we have. Only then may the
+          # image tag move; every other release still publishes under its own
+          # version tag.
+
+          # A pre-release is never the newest shipped version.
+          if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
+            echo "Pre-release $TAG — leaving :latest where it is"
+            echo "PUSH_LATEST=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # Highest stable vX.Y.Z tag in the repo. The tag being released is
+          # already among them, so it comes out on top when it really is the
+          # newest — and loses to a higher one when this is a patch cut from an
+          # older release branch.
+          HIGHEST_STABLE=$(git tag -l 'v*' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -1)
+
+          if [ -z "$HIGHEST_STABLE" ]; then
+            echo "No stable tags found — moving :latest"
+            echo "PUSH_LATEST=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          echo "Releasing: $TAG   highest stable tag: $HIGHEST_STABLE"
+          if [ "$TAG" = "$HIGHEST_STABLE" ]; then
+            echo "$TAG is the newest stable release — moving :latest"
+            echo "PUSH_LATEST=true" >> $GITHUB_ENV
+          else
+            echo "$TAG is older than $HIGHEST_STABLE — leaving :latest where it is"
+            echo "PUSH_LATEST=false" >> $GITHUB_ENV
+          fi
+
+      - name: Decide which homebrew repository to authenticate against
+        run: |
+          HOMEBREW_REPO="homebrew-odigos-cli-rc"
+          if [ "${{ env.IS_PRERELEASE }}" != "true" ]; then
+            HOMEBREW_REPO="homebrew-odigos-cli"
+          fi
+          echo "Using Homebrew repository: $HOMEBREW_REPO"
+          echo "HOMEBREW_REPO=$HOMEBREW_REPO" >> $GITHUB_ENV
+
+      - name: Check if CLI GitHub release assets already exist
+        id: existing_cli_assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.TAG }}
+        run: |
+          VERSION="${TAG#v}"
+          EXPECTED=(
+            "cli_${VERSION}_darwin_amd64.tar.gz"
+            "cli_${VERSION}_darwin_arm64.tar.gz"
+            "cli_${VERSION}_linux_amd64.tar.gz"
+            "cli_${VERSION}_linux_arm64.tar.gz"
+            "cli_${VERSION}_windows_amd64.tar.gz"
+            "cli_${VERSION}_windows_arm64.tar.gz"
+            "checksums.txt"
+          )
+
+          if ! gh release view "$TAG" --json assets --jq '.assets[].name' > /tmp/release-assets.txt 2>/dev/null; then
+            echo "No GitHub release for $TAG yet — goreleaser will create it"
+            echo "skip_goreleaser=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          missing=()
+          for name in "${EXPECTED[@]}"; do
+            if ! grep -Fxq "$name" /tmp/release-assets.txt; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "All CLI archives already on $TAG — skipping goreleaser"
+            echo "skip_goreleaser=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Missing CLI assets on $TAG: ${missing[*]} — goreleaser will upload"
+            echo "skip_goreleaser=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: odigos-io/ci-core/sts@main
+        if: steps.existing_cli_assets.outputs.skip_goreleaser != 'true'
+        id: sts-goreleaser
+        with:
+          scope: odigos-io/${{ env.HOMEBREW_REPO }}
+          identity: releaser
+          output-git-config: "false"
+
+      - uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 #v7.0.0
+        id: goreleaser
+        if: steps.existing_cli_assets.outputs.skip_goreleaser != 'true'
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ steps.sts-goreleaser.outputs.GH_TOKEN }}
+          IS_PRERELEASE: ${{ env.IS_PRERELEASE }}
+          SKIP_HOMEBREW_UPDATE: ${{ env.SKIP_HOMEBREW_UPDATE }}
+          GORELEASER_CURRENT_TAG: ${{ env.TAG }}
+
+      - name: Notify Slack (goreleaser)
+        if: failure() && steps.goreleaser.outcome == 'failure'
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "CLI GitHub release assets published"
+          failure-description: "ERROR: Failed to publish CLI GitHub release assets (goreleaser)"
+          tag: ${{ env.TAG }}
+
+      - name: Generate and update release notes
+        id: release_notes
+        if: env.IS_FEATURE_RELEASE != 'true'
+        uses: odigos-io/ci-core/generate-release-notes@main
+        continue-on-error: true
+        with:
+          tag: ${{ env.TAG }}
+          release-branch: ${{ env.RELEASE_BRANCH }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify Slack (release notes)
+        if: always() && env.IS_FEATURE_RELEASE != 'true' && steps.release_notes.outcome != 'skipped'
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Release notes updated successfully"
+          failure-description: "ERROR: Failed to update release notes"
+          tag: ${{ env.TAG }}
 
       - uses: ko-build/setup-ko@v0.9
 
       - name: publish cli image to docker registries
+        id: ko-cli
         working-directory: ./cli
         env:
-          KO_DOCKER_REPO: ${{ env.DOCKERHUB_ORG }}/odigos-cli
+          KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
           KO_CONFIG_PATH: ./.ko.yaml
           VERSION: ${{ env.TAG }}
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
           DATE: ${{ steps.vars.outputs.date }}
         run: |
-          ko build --bare --tags latest --tags ${{ env.TAG }} --platform=all .
+          KO_TAGS="--tags ${{ env.TAG }}"
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            KO_TAGS="$KO_TAGS --tags latest"
+          fi
+          echo "ko tags: $KO_TAGS"
+          # ko prints the pushed ref with its digest; capture it so the image
+          # can be signed by digest rather than by mutable tag.
+          IMAGE_REF=$(ko build --bare $KO_TAGS --platform=linux/amd64,linux/arm64)
+          echo "built: ${IMAGE_REF}"
+          case "$IMAGE_REF" in
+            *@sha256:*) echo "digest=${IMAGE_REF##*@}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::ko did not return a digest ref: ${IMAGE_REF}"; exit 1 ;;
+          esac
 
-      - name: Notify Slack on Failure
-        if: ${{ failure() || cancelled() }}
+      # Sign at the source registry before mirroring, so the mirrors can carry
+      # the signature and SBOM along as OCI referrers. Fail-closed.
+      - name: Sign CLI image and attach SBOM
+        uses: odigos-io/ci-core/sign-oci@main
+        with:
+          refs: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
+          digest: ${{ steps.ko-cli.outputs.digest }}
+
+      - name: Install oras
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+
+      - name: Copy CLI image to Docker Hub and private GCR
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
+          SOURCE_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cli
+          GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cli
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+          # oras copy -r rather than crane copy: -r copies the referrers graph
+          # (cosign signature and SBOM attestation) along with the image, so
+          # the mirrors stay verifiable. crane copy moves only the manifest.
+          oras copy -r ${SOURCE_IMAGE}:${{ env.TAG }} ${DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE}:${{ env.TAG }} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+
+          # Mirror :latest only when this release owns it, so the mirrors stay
+          # in step with the source registry.
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            oras copy -r ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE}:latest ${GCR_PRIVATE_DEST_IMAGE}:latest
+          else
+            echo "Skipping :latest mirror for ${{ env.TAG }}"
+          fi
+
+      - name: Copy VictoriaMetrics image to Docker Hub and GCR
+        id: vm-copy
+        env:
+          SOURCE_IMAGE: docker.io/victoriametrics/victoria-metrics:${{ env.VICTORIA_METRICS_VERSION }}
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
+          GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
+          GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
+        run: |
+          oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+
+          # VICTORIA_METRICS_VERSION is pinned per branch, so :latest here
+          # tracks whichever release owns it rather than the last one to run.
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+          else
+            echo "Skipping :latest mirror for ${{ env.TAG }}"
+          fi
+
+          # The copy preserves the upstream digest; capture it so our copies
+          # can be signed by digest.
+          echo "digest=$(oras resolve ${SOURCE_IMAGE})" >> "$GITHUB_OUTPUT"
+
+      # VictoriaMetrics is a re-host of an upstream image under our name. The
+      # signature attests that WE published this exact digest in our
+      # registries — not that we built it. Signed at the destinations because
+      # there is no upstream cosign signature to carry over.
+      - name: Sign re-hosted VictoriaMetrics image
+        uses: odigos-io/ci-core/sign-oci@main
+        with:
+          refs: |
+            docker.io/${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
+            us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
+          digest: ${{ steps.vm-copy.outputs.digest }}
+
+      - name: Copy Redis image to Docker Hub and GCR as odigos-cache
+        id: cache-copy
+        env:
+          SOURCE_IMAGE: docker.io/library/redis:${{ env.REDIS_VERSION }}
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cache
+          GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cache
+          GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cache
+        run: |
+          oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+
+          # REDIS_VERSION is pinned per branch, so :latest here tracks whichever
+          # release owns it rather than the last one to run.
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+          else
+            echo "Skipping :latest mirror for ${{ env.TAG }}"
+          fi
+
+          # The copy preserves the upstream digest; capture it so our copies
+          # can be signed by digest.
+          echo "digest=$(oras resolve ${SOURCE_IMAGE})" >> "$GITHUB_OUTPUT"
+
+      # Redis is a re-host of an upstream image under our name. The signature
+      # attests that WE published this exact digest in our registries — not that
+      # we built it. Signed at the destinations because there is no upstream
+      # cosign signature to carry over.
+      - name: Sign re-hosted odigos-cache image
+        uses: odigos-io/ci-core/sign-oci@main
+        with:
+          refs: |
+            docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cache
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cache
+            us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cache
+          digest: ${{ steps.cache-copy.outputs.digest }}
+
+      - name: Set notification messages
+        run: |
+          if [ "${{ env.IS_FEATURE_RELEASE }}" = "true" ]; then
+            echo "SUCCESS_MSG=Odigos CLI feature release completed successfully" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
+          elif [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
+            echo "SUCCESS_MSG=Odigos CLI stable release completed successfully" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
+          else
+            echo "SUCCESS_MSG=Odigos CLI pre-release completed successfully" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
+          fi
+
+      - name: Notify Slack
+        if: always() && steps.ko-cli.outcome != 'skipped'
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: ${{ env.SUCCESS_MSG }}
+          failure-description: ${{ env.FAILURE_MSG }}
+          tag: ${{ env.TAG }}
+
+  publish-helm:
+    needs: [build-cli]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine Tag Value
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "bot@odigos.io"
+          git config --global user.name "Odigos Release Bot"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: v3.15.2
+
+      - name: Download packaged chart artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: odigos-chart
+          path: helm/
+
+      - name: Publish Helm charts
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+        run: bash ./scripts/publish-charts.sh
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Helm charts published successfully. new version is ready"
+          failure-description: "ERROR: Failed to publish Helm charts"
+          tag: ${{ env.TAG }}
+
+  # Mirrors the tag into the "odigos" release pipeline in Linear with the issues that
+  # shipped in it. Its own job, not a step on build-cli: that keeps the third-party CLI
+  # away from the goreleaser and STS tokens, and keeps remote-action resolution — which
+  # happens during job setup, before continue-on-error applies — out of the job that
+  # publishes the release.
+  linear-release:
+    needs: [build-cli]
+    if: needs.build-cli.outputs.is_feature_release != 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build-cli.outputs.tag }}
+          fetch-depth: 0 # the scan walks commit history
+          fetch-tags: true
+
+      - name: Fetch the GitHub release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build-cli.outputs.tag }}
+        run: |
+          set -uo pipefail
+          if ! gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+               --json body --jq .body > release-notes.md; then
+            echo "::warning::could not read the GitHub release notes for ${TAG}"
+          fi
+          # Whitespace-only is worse than nothing: an empty note still occupies the slot
+          # in Linear and suppresses its own generation.
+          grep -q '[^[:space:]]' release-notes.md 2>/dev/null || rm -f release-notes.md
+
+      # A sync lands in the pipeline's first started stage, PRE, so a -pre build needs no
+      # promotion. Only Released is a completed stage, so "done on release" style
+      # automation fires for stable builds alone.
+      - name: Decide the release stage
+        id: stage
+        env:
+          TAG: ${{ needs.build-cli.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "name=Released" >> "$GITHUB_OUTPUT"
+          elif [[ "${TAG}" =~ -rc\.?[0-9]+$ ]]; then
+            echo "name=RC" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: odigos-io/ci-core/linear-release@main
+        with:
+          access-key: ${{ secrets.LINEAR_RELEASE_ACCESS_KEY }}
+          name: ${{ needs.build-cli.outputs.tag }}
+          version: ${{ needs.build-cli.outputs.tag }}
+          # generate-release-notes already resolved the range for this tag; reusing it
+          # keeps the issues attached here and the notes on the release in step.
+          base-ref: ${{ needs.build-cli.outputs.start_sha }}
+          release-notes: release-notes.md
+          stage: ${{ steps.stage.outputs.name }}
+          links: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.build-cli.outputs.tag }}
+

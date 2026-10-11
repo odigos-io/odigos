@@ -1,0 +1,11 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: disable-nodejs-express
+spec:
+  ruleName: "disable nodejs express"
+  notes: "Auto generated rule from disable-nodejs-express profile. Do not edit."
+  traceVerbosity:
+    disabledLibraries:
+      - libraryName: "@opentelemetry/instrumentation-express"
+        Language: javascript

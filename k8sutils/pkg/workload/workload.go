@@ -1,32 +1,32 @@
 package workload
 
 import (
-	"context"
 	"errors"
 
-	"github.com/odigos-io/odigos/common/consts"
-
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Workload interface {
 	client.Object
 	AvailableReplicas() int32
-	PodTemplateSpec() *corev1.PodTemplateSpec
+	LabelSelector() *metav1.LabelSelector
+	PodSpec() *corev1.PodSpec
 }
 
 // compile time check for interface implementation
 var _ Workload = &DeploymentWorkload{}
 var _ Workload = &DaemonSetWorkload{}
 var _ Workload = &StatefulSetWorkload{}
+var _ Workload = &StaticPodWorkload{}
 var _ Workload = &CronJobWorkloadV1{}
-var _ Workload = &CronJobWorkloadBeta{}
+var _ Workload = &DeploymentConfigWorkload{}
+var _ Workload = &ArgoRolloutWorkload{}
 
 type DeploymentWorkload struct {
 	*v1.Deployment
@@ -36,8 +36,12 @@ func (d *DeploymentWorkload) AvailableReplicas() int32 {
 	return d.Status.AvailableReplicas
 }
 
-func (d *DeploymentWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &d.Spec.Template
+func (d *DeploymentWorkload) PodSpec() *corev1.PodSpec {
+	return &d.Spec.Template.Spec
+}
+
+func (d *DeploymentWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
 }
 
 type DaemonSetWorkload struct {
@@ -48,8 +52,12 @@ func (d *DaemonSetWorkload) AvailableReplicas() int32 {
 	return d.Status.NumberReady
 }
 
-func (d *DaemonSetWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &d.Spec.Template
+func (d *DaemonSetWorkload) PodSpec() *corev1.PodSpec {
+	return &d.Spec.Template.Spec
+}
+
+func (d *DaemonSetWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
 }
 
 type StatefulSetWorkload struct {
@@ -60,32 +68,81 @@ func (s *StatefulSetWorkload) AvailableReplicas() int32 {
 	return s.Status.ReadyReplicas
 }
 
-func (s *StatefulSetWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &s.Spec.Template
+func (s *StatefulSetWorkload) PodSpec() *corev1.PodSpec {
+	return &s.Spec.Template.Spec
+}
+
+type StaticPodWorkload struct {
+	*corev1.Pod
+}
+
+func (s *StaticPodWorkload) AvailableReplicas() int32 {
+	if s.Status.Phase == corev1.PodRunning {
+		return 1
+	}
+	return 0
+}
+
+func (s *StaticPodWorkload) PodSpec() *corev1.PodSpec {
+	return &s.Spec
+}
+
+func (s *StaticPodWorkload) LabelSelector() *metav1.LabelSelector {
+	return nil
+}
+
+func (s *StatefulSetWorkload) LabelSelector() *metav1.LabelSelector {
+	return s.Spec.Selector
 }
 
 type CronJobWorkloadV1 struct {
 	*batchv1.CronJob
 }
 
-type CronJobWorkloadBeta struct {
-	*batchv1beta1.CronJob
+func (c *CronJobWorkloadV1) LabelSelector() *metav1.LabelSelector {
+	return nil
 }
 
 func (c *CronJobWorkloadV1) AvailableReplicas() int32 {
 	return int32(len(c.Status.Active))
 }
 
-func (c *CronJobWorkloadV1) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &c.Spec.JobTemplate.Spec.Template
+func (c *CronJobWorkloadV1) PodSpec() *corev1.PodSpec {
+	return &c.Spec.JobTemplate.Spec.Template.Spec
 }
 
-func (c *CronJobWorkloadBeta) AvailableReplicas() int32 {
-	return int32(len(c.Status.Active))
+type DeploymentConfigWorkload struct {
+	*openshiftappsv1.DeploymentConfig
 }
 
-func (c *CronJobWorkloadBeta) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &c.Spec.JobTemplate.Spec.Template
+func (d *DeploymentConfigWorkload) AvailableReplicas() int32 {
+	return d.Status.AvailableReplicas
+}
+
+func (d *DeploymentConfigWorkload) PodSpec() *corev1.PodSpec {
+	return &d.Spec.Template.Spec
+}
+
+func (d *DeploymentConfigWorkload) LabelSelector() *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: d.Spec.Selector,
+	}
+}
+
+type ArgoRolloutWorkload struct {
+	*argorolloutsv1alpha1.Rollout
+}
+
+func (d *ArgoRolloutWorkload) AvailableReplicas() int32 {
+	return d.Status.AvailableReplicas
+}
+
+func (d *ArgoRolloutWorkload) PodSpec() *corev1.PodSpec {
+	return &d.Spec.Template.Spec
+}
+
+func (d *ArgoRolloutWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
 }
 
 func ObjectToWorkload(obj client.Object) (Workload, error) {
@@ -96,64 +153,18 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 		return &DaemonSetWorkload{DaemonSet: t}, nil
 	case *v1.StatefulSet:
 		return &StatefulSetWorkload{StatefulSet: t}, nil
+	case *corev1.Pod:
+		if IsStaticPod(t) {
+			return &StaticPodWorkload{Pod: t}, nil
+		}
+		return nil, errors.New("currently not supporting standalone pods which are not static as workloads")
 	case *batchv1.CronJob:
 		return &CronJobWorkloadV1{CronJob: t}, nil
-	case *batchv1beta1.CronJob:
-		return &CronJobWorkloadBeta{CronJob: t}, nil
+	case *openshiftappsv1.DeploymentConfig:
+		return &DeploymentConfigWorkload{DeploymentConfig: t}, nil
+	case *argorolloutsv1alpha1.Rollout:
+		return &ArgoRolloutWorkload{Rollout: t}, nil
 	default:
 		return nil, errors.New("unknown kind")
 	}
-}
-
-// Deprecated: this should only be used for backward compatibility migration.
-func IsObjectLabeledForInstrumentation(obj client.Object) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
-		return false
-	}
-
-	val, exists := labels[consts.OdigosInstrumentationLabel]
-	if !exists {
-		return false
-	}
-
-	return val == consts.InstrumentationEnabled
-}
-
-// Deprecated: this should only be used for backward compatibility migration.
-func IsWorkloadInstrumentationEffectiveEnabled(ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
-	// if the object itself is labeled, we will use that value
-	workloadLabels := obj.GetLabels()
-	if val, exists := workloadLabels[consts.OdigosInstrumentationLabel]; exists {
-		return val == consts.InstrumentationEnabled, nil
-	}
-
-	// we will get here if the workload instrumentation label is not set.
-	// no label means inherit the instrumentation value from namespace.
-	var ns corev1.Namespace
-	err := kubeClient.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
-	if err != nil {
-		logger := log.FromContext(ctx)
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-
-		logger.Error(err, "error fetching namespace object")
-		return false, err
-	}
-
-	return IsObjectLabeledForInstrumentation(&ns), nil
-}
-
-// Deprecated: this should only be used for backward compatibility migration.
-func IsInstrumentationDisabledExplicitly(obj client.Object) bool {
-	labels := obj.GetLabels()
-	if labels != nil {
-		val, exists := labels[consts.OdigosInstrumentationLabel]
-		if exists && val == consts.InstrumentationDisabled {
-			return true
-		}
-	}
-
-	return false
 }

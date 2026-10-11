@@ -99,12 +99,14 @@ def generate_signals(yaml_content):
     with_traces = signals.get("traces", {}).get("supported", False)
     with_metrics = signals.get("metrics", {}).get("supported", False)
     with_logs = signals.get("logs", {}).get("supported", False)
+    with_profiles = signals.get("profiles", {}).get("supported", False)
 
     content = (
         "<Accordion title=\"Supported Signals:\">"
         + f"\n{indent_lines('✅' if with_traces else '❌', 2)} Traces"
         + f"\n{indent_lines('✅' if with_metrics else '❌', 2)} Metrics"
         + f"\n{indent_lines('✅' if with_logs else '❌', 2)} Logs"
+        + f"\n{indent_lines('✅' if with_profiles else '❌', 2)} Profiles"
         + "\n</Accordion>"
     )
 
@@ -241,6 +243,8 @@ def generate_kubectl_apply(yaml_content):
         destination_yaml["spec"]["signals"].append("METRICS")
     if signals.get("logs", {}).get("supported", False):
         destination_yaml["spec"]["signals"].append("LOGS")
+    if signals.get("profiles", {}).get("supported", False):
+        destination_yaml["spec"]["signals"].append("PROFILES")
 
     # Separate required, optional, and secret fields
     required_fields = {}
@@ -551,7 +555,7 @@ def process_overview(backend_yaml_dir, docs_dir):
     Returns:
         None
     """
-    overview_path = os.path.join(docs_dir, "backends-overview.mdx")
+    overview_path = os.path.join(docs_dir, "snippets/shared/backends-overview.mdx")
 
     rows = []
     for root, _, files in os.walk(backend_yaml_dir):
@@ -572,22 +576,17 @@ def process_overview(backend_yaml_dir, docs_dir):
                         f"{'Managed' if category == 'managed' else 'Self-Hosted'} | "
                         f"{'✅' if signals.get('traces', {}).get('supported', False) else ''} | "
                         f"{'✅' if signals.get('metrics', {}).get('supported', False) else ''} | "
-                        f"{'✅' if signals.get('logs', {}).get('supported', False) else ''} |"
+                        f"{'✅' if signals.get('logs', {}).get('supported', False) else ''} | "
+                        f"{'✅' if signals.get('profiles', {}).get('supported', False) else ''} |"
                     )
 
     content = (
-        "---"
-        + "\ntitle: 'Overview'"
-        + "\ndescription: 'Odigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination.'"
-        + "\nsidebarTitle: 'Overview'"
-        + "\nicon: 'house'"
-        + "\n---"
-        + "\n\n<Tip>"
+        "<Tip>"
         + "\n  Can't find your backend in Odigos? Please tell us! We are constantly adding new integrations.<br />"
         + "\n  You can also follow our quick [add new destination](/adding-new-dest) guide and submit a PR."
         + "\n</Tip>"
-        + "\n\n| | | | Traces | Metrics | Logs |"
-        + "\n|---|---|---|:---:|:---:|:---:|"
+        + "\n\n| | | | Traces | Metrics | Logs | Profiles |"
+        + "\n|---|---|---|:---:|:---:|:---:|:---:|"
         + "\n"
         + "\n".join(rows)
     )
@@ -598,7 +597,7 @@ def process_overview(backend_yaml_dir, docs_dir):
 
 def process_mint(backend_mdx_dir, docs_dir):
     """
-    This function will update the Mint navigation to include the new backends.
+    This function will update the docs.json navigation to include the new backends.
 
     Args:
         backend_mdx_dir (str): Path to the MDX files directory.
@@ -607,39 +606,51 @@ def process_mint(backend_mdx_dir, docs_dir):
     Returns:
         None
     """
-    mint_path = os.path.join(docs_dir, "mint.json")
+    docs_json_path = os.path.join(docs_dir, "docs.json")
 
     # Load the JSON file
-    with open(mint_path, 'r') as file:
-        mint_data = json.load(file)
+    with open(docs_json_path, 'r') as file:
+        docs_data = json.load(file)
 
-    # Locate the "Destinations" group within "navigation"
-    destinations_group = next((
-        nav for nav in mint_data.get("navigation", [])
-        if nav.get("group") == "Destinations"
-    ), None)
-
-    # Locate the group with "Supported Backends" within "pages"
-    supported_backends_group = next((
-        page for page in destinations_group.get("pages", [])
-        if isinstance(page, dict) and page.get("group") == "Supported Backends"
-    ), None)
-
-    # Replace the "pages" array with new backend paths
-    mint_pages = []
+    # Build sorted list of backend page names
+    backend_pages = []
     for _, _, files in os.walk(backend_mdx_dir):
         for file in files:
             if file.endswith('.mdx'):
-                mint_pages.append(f"backends/{file.replace('.mdx', '')}")
-    supported_backends_group["pages"] = sorted(mint_pages)
+                backend_pages.append(file.replace('.mdx', ''))
+    backend_pages = sorted(backend_pages)
+
+    # Update backend pages for each K8s Agent tab (oss and enterprise)
+    k8s_product = next((
+        p for p in docs_data.get("navigation", {}).get("products", [])
+        if p.get("product") == "K8s Agent"
+    ), None)
+
+    if k8s_product:
+        # docs.json may list tabs under product ("tabs") or under "versions"[] (legacy).
+        tabs_to_process = []
+        if k8s_product.get("versions"):
+            for version in k8s_product["versions"]:
+                tabs_to_process.extend(version.get("tabs", []))
+        else:
+            tabs_to_process = k8s_product.get("tabs", [])
+
+        for tab in tabs_to_process:
+            tab_href = tab.get("href", "")
+            prefix = f"{tab_href}/backends" if tab_href else "backends"
+            for group in tab.get("groups", []):
+                if group.get("group") == "Destinations":
+                    for page in group.get("pages", []):
+                        if isinstance(page, dict) and page.get("group") == "Supported Backends":
+                            page["pages"] = [f"{prefix}/{name}" for name in backend_pages]
 
     # Save the modified JSON back to the file
-    with open(mint_path, 'w') as file:
-        json.dump(mint_data, file, indent=2)
+    with open(docs_json_path, 'w') as file:
+        json.dump(docs_data, file, indent=2)
 
 
 if __name__ == "__main__":
-    backend_mdx_dir = "./backends"
+    backend_mdx_dir = "./snippets/shared/backends"
     backend_yaml_dir = "../destinations/data"
     docs_dir = "."
 

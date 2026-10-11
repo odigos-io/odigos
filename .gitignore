@@ -4,6 +4,8 @@ node_modules
 .DS_Store
 go.work.sum
 go.work
+go.work.sum.bak
+go.work.bak
 cli/odigos
 .venv
 **/__pycache__/
@@ -14,7 +16,10 @@ serving-certs/
 /odigos
 gha-creds-*.json
 artifacts/
-preflight*
+/preflight*
+.env
+.yalc
+yalc.lock
 
 **.tfstate
 **.tfstate.backup
@@ -22,3 +27,9 @@ preflight*
 
 *.log
 *.logs
+**/__debug_bin*
+
+# CLI embedded Helm charts (generated during build)
+cli/pkg/helm/embedded/*.tgz
+
+kubeconfig

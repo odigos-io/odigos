@@ -6,24 +6,38 @@ import (
 	"fmt"
 	"time"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/distros"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-const requeueWaitingForWorkloadRollout = 10 * time.Second
+const RequeueWaitingForWorkloadRollout = 10 * time.Second
+
+type RolloutResult struct {
+	StatusChanged bool
+	// Result contains the controller result for requeue behavior.
+	Result ctrl.Result
+}
+
+// WorkloadKey generates a unique key for rate limiting purposes
+func WorkloadKey(pw k8sconsts.PodWorkload) string {
+	return fmt.Sprintf("%s/%s/%s", pw.Namespace, pw.Kind, pw.Name)
+}
 
 // Do potentially triggers a rollout for the given workload based on the given instrumentation config.
 // If the instrumentation config is nil, the workload is rolled out - this is used for un-instrumenting workloads.
@@ -34,163 +48,242 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 // If a rollout is triggered the status of the instrumentation config is updated with the new rollout hash
 // and a corresponding condition is set.
 //
-// Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
-func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration) (bool, ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	automaticRolloutDisabled := conf.Rollout != nil && conf.Rollout.AutomaticRolloutDisabled != nil && *conf.Rollout.AutomaticRolloutDisabled
+// Returns a RolloutResult and an error.
+func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration, distroProvider *distros.Provider, rolloutConcurrencyLimiter *RolloutConcurrencyLimiter) (RolloutResult, error) {
+	isAutomaticRolloutDisabled, rollBackOptions, configErr := getRolloutAndRollbackOptions(conf)
+	if configErr != nil {
+		return RolloutResult{}, configErr
+	}
+	logger := commonlogger.FromContext(ctx)
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
-	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
-	if err != nil {
-		return false, ctrl.Result{}, client.IgnoreNotFound(err)
+	getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
+	if getErr != nil {
+		return RolloutResult{}, client.IgnoreNotFound(getErr)
+	}
+
+	// Don't allow rollout of static pods, cronjobs or jobs
+	if pw.Kind == k8sconsts.WorkloadKindStaticPod {
+		if ic == nil {
+			return RolloutResult{}, nil
+		}
+
+		changed := false
+		if ic.Spec.PodManifestInjectionOptional {
+			changed = meta.SetStatusCondition(&ic.Status.Conditions, conditionRestartNotRequiredForDistro)
+		} else {
+			changed = meta.SetStatusCondition(&ic.Status.Conditions, conditionStaticPodsNotSupported)
+		}
+		return RolloutResult{StatusChanged: changed}, nil
 	}
 
 	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
-		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
-			Status:  metav1.ConditionTrue,
-			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart),
-			Message: "Waiting for job to trigger by itself",
-		})
-		return statusChanged, ctrl.Result{}, nil
+		if ic == nil {
+			return RolloutResult{}, nil
+		}
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionWaitingForJobTrigger)
+		return RolloutResult{StatusChanged: changed}, nil
 	}
 
 	if ic == nil {
 		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label,
 		// it means it is a rolled back application that shouldn't be rolled out again.
-		hasAgents, err := workloadHasOdigosAgents(ctx, c, workloadObj)
-		if err != nil {
-			logger.Error(err, "failed to check for odigos agent labels")
-			return false, ctrl.Result{}, err
+		hasAgents, agentsErr := workloadHasOdigosAgents(ctx, c, workloadObj)
+		if agentsErr != nil {
+			logger.Error(agentsErr, "failed to check for odigos agent labels")
+			return RolloutResult{}, agentsErr
 		}
 		if !hasAgents {
 			logger.Info("skipping rollout - workload already runs without odigos agents",
 				"workload", pw.Name, "namespace", pw.Namespace)
-			return false, ctrl.Result{}, nil
+			return RolloutResult{}, nil
 		}
 
-		if automaticRolloutDisabled {
+		// Just because an IC is nil, it doesn't mean the workload is not instrumented.
+		// The workload may be instrumented by a source (and the IC may just temporarily be missing)
+		// So we need to check if the workload is still marked for instrumentation.
+		// For example, in a racey scenario where a workload is deleted and quickly replaced (such as with ArgoCD),
+		// the new workload may exist before the IC is actually garbage collected by the deletion of the old workload.
+		// Without this check, it would look like the IC was intentionally deleted (ie, via sourceinstrumentation controller).
+		// This is a safety check: ic==nil is the signal, but the Source is the source of truth.
+		stillInstrumented, instrumentedErr := workloadStillMarkedForInstrumentation(ctx, c, pw)
+		if instrumentedErr != nil {
+			logger.Error(instrumentedErr, "failed to check if workload is still marked for instrumentation")
+			return RolloutResult{}, instrumentedErr
+		}
+		if stillInstrumented {
+			logger.Info("skipping uninstrumentation rollout - workload is still covered by an active source",
+				"workload", pw.Name, "namespace", pw.Namespace)
+			return RolloutResult{}, nil
+		}
+
+		if isAutomaticRolloutDisabled {
 			logger.Info("skipping rollout to uninstrument workload source - automatic rollout is disabled",
 				"workload", pw.Name, "namespace", pw.Namespace)
-			return false, ctrl.Result{}, nil
+			return RolloutResult{}, nil
 		}
 
 		// instrumentation config is deleted, trigger a rollout for the associated workload
 		// this should happen once per workload, as the instrumentation config is deleted
 		// and we want to rollout the workload to remove the instrumentation
+		// Note: uninstrumentation rollouts are not rate limited since we can't track completion
+		// (the IC is deleted so we won't get subsequent reconciles)
+		logger.Debug("proceeding with uninstrumentation rollout",
+			"workload", pw.Name,
+			"namespace", pw.Namespace)
+		rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
 		rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-		return false, ctrl.Result{}, client.IgnoreNotFound(rolloutErr)
+		return RolloutResult{}, client.IgnoreNotFound(rolloutErr)
 	}
 
-	rollbackDisabled := false
-	if conf.RollbackDisabled != nil {
-		rollbackDisabled = *conf.RollbackDisabled
-	}
-
-	rollbackGraceTime, _ := time.ParseDuration(consts.DefaultAutoRollbackGraceTime)
-	if conf.RollbackGraceTime != "" {
-		rollbackGraceTime, err = time.ParseDuration(conf.RollbackGraceTime)
-		if err != nil {
-			return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
+	// Check if recovery from rollback is needed before proceeding with rollout logic.
+	// If recovery is needed, persist the changes and requeue so the next reconcile
+	// recomputes the spec with RollbackOccurred cleared.
+	if recoverFromRollback(ic) {
+		if err := c.Update(ctx, ic); err != nil {
+			result, handledErr := utils.K8SUpdateErrorHandler(err)
+			return RolloutResult{Result: result}, handledErr
 		}
-	}
-
-	rollbackStabilityWindow, _ := time.ParseDuration(consts.DefaultAutoRollbackStabilityWindow)
-	if conf.RollbackStabilityWindow != "" {
-		rollbackStabilityWindow, err = time.ParseDuration(conf.RollbackStabilityWindow)
-		if err != nil {
-			return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
+		// c.Update refreshes the in-memory object, overwriting status changes. Re-apply and persist.
+		ic.Status.RollbackOccurred = false
+		if err := c.Status().Update(ctx, ic); err != nil {
+			result, handledErr := utils.K8SUpdateErrorHandler(err)
+			return RolloutResult{Result: result}, handledErr
 		}
+		return RolloutResult{Result: ctrl.Result{Requeue: true}}, nil
 	}
 
-	if automaticRolloutDisabled {
+	if ic.Spec.PodManifestInjectionOptional {
+		// all distributions used by this workload do not require a restart
+		// thus, no rollout is needed
+		rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionRestartNotRequiredForDistro)
+		return RolloutResult{StatusChanged: changed}, nil
+	}
+
+	if isAutomaticRolloutDisabled {
 		// TODO: add more fine grained status conditions for this case.
 		// For example: if the workload has already been rolled out, we can set the status to true
 		// and signal that the process is considered completed.
 		// If manual rollout is required, we can mention this for better UX.
-		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
-			Status:  metav1.ConditionTrue, // this might not be a success, need to refine into multiple discrete states
-			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonDisabled),
-			Message: "odigos automatic rollout is disabled",
-		})
-		return statusChanged, ctrl.Result{}, nil
+		rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionRolloutDisabled)
+		return RolloutResult{StatusChanged: changed}, nil
 	}
 
+	workloadKey := WorkloadKey(pw)
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
+	// Scenario: successful instrumentation ("X"="X") or successful uninstrumentation (""="")
 	if savedRolloutHash == newRolloutHash {
-		if !isWorkloadRolloutDone(workloadObj) && !rollbackDisabled {
-			timeSinceCrashLoopBackOff, err := crashLoopBackOffDuration(ctx, c, workloadObj)
+		rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
+
+		if !rolloutDone && !rollBackOptions.IsRollbackDisabled {
+			// Rollback scenario: already instrumented workload is in backoff state, trigger rollback.
+			shouldRollback, waitDuration, backOffInfo, err := shouldTriggerRollback(
+				ctx, c, ic, workloadObj, rollBackOptions,
+			)
 			if err != nil {
-				logger.Error(err, "Failed to check crashLoopBackOff")
-				return false, ctrl.Result{}, err
+				logger.Error(err, "Failed to check pod backoff status")
+				return RolloutResult{}, err
+			}
+			if waitDuration > 0 && shouldRollback {
+				return RolloutResult{Result: ctrl.Result{RequeueAfter: waitDuration}}, nil
+			}
+			if shouldRollback {
+				return triggerRollback(ctx, c, logger, ic, workloadObj, workloadKey,
+					rolloutConcurrencyLimiter, &backOffInfo, pw)
 			}
 
-			if ic.Status.InstrumentationTime == nil {
-				return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
-			}
-			now := time.Now()
-			timeSinceInstrumentation := now.Sub(ic.Status.InstrumentationTime.Time)
-
-			if timeSinceCrashLoopBackOff > 0 && timeSinceInstrumentation < rollbackStabilityWindow && ic.Spec.AgentInjectionEnabled {
-				// Allow grace time for worklaod to stabelize before uninstrumenting it
-				if timeSinceCrashLoopBackOff < rollbackGraceTime {
-					return false, ctrl.Result{RequeueAfter: rollbackGraceTime - timeSinceCrashLoopBackOff}, nil
-				}
-
-				for i := range ic.Spec.Containers {
-					ic.Spec.Containers[i].AgentEnabled = false
-					ic.Spec.Containers[i].AgentEnabledReason = odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff
-				}
-				ic.Spec.AgentInjectionEnabled = false
-
-				if err := c.Update(ctx, ic); err != nil {
-					res, err := utils.K8SUpdateErrorHandler(err)
-					return false, res, err
-				}
-
-				ic.Status.RollbackOccurred = true
-
-				rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-				if rolloutErr != nil {
-					logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
-					return false, ctrl.Result{}, rolloutErr
-				}
-
-				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-					Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
-					Status:  metav1.ConditionTrue,
-					Reason:  string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully),
-					Message: "pods entered CrashLoopBackOff; instrumentation disabled",
-				})
-
-				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-					Type:    odigosv1alpha1.AgentEnabledStatusConditionType,
-					Status:  metav1.ConditionFalse,
-					Reason:  string(odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff),
-					Message: "Pods entered CrashLoopBackOff; instrumentation disabled",
-				})
-				// Status always changes, requeue to test wait for status change with workload
-				return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
-			}
-			// Requeue to wait for workload to finish or enter CrashLoopBackOff
-			return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+			// Requeue to wait for workload to finish or enter backoff state
+			return RolloutResult{Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 		}
-		return false, ctrl.Result{}, nil
+
+		// at this point, we know that rollout happened.
+		// make sure to cleanup any stale condition from previous rollout attempts.
+		// example:
+		// - workload is instrumented successfully.
+		// - rollout regardless of odigos
+		// - agent disabled -> status is changed to "waiting for previous rollout to finish"
+		// - agent enabled -> no need for a rollout, but the status needs to be updated.
+		statusChanged := false
+		// This is the happy flow - the workload is rolled out successfully
+		if rolloutDone {
+			statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionRolloutFinished)
+			// Rollout is complete - release the slot if we had one
+			rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(workloadKey)
+		}
+		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{}}, nil
 	}
+
+	// Rollback scenario: Webhook-instrumented pod crashlooping before rollout: AgentsMetaHash is populated but WorkloadRolloutHash is empty.
+	if savedRolloutHash == "" && newRolloutHash != "" &&
+		!rollBackOptions.IsRollbackDisabled && ic.Spec.AgentInjectionEnabled {
+		// TODO: this must be changed - if rate limiting is enabled, then this time will prevent webhook crashlooping pods from rollbacking.
+		// This is becasue the AgentsMetaHashChangedTime is set when the pod is created by the agentsenabled, but rate limiting may cause the actual rollout
+		// to be much further on, preventing rollback when neccessary.
+		ic.Status.InstrumentationTime = ic.Spec.AgentsMetaHashChangedTime
+
+		shouldRollback, waitDuration, backOffInfo, err := shouldTriggerRollback(
+			ctx, c, ic, workloadObj, rollBackOptions,
+		)
+		if err != nil {
+			logger.Error(err, "Failed to check pod backoff status for pre-rollout pods")
+			return RolloutResult{}, err
+		}
+		if waitDuration > 0 && shouldRollback {
+			return RolloutResult{Result: ctrl.Result{RequeueAfter: waitDuration}}, nil
+		}
+		if shouldRollback {
+			return triggerRollback(ctx, c, logger, ic, workloadObj, workloadKey,
+				rolloutConcurrencyLimiter, &backOffInfo, pw)
+		}
+	}
+
+	// Rollback scenario: new instrumented pod was inited due to new runtime, but it is potentially crashlooping, check for rollback
+	if savedRolloutHash != "" && newRolloutHash != "" && savedRolloutHash != newRolloutHash &&
+		!rollBackOptions.IsRollbackDisabled && ic.Spec.AgentInjectionEnabled {
+		shouldRollback, waitDuration, backOffInfo, err := shouldTriggerRollback(
+			ctx, c, ic, workloadObj, rollBackOptions,
+		)
+		if err != nil {
+			logger.Error(err, "Failed to check pod backoff status pods with new runtime")
+			return RolloutResult{}, err
+		}
+		if waitDuration > 0 && shouldRollback {
+			return RolloutResult{Result: ctrl.Result{RequeueAfter: waitDuration}}, nil
+		}
+		if shouldRollback {
+			return triggerRollback(ctx, c, logger, ic, workloadObj, workloadKey,
+				rolloutConcurrencyLimiter, &backOffInfo, pw)
+		}
+	}
+
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false
-	if !isWorkloadRolloutDone(workloadObj) {
-		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
-			Status:  metav1.ConditionUnknown,
-			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing),
-			Message: "waiting for workload rollout to finish before triggering a new one",
-		})
-		return statusChanged, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+	if !utils.IsWorkloadRolloutDone(workloadObj) {
+		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionPreviousRolloutOngoing)
+		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 
-	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
+	if !rolloutConcurrencyLimiter.TryAcquire(workloadKey, rollBackOptions.MaxConcurrentRollouts) {
+		logger.Debug("rate limited instrumentation rollout, requeuing",
+			"workload", pw.Name,
+			"namespace", pw.Namespace,
+			"requeueAfter", RequeueWaitingForWorkloadRollout)
+		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionWaitingInQueue)
+		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
+	}
+
+	// use the AgentsMetaHashChangedTime if it exists,
+	// so we are idempotent if the reconciler requeue for any reason.
+	var t time.Time
+	if ic.Spec.AgentsMetaHashChangedTime != nil {
+		t = ic.Spec.AgentsMetaHashChangedTime.Time
+	} else {
+		t = time.Now()
+	}
+
+	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, t)
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 	}
@@ -202,236 +295,173 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		now := metav1.NewTime(time.Now())
 		ic.Status.InstrumentationTime = &now
 	}
+	// Setting the condition for successful triggering the rollout, or a failed to patch condition with a specific error message.
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
 
 	// at this point, the hashes are different, notify the caller the status has changed
 	// Requeue to try and catch a crashing app
-	return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+	return RolloutResult{StatusChanged: true, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 }
 
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
 // this is bases on the kubectl implementation of restarting a workload
 // https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/objectrestarter.go#L32
-func rolloutRestartWorkload(ctx context.Context, workload client.Object, c client.Client, ts time.Time) error {
+func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c client.Client, ts time.Time) error {
+
+	logger := commonlogger.FromContext(ctx)
+
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, ts.Format(time.RFC3339)))
-	switch obj := workload.(type) {
+	switch obj := workloadObj.(type) {
 	case *appsv1.Deployment:
 		if obj.Spec.Paused {
 			return errors.New("can't restart paused deployment")
 		}
+		logger.Info("auto rollout - restarting deployment", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *appsv1.StatefulSet:
+		logger.Info("auto rollout - restarting stateful set", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *appsv1.DaemonSet:
+		logger.Info("auto rollout - restarting daemon set", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
+	case *openshiftappsv1.DeploymentConfig:
+		logger.Info("auto rollout - restarting deployment config", "name", obj.Name, "namespace", obj.Namespace)
+		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
+	case *argorolloutsv1alpha1.Rollout:
+		logger.Info("auto rollout - restarting argo rollout", "name", obj.Name, "namespace", obj.Namespace)
+		// Rollouts use a different field (spec.restartAt) for restarting, so we need to patch it differently
+		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
+		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, ts.Format(time.RFC3339)))
+		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, rolloutPatch))
+	case *corev1.Pod:
+		if workload.IsStaticPod(obj) {
+			return errors.New("can't restart static pods")
+		}
+		logger.Info("auto rollout - restarting standalone pod", "name", obj.Name, "namespace", obj.Namespace)
+		return errors.New("currently not supporting standalone pods as workloads for rollout")
 	default:
 		return errors.New("unknown kind")
 	}
 }
 
-// isWorkloadRolloutDone checks if the rollout of the given workload is done.
-// this is based on the kubectl implementation of checking the rollout status:
-// https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/rollout_status.go
-func isWorkloadRolloutDone(obj client.Object) bool {
-	switch o := obj.(type) {
-	case *appsv1.Deployment:
-		if o.Generation <= o.Status.ObservedGeneration {
-			cond := conditions.GetDeploymentCondition(o.Status, appsv1.DeploymentProgressing)
-			if cond != nil && cond.Reason == conditions.TimedOutReason {
-				// deployment exceeded its progress deadline
-				return false
-			}
-			if o.Spec.Replicas != nil && o.Status.UpdatedReplicas < *o.Spec.Replicas {
-				// Waiting for deployment rollout to finish
-				return false
-			}
-			if o.Status.Replicas > o.Status.UpdatedReplicas {
-				// Waiting for deployment rollout to finish old replicas are pending termination.
-				return false
-			}
-			if o.Status.AvailableReplicas < o.Status.UpdatedReplicas {
-				// Waiting for deployment rollout to finish:  not all updated replicas are available..
-				return false
-			}
-			return true
-		}
-		return false
-	case *appsv1.StatefulSet:
-		if o.Spec.UpdateStrategy.Type != appsv1.RollingUpdateStatefulSetStrategyType {
-			// rollout status is only available for RollingUpdateStatefulSetStrategyType strategy type
-			return true
-		}
-		if o.Status.ObservedGeneration == 0 || o.Generation > o.Status.ObservedGeneration {
-			// Waiting for statefulset spec update to be observed
-			return false
-		}
-		if o.Spec.Replicas != nil && o.Status.ReadyReplicas < *o.Spec.Replicas {
-			// Waiting for pods to be ready
-			return false
-		}
-		if o.Spec.UpdateStrategy.Type == appsv1.RollingUpdateStatefulSetStrategyType && o.Spec.UpdateStrategy.RollingUpdate != nil {
-			if o.Spec.Replicas != nil && o.Spec.UpdateStrategy.RollingUpdate.Partition != nil {
-				if o.Status.UpdatedReplicas < (*o.Spec.Replicas - *o.Spec.UpdateStrategy.RollingUpdate.Partition) {
-					// Waiting for partitioned roll out to finish
-					return false
-				}
-			}
-			// partitioned roll out complete
-			return true
-		}
-		if o.Status.UpdateRevision != o.Status.CurrentRevision {
-			// waiting for statefulset rolling update to complete
-			return false
-		}
-		return true
-	case *appsv1.DaemonSet:
-		if o.Spec.UpdateStrategy.Type != appsv1.RollingUpdateDaemonSetStrategyType {
-			// rollout status is only available for RollingUpdateDaemonSetStrategyType strategy type
-			return true
-		}
-		if o.Generation <= o.Status.ObservedGeneration {
-			if o.Status.UpdatedNumberScheduled < o.Status.DesiredNumberScheduled {
-				// Waiting for daemon set rollout to finish
-				return false
-			}
-			if o.Status.NumberAvailable < o.Status.DesiredNumberScheduled {
-				// Waiting for daemon set rollout to finish
-				return false
-			}
-			return true
-		}
-		// Waiting for daemon set spec update to be observed
-		return false
-	default:
-		return false
-	}
-}
-
 func rolloutCondition(rolloutErr error) metav1.Condition {
-	cond := metav1.Condition{
-		Type: odigosv1alpha1.WorkloadRolloutStatusConditionType,
-	}
-
 	if rolloutErr == nil {
-		cond.Status = metav1.ConditionTrue
-		cond.Reason = string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully)
-		cond.Message = "workload rollout triggered successfully"
-	} else {
-		cond.Status = metav1.ConditionFalse
-		cond.Reason = string(odigosv1alpha1.WorkloadRolloutReasonFailedToPatch)
-		cond.Message = rolloutErr.Error()
+		return conditionTriggeredSuccessfully
 	}
-
-	return cond
+	return newConditionFailedToPatch(rolloutErr)
 }
 
-// podHasCrashLoop returns true if any (init)-container in the pod is in CrashLoopBackOff.
-func podHasCrashLoop(p *corev1.Pod) bool {
-	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
-		if cs.State.Waiting != nil && cs.State.Waiting.Reason == "CrashLoopBackOff" {
-			return true
+// WorkloadHasNonInstrumentedPodInBackoff checks if any NON-INSTRUMENTED pod belonging to the workload is in a backoff state
+// (CrashLoopBackOff or ImagePullBackOff). This specifically checks pods that DON'T have the odigos label,
+// to detect pre-existing crashloops and prevent attempting to instrument already-crashlooping workloads.
+// Pods that are already instrumented (have the odigos label) are handled by the rollback logic instead.
+func WorkloadHasNonInstrumentedPodInBackoff(ctx context.Context, c client.Client, workloadObj client.Object) (bool, error) {
+	if pod, ok := workloadObj.(*corev1.Pod); ok {
+		return podHasBackOff(pod), nil
+	}
+
+	selector, err := notInstrumentedWorkloadPodsSelector(workloadObj)
+	if err != nil {
+		return false, fmt.Errorf("WorkloadHasNonInstrumentedPodInBackoff: %w", err)
+	}
+
+	var podList corev1.PodList
+	if err := c.List(ctx, &podList,
+		client.InNamespace(workloadObj.GetNamespace()),
+		client.MatchingLabelsSelector{Selector: selector},
+	); err != nil {
+		return false, fmt.Errorf("WorkloadHasNonInstrumentedPodInBackoff: failed listing pods: %w", err)
+	}
+
+	// If a pod has the odigos label and is in backoff, it's handled by the rollback logic.
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		if podHasBackOff(pod) {
+			return true, nil
 		}
 	}
-	return false
+
+	return false, nil
 }
 
-// crashLoopBackOffDuration returns how long the supplied workload
-// (Deployment, StatefulSet, or DaemonSet) has been in *CrashLoopBackOff*.
-//
-// It inspects all Pods selected by the workload’s label selector:
-//
-//   - If at least one Pod is currently in CrashLoopBackOff, it finds the
-//     earliest Pod.StartTime among those Pods and returns the elapsed time
-//     since that moment.
-//
-//   - If **no** Pod is in CrashLoopBackOff, it simply returns 0 and no error.
-//
-// A non-nil error is returned only for unexpected situations (e.g. unsupported
-// workload kind, invalid selector, or failed Pod list call).
-func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.Object) (time.Duration, error) {
-	var (
-		ns       string
-		selector *metav1.LabelSelector
-	)
+// workloadLabelSelector returns the label selector for a workload object
+func workloadLabelSelector(obj client.Object) (*metav1.LabelSelector, error) {
+	var selector *metav1.LabelSelector
 
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
-		ns, selector = o.Namespace, o.Spec.Selector
+		selector = o.Spec.Selector
 	case *appsv1.StatefulSet:
-		ns, selector = o.Namespace, o.Spec.Selector
+		selector = o.Spec.Selector
 	case *appsv1.DaemonSet:
-		ns, selector = o.Namespace, o.Spec.Selector
+		selector = o.Spec.Selector
+	case *openshiftappsv1.DeploymentConfig:
+		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
+		selector = &metav1.LabelSelector{
+			MatchLabels: o.Spec.Selector,
+		}
+	case *argorolloutsv1alpha1.Rollout:
+		selector = &metav1.LabelSelector{
+			MatchLabels: o.Spec.Selector.MatchLabels,
+		}
 	default:
-		return 0, fmt.Errorf("crashLoopBackOffDuration: unsupported workload kind %T", obj)
+		return nil, fmt.Errorf("workloadLabelSelector: unsupported workload kind %T", obj)
 	}
 
 	if selector == nil {
-		return 0, fmt.Errorf("crashLoopBackOffDuration: workload has nil selector")
+		return nil, fmt.Errorf("workloadLabelSelector: workload has nil selector")
 	}
-	sel, err := metav1.LabelSelectorAsSelector(selector)
+
+	return selector, nil
+}
+
+// workloadPodsSelector returns a selector for all pods that are associated with the workload object
+// who do not have the odigos instrumentation label
+func notInstrumentedWorkloadPodsSelector(obj client.Object) (labels.Selector, error) {
+	labelSelector, err := workloadLabelSelector(obj)
 	if err != nil {
-		return 0, fmt.Errorf("crashLoopBackOffDuration: invalid selector: %w", err)
+		return nil, err
 	}
 
-	// 2. List matching Pods once (single API call for both checks).
-	var podList corev1.PodList
-	if err := c.List(ctx, &podList,
-		client.InNamespace(ns),
-		client.MatchingLabelsSelector{Selector: sel},
-	); err != nil {
-		return 0, fmt.Errorf("crashLoopBackOffDuration: failed listing pods: %w", err)
+	selectorCopy := labelSelector.DeepCopy()
+	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
+		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
+		Operator: metav1.LabelSelectorOpDoesNotExist,
+	})
+
+	selector, err := metav1.LabelSelectorAsSelector(selectorCopy)
+	if err != nil {
+		return nil, fmt.Errorf("notInstrumentedWorkloadPodsSelector: invalid selector: %w", err)
 	}
 
-	// 3. Find the earliest-started Pod that is crashing.
-	var earliest *time.Time
-	for i := range podList.Items {
-		p := &podList.Items[i]
+	return selector, nil
+}
 
-		if !podHasCrashLoop(p) {
-			continue
-		}
-		if p.Status.StartTime == nil { // extremely rare
-			continue
-		}
-
-		start := p.Status.StartTime.Time
-		if earliest == nil || start.Before(*earliest) {
-			earliest = &start
-		}
+// instrumentedPodsSelector returns a selector for all the instrumented pods that are associated with the workload object
+func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
+	labelSelector, err := workloadLabelSelector(obj)
+	if err != nil {
+		return nil, err
 	}
 
-	// 4. Return 0 if nothing is in CrashLoopBackOff.
-	if earliest == nil {
-		return 0, nil
+	// Create a deep copy of the selector to avoid mutating the original
+	selectorCopy := labelSelector.DeepCopy()
+	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
+		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
+		Operator: metav1.LabelSelectorOpExists,
+	})
+
+	sel, err := metav1.LabelSelectorAsSelector(selectorCopy)
+	if err != nil {
+		return nil, fmt.Errorf("instrumentedPodsSelector: invalid selector: %w", err)
 	}
 
-	// 5. Otherwise, duration since the workload entered CrashLoopBackOff.
-	return time.Since(*earliest), nil
+	return sel, nil
 }
 
 // workloadHasOdigosAgents returns true if the workload still has *any* pod present in the instrumented-pod.
 func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
-	var (
-		ns       string
-		selector *metav1.LabelSelector
-	)
-
-	switch o := obj.(type) {
-	case *appsv1.Deployment:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *appsv1.StatefulSet:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *appsv1.DaemonSet:
-		ns, selector = o.Namespace, o.Spec.Selector
-	default:
-		return false, fmt.Errorf("workloadHasOdigosAgents: unsupported workload kind %T", obj)
-	}
-
-	if selector == nil {
-		return false, errors.New("workloadHasOdigosAgents: workload has nil selector")
-	}
-
-	sel, err := metav1.LabelSelectorAsSelector(selector)
+	sel, err := instrumentedPodsSelector(obj)
 	if err != nil {
 		return false, fmt.Errorf("workloadHasOdigosAgents: invalid selector: %w", err)
 	}
@@ -439,13 +469,130 @@ func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Ob
 	var pods corev1.PodList
 	if err := c.List(
 		ctx, &pods,
-		client.InNamespace(ns),
+		client.InNamespace(obj.GetNamespace()),
 		client.MatchingLabelsSelector{Selector: sel},
 	); err != nil {
 		return false, fmt.Errorf("workloadHasOdigosAgents: listing pods failed: %w", err)
 	}
 
-	// Because the cache already filters on k8sconsts.OdigosAgentsMetaHashLabel,
-	// any non-empty list means the workload still runs instrumented pods.
 	return len(pods.Items) > 0, nil
+}
+
+func workloadStillMarkedForInstrumentation(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (bool, error) {
+	sources, err := odigosv1alpha1.GetSources(ctx, c, pw)
+	if err != nil {
+		return false, err
+	}
+	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
+	if err != nil {
+		return false, err
+	}
+	return enabled, nil
+}
+
+// shouldTriggerRollback checks if rollback should be triggered based on backoff state and timing.
+// Original condition: backOffInfo.duration > 0 && timeSinceInstrumentation < RollbackStabilityWindow && AgentInjectionEnabled
+// Returns:
+// - shouldRollback=true, waitDuration > 0: grace period not elapsed, requeue and wait
+// - shouldRollback=true, waitDuration=0: execute rollback now
+// - shouldRollback=false: no rollback needed
+func shouldTriggerRollback(
+	ctx context.Context,
+	c client.Client,
+	ic *odigosv1alpha1.InstrumentationConfig,
+	workloadObj client.Object,
+	rollBackOptions RollBackOptions,
+) (shouldRollback bool, waitDuration time.Duration, backOffInfo podBackOffInfo, err error) {
+	backOffInfo, err = podBackOffDuration(ctx, c, workloadObj)
+	if err != nil {
+		return false, 0, podBackOffInfo{}, err
+	}
+
+	if ic.Status.InstrumentationTime == nil {
+		return false, RequeueWaitingForWorkloadRollout, podBackOffInfo{}, nil
+	}
+
+	timeSinceInstrumentation := time.Since(ic.Status.InstrumentationTime.Time)
+
+	// Original condition: backOffInfo.duration > 0 && timeSinceInstrumentation < RollbackStabilityWindow && AgentInjectionEnabled
+	if backOffInfo.duration <= 0 || timeSinceInstrumentation >= rollBackOptions.RollbackStabilityWindow || !ic.Spec.AgentInjectionEnabled {
+		return false, 0, podBackOffInfo{}, nil
+	}
+
+	// At this point, rollback conditions are met (the outer condition from original code)
+	// Allow grace time for workload to stabilize before uninstrumenting it
+	if backOffInfo.duration < rollBackOptions.RollbackGraceTime {
+		return true, rollBackOptions.RollbackGraceTime - backOffInfo.duration, backOffInfo, nil
+	}
+
+	return true, 0, backOffInfo, nil
+}
+
+// recoverFromRollback checks if a rollback recovery was requested by comparing the
+// RollbackRecoveryAtAnnotation (desired, propagated from Source) with the
+// RollbackRecoveryProcessedAtAnnotation (last processed). If they differ, it clears
+// RollbackOccurred and updates the processed annotation.
+// Returns true if recovery was applied and the IC was modified.
+func recoverFromRollback(ic *odigosv1alpha1.InstrumentationConfig) bool {
+	currentRecoveryAt := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+	if !ic.Status.RollbackOccurred || currentRecoveryAt == "" {
+		return false
+	}
+
+	processedRecoveryAt := ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation]
+	if processedRecoveryAt == currentRecoveryAt {
+		return false
+	}
+
+	if ic.Annotations == nil {
+		ic.Annotations = make(map[string]string)
+	}
+	ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation] = currentRecoveryAt
+	return true
+}
+
+// triggerRollback executes the rollback: disables agents, updates IC, and restarts the workload.
+func triggerRollback(
+	ctx context.Context,
+	c client.Client,
+	logger *commonlogger.ContextLogger,
+	ic *odigosv1alpha1.InstrumentationConfig,
+	workloadObj client.Object,
+	workloadKey string,
+	rolloutConcurrencyLimiter *RolloutConcurrencyLimiter,
+	backOffInfo *podBackOffInfo,
+	pw k8sconsts.PodWorkload,
+) (RolloutResult, error) {
+	logger.Info("Triggering rollback due to backoff",
+		"reason", backOffInfo.reason,
+		"workload", pw.Name,
+		"namespace", pw.Namespace)
+
+	for i := range ic.Spec.Containers {
+		ic.Spec.Containers[i].AgentEnabled = false
+		ic.Spec.Containers[i].AgentEnabledReason = backOffInfo.reason
+	}
+	ic.Spec.AgentInjectionEnabled = false
+
+	if err := c.Update(ctx, ic); err != nil {
+		_, handledErr := utils.K8SUpdateErrorHandler(err)
+		return RolloutResult{}, handledErr
+	}
+
+	ic.Status.RollbackOccurred = true
+
+	// Release any rate limiter slot (rollback bypasses rate limiting)
+	rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(workloadKey)
+
+	// Restart the workload to remove instrumentation
+	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
+	if rolloutErr != nil {
+		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
+		return RolloutResult{}, rolloutErr
+	}
+
+	meta.SetStatusCondition(&ic.Status.Conditions, newConditionTriggeredWithMessage(backOffInfo.message))
+	meta.SetStatusCondition(&ic.Status.Conditions, newConditionAgentDisabledDueToBackoff(backOffInfo.reason, backOffInfo.message))
+
+	return RolloutResult{StatusChanged: true, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 }

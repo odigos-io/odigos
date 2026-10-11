@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: true
   fields:
     - name: DYNAMIC_DESTINATION_TYPE
       displayName: Destination Type
@@ -20,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: 'otlp'
+        placeholder: "otlp"
         tooltip: The type of OpenTelemetry Collector Exporter to use for the destination.
     - name: DYNAMIC_CONFIGURATION_DATA
       displayName: Config
@@ -28,4 +30,4 @@ spec:
       componentProps:
         type: textarea
         required: true
-        tooltip: The raw YAML config for the Collector Exporter for this destination.
+        tooltip: "The raw YAML config for the Collector Exporter for this destination. To inject secrets (e.g. TLS PEMs), use ${ENV_VAR} placeholders and set Destination.spec.secretRef to a Secret in the same namespace whose keys match those variable names. Use unique env var names across dynamic destinations — they are mounted into the shared gateway without a destination prefix."

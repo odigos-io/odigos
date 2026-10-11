@@ -19,20 +19,45 @@ package v1alpha1
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	common "github.com/odigos-io/odigos/common"
+	agentsignalconfig "github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	instrumentationrules "github.com/odigos-io/odigos/common/api/instrumentationrules"
 )
 
 // ContainerAgentConfigApplyConfiguration represents a declarative configuration of the ContainerAgentConfig type for use
 // with apply.
+//
+// ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfigApplyConfiguration struct {
-	ContainerName       *string                            `json:"containerName,omitempty"`
-	AgentEnabled        *bool                              `json:"agentEnabled,omitempty"`
-	AgentEnabledReason  *odigosv1alpha1.AgentEnabledReason `json:"agentEnabledReason,omitempty"`
-	AgentEnabledMessage *string                            `json:"agentEnabledMessage,omitempty"`
-	OtelDistroName      *string                            `json:"otelDistroName,omitempty"`
-	DistroParams        map[string]string                  `json:"distroParams,omitempty"`
-	Traces              *odigosv1alpha1.AgentTracesConfig  `json:"traces,omitempty"`
-	Metrics             *odigosv1alpha1.AgentMetricsConfig `json:"metrics,omitempty"`
-	Logs                *odigosv1alpha1.AgentLogsConfig    `json:"logs,omitempty"`
+	// The name of the container to which this configuration applies.
+	ContainerName *string `json:"containerName,omitempty"`
+	// boolean flag to indicate if the agent should be enabled for this container.
+	AgentEnabled *bool `json:"agentEnabled,omitempty"`
+	// An enum reason for the agent injection decision.
+	AgentEnabledReason *odigosv1alpha1.AgentEnabledReason `json:"agentEnabledReason,omitempty"`
+	// free text message to provide more information about the instrumentation decision.
+	// can be left empty if reason is self-explanatory.
+	AgentEnabledMessage *string `json:"agentEnabledMessage,omitempty"`
+	// set to true if the agent used in this container can be injected without pod manifest changes.
+	PodManifestInjectionOptional *bool `json:"podManifestInjectionOptional,omitempty"`
+	// The name of the otel distribution to use for this container.
+	// if the name is empty, this container should not be instrumented.
+	OtelDistroName *string `json:"otelDistroName,omitempty"`
+	// Additional parameters to the distro that controls how it's being applied.
+	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
+	DistroParams map[string]string `json:"distroParams,omitempty"`
+	// What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+	// Can be either "loader" or "pod-manifest".
+	// The injection should still check the actual values in the container manifest before injecting.
+	// Nil means that this container should not have env injection (agent should not be injected, or distro does not specify "loader" injection envs).
+	EnvInjectionMethod *common.EnvInjectionDecision `json:"envInjectionMethod,omitempty"`
+	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
+	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
+	Traces  *agentsignalconfig.AgentTracesConfig  `json:"traces,omitempty"`
+	Metrics *agentsignalconfig.AgentMetricsConfig `json:"metrics,omitempty"`
+	Logs    *agentsignalconfig.AgentLogsConfig    `json:"logs,omitempty"`
+	// Configure the log level for the agent itselg
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -73,6 +98,14 @@ func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabledMessage(value s
 	return b
 }
 
+// WithPodManifestInjectionOptional sets the PodManifestInjectionOptional field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PodManifestInjectionOptional field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithPodManifestInjectionOptional(value bool) *ContainerAgentConfigApplyConfiguration {
+	b.PodManifestInjectionOptional = &value
+	return b
+}
+
 // WithOtelDistroName sets the OtelDistroName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the OtelDistroName field is set to the value of the last call.
@@ -95,10 +128,18 @@ func (b *ContainerAgentConfigApplyConfiguration) WithDistroParams(entries map[st
 	return b
 }
 
+// WithEnvInjectionMethod sets the EnvInjectionMethod field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EnvInjectionMethod field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithEnvInjectionMethod(value common.EnvInjectionDecision) *ContainerAgentConfigApplyConfiguration {
+	b.EnvInjectionMethod = &value
+	return b
+}
+
 // WithTraces sets the Traces field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Traces field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithTraces(value odigosv1alpha1.AgentTracesConfig) *ContainerAgentConfigApplyConfiguration {
+func (b *ContainerAgentConfigApplyConfiguration) WithTraces(value agentsignalconfig.AgentTracesConfig) *ContainerAgentConfigApplyConfiguration {
 	b.Traces = &value
 	return b
 }
@@ -106,7 +147,7 @@ func (b *ContainerAgentConfigApplyConfiguration) WithTraces(value odigosv1alpha1
 // WithMetrics sets the Metrics field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Metrics field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithMetrics(value odigosv1alpha1.AgentMetricsConfig) *ContainerAgentConfigApplyConfiguration {
+func (b *ContainerAgentConfigApplyConfiguration) WithMetrics(value agentsignalconfig.AgentMetricsConfig) *ContainerAgentConfigApplyConfiguration {
 	b.Metrics = &value
 	return b
 }
@@ -114,7 +155,15 @@ func (b *ContainerAgentConfigApplyConfiguration) WithMetrics(value odigosv1alpha
 // WithLogs sets the Logs field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Logs field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value odigosv1alpha1.AgentLogsConfig) *ContainerAgentConfigApplyConfiguration {
+func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value agentsignalconfig.AgentLogsConfig) *ContainerAgentConfigApplyConfiguration {
 	b.Logs = &value
+	return b
+}
+
+// WithAgentDiagnostics sets the AgentDiagnostics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentDiagnostics field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithAgentDiagnostics(value instrumentationrules.AgentDiagnostics) *ContainerAgentConfigApplyConfiguration {
+	b.AgentDiagnostics = &value
 	return b
 }

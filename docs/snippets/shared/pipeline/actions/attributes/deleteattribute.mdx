@@ -1,0 +1,95 @@
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+## Considerations
+
+<Warning>
+  Before enabling **delete attribute**, please note the following:
+  - This action will delete selected attributes from spans, metric data points and log records, but will not delete the entire span, metric data point or log record.
+  - For matching attributes, the attribute value will be deleted entirely. This action is not suitable for partial deletion or masking of the attribute value. For example, if you collect an `http.request.body` attribute, this action can be used to delete the attribute but not a key from the JSON object.
+  - While it is common for information to be recorded in attributes, it can also be recorded into names or other fields, for which this action will not be effective.
+</Warning>
+
+## Use Cases
+
+**Security**
+
+- By default, OpenTelemetry should not record PII (Personally Identifiable Information) or sensitive data such as passwords, api tokens, creditcard numbers etc. However, if the data is accidentally added to the telemetry signals, or if a manual instrumentation recorded it into an attribute, this action can be used to delete such data.
+
+**Cost Reduction**
+
+- Some vendors charge based on the amount of data ingested. For self hosted destinations, the cost is correlated to the use of cloud resources which grows with the based on the amount of data you process and store. By deleting unnecessary attributes, you can reduce the amount of data ingested and reduce costs.
+
+**Usability**
+
+- Remove duplications - sometimes, the same attribute is added to the telemetry signals by multiple sources. This action can be used to delete the duplicates and keep the data clean. For example, you might find the host name recorded both as `host.name` and `k8s.node.name` which are the same value.
+- Verbosity - not all data is useful to all users. You might wish to delete certain attributes when they give no value to your organization or observability needs. Sometimes, recording too much data can obscure the important information and make it harder to find.
+
+## Configuration Options
+
+The DeleteAttribute action is configured using the `odigos.io/v1alpha1.Action` CRD with the `deleteAttribute` configuration section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the action will operate on.
+    - This field is *required*
+    - Supported values: `TRACES`, `METRICS`, `LOGS`
+  </Accordion>
+  <Accordion title="deleteAttribute *">
+    **deleteAttribute** `object` : Configuration for the DeleteAttribute action.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="attributeNamesToDelete *">
+        **attributeNamesToDelete** `string[]` : An array of strings representing the names of the attributes to be deleted from the telemetry signals.
+        - This field is *required*
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example demonstrates how to delete the `host.name` attribute from all telemetry signals using the new Action CRD.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml delete-host-name.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: delete-host-name
+      namespace: odigos-system
+    spec:
+      actionName: "delete host.name"
+      signals:
+        - TRACES
+        - METRICS
+        - LOGS
+      deleteAttribute:
+        attributeNamesToDelete:
+          - host.name
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f delete-host-name.yaml
+    ```
+  </Step>
+</Steps>

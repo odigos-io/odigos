@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter/internal/metadata"
+	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
@@ -27,17 +28,10 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		ResponseDuration: time.Millisecond * 100,
 		RejectFraction:   0,
+		Encoding:         EncodingProto,
 		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
 		RetryConfig:      configretry.NewDefaultBackOffConfig(),
-		QueueConfig:      exporterhelper.NewDefaultQueueConfig(),
-		BatcherConfig: exporterhelper.BatcherConfig{
-			Enabled:      true,
-			FlushTimeout: 200 * time.Millisecond,
-			SizeConfig: exporterhelper.SizeConfig{
-				Sizer:   exporterhelper.RequestSizerTypeItems,
-				MinSize: 8192,
-			},
-		},
+		QueueConfig:      configoptional.Some(exporterhelper.NewDefaultQueueConfig()),
 	}
 }
 
@@ -61,7 +55,6 @@ func createLogsExporter(
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
 		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }
 
@@ -85,7 +78,6 @@ func createTracesExporter(
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
 		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }
 
@@ -109,6 +101,5 @@ func createMetricsExporter(
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
 		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }

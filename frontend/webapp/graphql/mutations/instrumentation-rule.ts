@@ -10,6 +10,13 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
       disabled
       mutable
       profileName
+      managedBy
+      sourcesScopes {
+        workloadName
+        workloadKind
+        workloadNamespace
+        workloadLanguage
+      }
       payloadCollection {
         httpRequest {
           mimeTypes
@@ -41,6 +48,23 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
       headersCollection {
         headerKeys
       }
+      customInstrumentations {
+        golang {
+          packageName
+          functionName
+          receiverName
+          receiverMethodName
+        }
+        java {
+          methodName
+          className
+        }
+        php {
+          className
+          functionName
+        }
+      }
+      networkMetrics
     }
   }
 `;
@@ -55,6 +79,13 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
       disabled
       mutable
       profileName
+      managedBy
+      sourcesScopes {
+        workloadName
+        workloadKind
+        workloadNamespace
+        workloadLanguage
+      }
       payloadCollection {
         httpRequest {
           mimeTypes
@@ -86,6 +117,23 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
       headersCollection {
         headerKeys
       }
+      customInstrumentations {
+        golang {
+          packageName
+          functionName
+          receiverName
+          receiverMethodName
+        }
+        java {
+          methodName
+          className
+        }
+        php {
+          className
+          functionName
+        }
+      }
+      networkMetrics
     }
   }
 `;

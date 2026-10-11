@@ -14,12 +14,34 @@ const (
 	// and use the label to identify the resources that needs to be deleted.
 	OdigosProfilesHashLabel = "odigos.io/profiles-hash"
 
-	// this label is used to mark resources that are managed by a profile.
-	// when reconciling profiles, we can use this label to know which profiles needs to be deleted.
-	OdigosProfilesManagedByLabel = "odigos.io/managed-by"
-	OdigosProfilesManagedByValue = "profile"
+	// OdigosProfilesManagedByLabel marks which Odigos surface manages a resource
+	// (e.g. profile reconciler, UI, interrogation loop). When reconciling profiles,
+	// we use this label to know which resources need to be deleted.
+	OdigosProfilesManagedByLabel          = "odigos.io/managed-by"
+	OdigosProfilesManagedByValue          = "profile"
+	OdigosUIManagedByValue                = "odigos-ui"
+	OdigosInterrogationLoopManagedByValue = "interrogation-loop"
 
 	// for resources auto created by a profile, this annotation will record
 	// the name of the profile that created them.
 	OdigosProfileAnnotation = "odigos.io/profile"
+
+	// RollbackRecoveryAtAnnotation is set on a Source to request recovery from a rollback.
+	// The sourceinstrumentation controller copies it to the InstrumentationConfig annotation.
+	// The rollout controller compares it with RollbackRecoveryProcessedAtAnnotation to decide
+	// whether recovery is needed.
+	RollbackRecoveryAtAnnotation = "odigos.io/rollback-recovery"
+
+	// RollbackRecoveryProcessedAtAnnotation is set on InstrumentationConfig by the rollout
+	// controller to record the last recovery timestamp that was processed. When this matches
+	// RollbackRecoveryAtAnnotation on the same IC, the recovery has been handled.
+	RollbackRecoveryProcessedAtAnnotation = "odigos.io/rollback-recovery-processed"
+
+	// this label is not used in the api server, it is injected only into the controller-runtime cache object,
+	// and allows efficient listing of static pods based on the label.
+	OdigosVirtualStaticPodNameLabel = "odigos.io/virtual-static-pod-name"
+
+	// This label is used to mark resources that are managed by Helm.
+	AppManagedByHelmLabel = "app.kubernetes.io/managed-by"
+	AppManagedByHelmValue = "Helm"
 )

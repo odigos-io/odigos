@@ -10,10 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Helm
         uses: azure/setup-helm@v4
       - name: Lint Charts
+        run: helm lint helm/odigos helm/odigos-central
+
+  generate-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.6"
+      - name: Generate Helm Schema
+        run: make helm-schema
+      - name: Check for schema changes
         run: |
-          shopt -s extglob
-          helm lint helm/!(*.md)
+          if [[ -n $(git status --porcelain) ]]; then
+            git diff
+            echo "Helm values.schema.json is out of date. Please run 'make helm-schema' and commit the changes."
+            exit 1
+          fi

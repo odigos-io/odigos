@@ -5,23 +5,19 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
-// naive implementation, can be optimized.
-// assumption is that the list of workloads is small
-func IsWorkloadParticipatingInRule(workload k8sconsts.PodWorkload, rule *odigosv1alpha1.InstrumentationRule) bool {
-
-	// first check if the rule is disabled
+// Resolves whether the rule applies to the workload for at least one container on the InstrumentationConfig.
+func IsInstrumentationConfigParticipatingInRule(
+	workload k8sconsts.PodWorkload,
+	ic *odigosv1alpha1.InstrumentationConfig,
+	rule *odigosv1alpha1.InstrumentationRule,
+) bool {
 	if rule.Spec.Disabled {
 		return false
 	}
 
-	// nil means all workloads are participating
-	if rule.Spec.Workloads == nil {
-		return true
-	}
-	for _, allowedWorkload := range *rule.Spec.Workloads {
-		if allowedWorkload == workload {
-			return true
-		}
-	}
-	return false
+	// this function is used for the "instrumentationconfig" controllers which are about to get deprecated soon,
+	// and are unused in odigos.
+	// the rules were always applied to the entire cluster, so we can relax the check here for short while
+	// until the controllers are removed.
+	return true
 }

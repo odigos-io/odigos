@@ -13,14 +13,16 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: INSTANA_ENDPOINT
       displayName: OTLP gRPC Endpoint
       componentType: input
       componentProps:
         required: true
-        placeholder: 'otlp-{color}-saas.instana.io'
-        tooltip: 'Domain name of the otlp-acceptor component of the Instana backend.'
+        placeholder: "otlp-{color}-saas.instana.io"
+        tooltip: "Domain name of the otlp-acceptor component of the Instana backend."
     - name: INSTANA_AGENT_KEY
       displayName: Agent Key
       secret: true
@@ -28,7 +30,7 @@ spec:
       componentProps:
         type: password
         required: true
-        tooltip: 'The agent key of the Instana for targeting the Instana backend.'
+        tooltip: "The agent key of the Instana for targeting the Instana backend."
   note:
     type: Warning
     content: |

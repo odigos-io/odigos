@@ -1,2 +1,2 @@
-export * from './useTokenCRUD';
+export * from './useCSRF';
 export * from './useTokenTracker';

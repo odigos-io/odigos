@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
@@ -14,55 +15,125 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"golang.org/x/oauth2"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/yaml"
 )
 
-// gets the OIDC configuration values from the odigos-config ConfigMap
-func getOidcValuesFromConfig(ctx context.Context) (string, string, string, string, bool) {
-	var odigosConfig common.OdigosConfiguration
+func EnsureOidcSecret(ctx context.Context, secretValue string) error {
+	odigosNs := env.GetCurrentNamespace()
+
+	// get existing secret, do not throw on not found
+	secret, err := kube.DefaultClient.CoreV1().Secrets(odigosNs).Get(ctx, consts.OidcSecretName, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	if secret == nil || apierrors.IsNotFound(err) {
+		// if the secret doesn't exist, create it
+		secret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: consts.OidcSecretName},
+			Data:       map[string][]byte{consts.OidcClientSecretProperty: []byte(secretValue)},
+		}
+		_, err = kube.DefaultClient.CoreV1().Secrets(odigosNs).Create(ctx, secret, metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
+	} else {
+		// if the secret exists, update it
+		secret.Data[consts.OidcClientSecretProperty] = []byte(secretValue)
+		_, err = kube.DefaultClient.CoreV1().Secrets(odigosNs).Update(ctx, secret, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func GetOidcSecret(ctx context.Context) (string, error) {
+	odigosNs := env.GetCurrentNamespace()
+	secret, err := kube.DefaultClient.CoreV1().Secrets(odigosNs).Get(ctx, consts.OidcSecretName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return string(secret.Data[consts.OidcClientSecretProperty]), nil
+}
+
+// gets the OIDC configuration values from the odigos-configuration ConfigMap.
+// this runs on every request that reaches the OIDC middleware, so failures are
+// returned to the caller and must never terminate the process.
+func getOidcValuesFromConfig(ctx context.Context) (string, string, string, string, bool, error) {
+	var odigosConfiguration common.OdigosConfiguration
 	odigosns := env.GetCurrentNamespace()
 
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
-	if err != nil {
-		log.Fatalf("Error getting CM: %v\n", err)
+	// Retry up to ~1 minute with exponential backoff (2s→4s→8s→16s→16s→16s) in case
+	// the frontend starts before the effective-config CM has been reconciled [e.g frontend started before scheduler is ready].
+	effectiveConfigBackoff := wait.Backoff{
+		Duration: 2 * time.Second,
+		Factor:   2,
+		Cap:      16 * time.Second,
+		Steps:    6,
 	}
-	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
+	var configMap *corev1.ConfigMap
+	err := retry.OnError(effectiveConfigBackoff, apierrors.IsNotFound, func() error {
+		var e error
+		configMap, e = kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+		if apierrors.IsNotFound(e) {
+			log.Printf("Effective config CM not found, retrying...\n")
+		}
+		return e
+	})
 	if err != nil {
-		log.Fatalf("Error parsing YAML: %v\n", err)
+		return "", "", "", "", false, fmt.Errorf("error getting effective config CM: %w", err)
 	}
-	if odigosConfig.Oidc == nil {
-		return "", "", "", "", false
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
+	if err != nil {
+		return "", "", "", "", false, fmt.Errorf("error parsing effective config YAML: %w", err)
+	}
+	if odigosConfiguration.Oidc == nil {
+		return "", "", "", "", false, nil
 	}
 
 	// UI values
-	uiRemoteUrl := odigosConfig.UiRemoteUrl
+	uiRemoteUrl := odigosConfiguration.UiRemoteUrl
 	if uiRemoteUrl == "" {
 		uiRemoteUrl = "http://localhost:3000"
 	}
-	if !strings.HasSuffix(uiRemoteUrl, "/auth/callback") {
-		uiRemoteUrl = fmt.Sprintf("%s/auth/callback", uiRemoteUrl)
+	if !strings.HasSuffix(uiRemoteUrl, "/auth/oidc-callback") {
+		uiRemoteUrl = fmt.Sprintf("%s/auth/oidc-callback", uiRemoteUrl)
 	}
 
 	// OIDC values
-	secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(ctx, consts.OidcSecretName, metav1.GetOptions{})
-	if err != nil {
-		return "", "", "", "", false
+	// helm renders the oidc config block when any of tenantUrl/clientId/clientSecret is set,
+	// but only creates the secret when a client secret is set, so a missing secret means
+	// OIDC is not fully configured. Any other read failure must not silently disable it.
+	oidcClientSecret, err := GetOidcSecret(ctx)
+	if apierrors.IsNotFound(err) {
+		return "", "", "", "", false, nil
 	}
-	oidcClientSecret := string(secret.Data[consts.OidcClientSecretProperty])
-	oidcClientId := odigosConfig.Oidc.ClientId
-	oidcTenantUrl := odigosConfig.Oidc.TenantUrl
+	if err != nil {
+		return "", "", "", "", false, fmt.Errorf("error getting OIDC client secret: %w", err)
+	}
+	oidcClientId := odigosConfiguration.Oidc.ClientId
+	oidcTenantUrl := odigosConfiguration.Oidc.TenantUrl
 	if !strings.HasPrefix(oidcTenantUrl, "https://") {
 		oidcTenantUrl = fmt.Sprintf("https://%s", oidcTenantUrl)
 	}
 
 	shouldProcessOidc := oidcTenantUrl != "" && oidcClientId != "" && oidcClientSecret != ""
 
-	return uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc
+	return uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc, nil
 }
 
 func getOidcProvider(ctx context.Context) (string, string, string, string, *oidc.Provider, error) {
-	uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc := getOidcValuesFromConfig(ctx)
+	uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc, err := getOidcValuesFromConfig(ctx)
+	if err != nil {
+		return "", "", "", "", nil, err
+	}
 	if !shouldProcessOidc {
 		return "", "", "", "", nil, nil
 	}
@@ -139,11 +210,13 @@ func OidcAuthCallback(ctx context.Context, c *gin.Context) {
 	// Initialize OIDC & OAuth2
 	oidcTokenVerifier, err := GetOidcTokenVerifier(ctx)
 	if err != nil {
-		log.Fatalf("Error initializing OIDC verifier: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"oidc verifier": err.Error()})
+		return
 	}
 	oauth2Config, err := GetOidcOauthConfig(ctx)
 	if err != nil {
-		log.Fatalf("Error initializing OAuth2 config: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"oauth2 config": err.Error()})
+		return
 	}
 	// We're in a callback (after being redirected from auth),
 	// so we should always have OIDC & OAuth2 configured here.

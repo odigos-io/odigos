@@ -24,14 +24,19 @@ const (
 	MessageEventAdded    MessageEvent = "Added"
 	MessageEventDeleted  MessageEvent = "Deleted"
 	MessageEventModified MessageEvent = "Modified"
+
+	// Diagnose progress events. Data is JSON: DiagnoseStagesRequested = array of stage ids;
+	// DiagnoseStageCompleted = object with "stage", "status" (success|error), and optional "message" on error.
+	MessageEventDiagnoseStagesRequested MessageEvent = "DiagnoseStagesRequested"
+	MessageEventDiagnoseStageCompleted  MessageEvent = "DiagnoseStageCompleted"
 )
 
 type SSEMessage struct {
 	Type    MessageType  `json:"type"`
 	Event   MessageEvent `json:"event"`
 	Data    string       `json:"data"`
-	Target  string       `json:"target"`
 	CRDType string       `json:"crdType"`
+	Targets []string     `json:"targets"`
 }
 
 // This map will hold channels for each client connected to the SSE endpoint
@@ -68,7 +73,6 @@ func HandleSSEConnections(c *gin.Context) {
 		Event:   "Connected",
 		Data:    "Connected to the server",
 		CRDType: "CONNECTED",
-		Target:  "CONNECTED",
 	})
 
 	// Continuously send SSE messages to the client

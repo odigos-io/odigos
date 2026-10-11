@@ -1,0 +1,396 @@
+{{- /* ensure ResourceSizePreset is valid early */ -}}
+
+{{- include "collector.validateSizing" . -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-configuration
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    odigos.io/config: '1'
+    odigos.io/system-object: "true"
+data:
+  config.yaml: |
+    configVersion: 1
+    componentLogLevels:
+      default: {{ .Values.logLevel | default "info" }}
+      {{- if .Values.instrumentor.logLevel }}
+      instrumentor: {{ .Values.instrumentor.logLevel }}
+      {{- end }}
+      {{- if .Values.odiglet.logLevel }}
+      odiglet: {{ .Values.odiglet.logLevel }}
+      {{- end }}
+      {{- if .Values.ui.logLevel }}
+      ui: {{ .Values.ui.logLevel }}
+      {{- end }}
+    {{- if .Values.clusterName }}
+    clusterName: {{ .Values.clusterName }}
+    {{- end }}
+    {{- if .Values.centralProxy.centralBackendURL }}
+    centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
+    {{- end }}
+    imagePrefix: {{ template "utils.imagePrefix" . }}
+    {{- if .Values.ui.uiMode }}
+    uiMode: {{ .Values.ui.uiMode }}
+    {{- end }}
+    {{- if .Values.ui.mcpAccessMode }}
+    mcpAccessMode: {{ .Values.ui.mcpAccessMode }}
+    {{- end }}
+    mcpEnabled: {{ dig "mcp" "enabled" true .Values.ui }}
+    {{- if .Values.ui.uiPaginationLimit }}
+    uiPaginationLimit: {{ .Values.ui.uiPaginationLimit }}
+    {{- end }}
+    {{- if .Values.ui.uiRemoteUrl }}
+    uiRemoteUrl: {{ .Values.ui.uiRemoteUrl }}
+    {{- end }}
+    {{- if or .Values.ui.oidcTenantUrl .Values.ui.oidcClientId .Values.ui.oidcClientSecret }}
+    oidc:
+      {{- if .Values.ui.oidcTenantUrl }}
+      tenantUrl: {{ .Values.ui.oidcTenantUrl }}
+      {{- end }}
+      {{- if .Values.ui.oidcClientId }}
+      clientId: {{ .Values.ui.oidcClientId }}
+      {{- end }}
+      {{- if .Values.ui.oidcClientSecret }}
+      clientSecret: secretRef:odigos-oidc
+      {{- end }}
+    {{- end }}
+    {{- /*
+    Gated on odigos.secretExists exactly like every templates/insights/* resource:
+    odigos-insights runs the enterprise-insights image, so without an on-prem token
+    none of its workloads are rendered. Advertising the feature here anyway would make
+    the gateway force traces on cluster-wide, buffer them in groupbytrace and export to
+    a Service that does not exist.
+    */}}
+    {{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+    insights:
+      enabled: {{ .Values.insights.enabled }}
+    {{- end }}
+    {{- /*
+    Enterprise-only. Gated on odigos.secretExists like insights: without a token the
+    gateway must not force traces on or install the unmatched-URL debug side-channel.
+    */}}
+    {{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" }}
+    {{- $ltl := .Values.cardinalityControl.urlTemplatization.liveTrafficLearning }}
+    {{- $ruleComputation := $ltl.ruleComputation | default dict }}
+    {{- $automaticRules := $ltl.automaticRules | default dict }}
+    cardinalityControl:
+      urlTemplatization:
+        liveTrafficLearning:
+          enabled: true
+          {{- if $ltl.maxExamplePathsPerWorkload }}
+          maxExamplePathsPerWorkload: {{ $ltl.maxExamplePathsPerWorkload }}
+          {{- end }}
+          {{- if $ltl.pathExampleIdleTTL }}
+          pathExampleIdleTTL: {{ $ltl.pathExampleIdleTTL | quote }}
+          {{- end }}
+          {{- if $ltl.learningInterval }}
+          learningInterval: {{ $ltl.learningInterval | quote }}
+          {{- end }}
+          {{- if or $ruleComputation.minObservationsForRule $ruleComputation.minCardinalityForTemplating }}
+          ruleComputation:
+            {{- if $ruleComputation.minObservationsForRule }}
+            minObservationsForRule: {{ $ruleComputation.minObservationsForRule }}
+            {{- end }}
+            {{- if $ruleComputation.minCardinalityForTemplating }}
+            minCardinalityForTemplating: {{ $ruleComputation.minCardinalityForTemplating }}
+            {{- end }}
+          {{- end }}
+          {{- if $automaticRules.enabled }}
+          automaticRules:
+            enabled: {{ $automaticRules.enabled }}
+          {{- end }}
+    {{- end }}
+    {{- if .Values.profiling.enabled }}
+    {{- $pex := .Values.profiling.exporter | default dict }}
+    {{- $pretry := $pex.retryOnFailure | default dict }}
+    profiling:
+      enabled: true
+      exporter:
+        enableDataCompression: {{ $pex.enableDataCompression | default false }}
+        timeout: {{ $pex.timeout | default "5s" }}
+        retryOnFailure:
+          enabled: {{ $pretry.enabled | default true }}
+          initialInterval: {{ $pretry.initialInterval | default "5s" }}
+          maxInterval: {{ $pretry.maxInterval | default "30s" }}
+          maxElapsedTime: {{ $pretry.maxElapsedTime | default "300s" }}
+      {{- $pui := .Values.profiling.ui | default dict }}
+      ui:
+        slotTTLSeconds: {{ $pui.slotTTLSeconds | default 300 | int }}
+        maxSlots: {{ $pui.maxSlots | default 32 | int }}
+        slotMaxBytes: {{ $pui.slotMaxBytes | default 8388608 | int }}
+    {{- end }}
+    {{- if .Values.collectorGateway }}
+    {{- $gwLimiter := include "collector.gateway.memoryLimiter" . | fromYaml }}
+    collectorGateway:
+      MinReplicas: {{ include "collector.gateway.minReplicas" . }}
+      MaxReplicas: {{ include "collector.gateway.maxReplicas" . }}
+      requestMemoryMiB: {{ include "collector.gateway.memoryRequest" . }}
+      limitMemoryMiB: {{ include "collector.gateway.memoryLimit" . }}
+      requestCPUm: {{ include "collector.gateway.cpuRequest" . }}
+      limitCPUm: {{ include "collector.gateway.cpuLimit" . }}
+      memoryLimiterLimitMiB: {{ $gwLimiter.limitMiB }}
+      memoryLimiterSpikeLimitMiB: {{ $gwLimiter.spikeMiB }}
+      goMemLimitMiB: {{ $gwLimiter.goMiB }}
+      serviceGraph:
+        disabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
+        {{- if .Values.collectorGateway.serviceGraphExtraDimensions }}
+        extraDimensions:
+          {{- toYaml .Values.collectorGateway.serviceGraphExtraDimensions | nindent 10 }}
+        {{- end }}
+        {{- if .Values.collectorGateway.serviceGraphVirtualNodePeerAttributes }}
+        virtualNodePeerAttributes:
+          {{- toYaml .Values.collectorGateway.serviceGraphVirtualNodePeerAttributes | nindent 10 }}
+        {{- end }}
+      clusterMetricsEnabled: {{ .Values.collectorGateway.clusterMetricsEnabled }}
+      {{- with .Values.collectorGateway.httpsProxyAddress }}
+      httpsProxyAddress: {{ . }}
+      {{- end }}
+      {{- if .Values.collectorGateway.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+        {{- toYaml .Values.collectorGateway.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.collectorGateway.deploymentName }}
+      deploymentName: {{ .Values.collectorGateway.deploymentName }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.collectorNode }}
+    {{- $nodeLimiter := include "collector.node.memoryLimiter" . | fromYaml }}
+    collectorNode:
+      {{- with .Values.collectorNode.collectorOwnMetricsPort }}
+      collectorOwnMetricsPort: {{ . }}
+      {{- end }}
+      requestMemoryMiB: {{ include "collector.node.memoryRequest" . }}
+      limitMemoryMiB:   {{ include "collector.node.memoryLimit" . }}
+      requestCPUm:      {{ include "collector.node.cpuRequest" . }}
+      limitCPUm:        {{ include "collector.node.cpuLimit" . }}
+      memoryLimiterLimitMiB: {{ $nodeLimiter.limitMiB }}
+      memoryLimiterSpikeLimitMiB: {{ $nodeLimiter.spikeMiB }}
+      goMemLimitMiB: {{ $nodeLimiter.goMiB }}
+      {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
+      k8sNodeLogsDirectory: {{ . }}
+      {{- end }}
+      {{- with .Values.resourceDetectors }}
+      resourceDetectors:
+        {{- with .ec2 }}
+        ec2:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+        {{- with .eks }}
+        eks:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+        {{- with .azure }}
+        azure:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+        {{- with .aks }}
+        aks:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+        {{- with .gcp }}
+        gcp:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.collectorNode.otlpExporterConfiguration}}
+      otlpExporterConfiguration:
+        enableDataCompression: {{ .enableDataCompression }}
+        timeout: {{ .timeout }}
+        retryOnFailure:
+          enabled: {{ .retryOnFailure.enabled }}
+          initialInterval: {{ .retryOnFailure.initialInterval }}
+          maxInterval: {{ .retryOnFailure.maxInterval }}
+          maxElapsedTime: {{ .retryOnFailure.maxElapsedTime }}
+      {{- end }}
+    {{- end }}
+    {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
+    userInstrumentationEnvs:
+      languages:
+        {{- range $lang, $config := .Values.userInstrumentationEnvs.languages }}
+        {{- if or $config.enabled $config.env }}
+        {{ $lang }}:
+          enabled: {{ $config.enabled }}
+          {{- if $config.env }}
+          env:
+            {{- range $key, $value := $config.env }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
+    {{- end }}
+    {{- if .Values.profiles }}
+      {{- if not (kindIs "slice" .Values.profiles) }}
+        {{- fail "Invalid 'profiles' value: must be a list. Example (YAML): profiles: [PROFILE_NAME]  |  CLI: --set profiles={PROFILE_NAME}" }}
+      {{- end }}
+    profiles:
+      {{- toYaml .Values.profiles | nindent 6 }}
+    {{- end }}
+    telemetryEnabled: {{ .Values.telemetry.enabled }}
+    openshiftEnabled: {{ .Values.openshift.enabled }}
+    psp: {{ .Values.psp.enabled }}
+    {{- if .Values.ignoredNamespaces }}
+    ignoredNamespaces:
+      {{- toYaml .Values.ignoredNamespaces | nindent 6 }}
+    {{- end }}
+    {{- if .Values.ignoredContainers }}
+    ignoredContainers:
+      {{- toYaml .Values.ignoredContainers | nindent 6 }}
+    {{- end }}
+    {{- if kindIs "bool" .Values.ignoreOdigosNamespace }}
+    ignoreOdigosNamespace: {{ .Values.ignoreOdigosNamespace }}
+    {{- else }}
+    ignoreOdigosNamespace: true
+    {{- end }}
+    {{- if .Values.instrumentor.mountMethod }}
+      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container" "k8s-csi-driver") }}
+    mountMethod: {{ .Values.instrumentor.mountMethod }}
+      {{- else }}
+        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device', 'k8s-init-container' and 'k8s-csi-driver'." }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
+    checkDeviceHealthBeforeInjection: {{ .Values.instrumentor.checkDeviceHealthBeforeInjection }}
+    {{- end }}
+    {{- if .Values.instrumentor.agentsInitContainerResources }}
+    agentsInitContainerResources:
+      {{- if .Values.instrumentor.agentsInitContainerResources.requests.cpu }}
+      requestCPUm: {{ .Values.instrumentor.agentsInitContainerResources.requests.cpu | toString | replace "m" "" | int }}
+      {{- end }}
+      {{- if .Values.instrumentor.agentsInitContainerResources.limits.cpu }}
+      limitCPUm: {{ .Values.instrumentor.agentsInitContainerResources.limits.cpu | toString | replace "m" "" | int }}
+      {{- end }}
+      {{- if .Values.instrumentor.agentsInitContainerResources.requests.memory }}
+      requestMemoryMiB: {{ .Values.instrumentor.agentsInitContainerResources.requests.memory | toString | replace "Mi" "" | int }}
+      {{- end }}
+      {{- if .Values.instrumentor.agentsInitContainerResources.limits.memory }}
+      limitMemoryMiB: {{ .Values.instrumentor.agentsInitContainerResources.limits.memory | toString | replace "Mi" "" | int }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.ResourceSizePreset }}
+    resourceSizePreset: {{ .Values.ResourceSizePreset }}
+    {{- end }}
+    {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
+    {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}
+    {{- fail "Error: Invalid agentEnvVarsInjectionMethod. Supported values are 'loader', 'pod-manifest', and 'loader-fallback-to-pod-manifest'." }}
+    {{- else if $envMethod }}
+    agentEnvVarsInjectionMethod: {{ $envMethod }}
+    {{- end }}
+    {{- if .Values.nodeSelector }}
+    nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- end }}
+    {{- if .Values.karpenter.enabled }}
+    karpenterEnabled: {{ .Values.karpenter.enabled }}
+    {{- end }}
+    {{- if .Values.autoRollback.disabled }}
+    rollbackDisabled: {{ .Values.autoRollback.disabled }}
+    {{- end }}
+    {{- if .Values.autoRollback.graceTime }}
+    rollbackGraceTime: {{ .Values.autoRollback.graceTime }}
+    {{- end }}
+    {{- if .Values.autoRollback.stabilityWindowTime }}
+    rollbackStabilityWindow: {{ .Values.autoRollback.stabilityWindowTime }}
+    {{- end }}
+    {{- if .Values.rollout }}
+    rollout:
+      {{- if .Values.rollout.automaticRolloutDisabled }}
+      automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
+      {{- end }}
+      {{- if .Values.rollout.maxConcurrentRollouts }}
+      maxConcurrentRollouts: {{ .Values.rollout.maxConcurrentRollouts }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.clickhouseDestinationJsonType.enabled }}
+    clickhouseDestinationJsonType: {{ .Values.clickhouseDestinationJsonType.enabled }}
+    {{- end }}
+    {{- if .Values.allowConcurrentAgents.enabled }}
+    allowConcurrentAgents: {{ .Values.allowConcurrentAgents.enabled }}
+    {{- end }}
+    {{- if .Values.goAutoOffsetsCron }}
+    goAutoOffsetsCron: {{ .Values.goAutoOffsetsCron }}
+    {{- end }}
+    {{- if .Values.goAutoOffsetsMode }}
+    goAutoOffsetsMode: {{ quote .Values.goAutoOffsetsMode }}
+    {{- end }}
+    {{- if .Values.metricsSources }}
+    metricsSources:
+      {{- toYaml .Values.metricsSources | nindent 6 }}
+    {{- end }}
+    {{- if .Values.traceCorrelations }}
+    traceCorrelations:
+      {{- toYaml .Values.traceCorrelations | nindent 6 }}
+    {{- end }}
+    {{- if .Values.odiglet.traceIdSuffix }}
+    traceIdSuffix: {{ .Values.odiglet.traceIdSuffix }}
+    {{- end }}
+    odigosOwnTelemetryStore:
+      metricsStoreDisabled: {{ .Values.ownTelemetry.metricsStore.disabled }}
+    {{- if or .Values.imagePullSecrets (include "odigos.hasEnterpriseRegistryPullSecret" .) }}
+    imagePullSecrets:
+      {{- range .Values.imagePullSecrets }}
+      - {{ . | quote }}
+      {{- end }}
+      {{- if include "odigos.hasEnterpriseRegistryPullSecret" . }}
+      - {{ include "odigos.enterpriseRegistryPullSecretName" . | quote }}
+      {{- end }}
+    {{- end }}
+    {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
+    sampling:
+      {{- if ne .Values.sampling.dryRun nil }}
+      dryRun: {{ .Values.sampling.dryRun }}
+      {{- end }}
+      {{- if .Values.sampling.spanSamplingAttributes }}
+      spanSamplingAttributes:
+        {{- if ne .Values.sampling.spanSamplingAttributes.disabled nil }}
+        disabled: {{ .Values.sampling.spanSamplingAttributes.disabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.samplingCategoryDisabled nil }}
+        samplingCategoryDisabled: {{ .Values.sampling.spanSamplingAttributes.samplingCategoryDisabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.traceDecidingRuleDisabled nil }}
+        traceDecidingRuleDisabled: {{ .Values.sampling.spanSamplingAttributes.traceDecidingRuleDisabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.spanDecisionAttributesDisabled nil }}
+        spanDecisionAttributesDisabled: {{ .Values.sampling.spanSamplingAttributes.spanDecisionAttributesDisabled }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.sampling.tailSampling }}
+      tailSampling:
+        {{- if .Values.sampling.tailSampling.disabled }}
+        disabled: {{ .Values.sampling.tailSampling.disabled }}
+        {{- end }}
+        {{- if .Values.sampling.tailSampling.traceAggregationWaitDuration }}
+        traceAggregationWaitDuration: {{ .Values.sampling.tailSampling.traceAggregationWaitDuration | quote }}
+        {{- end }}
+        {{- if .Values.sampling.tailSampling.noisyOperationsEnforcement }}
+        noisyOperationsEnforcement: {{ .Values.sampling.tailSampling.noisyOperationsEnforcement }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.sampling.k8sHealthProbesSampling }}
+      k8sHealthProbesSampling:
+        {{- if .Values.sampling.k8sHealthProbesSampling.enabled }}
+        enabled: {{ .Values.sampling.k8sHealthProbesSampling.enabled }}
+        {{- end }}
+        {{- if .Values.sampling.k8sHealthProbesSampling.keepPercentage }}
+        keepPercentage: {{ .Values.sampling.k8sHealthProbesSampling.keepPercentage }}
+        {{- end }}
+      {{- end }}
+    {{- end }}

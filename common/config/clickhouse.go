@@ -9,20 +9,51 @@ import (
 )
 
 const (
-	clickhouseEndpoint     = "CLICKHOUSE_ENDPOINT"
-	clickhouseUsername     = "CLICKHOUSE_USERNAME"
-	clickhousePassword     = "${CLICKHOUSE_PASSWORD}"
-	clickhouseCreateSchema = "CLICKHOUSE_CREATE_SCHEME"
-	clickhouseDatabaseName = "CLICKHOUSE_DATABASE_NAME"
-	clickhouseTracesTable  = "CLICKHOUSE_TRACES_TABLE"
-	clickhouseMetricsTable = "CLICKHOUSE_METRICS_TABLE"
-	clickhouseLogsTable    = "CLICKHOUSE_LOGS_TABLE"
+	clickhouseEndpoint                 = "CLICKHOUSE_ENDPOINT"
+	clickhouseUsername                 = "CLICKHOUSE_USERNAME"
+	clickhousePasswordKey              = "CLICKHOUSE_PASSWORD"
+	clickhouseCreateSchema             = "CLICKHOUSE_CREATE_SCHEME"
+	clickhouseDatabaseName             = "CLICKHOUSE_DATABASE_NAME"
+	clickhouseTlsEnabled               = "CLICKHOUSE_TLS_ENABLED"
+	clickhouseUseCustomCa              = "CLICKHOUSE_USE_CUSTOM_CA"
+	clickhouseCaPem                    = "CLICKHOUSE_CA_PEM"
+	clickhouseInsecureSkipVerify       = "CLICKHOUSE_INSECURE_SKIP_VERIFY"
+	clickhouseTracesTable              = "CLICKHOUSE_TRACES_TABLE"
+	clickhouseLogsTable                = "CLICKHOUSE_LOGS_TABLE"
+	clickhouseMetricsTableSum          = "CLICKHOUSE_METRICS_TABLE_SUM"
+	clickhouseMetricsTableGauge        = "CLICKHOUSE_METRICS_TABLE_GAUGE"
+	clickhouseMetricsTableHistogram    = "CLICKHOUSE_METRICS_TABLE_HISTOGRAM"
+	clickhouseMetricsTableSummary      = "CLICKHOUSE_METRICS_TABLE_SUMMARY"
+	clickhouseMetricsTableExpHistogram = "CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM"
+	hyperdxLogNormalizer               = "HYPERDX_LOG_NORMALIZER"
+
+	// ClickhouseCaMountPath is the path where the CA certificate is mounted in the collector pod
+	ClickhouseCaMountPath        = "/etc/clickhouse/certs"
+	ClickhouseCaSecretVolumeName = "clickhouse-ca-cert"
 )
 
 type Clickhouse struct{}
 
 func (c *Clickhouse) DestType() common.DestinationType {
 	return common.ClickhouseDestinationType
+}
+
+func clickhouseTlsConfig(dest ExporterConfigurer) GenericMap {
+	tlsConfig := GenericMap{
+		"insecure": false,
+	}
+
+	if val, ok := dest.GetConfig()[clickhouseInsecureSkipVerify]; ok && val != "" {
+		tlsConfig["insecure_skip_verify"] = parseBool(val)
+	}
+
+	// Set ca_file only if user explicitly chose to use a custom CA certificate
+	// The CA certificate will be mounted by k8sconfig if CLICKHOUSE_CA_PEM exists in the secret
+	if useCustomCa, ok := dest.GetConfig()[clickhouseUseCustomCa]; ok && useCustomCa == "true" {
+		tlsConfig["ca_file"] = ClickhouseCaMountPath + "/" + dest.GetID() + "/" + clickhouseCaPem
+	}
+
+	return tlsConfig
 }
 
 func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
@@ -44,15 +75,14 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		endpoint = strings.Replace(endpoint, parsedUrl.Host, parsedUrl.Host+":9000", 1)
 	}
 
-	username, userExists := dest.GetConfig()[clickhouseUsername]
-
 	exporterName := "clickhouse/clickhouse-" + dest.GetID()
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 	}
-	if userExists {
+
+	if username, userExists := dest.GetConfig()[clickhouseUsername]; userExists {
 		exporterConfig["username"] = username
-		exporterConfig["password"] = clickhousePassword
+		exporterConfig["password"] = SecretEnvPlaceholder(clickhousePasswordKey, dest)
 	}
 
 	createSchema := dest.GetConfig()[clickhouseCreateSchema]
@@ -64,45 +94,63 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 	exporterConfig["database"] = dbName
 
-	tracesTable, exists := dest.GetConfig()[clickhouseTracesTable]
-	if exists {
+	if dest.GetConfig()[clickhouseTlsEnabled] == "true" {
+		exporterConfig["tls"] = clickhouseTlsConfig(dest)
+	}
+
+	if tracesTable, ok := dest.GetConfig()[clickhouseTracesTable]; ok {
 		exporterConfig["traces_table_name"] = tracesTable
 	}
 
-	metricsTable, exists := dest.GetConfig()[clickhouseMetricsTable]
-	if exists {
-		exporterConfig["metrics_table_name"] = metricsTable
-	}
-
-	logsTable, exists := dest.GetConfig()[clickhouseLogsTable]
-	if exists {
+	if logsTable, ok := dest.GetConfig()[clickhouseLogsTable]; ok {
 		exporterConfig["logs_table_name"] = logsTable
 	}
 
+	// Handle each metric table separately if provided
+	metricsTables := GenericMap{}
+	if sum, ok := dest.GetConfig()[clickhouseMetricsTableSum]; ok {
+		metricsTables["sum"] = GenericMap{"name": sum}
+	}
+	if gauge, ok := dest.GetConfig()[clickhouseMetricsTableGauge]; ok {
+		metricsTables["gauge"] = GenericMap{"name": gauge}
+	}
+	if hist, ok := dest.GetConfig()[clickhouseMetricsTableHistogram]; ok {
+		metricsTables["histogram"] = GenericMap{"name": hist}
+	}
+	if summary, ok := dest.GetConfig()[clickhouseMetricsTableSummary]; ok {
+		metricsTables["summary"] = GenericMap{"name": summary}
+	}
+	if expHist, ok := dest.GetConfig()[clickhouseMetricsTableExpHistogram]; ok {
+		metricsTables["exponential_histogram"] = GenericMap{"name": expHist}
+	}
+
+	exporterConfig["metrics_tables"] = metricsTables
+
 	currentConfig.Exporters[exporterName] = exporterConfig
+
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/clickhouse-" + dest.GetID()
-		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-		pipelineNames = append(pipelineNames, tracesPipelineName)
+		name := "traces/clickhouse-" + dest.GetID()
+		currentConfig.Service.Pipelines[name] = Pipeline{Exporters: []string{exporterName}}
+		pipelineNames = append(pipelineNames, name)
 	}
-
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/clickhouse-" + dest.GetID()
-		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-		pipelineNames = append(pipelineNames, metricsPipelineName)
+		name := "metrics/clickhouse-" + dest.GetID()
+		currentConfig.Service.Pipelines[name] = Pipeline{Exporters: []string{exporterName}}
+		pipelineNames = append(pipelineNames, name)
 	}
-
 	if isLoggingEnabled(dest) {
-		logsPipelineName := "logs/clickhouse-" + dest.GetID()
-		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
+		name := "logs/clickhouse-" + dest.GetID()
+		pipeline := Pipeline{Exporters: []string{exporterName}}
+
+		if val, ok := dest.GetConfig()[hyperdxLogNormalizer]; ok && getBooleanConfig(val, "true") {
+			processorName := "transform/hyperdx-log-normalizer-" + dest.GetID()
+			currentConfig.Processors[processorName] = HyperdxLogNormalizerProcessor
+			pipeline.Processors = []string{processorName}
 		}
-		pipelineNames = append(pipelineNames, logsPipelineName)
+
+		currentConfig.Service.Pipelines[name] = pipeline
+		pipelineNames = append(pipelineNames, name)
 	}
 
 	return pipelineNames, nil

@@ -28,10 +28,10 @@ externalPackages:
   - match: ^go\.opentelemetry\.io/otel/attribute\.Key$
     target: https://pkg.go.dev/go.opentelemetry.io/otel/attribute#Key
 
-  - match: ^github\.com/odigos-io/odigos/common.(.*)$
+  - match: ^github\.com/odigos-io/odigos/common/api/instrumentationrules\.(.*)$
+    target: https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#{{- .TypeIdentifier -}}
+  - match: ^github\.com/odigos-io/odigos/common\.(.*)$
     target: https://pkg.go.dev/github.com/odigos-io/odigos/common#{{- .TypeIdentifier -}}
-  - match: ^github\.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.(.*)$
-    target: https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#{{- .TypeIdentifier -}}
   - match: ^github\.com/odigos-io/odigos/api/k8sconsts.(.*)$
     target: https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#{{- .TypeIdentifier -}}
 
@@ -49,6 +49,7 @@ stripPrefix:
   - github.com/tengqm/kubeconfig/config/bootstraptoken/v1.
   - github.com/odigos-io/odigos/k8sutils/pkg/
   - github.com/odigos-io/odigos/api/odigos/v1alpha1/
+  - github.com/odigos-io/odigos/api/cloud-connectors/v1alpha1/
   - github.com/odigos-io/odigos/api/actions/v1alpha1/
   - github.com/odigos-io/odigos/api/
   - github.com/odigos-io/odigos/
@@ -58,6 +59,13 @@ apis:
     title: odigos.io/v1alpha1
     package: github.com/odigos-io/odigos
     path: api/odigos/v1alpha1
+
+  # Cloud connector types share the odigos.io/v1alpha1 group but live in their own
+  # package (api/cloud-connectors/v1alpha1); documented as a separate reference page.
+  - name: cloud-connectors.odigos.io
+    title: odigos.io/v1alpha1 (Cloud Connectors)
+    package: github.com/odigos-io/odigos
+    path: api/cloud-connectors/v1alpha1
 
   - name: actions.odigos.io
     title: actions.odigos.io/v1alpha1

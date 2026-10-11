@@ -10,46 +10,117 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-logr/logr"
+	googlecloudmetadata "cloud.google.com/go/compute/metadata"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
+	controllerconfig "github.com/odigos-io/odigos/instrumentor/controllers/controller_config"
+	"github.com/odigos-io/odigos/instrumentor/controllers/metricshandler"
+	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
+	"github.com/odigos-io/odigos/instrumentor/internal/clusterinfo"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/recommendations"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/version"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+const defaultCollectorImage = "registry.odigos.io/odigos-collector"
 
 type Instrumentor struct {
 	mgr                controllerruntime.Manager
-	logger             logr.Logger
 	certReady          chan struct{}
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
+	k8sVersion         *version.Version
 }
 
-func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
+// Options configures a new Instrumentor.
+type Options struct {
+	ManagerOptions  controllers.KubeManagerOptions
+	DistrosProvider *distros.Provider
+	// Runnables build runnables that are registered on the controller-runtime manager
+	// before it starts (e.g. enterprise periodic jobs). Each factory receives the manager
+	// so the runnable can use its cached client. Runnables participate in manager
+	// lifecycle and can opt into leader election via manager.LeaderElectionRunnable.
+	Runnables []func(mgr manager.Manager) manager.Runnable
+}
+
+func New(opts Options) (*Instrumentor, error) {
 	err := feature.Setup()
 	if err != nil {
 		return nil, err
 	}
 
-	mgr, err := controllers.CreateManager(opts)
+	err = destinations.Load()
+	if err != nil {
+		return nil, fmt.Errorf("unable to load destinations data: %w", err)
+	}
+
+	if err := recommendations.Load(); err != nil {
+		return nil, fmt.Errorf("unable to load recommendations catalog: %w", err)
+	}
+
+	mgr, err := controllers.CreateManager(opts.ManagerOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	// remove the deprecated webhook secret if it exists
-	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
-		Namespace: env.GetCurrentNamespace(),
-		Name:      k8sconsts.DeprecatedInstrumentorWebhookSecretName,
+	for _, newRunnable := range opts.Runnables {
+		if err := mgr.Add(newRunnable(mgr)); err != nil {
+			return nil, fmt.Errorf("unable to add runnable: %w", err)
+		}
+	}
+
+	odigosNs := env.GetCurrentNamespace()
+
+	// One-shot upgrade cleanup after autoscaler merged into instrumentor:
+	// delete leftover autoscaler webhook cert Secrets and the custom-metrics
+	// APIService if Odigos still owns it but Helm does not, so the next helm
+	// upgrade can create it. Safe once those objects are gone.
+	// Remove after 8 April 2027 (6 months after this landed).
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.ManagerOptions.Logger, Secret: types.NamespacedName{
+		Namespace: odigosNs,
+		Name:      k8sconsts.DeprecatedAutoscalerWebhookSecretName,
 	}})
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.ManagerOptions.Logger, Secret: types.NamespacedName{
+		Namespace: odigosNs,
+		Name:      k8sconsts.AutoscalerWebhookSecretName,
+	}})
+	mgr.Add(&metricshandler.APIServiceDeleteMigration{
+		Client: mgr.GetClient(),
+		Logger: opts.ManagerOptions.Logger,
+	})
+
+	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return nil, fmt.Errorf("unable to create dynamic client: %w", err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return nil, fmt.Errorf("unable to create kubernetes client: %w", err)
+	}
+	err = clusterinfo.RecordClusterInfo(context.Background(), clientset, odigosNs)
+	if err != nil {
+		opts.ManagerOptions.Logger.Error(err, "unable to record cluster info, skipping")
+	}
 
 	// setup the certificate rotator
 	rotatorSetupFinished := make(chan struct{})
@@ -65,6 +136,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 			{Name: k8sconsts.InstrumentorMutatingWebhookName, Type: rotator.Mutating},
 			{Name: k8sconsts.InstrumentorSourceMutatingWebhookName, Type: rotator.Mutating},
 			{Name: k8sconsts.InstrumentorSourceValidatingWebhookName, Type: rotator.Validating},
+			{Name: k8sconsts.AutoscalerActionValidatingWebhookName, Type: rotator.Validating},
 		},
 		DNSName: "serving-cert",
 		ExtraDNSNames: []string{
@@ -90,8 +162,33 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return nil, fmt.Errorf("unable to add cert rotator: %w", err)
 	}
 
+	k8sVersion, err := utils.ClusterVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	collectorImage := defaultCollectorImage
+	if collectorImageEnv, ok := os.LookupEnv("ODIGOS_COLLECTOR_IMAGE"); ok {
+		collectorImage = collectorImageEnv
+	}
+	onGKE := isRunningOnGKE(context.Background())
+	if onGKE {
+		opts.ManagerOptions.Logger.Info("Running on GKE")
+	}
+	pipeline.ControllerConfig = &controllerconfig.ControllerConfig{
+		K8sVersion:     feature.K8sVersion(),
+		CollectorImage: collectorImage,
+		OnGKE:          onGKE,
+	}
+
 	// wire up the controllers and webhooks
-	err = controllers.SetupWithManager(mgr, dp)
+	scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention := parseFirstInstrumentedPodAtNodeLabelRetention()
+	configOpts := controllers.OdigosConfigurationOptions{
+		Tier:          env.GetOdigosTierFromEnv(),
+		OdigosVersion: os.Getenv(consts.OdigosVersionEnvVarName),
+		DynamicClient: dynamicClient,
+	}
+	err = controllers.SetupWithManager(context.Background(), mgr, opts.DistrosProvider, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention, configOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -119,23 +216,24 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 
 	return &Instrumentor{
 		mgr:                mgr,
-		logger:             opts.Logger,
 		certReady:          rotatorSetupFinished,
-		dp:                 dp,
+		dp:                 opts.DistrosProvider,
 		webhooksRegistered: webhooksRegistered,
+		k8sVersion:         k8sVersion,
 	}, nil
 }
 
 func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
+	logger := commonlogger.LoggerCompat().With("subsystem", "instrumentor")
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	// Start pprof server
 	g.Go(func() error {
-		err := common.StartPprofServer(groupCtx, i.logger)
+		err := common.StartPprofServer(groupCtx, commonlogger.ToLogr(), int(k8sconsts.DefaultPprofEndpointPort))
 		if err != nil {
-			i.logger.Error(err, "Failed to start pprof server")
+			logger.Error("Failed to start pprof server", "err", err)
 		} else {
-			i.logger.V(0).Info("Pprof server exited")
+			logger.Info("Pprof server exited")
 		}
 		// if we fail to start the pprof server, don't return an error as it is not critical
 		// and we can run the rest of the components
@@ -146,7 +244,7 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		// Start telemetry report
 		g.Go(func() error {
 			report.Start(groupCtx, i.mgr.GetClient())
-			i.logger.V(0).Info("Telemetry reporting exited")
+			logger.Info("Telemetry reporting exited")
 			return nil
 		})
 	}
@@ -155,9 +253,9 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 	g.Go(func() error {
 		err := i.mgr.Start(groupCtx)
 		if err != nil {
-			i.logger.Error(err, "error starting kube manager")
+			logger.Error("error starting kube manager", "err", err)
 		} else {
-			i.logger.V(0).Info("Kube manager exited")
+			logger.Info("Kube manager exited")
 		}
 		return err
 	})
@@ -169,18 +267,53 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		case <-groupCtx.Done():
 			return nil
 		}
-		i.logger.V(0).Info("Cert rotator is ready")
-		err := controllers.RegisterWebhooks(i.mgr, i.dp)
+		logger.Info("Cert rotator is ready")
+		err := controllers.RegisterWebhooks(i.mgr, controllers.WebhookConfig{
+			DistrosProvider: i.dp,
+			K8sVersion:      i.k8sVersion,
+		})
 		if err != nil {
 			return err
 		}
+		if err := metricshandler.RegisterCustomMetricsAPI(i.mgr); err != nil {
+			logger.Error("failed to register custom metrics API", "err", err)
+		} else {
+			logger.Info("Custom Metrics API registered successfully")
+		}
 		i.webhooksRegistered.Store(true)
-		i.logger.V(0).Info("Webhooks registered")
+		logger.Info("Webhooks registered")
 		return nil
 	})
 
 	err := g.Wait()
 	if err != nil {
-		i.logger.Error(err, "Instrumentor exited with error")
+		logger.Error("Instrumentor exited with error", "err", err)
 	}
+}
+
+func parseFirstInstrumentedPodAtNodeLabelRetention() (enabled bool, retention time.Duration) {
+	raw := os.Getenv(k8sconsts.FirstInstrumentedPodAtNodeLabelRetentionEnvVar)
+	if raw == "" {
+		return false, 0
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		commonlogger.LoggerCompat().Error("invalid instrumented pods node label retention, using 5m",
+			"env", k8sconsts.FirstInstrumentedPodAtNodeLabelRetentionEnvVar, "value", raw, "err", err)
+		return true, 5 * time.Minute
+	}
+	if d < 0 {
+		d = 0
+	}
+	return true, d
+}
+
+// based on https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/19c4db6ea12211308fbd2cba12cc8665a5b7c890/detectors/gcp/gke.go#L34
+func isRunningOnGKE(ctx context.Context) bool {
+	c := googlecloudmetadata.NewClient(nil)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	_, err := c.InstanceAttributeValueWithContext(ctx, "cluster-location")
+	return err == nil
 }

@@ -5,6 +5,111 @@ export const CREATE_ACTION = gql`
     createAction(action: $action) {
       id
       type
+      name
+      notes
+      disabled
+      signals
+      uiGenerated
+      managedBy
+      fields {
+        collectContainerAttributes
+        collectReplicaSetAttributes
+        collectWorkloadId
+        collectClusterId
+        labelsAttributes {
+          labelKey
+          attributeKey
+          from
+          fromSources
+        }
+        annotationsAttributes {
+          annotationKey
+          attributeKey
+          from
+          fromSources
+        }
+        clusterAttributes {
+          attributeName
+          attributeStringValue
+        }
+        overwriteExistingValues
+        attributeNamesToDelete
+        renames
+        piiCategories
+        customFormatMaskings {
+          lookupKey
+          dataFormat
+        }
+        customRegexMaskings {
+          regex
+        }
+        urlTemplatizationRulesGroups {
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          filterK8sNamespace
+          filterK8sWorkloadKind
+          filterK8sWorkloadName
+          filterProgrammingLanguage
+          notes
+          workloadFilters {
+            kind
+            name
+          }
+          templatizationRules {
+            template
+            notes
+            examples
+          }
+        }
+        urlTemplatizationDefaultGroups {
+          disabled
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
+          }
+        }
+        extractAttribute {
+          extractions {
+            targetAttributeName
+            lookupKey
+            dataFormat
+            regex
+          }
+        }
+        scopes {
+          sources {
+            namespace
+            kind
+            name
+          }
+          namespaces
+          languages
+        }
+        templatizeLiterals
+        removePostgresCastOperator
+      }
+      conditions {
+        status
+        type
+        reason
+        message
+      }
     }
   }
 `;
@@ -14,6 +119,111 @@ export const UPDATE_ACTION = gql`
     updateAction(id: $id, action: $action) {
       id
       type
+      name
+      notes
+      disabled
+      signals
+      uiGenerated
+      managedBy
+      fields {
+        collectContainerAttributes
+        collectReplicaSetAttributes
+        collectWorkloadId
+        collectClusterId
+        labelsAttributes {
+          labelKey
+          attributeKey
+          from
+          fromSources
+        }
+        annotationsAttributes {
+          annotationKey
+          attributeKey
+          from
+          fromSources
+        }
+        clusterAttributes {
+          attributeName
+          attributeStringValue
+        }
+        overwriteExistingValues
+        attributeNamesToDelete
+        renames
+        piiCategories
+        customFormatMaskings {
+          lookupKey
+          dataFormat
+        }
+        customRegexMaskings {
+          regex
+        }
+        urlTemplatizationRulesGroups {
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          filterK8sNamespace
+          filterK8sWorkloadKind
+          filterK8sWorkloadName
+          filterProgrammingLanguage
+          notes
+          workloadFilters {
+            kind
+            name
+          }
+          templatizationRules {
+            template
+            notes
+            examples
+          }
+        }
+        urlTemplatizationDefaultGroups {
+          disabled
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
+          }
+        }
+        extractAttribute {
+          extractions {
+            targetAttributeName
+            lookupKey
+            dataFormat
+            regex
+          }
+        }
+        scopes {
+          sources {
+            namespace
+            kind
+            name
+          }
+          namespaces
+          languages
+        }
+        templatizeLiterals
+        removePostgresCastOperator
+      }
+      conditions {
+        status
+        type
+        reason
+        message
+      }
     }
   }
 `;

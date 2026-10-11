@@ -1,0 +1,118 @@
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: nodejs-tail-sampling-errors-rules
+  namespace: odigos-test
+spec:
+  name: nodejs tail-sampling errors rules
+  notes: >-
+    Tail sampling for error scenarios on Deployment tail-sampling-errors.
+    Error traces are highly relevant (100%). Successful /ok baseline traffic is
+    cost-reduced to 10%.
+  highlyRelevantOperations:
+    - name: high-relevance-error
+      notes: >-
+        Error traces from /error and propagated /hops failures are sampled at
+        100%.
+      error: true
+      percentageAtLeast: 100
+      sourceScopes: &errorsDeploymentScopes
+        sources:
+          - kind: Deployment
+            name: tail-sampling-errors
+            namespace: default
+  costReductionRules:
+    - name: cost-reduction-ok-baseline
+      notes: Successful /ok requests are sampled at most 10%.
+      percentageAtMost: 10
+      operation:
+        httpServer:
+          route: /ok
+      sourceScopes: *errorsDeploymentScopes
+---
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: nodejs-tail-sampling-duration-rules
+  namespace: odigos-test
+spec:
+  name: nodejs tail-sampling duration rules
+  notes: >-
+    Tail sampling for duration scenarios on Deployment tail-sampling-duration.
+    Operations above 1000ms are highly relevant (100%). Operations above 500ms
+    are sampled at least 50%. Remaining traffic is cost-reduced to 10%.
+  highlyRelevantOperations:
+    - name: high-relevance-duration-above-1000ms
+      notes: Operations with duration above 1000ms are highly relevant and sampled at 100%.
+      durationAtLeastMs: 1000
+      percentageAtLeast: 100
+      sourceScopes: &durationDeploymentScopes
+        sources:
+          - kind: Deployment
+            name: tail-sampling-duration
+            namespace: default
+    - name: duration-above-500ms
+      notes: Operations with duration above 500ms are sampled at least 50%.
+      durationAtLeastMs: 500
+      percentageAtLeast: 50
+      sourceScopes: *durationDeploymentScopes
+  costReductionRules:
+    - name: cost-reduction-rest
+      notes: Remaining duration-scenario traffic is sampled at most 10%.
+      percentageAtMost: 10
+      sourceScopes: *durationDeploymentScopes
+---
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: nodejs-tail-sampling-http-server-rules
+  namespace: odigos-test
+spec:
+  name: nodejs tail-sampling http-server rules
+  notes: >-
+    Tail sampling for HTTP server route matching on Deployment
+    tail-sampling-http-server. Exact templated
+    /http-server/templated/:id/users/:name/orders/:uuid, prefix
+    /http-server/prefix/:id/items, and static AllStatic routes
+    (with and without a leading /) are highly relevant (100%).
+  highlyRelevantOperations:
+    - name: high-relevance-http-server-templated
+      notes: >-
+        Templated HTTP server route is sampled at 100%. Mixes {id} and * so both
+        segment forms match Express http.route params.
+      percentageAtLeast: 100
+      operation:
+        httpServer:
+          route: /http-server/templated/{id}/users/*/orders/*
+      sourceScopes: &httpServerDeploymentScopes
+        sources:
+          - kind: Deployment
+            name: tail-sampling-http-server
+            namespace: default
+    - name: high-relevance-http-server-templated-prefix
+      notes: >-
+        Templated HTTP server route prefix is sampled at 100%. Mixes {id} and *
+        so /http-server/prefix/:id/items and nested /items/:itemId both match.
+      percentageAtLeast: 100
+      operation:
+        httpServer:
+          routePrefix: /http-server/prefix/{id}/*
+      sourceScopes: *httpServerDeploymentScopes
+    - name: high-relevance-http-server-static-leading-slash
+      notes: >-
+        Static HTTP server route is sampled at 100%. Rule includes a leading /
+        so AllStatic matching still works when the user-facing route starts with /.
+      percentageAtLeast: 100
+      operation:
+        httpServer:
+          route: /http-server/static/leading-slash
+      sourceScopes: *httpServerDeploymentScopes
+    - name: high-relevance-http-server-static-no-leading-slash
+      notes: >-
+        Static HTTP server route is sampled at 100%. Rule omits the leading /
+        so AllStatic matching still works when the user-facing route has none.
+      percentageAtLeast: 100
+      operation:
+        httpServer:
+          route: http-server/static/no-leading-slash
+      sourceScopes: *httpServerDeploymentScopes

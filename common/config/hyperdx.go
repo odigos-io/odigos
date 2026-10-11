@@ -13,11 +13,11 @@ func (j *HyperDX) DestType() common.DestinationType {
 func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
 	uniqueUri := "hdx-" + dest.GetID()
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": "in-otel.hyperdx.io:4317",
 		"headers": GenericMap{
-			"authorization": "${HYPERDX_API_KEY}",
+			"authorization": SecretEnvPlaceholder("HYPERDX_API_KEY", dest),
 		},
 	}
 
@@ -41,9 +41,15 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 
 	if isLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
-		cfg.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
+		pipeline := Pipeline{Exporters: []string{exporterName}}
+
+		if val, ok := dest.GetConfig()[hyperdxLogNormalizer]; ok && getBooleanConfig(val, "true") {
+			processorName := "transform/hyperdx-log-normalizer-" + dest.GetID()
+			cfg.Processors[processorName] = HyperdxLogNormalizerProcessor
+			pipeline.Processors = []string{processorName}
 		}
+
+		cfg.Service.Pipelines[pipeName] = pipeline
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 

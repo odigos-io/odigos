@@ -8,6 +8,5 @@
   "trailingComma": "all",
   "bracketSpacing": true,
   "bracketSameLine": false,
-  "arrowParens": "always",
-  "parser": "typescript"
+  "arrowParens": "always"
 }

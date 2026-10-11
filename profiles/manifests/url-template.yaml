@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: url-template
+spec:
+  actionName: URL Templatization
+  notes: "Auto generated rule from url-template profile. Do not edit."
+  signals:
+    - TRACES
+  urlTemplatization: {}

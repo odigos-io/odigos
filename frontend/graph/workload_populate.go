@@ -1,0 +1,275 @@
+package graph
+
+import (
+	"cmp"
+	"context"
+	"slices"
+	"sync"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
+	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/graph/status"
+	"github.com/odigos-io/odigos/frontend/services"
+	frontendcommon "github.com/odigos-io/odigos/frontend/services/common"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+)
+
+// Serializes heavy workload queries so concurrent requests don't double memory usage.
+var heavyWorkloadQueryMu sync.Mutex
+
+// populateNamespaceWorkloadLightFields pre-computes the three resolver fields
+// requested by GetNamespacesWithWorkloads (markedForInstrumentation,
+// dataStreamNames, numberOfInstances) directly from the already-loaded source
+// and manifest caches. This lets each field resolver short-circuit via its
+// `if obj.X != nil` guard and keeps gqlgen's per-field goroutines in the 2 KB
+// stack range — critical at 20K workloads where spawning 60K work-doing
+// goroutines otherwise pushes the UI pod past its GOMEMLIMIT.
+//
+// Unlike populateWorkloadFields, this helper intentionally does NOT touch
+// InstrumentationConfigs or Pods — both are expensive to load cluster-wide
+// and are not needed by the source-selection UI that drives this query.
+func populateNamespaceWorkloadLightFields(ctx context.Context, l *loaders.Loaders, w *model.K8sWorkload) {
+	id := *w.ID
+
+	// Share a single GetSources lookup across the two source-derived fields
+	// instead of locking l.sourcesMutex twice per workload.
+	sources, sourcesErr := l.GetSources(ctx, id)
+	if sourcesErr == nil && sources != nil {
+		enabled, reason, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, nil)
+		if err == nil {
+			var marked *bool
+			if enabled {
+				marked = &enabled
+			} else if reason.Reason == string("WorkloadSourceDisabled") {
+				marked = &enabled
+			}
+			w.MarkedForInstrumentation = &model.K8sWorkloadMarkedForInstrumentation{
+				MarkedForInstrumentation: marked,
+				DecisionEnum:             string(reason.Reason),
+				Message:                  reason.Message,
+			}
+		}
+
+		ptrNames := services.ExtractDataStreamsFromSource(sources.Workload, sources.Namespace)
+		names := make([]string, len(ptrNames))
+		for i, p := range ptrNames {
+			names[i] = *p
+		}
+		w.DataStreamNames = names
+	}
+
+	if manifest, err := l.GetWorkloadManifest(ctx, id); err == nil && manifest != nil {
+		count := int(manifest.AvailableReplicas)
+		w.NumberOfInstances = &count
+	}
+}
+
+// populateWorkloadFields pre-computes all resolver fields for a workload
+// sequentially. This is called from the Workloads batch resolver to avoid
+// gqlgen spawning a goroutine per field per workload.
+// Errors are logged but don't fail the entire batch — individual workloads
+// get nil/zero values for fields that fail to resolve.
+//
+// tier is the Odigos tier resolved once by the caller; passed in to avoid
+// re-fetching it per workload in the hot list path.
+func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.Loaders, w *model.K8sWorkload, tier model.Tier) {
+	id := *w.ID
+
+	ic, _ := l.GetInstrumentationConfig(ctx, id)
+
+	// serviceName
+	if ic != nil {
+		w.ServiceName = &ic.Spec.ServiceName
+	}
+
+	// rollbackOccurred
+	if ic != nil {
+		w.RollbackOccurred = ic.Status.RollbackOccurred
+	}
+
+	// markedForInstrumentation + dataStreamNames (+ serviceName fallback from Source)
+	if sources, err := l.GetSources(ctx, id); err == nil {
+		enabled, reason, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, nil)
+		if err == nil {
+			var marked *bool
+			if enabled {
+				marked = &enabled
+			} else if reason.Reason == string("WorkloadSourceDisabled") {
+				marked = &enabled
+			}
+			w.MarkedForInstrumentation = &model.K8sWorkloadMarkedForInstrumentation{
+				MarkedForInstrumentation: marked,
+				DecisionEnum:             string(reason.Reason),
+				Message:                  reason.Message,
+			}
+		}
+
+		ptrNames := services.ExtractDataStreamsFromSource(sources.Workload, sources.Namespace)
+		names := make([]string, len(ptrNames))
+		for i, p := range ptrNames {
+			names[i] = *p
+		}
+		w.DataStreamNames = names
+
+		// When a Source is disabled its InstrumentationConfig is deleted; keep the
+		// configured otel service name visible from the Source CR itself.
+		if w.ServiceName == nil && sources.Workload != nil && sources.Workload.Spec.OtelServiceName != "" {
+			name := sources.Workload.Spec.OtelServiceName
+			w.ServiceName = &name
+		}
+	}
+
+	// numberOfInstances
+	if manifest, err := l.GetWorkloadManifest(ctx, id); err == nil && manifest != nil {
+		count := int(manifest.AvailableReplicas)
+		w.NumberOfInstances = &count
+	}
+
+	// runtimeInfo
+	if ic != nil {
+		completed := len(ic.Status.RuntimeDetailsByContainer) > 0
+		containers := make([]*model.K8sWorkloadRuntimeInfoContainer, len(ic.Status.RuntimeDetailsByContainer))
+		for i, container := range ic.Status.RuntimeDetailsByContainer {
+			containers[i] = runtimeDetailsContainersToModel(&container)
+		}
+		slices.SortFunc(containers, func(a, b *model.K8sWorkloadRuntimeInfoContainer) int {
+			return cmp.Compare(a.ContainerName, b.ContainerName)
+		})
+		var detectedLanguages []model.ProgrammingLanguage
+		if completed {
+			// prefer overriden runtime info over detected runtime info, matching client-side getEffectiveLanguage logic.
+			detectedLanguages = collectEffectiveDetectedLanguages(ic, l.GetIgnoredContainers())
+		}
+		w.RuntimeInfo = &model.K8sWorkloadRuntimeInfo{
+			Completed:         completed,
+			CompletedStatus:   status.CalculateRuntimeInspectionStatus(ic),
+			DetectedLanguages: detectedLanguages,
+			Containers:        containers,
+		}
+	}
+
+	// containers
+	if ic != nil {
+		containerByName := make(map[string]*model.K8sWorkloadContainer)
+		for i := range ic.Spec.Containers {
+			container := &ic.Spec.Containers[i]
+			if _, ok := containerByName[container.ContainerName]; !ok {
+				containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
+					ContainerName: container.ContainerName,
+				}
+			}
+			containerByName[container.ContainerName].AgentEnabled = agentEnabledContainersToModel(container)
+			containerByName[container.ContainerName].AgentConfig = containerAgentConfigToAgentConfigModel(container)
+		}
+		for i := range ic.Spec.WorkloadCollectorConfig {
+			collectorConfig := &ic.Spec.WorkloadCollectorConfig[i]
+			if _, ok := containerByName[collectorConfig.ContainerName]; !ok {
+				containerByName[collectorConfig.ContainerName] = &model.K8sWorkloadContainer{
+					ContainerName: collectorConfig.ContainerName,
+				}
+			}
+			containerByName[collectorConfig.ContainerName].CollectorConfig = containerCollectorConfigToModel(collectorConfig)
+		}
+		for _, container := range ic.Status.RuntimeDetailsByContainer {
+			if _, ok := containerByName[container.ContainerName]; !ok {
+				containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
+					ContainerName: container.ContainerName,
+				}
+			}
+			containerByName[container.ContainerName].RuntimeInfo = runtimeDetailsContainersToModel(&container)
+		}
+		for i := range ic.Spec.ContainersOverrides {
+			container := &ic.Spec.ContainersOverrides[i]
+			if _, ok := containerByName[container.ContainerName]; !ok {
+				containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
+					ContainerName: container.ContainerName,
+				}
+			}
+			containerByName[container.ContainerName].Overrides = containerOverrideToModel(container)
+		}
+		w.Containers = make([]*model.K8sWorkloadContainer, 0, len(containerByName))
+		for _, container := range containerByName {
+			w.Containers = append(w.Containers, container)
+		}
+		slices.SortFunc(w.Containers, func(a, b *model.K8sWorkloadContainer) int {
+			return cmp.Compare(a.ContainerName, b.ContainerName)
+		})
+	}
+
+	// Pod-dependent fields: conditions, workloadOdigosHealthStatus, podsAgentInjectionStatus.
+	// Pre-computed here (not left for lazy resolvers) to avoid 30K goroutines.
+	// CachedPods are loaded once and shared across all workloads via the Loaders cache.
+	pods, _ := l.GetWorkloadPods(ctx, id)
+
+	var runtimeDetection, agentInjectionEnabled, rolloutStatus, podsManifestInjectionStatus, agentInjected, processesHealth, expectingTelemetry *model.DesiredConditionStatus
+
+	if ic != nil {
+		runtimeDetection = status.CalculateRuntimeInspectionStatus(ic)
+		agentInjectionEnabled = status.CalculateAgentInjectionEnabledStatus(ic)
+		rolloutStatus = status.CalculateRolloutStatus(ic)
+	}
+	podsManifestInjectionStatus = status.CalculatePodsManifestInjectionStatus(ic, pods)
+	agentInjected = status.CalculateAgentInjectedStatus(ic, pods)
+	containerNames := getContainerNamesWithOptionalPodManifestInjection(ic)
+	processesHealth, _ = aggregateProcessesHealthForWorkload(ctx, &id, containerNames)
+
+	var totalDataSent *int
+	if workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
+		Namespace: id.Namespace,
+		Kind:      k8sconsts.WorkloadKind(id.Kind),
+		Name:      id.Name,
+	}); ok {
+		tds := int(workloadMetrics.TotalDataSent())
+		totalDataSent = &tds
+	}
+	telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
+	expectingTelemetry = telemetryMetrics.TelemetryObservedStatus
+
+	if ic != nil {
+		w.Conditions = &model.K8sWorkloadConditions{
+			RuntimeDetection:      runtimeDetection,
+			AgentInjectionEnabled: agentInjectionEnabled,
+			Rollout:               rolloutStatus,
+			PodsManifestInjection: podsManifestInjectionStatus,
+			AgentInjected:         agentInjected,
+			ProcessesAgentHealth:  processesHealth,
+			ExpectingTelemetry:    expectingTelemetry,
+		}
+	}
+
+	w.PodsAgentInjectionStatus = agentInjected
+
+	healthConditions := make([]*model.DesiredConditionStatus, 0, 7)
+	if ic != nil {
+		healthConditions = append(healthConditions, runtimeDetection, agentInjectionEnabled, rolloutStatus)
+	} else {
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
+		message := "workload is not marked for instrumentation"
+		if w.MarkedForInstrumentation != nil && w.MarkedForInstrumentation.Message != "" {
+			message = w.MarkedForInstrumentation.Message
+		}
+		healthConditions = append(healthConditions, &model.DesiredConditionStatus{
+			Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressDisabled,
+			ReasonEnum: &reasonStr, Message: message,
+		})
+	}
+	healthConditions = append(healthConditions, podsManifestInjectionStatus, agentInjected, processesHealth, expectingTelemetry)
+
+	if override := status.StaticPodEnterpriseFeatureHealthStatus(id.Kind, tier); override != nil {
+		w.WorkloadOdigosHealthStatus = override
+		return
+	}
+
+	mostSevere := status.AggregateConditionsBySeverity(healthConditions)
+	if mostSevere == nil {
+		mostSevere = &model.DesiredConditionStatus{Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressUnknown}
+	} else if mostSevere.Status == model.DesiredStateProgressSuccess {
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonCollectingTelemetry)
+		mostSevere = &model.DesiredConditionStatus{
+			Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr, Message: "source is instrumented and telemetry is being collected",
+		}
+	}
+	w.WorkloadOdigosHealthStatus = mostSevere
+}

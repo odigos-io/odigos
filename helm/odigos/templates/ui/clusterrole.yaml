@@ -12,7 +12,8 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      - watch
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - patch
       {{- end }}
   - apiGroups:
@@ -24,7 +25,8 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      - watch
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
       {{- end }}
@@ -35,7 +37,34 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      - watch
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - update
+      - patch
+      {{- end }}
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - apps.openshift.io
+    resources:
+      - deploymentconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - update
+      - patch
+      {{- end }}
+{{- end }}
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - rollouts
+    verbs:
+      - get
+      - list
+      - watch
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
       {{- end }}
@@ -61,24 +90,44 @@ rules:
       - get
       - list
       - watch
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - delete
+      {{- end }}
+  - apiGroups:
+      - odigos.io
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - watch
+  {{- if include "odigos.ui.requiresWritePermissions" . }}
   - apiGroups:
       - odigos.io
     resources:
       - instrumentationconfigs
       - instrumentationinstances
+      - sources
+      - samplings
+    verbs:
+      - update
+      - patch
+      - create
+      - delete
+  {{- end }}
+  - apiGroups:
+      - operator.odigos.io
+    resources:
+      - odigos
     verbs:
       - get
       - list
       - watch
   - apiGroups:
-      - odigos.io
+      - actions.odigos.io
     resources:
-      - sources
+      - '*'
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
-      - patch
-      - create
-      - delete
-      {{- end }}
+      - watch

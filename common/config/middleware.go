@@ -26,11 +26,11 @@ func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		return nil, errors.New("Middleware target not specified, gateway will not be configured for Middleware")
 	}
 
-	exporterName := "otlp/middleware-" + dest.GetID()
+	exporterName := "otlp_grpc/middleware-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
-		"endpoint": "${MW_TARGET}",
+		"endpoint": SecretEnvPlaceholder("MW_TARGET", dest),
 		"headers": GenericMap{
-			"authorization": "${MW_API_KEY}",
+			"authorization": SecretEnvPlaceholder("MW_API_KEY", dest),
 		},
 	}
 	var pipelineNames []string

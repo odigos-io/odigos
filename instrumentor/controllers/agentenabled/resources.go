@@ -5,10 +5,9 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,40 +17,99 @@ import (
 // this indicates that they were not found, but it is valid.
 func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (
 	*odigosv1.CollectorsGroup,
+	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
-	*common.OdigosConfiguration,
+	*[]odigosv1.Action,
+	*[]odigosv1.Sampling,
+	workload.Workload,
 	error) {
 
-	cg, err := getCollectorsGroup(ctx, c)
-	if err != nil {
-		return nil, nil, nil, err
+	// fetch the workload object, so we can extract the health check paths from it.
+	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
+	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
+	workloadObj, err := workload.ObjectToWorkload(obj)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	// TODO: we are yaml unmarshalling the configmap data for every workload, this is not efficient
-	// can we cache the configmap data in the controller?
-	effectiveConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+	nodeCollectorsGroup, err := getCollectorsGroup(ctx, c, k8sconsts.OdigosNodeCollectorCollectorGroupName)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	return cg, irls, &effectiveConfig, nil
+	gatewayCollectorsGroup, err := getCollectorsGroup(ctx, c, k8sconsts.OdigosClusterCollectorCollectorGroupName)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	irls, err := getRelevantInstrumentationRules(ctx, c)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	actions, err := getAgentLevelRelatedActions(ctx, c)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	samplings, err := getAllSamplingRules(ctx, c)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	return nodeCollectorsGroup, gatewayCollectorsGroup, irls, actions, samplings, workloadObj, nil
 }
 
-func getCollectorsGroup(ctx context.Context, c client.Client) (*odigosv1.CollectorsGroup, error) {
+func getAllSamplingRules(ctx context.Context, c client.Client) (*[]odigosv1.Sampling, error) {
+	samplingList := &odigosv1.SamplingList{}
+	err := c.List(ctx, samplingList, &client.ListOptions{Namespace: env.GetCurrentNamespace()})
+	if err != nil {
+		return nil, err
+	}
+	samplingObjects := samplingList.Items
+	return &samplingObjects, nil
+}
+
+func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
+	actionList := &odigosv1.ActionList{}
+	err := c.List(ctx, actionList, &client.ListOptions{Namespace: env.GetCurrentNamespace()})
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter only actions that affect agent/collector per-container config.
+	agentLevelActions := []odigosv1.Action{}
+	for _, action := range actionList.Items {
+		if action.Spec.Disabled {
+			continue
+		}
+		if action.Spec.URLTemplatization != nil ||
+			action.Spec.SpanRenamer != nil ||
+			action.Spec.DbQueryTemplatization != nil ||
+			action.Spec.InferDbAttributes != nil ||
+			action.Spec.PiiMasking != nil {
+			agentLevelActions = append(agentLevelActions, action)
+		}
+	}
+
+	return &agentLevelActions, nil
+}
+func getCollectorsGroup(ctx context.Context, c client.Client, name string) (*odigosv1.CollectorsGroup, error) {
 	cg := odigosv1.CollectorsGroup{}
-	err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &cg)
+	err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: name}, &cg)
 	if err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
 	return &cg, nil
 }
 
-func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (*[]odigosv1.InstrumentationRule, error) {
+// Returns rules whose spec affects agent-enabled logic (distro selection, signal toggles, etc.)
+// Per container scoping is applied later in sync.go via utils.IsContainerParticipatingInRule.
+func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]odigosv1.InstrumentationRule, error) {
 	relevantIr := []odigosv1.InstrumentationRule{}
 	irList := odigosv1.InstrumentationRuleList{}
 	err := c.List(ctx, &irList)
@@ -61,18 +119,22 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 
 	for i := range irList.Items {
 		ir := &irList.Items[i]
-
-		if !utils.IsWorkloadParticipatingInRule(pw, ir) {
+		if ir.Spec.Disabled {
 			continue
 		}
+		if (ir.Spec.OtelDistros != nil) ||
+			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
+			(ir.Spec.PayloadCollection != nil) ||
+			(ir.Spec.CodeAttributes != nil) ||
+			(ir.Spec.HeadersCollection != nil) ||
+			(ir.Spec.TraceVerbosity != nil) ||
+			(ir.Spec.CustomInstrumentations != nil) ||
+			(ir.Spec.EbpfLogCapture != nil) ||
+			(ir.Spec.AgentDiagnostics != nil) ||
+			(ir.Spec.NetworkMetrics != nil) {
 
-		if ir.Spec.OtelSdks == nil {
-			// we only care about otel sdks rules at the moment.
-			// no need to process other rules.
-			continue
+			relevantIr = append(relevantIr, *ir)
 		}
-
-		relevantIr = append(relevantIr, *ir)
 	}
 
 	return &relevantIr, nil

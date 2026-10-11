@@ -20,8 +20,23 @@ package v1alpha1
 // ContainerOverrideApplyConfiguration represents a declarative configuration of the ContainerOverride type for use
 // with apply.
 type ContainerOverrideApplyConfiguration struct {
-	ContainerName *string                                      `json:"containerName,omitempty"`
-	RuntimeInfo   *RuntimeDetailsByContainerApplyConfiguration `json:"runtimeInfo,omitempty"`
+	// The name of the container to override.
+	ContainerName *string `json:"containerName,omitempty"`
+	// RuntimeInfo to use for agent enabling.
+	// If set for a container, the automatic detection will not be used for this container,
+	// and the distro to use will be calculated based on this value.
+	RuntimeInfo *RuntimeDetailsByContainerApplyConfiguration `json:"runtimeInfo,omitempty"`
+	// select one specific otel distro to use for this container.
+	// the selected distro must match the programming language and any constraints of the distro.
+	// if the programmin language is incorrect, the runtime info can be overridden to match
+	OtelDistroName *string `json:"otelDistroName,omitempty"`
+	// Odigos by default will attempt to detect if another agent is already running in the container,
+	// and if so, will avoid adding odigos agent to the container.
+	// This option allows to override this setting for a specific container in a source.
+	// Can be used for selective setting of which containers should run odigos concurrently with other agents.
+	// empty means take odigos global config for this setting.
+	// when not empty, the value will override the global config for this container
+	AllowConcurrentAgents *bool `json:"allowConcurrentAgents,omitempty"`
 }
 
 // ContainerOverrideApplyConfiguration constructs a declarative configuration of the ContainerOverride type for use with
@@ -43,5 +58,21 @@ func (b *ContainerOverrideApplyConfiguration) WithContainerName(value string) *C
 // If called multiple times, the RuntimeInfo field is set to the value of the last call.
 func (b *ContainerOverrideApplyConfiguration) WithRuntimeInfo(value *RuntimeDetailsByContainerApplyConfiguration) *ContainerOverrideApplyConfiguration {
 	b.RuntimeInfo = value
+	return b
+}
+
+// WithOtelDistroName sets the OtelDistroName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OtelDistroName field is set to the value of the last call.
+func (b *ContainerOverrideApplyConfiguration) WithOtelDistroName(value string) *ContainerOverrideApplyConfiguration {
+	b.OtelDistroName = &value
+	return b
+}
+
+// WithAllowConcurrentAgents sets the AllowConcurrentAgents field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AllowConcurrentAgents field is set to the value of the last call.
+func (b *ContainerOverrideApplyConfiguration) WithAllowConcurrentAgents(value bool) *ContainerOverrideApplyConfiguration {
+	b.AllowConcurrentAgents = &value
 	return b
 }

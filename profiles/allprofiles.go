@@ -5,15 +5,14 @@ import (
 	"github.com/odigos-io/odigos/profiles/aggregators"
 	"github.com/odigos-io/odigos/profiles/attributes"
 	"github.com/odigos-io/odigos/profiles/instrumentation"
-	"github.com/odigos-io/odigos/profiles/pipeline"
 	"github.com/odigos-io/odigos/profiles/profile"
-	"github.com/odigos-io/odigos/profiles/sizing"
 )
 
 var AllProfiles = []profile.Profile{
 
 	aggregators.KratosProfile,
 	aggregators.GreatwallProfile,
+	aggregators.InsightsProfile,
 
 	attributes.CategoryAttributesProfile,
 	attributes.CodeAttributesProfile,
@@ -22,23 +21,31 @@ var AllProfiles = []profile.Profile{
 	attributes.FullPayloadCollectionProfile,
 	attributes.DbPayloadCollectionProfile,
 	attributes.QueryOperationDetector,
+	attributes.UrlTemplateProfile,
+	attributes.InferDbAttributesProfile,
 	attributes.SemconvUpgraderProfile,
+	attributes.SemconvDynamoProfile,
+	attributes.SemconvRedisProfile,
 	attributes.ReduceSpanNameCardinalityProfile,
 
 	instrumentation.AllowConcurrentAgents,
+	instrumentation.EbpfLogCaptureProfile,
 	instrumentation.JavaEbpfInstrumentationsProfile,
+	instrumentation.JavaEnterpriseProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
 	instrumentation.LegacyDotNetProfile,
+	instrumentation.LegacyRubyProfile,
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
-	instrumentation.LoaderFallbackToPodManifestEnvVarInjection,
+	instrumentation.PodManifestEnvVarInjection,
+
+	// golang
 	instrumentation.DisableGinProfile,
+	instrumentation.DisableGinNewProfile,
 
-	pipeline.SmallBatchesProfile,
-
-	sizing.SizeSProfile,
-	sizing.SizeMProfile,
-	sizing.SizeLProfile,
+	// nodejs
+	instrumentation.DisableNodejsExpressProfile,
+	instrumentation.NodejsVerbosityFullProfile,
 }
 
 var ProfilesByName = map[common.ProfileName]profile.Profile{}

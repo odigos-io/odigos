@@ -1,0 +1,19 @@
+{{- if include "traceCorrelations.serviceIO.enabled" . | eq "true" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-correlations-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-correlations-metrics
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8428
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: odigos-correlations-metrics
+
+{{- end }}

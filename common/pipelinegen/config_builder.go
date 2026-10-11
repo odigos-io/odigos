@@ -5,34 +5,109 @@ import (
 	"slices"
 	"strings"
 
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"gopkg.in/yaml.v2"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
+// defaultServiceGraphPeerAttributes is odigos' default ordered list of span
+// attributes the servicegraph connector uses to name an uninstrumented
+// ("virtual") peer on a service-graph edge. The connector picks the first
+// attribute present on the client span (first match wins); when none match it
+// emits the literal "unknown", so every unnamed dependency collapses into one
+// "unknown" blast-radius node.
+//
+// The connector's own built-in default is only [peer.service, db.name,
+// db.system], which names databases but misses plain HTTP/gRPC egress: those
+// spans carry server.address / net.peer.name / rpc.service, not peer.service.
+// We widen it so external hosts (APIs, third-party endpoints) resolve to real
+// names. Ordered most-specific first: an explicit peer.service wins, then the
+// database identity, then the network host, then the RPC service.
+var defaultServiceGraphPeerAttributes = []string{
+	"peer.service",   // explicit logical peer name (operator/instrumentation intent)
+	"db.name",        // logical database
+	"db.system",      // database engine, when db.name is absent
+	"server.address", // HTTP/gRPC host (current semconv)
+	"net.peer.name",  // host on older instrumentations (deprecated semconv)
+	"rpc.service",    // gRPC service
+}
+
+type GatewayConfigOptions struct {
+	ServiceGraph          common.ServiceGraphOptions
+	ClusterMetricsEnabled *bool
+	OdigosNamespace       string
+
+	// the name of the extension for accessing odigos configurations.
+	// the extension and it's name are platform specific.
+	OdigosConfigExtensionName *string
+
+	// groupbytrace wait duration when tail sampling, service I/O trace
+	// correlations, or insights are active.
+	TraceAggregationWaitDuration *string
+
+	// Tail sampling v2 processors when tail sampling is active.
+	TailSamplingEnabled    *bool
+	SamplingDryRun         bool
+	SamplingSpanAttributes *sampling.SpanSamplingAttributesConfiguration
+
+	// Insights side-channel exporter; when active, groupbytrace is installed
+	// so the exporter sees fully assembled traces.
+	Insights *common.InsightsConfiguration
+
+	// InsightsOtlpEndpoint is the in-cluster OTLP gRPC endpoint of the
+	// odigos-insights-headless service in dns:/// form (e.g.
+	// dns:///odigos-insights-headless.<ns>:4317). Set by the caller so
+	// pipelinegen (in the common module) does not depend on the api module
+	// for the endpoint helper. When insights is active this is the destination
+	// for the OTLP exporter added to metrics/servicegraph; the exporter uses
+	// round_robin so traffic fans out across insights replicas.
+	InsightsOtlpEndpoint string
+
+	// Trace correlations configuration for the serviceio connector (service I/O metrics).
+	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
+}
+
 func GetGatewayConfig(
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
-	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
+	gatewayOptions *GatewayConfigOptions,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
-	currentConfig := GetBasicConfig(memoryLimiterConfig)
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails)
+	cfg, err, status, signals := CalculateGatewayConfig(dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
+	if err != nil {
+		return "", err, status, signals
+	}
+
+	// yaml.Marshal sorts the maps for deterministic YAML output
+	// however, lists are kept in the order they were added, so we need to sort them manually,
+	// to avoid any unexpected changes in the YAML output.
+	slices.Sort(cfg.Service.Extensions)
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return "", err, status, signals
+	}
+	return string(data), nil, status, signals
 }
 
+//nolint:funlen,gocyclo // This function handles complex gateway configuration logic that is difficult to break down further
 func CalculateGatewayConfig(
-	currentConfig *config.Config,
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
+	gatewayOptions *GatewayConfigOptions,
+) (*config.Config, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
+	currentConfig := GetBasicConfig()
+
 	configers, err := config.LoadConfigers()
 	if err != nil {
-		return "", err, nil, nil
+		return nil, err, nil, nil
 	}
 
 	status := &config.ResourceStatuses{
@@ -41,7 +116,7 @@ func CalculateGatewayConfig(
 	}
 
 	if _, exists := currentConfig.Receivers["otlp"]; !exists {
-		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
+		return nil, fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
 	}
 
 	// map of destination ID to list of forward connectors
@@ -50,21 +125,36 @@ func CalculateGatewayConfig(
 	destForwardConnectors := make(map[string][]string)
 
 	tracesEnabled := false
+	hasTracesDestination := false // traces can be enabled without a destination (insights case)
 	metricsEnabled := false
 	logsEnabled := false
+	profilesEnabled := false
 
 	// Configure processors
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(processors)
-	if errs != nil {
-		status.Processor = errs
+	processorsResults := config.CrdProcessorToConfig(processors)
+	if len(processorsResults.Errs) != 0 {
+		for processorKey, err := range processorsResults.Errs {
+			status.Processor[processorKey] = err
+		}
 	}
-	for processorKey, processorCfg := range processorsCfg {
+	for processorKey, processorCfg := range processorsResults.ProcessorsConfig.Processors {
 		currentConfig.Processors[processorKey] = processorCfg
 	}
 
-	// TODO: this is a temporary solution to add the small batches processor to the destination pipelines
-	// we need to remove this once we have a proper way to processors per pipeline.
-	tracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(tracesProcessors)
+	if traceAggregationNeeded(gatewayOptions) {
+		ensureGroupByTraceProcessor(currentConfig, &processorsResults, gatewayOptions)
+	}
+
+	// If tail sampling v2 is enabled, add the tail sampling processor to the traces processors.
+	// Gated strictly on TailSamplingEnabled so insights/service-IO never start dropping spans.
+	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
+		processorsNames, processorsConfig := getTailSamplingProcessors(gatewayOptions)
+		for name, cfg := range processorsConfig {
+			currentConfig.Processors[name] = cfg
+		}
+		// apend processors to the front of the pipeline. this should be revisited.
+		processorsResults.TracesProcessors = append(processorsNames, processorsResults.TracesProcessors...)
+	}
 
 	unifiedDestinationPipelineNames := []string{}
 	for _, dest := range dests {
@@ -89,22 +179,24 @@ func CalculateGatewayConfig(
 			currentConfig.Connectors[connectorName] = config.GenericMap{}
 			pipeline := currentConfig.Service.Pipelines[pipelineName]
 			// add the forward connector as a receiver to the pipeline
-			pipeline.Receivers = []string{connectorName}
-			// every destination pipeline should have a generic batch processor
-			pipeline.Processors = []string{consts.GenericBatchProcessorConfigKey}
+			pipeline.Receivers = append(pipeline.Receivers, connectorName)
+			// every destination pipeline should have a generic batch processor, except profiles:
+			// the batch processor does not support the profiles signal in the pinned collector build.
+			if !strings.HasPrefix(pipelineName, "profiles/") {
+				pipeline.Processors = append(pipeline.Processors, consts.GenericBatchProcessorConfigKey)
+			}
 
 			// track which signals are enabled based on the destination pipeline names
 			switch {
 			case strings.HasPrefix(pipelineName, "traces/"):
-				// relevant only for traces signal
-				if smallBatchesEnabled {
-					pipeline.Processors = append(pipeline.Processors, consts.SmallBatchesProcessor)
-				}
 				tracesEnabled = true
+				hasTracesDestination = true
 			case strings.HasPrefix(pipelineName, "metrics/"):
 				metricsEnabled = true
 			case strings.HasPrefix(pipelineName, "logs/"):
 				logsEnabled = true
+			case strings.HasPrefix(pipelineName, "profiles/"):
+				profilesEnabled = true
 			}
 
 			// save the updated pipeline with the new receiver
@@ -113,6 +205,13 @@ func CalculateGatewayConfig(
 
 		status.Destination[dest.GetID()] = nil // mark this destination as success
 	}
+
+	// Insights taps the root traces pipeline; force traces on even with no destinations
+	// so the gateway receives spans and ReceiverSignals advertises traces to agents.
+	if common.InsightsPipelineActive(gatewayOptions.Insights) {
+		tracesEnabled = true
+	}
+
 	// track which signals are enabled
 	enabledSignals := []common.ObservabilitySignal{}
 
@@ -125,6 +224,13 @@ func CalculateGatewayConfig(
 	if logsEnabled {
 		enabledSignals = append(enabledSignals, common.LogsObservabilitySignal)
 	}
+	if profilesEnabled {
+		enabledSignals = append(enabledSignals, common.ProfilesObservabilitySignal)
+	}
+
+	if tracesEnabled {
+		currentConfig.Processors[consts.OdigosTraceStateProcessorName] = config.GenericMap{}
+	}
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
 	dataStreamPipelines := buildDataStreamPipelines(dataStreamsDetails, destForwardConnectors)
@@ -133,63 +239,184 @@ func CalculateGatewayConfig(
 	}
 
 	// Create root pipelines for each signal and connectors
-	insertRootPipelinesToConfig(currentConfig, dataStreamsDetails, tracesProcessors, metricsProcessors, logsProcessors, enabledSignals)
+	tracesPostForwardProcessors := processorsResults.TracesProcessorsPostSpanMetrics
+	if tracesEnabled {
+		tracesPostForwardProcessors = append(tracesPostForwardProcessors, consts.OdigosTraceStateProcessorName)
+	}
+	insertRootPipelinesToConfig(currentConfig,
+		processorsResults.TracesProcessors,
+		tracesPostForwardProcessors,
+		processorsResults.MetricsProcessors,
+		processorsResults.LogsProcessors,
+		processorsResults.ProfilesProcessors,
+		enabledSignals,
+		hasTracesDestination,
+		gatewayOptions)
 
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
 		if err := applySelfTelemetry(currentConfig, unifiedDestinationPipelineNames, GetSignalsRootPipelineNames()); err != nil {
-			return "", err, status, nil
+			return nil, err, status, nil
 		}
 	}
 
-	// Final marshal to YAML
-	data, err := yaml.Marshal(currentConfig)
-	if err != nil {
-		return "", err, status, nil
+	// Defensive nil-checks to avoid panic on optional *bool fields.
+	// Defaults:
+	// - ServiceGraph.Disabled: assume false (enabled) if nil
+	// - ClusterMetricsEnabled: assume false (disabled) if nil
+	if tracesEnabled && (gatewayOptions.ServiceGraph.Disabled == nil || !*gatewayOptions.ServiceGraph.Disabled) {
+		insertServiceGraphPipeline(currentConfig, gatewayOptions)
+	}
+	if tracesEnabled {
+		insertTraceCorrelationsServiceIOPipeline(currentConfig, gatewayOptions)
+	}
+	if metricsEnabled && gatewayOptions.ClusterMetricsEnabled != nil && *gatewayOptions.ClusterMetricsEnabled {
+		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
 	}
 
-	return string(data), nil, status, enabledSignals
+	// add the odigos config extension to the config if it is set
+	// each platform (k8s, vm) will have a different extension name
+	if gatewayOptions.OdigosConfigExtensionName != nil {
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, *gatewayOptions.OdigosConfigExtensionName)
+		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
+	}
+
+	return currentConfig, nil, status, enabledSignals
 }
 
-func insertRootPipelinesToConfig(currentConfig *config.Config, dataStreamsDetails []DataStreams,
-	tracesProcessors, metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
+func insertRootPipelinesToConfig(currentConfig *config.Config,
+	tracesProcessors, tracesPostForwardProcessors, metricsProcessors, logsProcessors, profilesProcessors []string,
+	signals []common.ObservabilitySignal, hasTracesDestination bool, gatewayOptions *GatewayConfigOptions) {
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
-		applyRootPipelineForSignal(
-			currentConfig,
-			common.TracesObservabilitySignal,
-			tracesProcessors,
-			dataStreamsDetails,
-		)
+		if traceAggregationNeeded(gatewayOptions) {
+			applySplitTracesRootPipelines(currentConfig, tracesProcessors, tracesPostForwardProcessors,
+				gatewayOptions.OdigosConfigExtensionName, hasTracesDestination)
+		} else {
+			allTracesProcessors := append(slices.Clone(tracesProcessors), tracesPostForwardProcessors...)
+			applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, allTracesProcessors, gatewayOptions.OdigosConfigExtensionName)
+		}
 	}
 
 	if slices.Contains(signals, common.MetricsObservabilitySignal) {
-		applyRootPipelineForSignal(
-			currentConfig,
-			common.MetricsObservabilitySignal,
-			metricsProcessors,
-			dataStreamsDetails,
-		)
+		applyRootPipelineForSignal(currentConfig, common.MetricsObservabilitySignal, metricsProcessors, gatewayOptions.OdigosConfigExtensionName)
 	}
 
 	if slices.Contains(signals, common.LogsObservabilitySignal) {
-		applyRootPipelineForSignal(
-			currentConfig,
-			common.LogsObservabilitySignal,
-			logsProcessors,
-			dataStreamsDetails,
-		)
+		applyRootPipelineForSignal(currentConfig, common.LogsObservabilitySignal, logsProcessors, gatewayOptions.OdigosConfigExtensionName)
+	}
+
+	if slices.Contains(signals, common.ProfilesObservabilitySignal) {
+		applyRootPipelineForSignal(currentConfig, common.ProfilesObservabilitySignal, profilesProcessors, gatewayOptions.OdigosConfigExtensionName)
 	}
 }
 
+// applySplitTracesRootPipelines forks traces after enrichment processors so complete trace batches
+// are templated before tail sampling. traces/in aggregates and forwards; traces/exporting tail-samples,
+// batches, and routes to destinations.
+// When there is no traces destination (e.g. insights-only), skip the forward/exporting/router split
+// and keep a single traces/in pipeline — downstream taps (insights, servicegraph) attach there.
+func applySplitTracesRootPipelines(
+	currentConfig *config.Config,
+	tracesProcessors, tracesPostForwardProcessors []string,
+	odigosConfigExtensionName *string,
+	hasTracesDestination bool,
+) {
+	tracesInProcessors, tracesExportingProcessors := splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProcessors)
+	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+
+	// shortcut - for example when only insights are enabled, no need to export traces to destinations
+	if !hasTracesDestination {
+		currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: append([]string{"resource/odigos-version"}, tracesInProcessors...),
+			Exporters:  []string{},
+		}
+		return
+	}
+
+	forwardConnectorName := consts.TracesPostGroupByForwardConnectorName
+	currentConfig.Connectors[forwardConnectorName] = config.GenericMap{}
+
+	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
+		Receivers:  []string{"otlp"},
+		Processors: append([]string{"resource/odigos-version"}, tracesInProcessors...),
+		Exporters:  []string{forwardConnectorName},
+	}
+
+	routerConnectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(common.TracesObservabilitySignal)))
+	routerConnectorCfg := config.GenericMap{}
+	if odigosConfigExtensionName != nil {
+		routerConnectorCfg["odigos_config_extension"] = *odigosConfigExtensionName
+	}
+	currentConfig.Connectors[routerConnectorName] = routerConnectorCfg
+
+	currentConfig.Service.Pipelines[consts.TracesExportingPipelineName] = config.Pipeline{
+		Receivers:  []string{forwardConnectorName},
+		Processors: tracesExportingProcessors,
+		Exporters:  []string{routerConnectorName},
+	}
+}
+
+func splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProcessors []string) (tracesIn, tracesExporting []string) {
+	exportingPipelineProcessors := map[string]struct{}{
+		consts.OdigosTailSamplingProcessorName: {},
+		consts.GenericBatchProcessorConfigKey:  {},
+	}
+
+	for _, processor := range tracesProcessors {
+		if processor == consts.GroupByTraceProcessor {
+			tracesIn = append(tracesIn, processor)
+			continue
+		}
+		if _, isExportingProcessor := exportingPipelineProcessors[processor]; isExportingProcessor {
+			tracesExporting = append(tracesExporting, processor)
+			continue
+		}
+		tracesIn = append(tracesIn, processor)
+	}
+
+	tracesExporting = orderExportingPipelineProcessors(tracesExporting)
+	return tracesIn, append(tracesExporting, tracesPostForwardProcessors...)
+}
+
+func orderExportingPipelineProcessors(processors []string) []string {
+	ordered := make([]string, 0, len(processors))
+	for _, processor := range []string{
+		consts.OdigosTailSamplingProcessorName,
+		consts.GenericBatchProcessorConfigKey,
+	} {
+		if slices.Contains(processors, processor) {
+			ordered = append(ordered, processor)
+		}
+	}
+	for _, processor := range processors {
+		if processor == consts.OdigosTailSamplingProcessorName || processor == consts.GenericBatchProcessorConfigKey {
+			continue
+		}
+		ordered = append(ordered, processor)
+	}
+	return ordered
+}
+
+func tracesPipelineForDownstreamConnectors(currentConfig *config.Config) string {
+	if _, exists := currentConfig.Service.Pipelines[consts.TracesExportingPipelineName]; exists {
+		return consts.TracesExportingPipelineName
+	}
+	return GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+}
+
 func applyRootPipelineForSignal(currentConfig *config.Config, signal common.ObservabilitySignal,
-	processors []string, dataStreamsDetails []DataStreams) {
+	processors []string, odigosConfigExtensionName *string) {
 	rootPipelineName := GetTelemetryRootPipelineName(signal)
-	fullProcessors := append([]string{"memory_limiter", "resource/odigos-version"}, processors...)
+	fullProcessors := append([]string{"resource/odigos-version"}, processors...)
 
 	connectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(signal)))
-	currentConfig.Connectors[connectorName] = config.GenericMap{
-		"datastreams": dataStreamsDetails,
+
+	connectorCfg := config.GenericMap{}
+	if odigosConfigExtensionName != nil {
+		connectorCfg["odigos_config_extension"] = *odigosConfigExtensionName
 	}
+	currentConfig.Connectors[connectorName] = connectorCfg
 
 	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
 		Receivers:  []string{"otlp"},
@@ -198,7 +425,177 @@ func applyRootPipelineForSignal(currentConfig *config.Config, signal common.Obse
 	}
 }
 
-func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
+func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *GatewayConfigOptions) {
+	extraDimensions := gatewayOptions.ServiceGraph.ExtraDimensions
+	virtualNodePeerAttributes := gatewayOptions.ServiceGraph.VirtualNodePeerAttributes
+	insightsOn := common.InsightsPipelineActive(gatewayOptions.Insights) && gatewayOptions.InsightsOtlpEndpoint != ""
+
+	// Add the service graph exporter to expose the service graph metrics to prometheus
+	currentConfig.Exporters["prometheus/servicegraph"] = config.GenericMap{
+		"endpoint":  fmt.Sprintf("localhost:%d", consts.ServiceGraphEndpointPort),
+		"namespace": "servicegraph",
+	}
+
+	// adding the service graph scrape config to prometheus/self-metrics receiver
+	err := AddServiceGraphScrapeConfig(currentConfig)
+	if err != nil {
+		return
+	}
+
+	// Build dimensions: always include service.name as the base, then append any extras
+	dimensions := []string{string(semconv.ServiceNameKey)}
+	dimensions = append(dimensions, extraDimensions...)
+
+	// When insights is active, the emitted edges must carry the namespace so the
+	// blast-radius topology can be joined to anomalies keyed by (namespace, service).
+	// service.name alone is ambiguous across namespaces, so force k8s.namespace.name
+	// into the connector dimensions (deduped against user-provided extras).
+	if insightsOn && !slices.Contains(dimensions, string(semconv.K8SNamespaceNameKey)) {
+		dimensions = append(dimensions, string(semconv.K8SNamespaceNameKey))
+	}
+
+	// Add the service graph connector to receive the service graph metrics from the root traces pipeline
+	// Retain incomplete edges for up to 15s to allow delayed span matching
+	// Clean up every 5s to reduce memory pressure and avoid stale edges
+	connectorCfg := config.GenericMap{
+		"store": config.GenericMap{
+			"ttl": "15s",
+		},
+		"store_expiration_loop": "5s",
+		"dimensions":            dimensions,
+	}
+
+	// Name uninstrumented "virtual" peers on service-graph edges. Prefer an
+	// explicit operator list; otherwise fall back to odigos' widened default
+	// rather than the connector's narrow built-in ([peer.service, db.name,
+	// db.system]). The built-in misses plain HTTP/gRPC egress — those spans carry
+	// server.address / net.peer.name / rpc.service, not peer.service — so every
+	// such call collapses into a single "unknown" blast-radius node. See
+	// defaultServiceGraphPeerAttributes.
+	if len(virtualNodePeerAttributes) == 0 {
+		virtualNodePeerAttributes = defaultServiceGraphPeerAttributes
+	}
+	connectorCfg["virtual_node_peer_attributes"] = virtualNodePeerAttributes
+
+	currentConfig.Connectors[consts.ServiceGraphConnectorName] = connectorCfg
+
+	// metrics/servicegraph receives the connector's metrics and exports them to
+	// the local prometheus/servicegraph endpoint (scraped back for the UI
+	// service map). When insights is active, the same pipeline also fans out
+	// to odigos-insights over OTLP — one connector, one pipeline, two exporters.
+	exporters := []string{"prometheus/servicegraph"}
+	var processors []string
+	if insightsOn {
+		// Stamp the gateway pod name onto the metrics resource so Insights can
+		// key ClickHouse rows by (edge, collector_pod). The connector's counters
+		// are cumulative per pod, and trace load balancing spreads an edge's
+		// spans across gateway replicas; without this, ReplacingMergeTree
+		// last-write-wins across pods. Reuse the self-telemetry processor when
+		// present, otherwise define it here so the pipeline is valid even if
+		// self-telemetry wasn't applied. Harmless on the Prometheus path:
+		// resource_to_telemetry_conversion is off by default, so k8s.pod.name
+		// stays a resource attribute and never becomes a scrape label.
+		if _, ok := currentConfig.Processors["resource/pod-name"]; !ok {
+			currentConfig.Processors["resource/pod-name"] = config.GenericMap{
+				"attributes": []config.GenericMap{
+					{
+						"key":    string(semconv.K8SPodNameKey),
+						"value":  "${POD_NAME}",
+						"action": "upsert",
+					},
+				},
+			}
+		}
+		processors = []string{"resource/pod-name"}
+		currentConfig.Exporters[consts.ServiceGraphInsightsExporterName] = config.GenericMap{
+			"endpoint":      gatewayOptions.InsightsOtlpEndpoint,
+			"balancer_name": "round_robin",
+			"tls":           config.GenericMap{"insecure": true},
+			"compression":   "none",
+			"retry_on_failure": config.GenericMap{
+				"enabled": false,
+			},
+		}
+		exporters = append(exporters, consts.ServiceGraphInsightsExporterName)
+	}
+	currentConfig.Service.Pipelines["metrics/servicegraph"] = config.Pipeline{
+		Receivers:  []string{consts.ServiceGraphConnectorName},
+		Processors: processors,
+		Exporters:  exporters,
+	}
+
+	// Add the service graph exporter to the traces pipeline that routes to destinations
+	// (traces/exporting when the pipeline is split, otherwise traces/in).
+	tracesPipelineName := tracesPipelineForDownstreamConnectors(currentConfig)
+	pipeline, exists := currentConfig.Service.Pipelines[tracesPipelineName]
+	if !exists {
+		return
+	}
+	pipeline.Exporters = append(pipeline.Exporters, consts.ServiceGraphConnectorName)
+	currentConfig.Service.Pipelines[tracesPipelineName] = pipeline
+}
+
+func insertTraceCorrelationsServiceIOPipeline(currentConfig *config.Config, gatewayOptions *GatewayConfigOptions) {
+	cfg := gatewayOptions.TraceCorrelationsServiceIO
+	if !common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
+		ServiceIO: cfg,
+	}) {
+		return
+	}
+
+	connectorCfg := config.GenericMap{}
+	if len(cfg.InputSpanAttributes) > 0 {
+		connectorCfg["input_span_attributes"] = cfg.InputSpanAttributes
+	}
+	if len(cfg.OutputSpanAttributes) > 0 {
+		connectorCfg["output_span_attributes"] = cfg.OutputSpanAttributes
+	}
+	if cfg.MetricsFlushInterval != "" {
+		connectorCfg["metrics_flush_interval"] = cfg.MetricsFlushInterval
+	}
+	if gatewayOptions.OdigosConfigExtensionName != nil {
+		connectorCfg["odigos_config_extension"] = *gatewayOptions.OdigosConfigExtensionName
+	}
+
+	currentConfig.Connectors[consts.ServiceIOConnectorName] = connectorCfg
+
+	exporterName := consts.TraceCorrelationsVictoriaMetricsExporterName
+	currentConfig.Exporters[exporterName] = traceCorrelationsVictoriaMetricsExporter(gatewayOptions.OdigosNamespace)
+
+	currentConfig.Service.Pipelines[consts.TraceCorrelationsMetricsPipelineName] = config.Pipeline{
+		Receivers: []string{consts.ServiceIOConnectorName},
+		Exporters: []string{exporterName},
+	}
+
+	tracesInPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+	pipeline, exists := currentConfig.Service.Pipelines[tracesInPipelineName]
+	if !exists {
+		return
+	}
+	if !slices.Contains(pipeline.Exporters, consts.ServiceIOConnectorName) {
+		pipeline.Exporters = append(pipeline.Exporters, consts.ServiceIOConnectorName)
+	}
+	currentConfig.Service.Pipelines[tracesInPipelineName] = pipeline
+}
+
+func traceCorrelationsVictoriaMetricsExporter(odigosNamespace string) config.GenericMap {
+	endpoint := fmt.Sprintf(
+		"http://%s.%s:8428/opentelemetry",
+		consts.TraceCorrelationsMetricsServiceName,
+		odigosNamespace,
+	)
+	return config.GenericMap{
+		"endpoint": endpoint,
+		"retry_on_failure": config.GenericMap{
+			"enabled": false,
+		},
+		"tls": config.GenericMap{
+			"insecure": true,
+		},
+	}
+}
+
+func GetBasicConfig() *config.Config {
 	return &config.Config{
 		Connectors: config.GenericMap{},
 		Receivers: config.GenericMap{
@@ -226,7 +623,6 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 			},
 		},
 		Processors: config.GenericMap{
-			"memory_limiter": memoryLimiterConfig,
 			"resource/odigos-version": config.GenericMap{
 				"attributes": []config.GenericMap{
 					{
@@ -236,7 +632,7 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 					},
 				},
 			},
-			consts.GenericBatchProcessorConfigKey: config.GenericMap{}, // Currently configured with default values
+			consts.GenericBatchProcessorConfigKey: config.GenericMap{},
 		},
 		Extensions: config.GenericMap{
 			"health_check": config.GenericMap{
@@ -254,17 +650,149 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 	}
 }
 
-func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
-	smallBatchesEnabled := false
-	filtered := make([]string, 0, len(tracesProcessors))
-
-	for _, processor := range tracesProcessors {
-		if processor == consts.SmallBatchesProcessor {
-			smallBatchesEnabled = true
-			continue // skip adding it to filtered slice
-		}
-		filtered = append(filtered, processor)
+func AddServiceGraphScrapeConfig(c *config.Config) error {
+	servicegraphScrape := config.GenericMap{
+		"job_name":        consts.ServiceGraphConnectorName,
+		"scrape_interval": "10s",
+		"static_configs": []config.GenericMap{
+			{
+				"targets": []string{fmt.Sprintf("127.0.0.1:%d", consts.ServiceGraphEndpointPort)},
+			},
+		},
+		"metric_relabel_configs": []config.GenericMap{
+			{
+				"source_labels": []string{"__name__"},
+				"regex":         "^servicegraph_traces_service_graph_request_total$",
+				"action":        "keep",
+			},
+		},
 	}
 
-	return filtered, smallBatchesEnabled
+	receiverVal, ok := c.Receivers["prometheus/self-metrics"]
+	if !ok {
+		return fmt.Errorf("receiver config is not a map")
+	}
+	receiver, ok := receiverVal.(config.GenericMap)
+	if !ok {
+		return fmt.Errorf("receiver config is not a map")
+	}
+
+	configMap, ok := receiver["config"].(config.GenericMap)
+	if !ok {
+		return fmt.Errorf("scrape configs is not a list")
+	}
+
+	scrapeConfigs, ok := configMap["scrape_configs"].([]config.GenericMap)
+	if !ok {
+		return fmt.Errorf("scrape configs is not a list")
+	}
+
+	// Append new servicegraph scrape config
+	scrapeConfigs = append(scrapeConfigs, servicegraphScrape)
+
+	// Reassign
+	configMap["scrape_configs"] = scrapeConfigs
+	receiver["config"] = configMap
+	c.Receivers["prometheus/self-metrics"] = receiver
+	return nil
+}
+
+func insertClusterMetricsResources(currentConfig *config.Config, odigosNs string) {
+	// setup the leader elector extension, this is to avoid all gateways instances to scrape the cluster metrics at the same time
+	currentConfig.Extensions["k8s_leader_elector"] = config.GenericMap{
+		"lease_name":      "odigos-gateway-leader",
+		"lease_namespace": odigosNs,
+	}
+
+	// add this to the service.extensions
+	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, "k8s_leader_elector")
+
+	// setup the k8s_cluster_receiver
+	currentConfig.Receivers["k8s_cluster"] = config.GenericMap{
+		"k8s_leader_elector": "k8s_leader_elector",
+	}
+
+	// Add the cluster metrics resources to the root metrics pipeline
+	rootPipelineName := GetTelemetryRootPipelineName(common.MetricsObservabilitySignal)
+	pipeline, exists := currentConfig.Service.Pipelines[rootPipelineName]
+	if !exists {
+		return
+	}
+
+	pipeline.Receivers = append(pipeline.Receivers, "k8s_cluster")
+	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
+}
+
+const defaultTraceAggregationWaitDuration = "30s"
+
+func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
+	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled {
+		return true
+	}
+
+	if common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
+		ServiceIO: gatewayOptions.TraceCorrelationsServiceIO,
+	}) {
+		return true
+	}
+
+	if common.InsightsPipelineActive(gatewayOptions.Insights) {
+		return true
+	}
+
+	return false
+}
+
+func ensureGroupByTraceProcessor(
+	currentConfig *config.Config,
+	processorsResults *config.CrdProcessorResults,
+	gatewayOptions *GatewayConfigOptions,
+) {
+	if slices.Contains(processorsResults.TracesProcessors, consts.GroupByTraceProcessor) {
+		return
+	}
+
+	waitDuration := defaultTraceAggregationWaitDuration
+	if gatewayOptions.TraceAggregationWaitDuration != nil && *gatewayOptions.TraceAggregationWaitDuration != "" {
+		waitDuration = *gatewayOptions.TraceAggregationWaitDuration
+	}
+
+	currentConfig.Processors[consts.GroupByTraceProcessor] = config.GenericMap{
+		"wait_duration": waitDuration,
+	}
+	processorsResults.TracesProcessors = append(
+		[]string{consts.GroupByTraceProcessor},
+		processorsResults.TracesProcessors...,
+	)
+}
+
+func getTailSamplingProcessors(gatewayOptions *GatewayConfigOptions) ([]string, map[string]config.GenericMap) {
+	tailSamplingProcessorCfg := config.GenericMap{
+		"odigos_config_extension": *gatewayOptions.OdigosConfigExtensionName,
+	}
+	if gatewayOptions.SamplingDryRun {
+		tailSamplingProcessorCfg["dry_run"] = true
+	}
+	if gatewayOptions.SamplingSpanAttributes != nil {
+		spanSamplingAttributesCfg := config.GenericMap{}
+		if gatewayOptions.SamplingSpanAttributes.Disabled != nil {
+			spanSamplingAttributesCfg["disabled"] = *gatewayOptions.SamplingSpanAttributes.Disabled
+		}
+		if gatewayOptions.SamplingSpanAttributes.SamplingCategoryDisabled != nil {
+			spanSamplingAttributesCfg["sampling_category_disabled"] = *gatewayOptions.SamplingSpanAttributes.SamplingCategoryDisabled
+		}
+		if gatewayOptions.SamplingSpanAttributes.TraceDecidingRuleDisabled != nil {
+			spanSamplingAttributesCfg["trace_deciding_rule_disabled"] = *gatewayOptions.SamplingSpanAttributes.TraceDecidingRuleDisabled
+		}
+		if gatewayOptions.SamplingSpanAttributes.SpanDecisionAttributesDisabled != nil {
+			spanSamplingAttributesCfg["span_decision_attributes_disabled"] = *gatewayOptions.SamplingSpanAttributes.SpanDecisionAttributesDisabled
+		}
+		tailSamplingProcessorCfg["span_sampling_attributes"] = spanSamplingAttributesCfg
+	}
+
+	processors := map[string]config.GenericMap{
+		consts.OdigosTailSamplingProcessorName: tailSamplingProcessorCfg,
+	}
+
+	return []string{consts.OdigosTailSamplingProcessorName}, processors
 }

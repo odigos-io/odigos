@@ -1,0 +1,283 @@
+---
+title: 'CDK: Lambda'
+description: 'Instrument AWS Lambda functions from your CDK app with OdigosLambdaInstrumentation — every option, and the edge cases to know about.'
+sidebarTitle: 'Lambda'
+---
+
+`OdigosLambdaInstrumentation` instruments AWS Lambda functions defined in your CDK app.
+
+<Note>
+  Read [Odigos AWS CDK](/cloud-connectors/aws/cdk/overview) first — it covers
+  installing the package and how Odigos recognizes an instrumented workload — then
+  [Destinations](/cloud-connectors/aws/cdk/destinations) for the shared `destination`
+  options. This page covers only what's specific to Lambda.
+</Note>
+
+## Basic usage
+
+```typescript
+import { OdigosLambdaInstrumentation } from '@odigos/aws-cdk';
+
+new OdigosLambdaInstrumentation(this, 'Odigos', {
+  destination: { endpoint: 'otlp.example.com:4317' },
+  functions: [apiFn, workerFn],
+});
+```
+
+Typically you define **one** `OdigosLambdaInstrumentation` per CDK stack and pass it every function you
+want instrumented. One construct does everything for every function you list: attaches the right
+OpenTelemetry layer for that function's language and CPU architecture, sets the variable that loads it,
+configures where telemetry goes, and writes the `ODIGOS_IAC` marker.
+
+`serviceName` (and other construct-level options) apply to **every** function on that construct. If each
+function needs its own `serviceName`, define **one construct per function** instead of listing them
+together. The same applies whenever any other setting must differ. To instrument every function in the
+stack without listing them, use the [Aspect](#instrumenting-every-function-in-a-stack) instead.
+
+Languages supported: **Python, Node.js, Java, Ruby.** Other runtimes — Go, .NET, and custom runtimes —
+have no OpenTelemetry Lambda layer, so they can't be instrumented this way.
+
+<Info>
+  You can also call `instrument(fn)` or `instrumentAll([fn1, fn2])` on the construct
+  after creating it, instead of passing `functions` up front.
+</Info>
+
+## How telemetry leaves the function
+
+This is worth understanding because it explains several of the options below.
+
+Your function's OpenTelemetry SDK does **not** send data to your destination directly. It sends it to a
+small collector that ships inside the Odigos layer and runs in the same Lambda sandbox, reachable on
+`localhost`. That collector then forwards the data to your real destination — **after** your handler has
+already returned its response to the caller.
+
+That extra hop is the entire point: if your destination is slow or briefly unreachable, the delay lands on
+billed duration rather than on the response your user is waiting for. (A `decouple` processor inside the
+collector keeps the sandbox alive just long enough to finish sending before Lambda freezes it, so a
+low-traffic function doesn't lose its telemetry.)
+
+<Warning>
+  This is why the construct never sets `OTEL_EXPORTER_OTLP_ENDPOINT`. If you set it
+  yourself, you point the SDK straight at your destination and put the network call
+  back on the critical path of every single invocation — undoing the whole design.
+</Warning>
+
+## Where the layer comes from
+
+<ParamField path="layerSource" type="OdigosLayerSource" default="ODIGOS_PUBLIC">
+  Which copy of the OpenTelemetry layer your functions attach.
+</ParamField>
+
+| | `ODIGOS_PUBLIC` (default) | `IN_ACCOUNT` |
+| --- | --- | --- |
+| What it adds to your stack | Just a reference to a layer | A nested stack per language/architecture in use |
+| Who owns the layer | Odigos' AWS account | **Your** account, created by your own stack |
+| When it's resolved | At build time, from a table inside the package | At deploy time, from AWS Serverless Application Repository |
+| Works without a fixed region | No — needs a concrete region | Yes |
+| First deploy | Unchanged | Slower |
+
+```typescript
+new OdigosLambdaInstrumentation(this, 'Odigos', {
+  destination: { endpoint: 'otlp.example.com:4317' },
+  functions: [fn],
+  layerSource: OdigosLayerSource.IN_ACCOUNT,
+});
+```
+
+Both options install byte-for-byte identical instrumentation. **`IN_ACCOUNT` is the SAR preload path for
+CDK**: the construct nests an AWS Serverless Application Repository application into your stack, which
+publishes an `AWS::Lambda::LayerVersion` owned by **your** account and wires its ARN onto the function. You
+do not deploy SAR by hand when using this option.
+
+Use `IN_ACCOUNT` if your organization's policy forbids attaching a Lambda layer owned by an outside AWS
+account. It needs the principal running `cdk deploy` to hold `serverlessrepo:CreateCloudFormationTemplate`
+and `serverlessrepo:GetApplication`.
+
+For the same preload outside CDK (Console, CloudFormation/SAM) — or to see the Application IDs and
+`SemanticVersion` the construct pins — see
+[Preload the Lambda layer](/cloud-connectors/aws/workloads/lambda/preload).
+
+<ParamField path="layerVersion" type="lambda.ILayerVersion">
+  Escape hatch: attach a specific layer you already own, and **skip `layerSource` entirely** — neither
+  `ODIGOS_PUBLIC` nor `IN_ACCOUNT` is consulted when this is set.
+
+  Pass any CDK [`ILayerVersion`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_lambda.ILayerVersion.html)
+  — typically `LayerVersion.fromLayerVersionArn(...)` pointing at a layer you mirrored into your account, or
+  a `LayerVersion` construct you already defined. There is no separate allow-list: the construct attaches
+  whatever you pass.
+
+  The layer **must** be the Odigos OpenTelemetry layer (same bytes / script layout as the public or SAR
+  layer). Environment variables assume paths inside that layout; a different layer will attach but fail to
+  instrument at runtime.
+
+  ```typescript
+  import * as lambda from 'aws-cdk-lib/aws-lambda';
+
+  new OdigosLambdaInstrumentation(this, 'Odigos', {
+    destination: { endpoint: 'otlp.example.com:4317' },
+    functions: [fn],
+    layerVersion: lambda.LayerVersion.fromLayerVersionArn(
+      this,
+      'OdigosLayer',
+      'arn:aws:lambda:eu-west-1:111122223333:layer:odigos-otel-python-arm64:1',
+    ),
+  });
+  ```
+
+  One `layerVersion` is used for **every** function on this construct, so those functions must share a
+  language and architecture that match that layer. Prefer `layerSource` when you need the construct to pick
+  the right layer per function.
+</ParamField>
+
+## Normal functions vs. web-server functions
+
+<ParamField path="mode" type="OdigosInstrumentationMode" default="HANDLER">
+  `HANDLER` is for an ordinary Lambda function — one that exports a handler and gets invoked per event.
+
+  `WEB_SERVER` is for a function that runs an actual web server behind the
+  [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter).
+</ParamField>
+
+The difference matters because both Odigos and the Web Adapter want to use the same Lambda setting
+(`AWS_LAMBDA_EXEC_WRAPPER`) to hook into startup. In `WEB_SERVER` mode, Odigos leaves that setting to the
+adapter and loads instrumentation a different way instead.
+
+<Warning>
+  **Using `HANDLER` on a web-adapter function overwrites the adapter's setting and
+  the function stops serving traffic.** There's deliberately no auto-detection:
+  spotting the adapter would mean inspecting the function's other layers, which CDK
+  often can't resolve until deploy time — and a detector that was right most of the
+  time would silently break exactly the functions it got wrong. So you state it.
+</Warning>
+
+```typescript
+new OdigosLambdaInstrumentation(this, 'Odigos', {
+  destination: { endpoint: 'otlp.example.com:4317' },
+  functions: [webFn],
+  mode: OdigosInstrumentationMode.WEB_SERVER,
+  existingLoaderValue: '--max-old-space-size=2048',
+});
+```
+
+<ParamField path="existingLoaderValue" type="string">
+  In `WEB_SERVER` mode, Odigos loads instrumentation through your language's own startup variable —
+  `NODE_OPTIONS`, `JAVA_TOOL_OPTIONS`, or `PYTHONPATH`. If your function already needs a value in that
+  variable, pass it here and Odigos adds to it instead of replacing it.
+
+  <Warning>
+    CDK can't read back an environment variable your app set elsewhere, so this
+    can't be detected automatically. Omit it and the variable is set to **only**
+    the Odigos value — for `NODE_OPTIONS`, that can silently drop a flag your
+    application needs to start.
+  </Warning>
+</ParamField>
+
+<Info>
+Ruby functions are not supported in WEB_SERVER mode because a verified web-server loader is currently unavailable.
+</Info>
+
+## Java functions: pick the matching handler type
+
+The Java layer ships four different wrapper scripts, one per Lambda handler interface. This is a
+correctness setting, not a level-of-detail setting.
+
+<ParamField path="javaHandlerDistro" type="OdigosJavaHandlerDistro" default="OTEL_HANDLER">
+  ```typescript
+  javaHandlerDistro: OdigosJavaHandlerDistro.OTEL_STREAM_HANDLER
+  ```
+</ParamField>
+
+| Value | Use it for |
+| --- | --- |
+| `OTEL_HANDLER` (default) | A `RequestHandler` function |
+| `OTEL_PROXY_HANDLER` | API Gateway proxy events — produces richer spans |
+| `OTEL_SQS_HANDLER` | SQS events — produces richer spans |
+| `OTEL_STREAM_HANDLER` | A `RequestStreamHandler` function |
+
+<Warning>
+  The default installs a `RequestHandler` implementation. A function that actually
+  implements `RequestStreamHandler` has a completely different method signature, so
+  the default **breaks the invocation** — it doesn't merely produce thinner traces.
+</Warning>
+
+## Instrumenting every function in a stack
+
+```typescript
+Aspects.of(stack).add(new OdigosInstrumentationAspect(stack, {
+  destination: { endpoint: 'otlp.example.com:4317' },
+}));
+```
+
+This visits every Lambda function in the stack.
+
+<ParamField path="skipUnsupportedRuntimes" type="boolean" default="false (true on the aspect)">
+  What to do when a function's runtime has no OpenTelemetry layer (Go, .NET, custom runtimes).
+
+  The aspect defaults to `true`: skip it with a build **warning** rather than failing. The single-function
+  construct defaults to `false`, because naming one specific Go function and asking for it to be
+  instrumented is a mistake worth stopping the build over.
+</ParamField>
+
+## Naming your service
+
+`OTEL_SERVICE_NAME` is what your function shows up as in your observability tool.
+
+<ParamField path="serviceName" type="string">
+  Left unset, this becomes the function's real name when your stack sets one explicitly, and the CDK
+  construct ID otherwise.
+</ParamField>
+
+That fallback exists for a structural reason: a function name that CloudFormation generates for you is a
+reference to the function itself, and a function referring to its own generated name inside its own
+configuration is a circular dependency that CloudFormation refuses to deploy.
+
+<Warning>
+  Odigos compares this against the function's real AWS name. **If your function's
+  name is auto-generated, set `serviceName` explicitly** — otherwise Odigos reports
+  it as drifted. Note that `serviceName` applies to *every* function in a single
+  construct, so use one construct per function when you need different names.
+</Warning>
+
+## Other things worth knowing
+
+<AccordionGroup>
+  <Accordion title="Functions this construct can't instrument">
+    A container-image function (`DockerImageFunction`) can't carry Lambda layers at all. The construct also
+    needs a function your own stack owns — one imported with `Function.fromFunctionArn` can't be modified
+    by CDK.
+  </Accordion>
+
+  <Accordion title="Layer limits">
+    AWS allows a maximum of 5 layers per function. Also don't attach the Odigos layer through more than one
+    route at once — two versions of the same layer is reported as a conflict.
+  </Accordion>
+</AccordionGroup>
+
+## API reference
+
+| Export | What it is |
+| --- | --- |
+| `OdigosLambdaInstrumentation` | The construct. Methods: `instrument(fn)`, `instrumentAll(fns)`. |
+| `OdigosInstrumentationAspect` | Applies instrumentation to every function in a scope. |
+| `OdigosLayerSource` | `ODIGOS_PUBLIC` \| `IN_ACCOUNT` |
+| `OdigosInstrumentationMode` | `HANDLER` \| `WEB_SERVER` |
+| `OdigosJavaHandlerDistro` | The four Java handler wrappers. |
+| `renderCollectorConfig` | The same collector-config renderer the construct uses, if you want to inspect what it produces. |
+| `LAYER_ARNS`, `ODIGOS_VERSION` | The public layer-ARN table baked into the package (`ODIGOS_PUBLIC`), and the Odigos release it came from. |
+| `SAR_APPLICATIONS`, `SAR_SEMANTIC_VERSION` | What `IN_ACCOUNT` deploys under the hood: SAR Application IDs keyed by `language/architecture`, and the pinned semantic version (same bytes as this package release). You normally do **not** import these — set `layerSource: IN_ACCOUNT` instead. Use them only if you're authoring your own SAR/`AWS::Serverless::Application` template; the step-by-step is in [Preload the Lambda layer](/cloud-connectors/aws/workloads/lambda/preload). |
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="CDK overview" icon="code" href="/cloud-connectors/aws/cdk/overview">
+    Install, constructs, and how Odigos recognizes instrumented workloads.
+  </Card>
+
+  <Card title="Destinations" icon="tower-broadcast" href="/cloud-connectors/aws/cdk/destinations">
+    Endpoint formats, credentials, and which signals to enable.
+  </Card>
+
+  <Card title="Preload the layer" icon="download" href="/cloud-connectors/aws/workloads/lambda/preload">
+    Put the layer in your own account for `IN_ACCOUNT`.
+  </Card>
+</CardGroup>

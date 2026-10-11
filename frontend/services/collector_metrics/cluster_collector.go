@@ -1,6 +1,7 @@
 package collectormetrics
 
 import (
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -17,8 +18,12 @@ const (
 	exporterSentMetricsMetricName = "otelcol_exporter_sent_metric_points_total"
 	exporterSentLogsMetricName    = "otelcol_exporter_sent_log_records_total"
 
+	// This metric is added by the service graph exporter.
+	// It is used to estimate the number of service graph requests and build the service graph.
+	serviceGraphRequestMetricName = "servicegraph_traces_service_graph_request_total"
+
 	// Each metrics from the exporters has this attribute which is the name of the exporter.
-	exporterMetricAttributesKey  = "exporter"
+	exporterMetricAttributesKey = "exporter"
 
 	// These metrics are added by the odigostrafficmetrics processor.
 	// Each processor comes with `otelcol_processor_incoming_items` and `otelcol_processor_outgoing_items` metrics.
@@ -29,10 +34,11 @@ const (
 	processorAcceptedLogsMetricName    = "otelcol_odigos_accepted_log_records_total"
 )
 
-type destinationsMetrics struct {
+type clusterCollectorMetrics struct {
 	destinations   map[string]*singleDestinationMetrics
 	destinationsMu sync.Mutex
 	avgCalculator  *averageSizeCalculator
+	serviceGraph   *ServiceGraph
 }
 
 type destinationTrafficMetrics struct {
@@ -99,14 +105,17 @@ func (asc *averageSizeCalculator) update(acceptedSpans, acceptedMetrics, accepte
 	asc.acceptedLogs = acceptedLogs
 }
 
-func newDestinationsMetrics() destinationsMetrics {
-	return destinationsMetrics{
+func newClusterCollectorMetrics() clusterCollectorMetrics {
+	return clusterCollectorMetrics{
 		destinations:  make(map[string]*singleDestinationMetrics),
 		avgCalculator: &averageSizeCalculator{},
+		serviceGraph:  newServiceGraph(),
 	}
 }
 
-func (dm *destinationsMetrics) removeClusterCollector(clusterCollectorID string) {
+func (dm *clusterCollectorMetrics) removeClusterCollector(clusterCollectorID string) {
+	dm.destinationsMu.Lock()
+	defer dm.destinationsMu.Unlock()
 	for _, d := range dm.destinations {
 		d.mu.Lock()
 		delete(d.clusterCollectorsTraffic, clusterCollectorID)
@@ -114,7 +123,7 @@ func (dm *destinationsMetrics) removeClusterCollector(clusterCollectorID string)
 	}
 }
 
-func (dm *destinationsMetrics) removeDestination(dID string) {
+func (dm *clusterCollectorMetrics) removeDestination(dID string) {
 	dm.destinationsMu.Lock()
 	delete(dm.destinations, dID)
 	dm.destinationsMu.Unlock()
@@ -136,7 +145,7 @@ func metricAttributesToDestinationID(attrs pcommon.Map) string {
 	return exporterNameStr[inedx:]
 }
 
-func (dm *destinationsMetrics) newDestinationTrafficMetrics(metricName string, numDataPoints float64, t time.Time) *destinationTrafficMetrics {
+func (dm *clusterCollectorMetrics) newDestinationTrafficMetrics(metricName string, numDataPoints float64, t time.Time) *destinationTrafficMetrics {
 	tm := trafficMetrics{
 		lastUpdate: t,
 	}
@@ -168,7 +177,7 @@ func (dm *destinationsMetrics) newDestinationTrafficMetrics(metricName string, n
 
 // newDestinationMetrics creates a new singleDestinationMetrics object with initial traffic metrics based on the data point received
 // The clusterCollectorsTraffic map initialized with the cluster collector ID and the traffic metrics
-func (dm *destinationsMetrics) newDestinationMetrics(dp pmetric.NumberDataPoint, metricName string, clusterCollectorID string) *singleDestinationMetrics {
+func (dm *clusterCollectorMetrics) newDestinationMetrics(dp pmetric.NumberDataPoint, metricName string, clusterCollectorID string) *singleDestinationMetrics {
 	dtm := dm.newDestinationTrafficMetrics(metricName, dp.DoubleValue(), dp.Timestamp().AsTime())
 
 	sm := &singleDestinationMetrics{
@@ -180,7 +189,7 @@ func (dm *destinationsMetrics) newDestinationMetrics(dp pmetric.NumberDataPoint,
 	return sm
 }
 
-func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.NumberDataPoint, metricName string, clusterCollectorID string) {
+func (dm *clusterCollectorMetrics) updateDestinationMetricsByExporter(dp pmetric.NumberDataPoint, metricName string, clusterCollectorID string) {
 	dID := metricAttributesToDestinationID(dp.Attributes())
 	if dID == "" {
 		return
@@ -247,7 +256,7 @@ func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.Num
 	*throughputPtr = throughput
 }
 
-func (dm *destinationsMetrics) updateAverageEstimates(md pmetric.Metrics) {
+func (dm *clusterCollectorMetrics) updateAverageEstimates(md pmetric.Metrics) {
 	var (
 		// number of spans/metrics/logs recorded in this snapshot
 		acceptedSpans, acceptedMetrics, acceptedLogs int64
@@ -262,12 +271,13 @@ func (dm *destinationsMetrics) updateAverageEstimates(md pmetric.Metrics) {
 			sm := smSlice.At(j)
 			for k := 0; k < sm.Metrics().Len(); k++ {
 				m := sm.Metrics().At(k)
-				switch m.Name() {
+				metricName := normalizeTrafficMetricName(m.Name())
+				switch metricName {
 				// our processor is recording the number of spans/metrics/logs it accepted
 				case processorAcceptedSpansMetricName, processorAcceptedMetricsMetricName, processorAcceptedLogsMetricName:
 					for dataPointIndex := 0; dataPointIndex < m.Sum().DataPoints().Len(); dataPointIndex++ {
 						dataPoint := m.Sum().DataPoints().At(dataPointIndex)
-						switch m.Name() {
+						switch metricName {
 						case processorAcceptedSpansMetricName:
 							acceptedSpans = int64(dataPoint.DoubleValue())
 						case processorAcceptedMetricsMetricName:
@@ -298,7 +308,7 @@ func (dm *destinationsMetrics) updateAverageEstimates(md pmetric.Metrics) {
 	dm.avgCalculator.update(acceptedSpans, acceptedMetrics, acceptedLogs, spansDataSize, metricsDataSize, logsDataSize)
 }
 
-func (dm *destinationsMetrics) handleClusterCollectorMetrics(senderPod string, md pmetric.Metrics) {
+func (dm *clusterCollectorMetrics) handleClusterCollectorMetrics(senderPod string, md pmetric.Metrics) {
 	dm.updateAverageEstimates(md)
 
 	rm := md.ResourceMetrics()
@@ -314,14 +324,21 @@ func (dm *destinationsMetrics) handleClusterCollectorMetrics(senderPod string, m
 						dataPoint := m.Sum().DataPoints().At(dataPointIndex)
 						dm.updateDestinationMetricsByExporter(dataPoint, m.Name(), senderPod)
 					}
+				case serviceGraphRequestMetricName:
+					for d := 0; d < m.Sum().DataPoints().Len(); d++ {
+						dp := m.Sum().DataPoints().At(d)
+						dm.serviceGraph.UpdateFromDataPoint(dp)
+					}
 				}
 			}
 		}
 	}
 }
 
-func (dm *destinationsMetrics) metricsByID(dID string) (trafficMetrics, bool) {
+func (dm *clusterCollectorMetrics) metricsByID(dID string) (trafficMetrics, bool) {
+	dm.destinationsMu.Lock()
 	sdm, ok := dm.destinations[dID]
+	dm.destinationsMu.Unlock()
 	if !ok {
 		return trafficMetrics{}, false
 	}
@@ -353,7 +370,51 @@ func (sdm *singleDestinationMetrics) metrics() trafficMetrics {
 	return resultMetrics
 }
 
-func (dm *destinationsMetrics) metrics() map[string]trafficMetrics {
+// ServiceGraphEdges returns a snapshot of the service graph edges
+// It is used to build the service graph in the UI
+// example of the structure of the result:
+// map[
+//   coupon: map[
+//     membership:        {0 2025-06-24 16:16:39.384 +0000 UTC}
+//   ]
+
+//   frontend: map[
+//     coupon:            {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     currency:          {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     geolocation:       {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     inventory:         {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     pricing:           {0 2025-06-24 16:16:39.384 +0000 UTC}
+//   ]
+
+//   prometheus-server: map[
+//     prometheus-kube-state-metrics:      {181 2025-06-25 06:01:07.771 +0000 UTC}
+//     prometheus-prometheus-node-exporter:{181 2025-06-25 06:01:07.771 +0000 UTC}
+//     prometheus-prometheus-pushgateway:  {181 2025-06-25 06:01:07.771 +0000 UTC}
+//     prometheus-server:                  {181 2025-06-25 06:01:07.771 +0000 UTC}
+//   ]
+
+//   user: map[
+//     frontend:                          {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     prometheus-server:                {2814 2025-06-25 06:01:07.771 +0000 UTC}
+//   ]
+// ]
+
+func (ccm *clusterCollectorMetrics) serviceGraphEdges() map[string]map[string]ServiceGraphEdge {
+	ccm.serviceGraph.mu.Lock()
+	defer ccm.serviceGraph.mu.Unlock()
+
+	result := make(map[string]map[string]ServiceGraphEdge, len(ccm.serviceGraph.edges))
+	for client, servers := range ccm.serviceGraph.edges {
+		result[client] = make(map[string]ServiceGraphEdge, len(servers))
+		for server, edge := range servers {
+			result[client][server] = *edge
+		}
+	}
+
+	return result
+}
+
+func (dm *clusterCollectorMetrics) destinationsMetrics() map[string]trafficMetrics {
 	dm.destinationsMu.Lock()
 	defer dm.destinationsMu.Unlock()
 
@@ -363,4 +424,127 @@ func (dm *destinationsMetrics) metrics() map[string]trafficMetrics {
 	}
 
 	return result
+}
+
+type ServiceGraph struct {
+	mu    sync.Mutex
+	edges map[string]map[string]*ServiceGraphEdge // client → server → edge
+}
+
+type ServiceGraphEdge struct {
+
+	// set to true if the "To" side of the edge is for a virtual node
+	ToNodeIsVirtual bool
+	RequestCount    int64
+	LastUpdated     time.Time
+	// Attributes holds service-graph datapoint metric labels: client* and server*
+	Attributes map[string]string
+}
+
+func newServiceGraph() *ServiceGraph {
+	return &ServiceGraph{
+		edges: make(map[string]map[string]*ServiceGraphEdge),
+	}
+}
+
+func (sg *ServiceGraph) UpdateFromDataPoint(dp pmetric.NumberDataPoint) {
+	attrs := dp.Attributes()
+
+	clientBase, ok1 := attrs.Get("client")
+	serverBase, ok2 := attrs.Get("server")
+
+	if !ok1 || !ok2 || clientBase.Str() == "unknown" || serverBase.Str() == "unknown" {
+		return
+	}
+
+	clientID := buildNodeID(clientBase.Str(), "client", attrs)
+	serverID := buildNodeID(serverBase.Str(), "server", attrs)
+
+	val := int64(0)
+	switch dp.ValueType() {
+	case pmetric.NumberDataPointValueTypeInt:
+		val = dp.IntValue()
+	case pmetric.NumberDataPointValueTypeDouble:
+		val = int64(dp.DoubleValue())
+	}
+
+	timestamp := dp.Timestamp().AsTime()
+
+	sg.mu.Lock()
+	defer sg.mu.Unlock()
+
+	if _, ok := sg.edges[clientID]; !ok {
+		sg.edges[clientID] = make(map[string]*ServiceGraphEdge)
+	}
+
+	edge, exists := sg.edges[clientID][serverID]
+	if !exists {
+		// a server node is not virtual if it has service.name attribute
+		_, isServerInstrumentedNode := attrs.Get("server_service_name")
+		sg.edges[clientID][serverID] = &ServiceGraphEdge{
+			ToNodeIsVirtual: !isServerInstrumentedNode,
+			RequestCount:    val,
+			LastUpdated:     timestamp,
+			Attributes:      copyClientServerStringAttrs(attrs),
+		}
+	} else {
+		// always overwrite because it's a cumulative counter
+		edge.RequestCount = val
+		edge.LastUpdated = timestamp
+	}
+}
+
+// Returns a new map of all string attributes whose keys start with
+// "client" or "server", this is used to build the service graph edges attributes
+func copyClientServerStringAttrs(attrs pcommon.Map) map[string]string {
+	out := make(map[string]string)
+	attrs.Range(func(k string, v pcommon.Value) bool {
+		if strings.HasPrefix(k, "client") || strings.HasPrefix(k, "server") {
+			if v.Type() == pcommon.ValueTypeStr {
+				out[k] = v.Str()
+			}
+		}
+		return true
+	})
+	return out
+}
+
+// buildNodeID constructs a composite node identifier from a base service name and
+// any extra dimensions the servicegraph connector attached to this side of the edge.
+// Extra dimensions appear as "<side>_<attr>" attributes (e.g. "client_k8s_namespace_name").
+// The connector always emits "client_service_name" / "server_service_name" (the service.name
+// dimension, with dots normalized to underscores by the Prometheus round-trip), which are
+// redundant with the base name and therefore skipped.
+// Keys are sorted before appending so the resulting ID is deterministic regardless of
+// attribute map iteration order.
+// When no extra dimensions are configured the function returns just the base name,
+// preserving full backward compatibility.
+func buildNodeID(base string, side string, attrs pcommon.Map) string {
+	prefix := side + "_"
+	// Prometheus [exporter] normalizes dots → underscores in label names, so "service.name"
+	// arrives here as "service_name".
+	skip := prefix + "service_name"
+
+	var extraKeys []string
+	attrs.Range(func(k string, _ pcommon.Value) bool {
+		if strings.HasPrefix(k, prefix) && k != skip {
+			extraKeys = append(extraKeys, k)
+		}
+		return true
+	})
+
+	if len(extraKeys) == 0 {
+		return base
+	}
+
+	sort.Strings(extraKeys)
+
+	parts := make([]string, 0, 1+len(extraKeys))
+	parts = append(parts, base)
+	for _, k := range extraKeys {
+		if v, ok := attrs.Get(k); ok {
+			parts = append(parts, v.Str())
+		}
+	}
+	return strings.Join(parts, "|")
 }

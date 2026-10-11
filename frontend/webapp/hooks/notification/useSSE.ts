@@ -1,155 +1,200 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { useStatusStore } from '@/store';
-import { useSourceCRUD } from '../sources';
-import { useDestinationCRUD } from '../destinations';
-import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
-import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
-import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
-import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
+import { StatusType } from '@odigos/ui-kit/types';
+import { safeJsonParse } from '@odigos/ui-kit/functions';
+import { useOdigosApi } from '@odigos/ui-kit/contexts';
+import { useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
 
-const CONNECTED = 'CONNECTED';
-
-const EVENT_TYPES = {
-  ADDED: 'Added',
-  MODIFIED: 'Modified',
-  DELETED: 'Deleted',
-};
+enum EventTypes {
+  CONNECTED = 'CONNECTED',
+  ADDED = 'Added',
+  MODIFIED = 'Modified',
+  DELETED = 'Deleted',
+  DiagnoseStagesRequested = 'DiagnoseStagesRequested',
+  DiagnoseStageCompleted = 'DiagnoseStageCompleted',
+}
 
 enum CrdTypes {
-  Source = 'Source',
   InstrumentationConfig = 'InstrumentationConfig',
   Destination = 'Destination',
 }
 
-export const useSSE = () => {
-  const { setPendingItems } = usePendingStore();
-  const { addNotification } = useNotificationStore();
-  const { title, setStatusStore } = useStatusStore();
-  const { fetchDestinations } = useDestinationCRUD();
-  const { fetchSourcesPaginated, fetchSourceById } = useSourceCRUD();
+interface DebouncedEvent {
+  handler: NodeJS.Timeout | null;
+  targets: string[];
+}
 
-  const retryCount = useRef(0);
+const EVENT_DEBOUNCE_MS = 5000;
+
+export const useSSE = () => {
+  const { addNotification } = useNotificationStore();
+  const { sourcesApi, destinationsApi } = useOdigosApi();
+  const fetchSources = sourcesApi.fetchAll;
+  const fetchSourcesByTargets = sourcesApi.fetchByTargets;
+  const fetchDestinations = destinationsApi.fetchAll;
+
   const maxRetries = 10;
+  const retryCount = useRef(0);
+
+  const eventsRef = useRef<Partial<Record<EventTypes, DebouncedEvent>> | null>(null);
+
+  const resetEventHandler = (eventType: EventTypes) => {
+    if (eventsRef.current?.[eventType]) {
+      if (eventsRef.current[eventType]!.handler) {
+        clearTimeout(eventsRef.current[eventType]!.handler as NodeJS.Timeout);
+        eventsRef.current[eventType]!.handler = null;
+      }
+      eventsRef.current[eventType]!.targets = [];
+    }
+  };
+
+  const handleEvent = (eventType: EventTypes, targets: string[], successCallback: (accumulatedTargets: string[]) => void) => {
+    if (!eventsRef.current) {
+      eventsRef.current = {};
+    }
+    if (!eventsRef.current[eventType]) {
+      eventsRef.current[eventType] = { handler: null, targets: [] };
+    }
+
+    const entry = eventsRef.current[eventType]!;
+
+    const existing = new Set(entry.targets);
+    for (const t of targets) {
+      if (t && !existing.has(t)) {
+        entry.targets.push(t);
+      }
+    }
+
+    if (entry.handler) clearTimeout(entry.handler as NodeJS.Timeout);
+
+    entry.handler = setTimeout(() => {
+      const accumulated = [...entry.targets];
+      resetEventHandler(eventType);
+      successCallback(accumulated);
+    }, EVENT_DEBOUNCE_MS);
+  };
 
   useEffect(() => {
     const connect = () => {
       const es = new EventSource(API.EVENTS);
-
-      es.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        const notification: NotifyPayload = {
-          type: data.type,
-          title: data.event || '',
-          message: data.data || '',
-          crdType: data.crdType || '',
-          target: data.target,
-        };
-
-        const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
-
-        const isConnected = [CONNECTED].includes(notification.crdType as string);
-        const isSource = [CrdTypes.InstrumentationConfig].includes(notification.crdType as CrdTypes);
-        const isDestination = [CrdTypes.Destination].includes(notification.crdType as CrdTypes);
-
-        if (!isConnected && !(isSource && isAwaitingInstrumentation) && notification.title !== EVENT_TYPES.MODIFIED) {
-          addNotification(notification);
-        }
-
-        // Handle specific CRD types
-        if (isConnected) {
-          // If the current status in store is API Token related, we don't want to override it with the connected message
-          if (title !== DISPLAY_TITLES.API_TOKEN) {
-            setStatusStore({ status: StatusType.Success, title: notification.title as string, message: notification.message as string });
-          }
-        } else if (isSource) {
-          switch (notification.title) {
-            case EVENT_TYPES.MODIFIED:
-              if (!isAwaitingInstrumentation && notification.target) {
-                const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
-
-                // This timeout is to ensure that the object isn't in paginating state when we start fetching the data,
-                // otherwise paginated-fetch will replace the modified-data with old-data.
-                setTimeout(() => fetchSourceById(id as WorkloadId), 1000);
-              }
-              break;
-
-            case EVENT_TYPES.ADDED:
-              const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-              setInstrumentCount('sourcesCreated', created);
-
-              // If not waiting, or we're at 100%, then proceed
-              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
-                addNotification({ type: StatusType.Success, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
-                setInstrumentAwait(false);
-                fetchSourcesPaginated();
-              }
-              break;
-
-            case EVENT_TYPES.DELETED:
-              const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-              setInstrumentCount('sourcesDeleted', deleted);
-
-              // If not waiting, or we're at 100%, then proceed
-              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
-                addNotification({ type: StatusType.Success, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
-                setInstrumentAwait(false);
-                setInstrumentCount('sourcesToDelete', 0);
-                setInstrumentCount('sourcesDeleted', 0);
-              }
-              break;
-
-            default:
-              break;
-          }
-        } else if (isDestination) {
-          fetchDestinations();
-        } else {
-          console.warn('Unhandled SSE for CRD type:', notification.crdType);
-        }
-
-        // This works for now,
-        // but in the future we might have to change this to "removePendingItems",
-        // and remove the specific pending items based on their entityType and entityId
-        setPendingItems([]);
-
-        // Reset retry count on successful connection
-        retryCount.current = 0;
-      };
 
       es.onerror = () => {
         es.close();
 
         if (retryCount.current < maxRetries) {
           retryCount.current += 1;
-          setStatusStore({
-            status: StatusType.Warning,
-            title: 'Disconnected',
-            message: `Disconnected from the server. Retrying connection (${retryCount.current})`,
-          });
+          console.warn(`Disconnected from the server. Retrying connection (${retryCount.current})`);
 
-          // Retry connection with exponential backoff if below max retries
           setTimeout(() => connect(), Math.min(10000, 1000 * Math.pow(2, retryCount.current)));
         } else {
-          setStatusStore({
-            status: StatusType.Error,
-            title: `Connection lost on ${new Date().toLocaleString()}`,
-            message: 'Please reboot the application',
-          });
-          addNotification({
-            type: StatusType.Error,
-            title: 'Connection Error',
-            message: 'Connection to the server failed. Please reboot the application.',
-          });
+          console.error(`Connection lost on ${new Date().toLocaleString()}. Please reboot the application`);
         }
+      };
+
+      es.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const targets: string[] = data.targets || [];
+
+        const isSource = data.crdType === CrdTypes.InstrumentationConfig;
+        const isDestination = data.crdType === CrdTypes.Destination;
+        const isDiagnoseRequested = data.event === EventTypes.DiagnoseStagesRequested;
+        const isDiagnoseCompleted = data.event === EventTypes.DiagnoseStageCompleted;
+
+        if (isSource) {
+          switch (data.event) {
+            case EventTypes.ADDED:
+              const newCreated = Number(data.data?.toString().replace(/[^\d]/g, '') || 0);
+              useProgressStore.getState().addProgress(ProgressKeys.Instrumenting, newCreated);
+
+              handleEvent(data.event, targets, (accumulatedTargets) => {
+                const { resetProgress } = useProgressStore.getState();
+                resetProgress(ProgressKeys.Instrumenting);
+
+                if (accumulatedTargets.length > 0) {
+                  fetchSourcesByTargets(accumulatedTargets, { slim: true });
+                } else {
+                  fetchSources();
+                }
+              });
+              break;
+
+            case EventTypes.MODIFIED:
+              const { progress } = useProgressStore.getState();
+              if (!progress[ProgressKeys.Instrumenting] && !progress[ProgressKeys.Uninstrumenting]) {
+                handleEvent(data.event, targets, (accumulatedTargets) => {
+                  if (accumulatedTargets.length > 0) {
+                    fetchSourcesByTargets(accumulatedTargets, { slim: true });
+                  } else {
+                    fetchSources();
+                  }
+                });
+              }
+              break;
+
+            case EventTypes.DELETED:
+              const newDeleted = Number(data.data?.toString().replace(/[^\d]/g, '') || 0);
+              useProgressStore.getState().addProgress(ProgressKeys.Uninstrumenting, newDeleted);
+
+              handleEvent(data.event, targets, () => {
+                const { resetProgress } = useProgressStore.getState();
+                resetProgress(ProgressKeys.Uninstrumenting);
+
+                // Re-fetch the canonical list — Apollo's cache write
+                // broadcasts to every active `useApiQuery('GET_WORKLOADS')`
+                // subscriber and the deleted workloads disappear from
+                // the response. The previous "evict-by-ids without a
+                // refetch" path is gone now that the entity store
+                // lives entirely in Apollo's normalized cache (the kit
+                // doesn't expose a per-id eviction primitive because
+                // central-ui's `REMOTE_FETCH` envelope would require
+                // per-adapter cache plumbing to do it generically).
+                fetchSources();
+              });
+              break;
+
+            default:
+              break;
+          }
+        } else if (isDestination) {
+          // Destination create/delete success toasts are dispatched client-side
+          // by the kit's `useDestinationsApi` (consistent with how sources and
+          // every other entity notify). The SSE stream only drives the refetch
+          // here so the overview reflects the cluster-confirmed state.
+          handleEvent(data.event, targets, () => {
+            fetchDestinations();
+          });
+        } else if (isDiagnoseRequested) {
+          const events = safeJsonParse<string[]>(data.data, []);
+
+          useProgressStore.getState().setProgress(ProgressKeys.DownloadingDiagnose, {
+            total: events.length,
+            current: 0,
+            percentage: 0,
+            list: events.map((event) => ({ label: event, status: StatusType.Default })),
+          });
+        } else if (isDiagnoseCompleted) {
+          const { stage, status, message } = safeJsonParse<{ stage: string; status: StatusType; message?: string }>(data.data, { stage: '', status: StatusType.Success });
+
+          if (status === StatusType.Success) {
+            useProgressStore.getState().addProgress(ProgressKeys.DownloadingDiagnose, 1, { label: stage, status });
+          } else {
+            useProgressStore.getState().addProgress(ProgressKeys.DownloadingDiagnose, 0, { label: stage, status });
+            addNotification({ type: StatusType.Error, title: 'Diagnose failed', message, crdType: '' });
+          }
+        } else {
+          console.warn('Unhandled SSE for CRD type:', data.crdType);
+        }
+
+        retryCount.current = 0;
       };
 
       return es;
     };
 
-    // Initialize event source connection
     const es = connect();
-    // Clean up event source on component unmount
-    return () => es.close();
-  }, [title]);
+    return () => {
+      es?.close();
+      Object.values(EventTypes).forEach((eventType) => resetEventHandler(eventType));
+    };
+  }, []);
 };

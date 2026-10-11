@@ -23,7 +23,7 @@ import (
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	testing "k8s.io/client-go/testing"
+	managedfields "k8s.io/apimachinery/pkg/util/managedfields"
 )
 
 // ForKind returns an apply configuration type for the given GroupVersionKind, or nil if no
@@ -39,32 +39,36 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ActionStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCondition"):
-		return &odigosv1alpha1.AttributeConditionApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AttributesAndSamplerRule"):
-		return &odigosv1alpha1.AttributesAndSamplerRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
 		return &odigosv1alpha1.CollectorsGroupApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupMetricsCollectionSettings"):
+		return &odigosv1alpha1.CollectorsGroupMetricsCollectionSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupResourcesSettings"):
 		return &odigosv1alpha1.CollectorsGroupResourcesSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupSpec"):
 		return &odigosv1alpha1.CollectorsGroupSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupStatus"):
 		return &odigosv1alpha1.CollectorsGroupStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupTraceCorrelationsSettings"):
+		return &odigosv1alpha1.CollectorsGroupTraceCorrelationsSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ContainerAgentConfig"):
 		return &odigosv1alpha1.ContainerAgentConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ContainerOverride"):
 		return &odigosv1alpha1.ContainerOverrideApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CostReductionRule"):
+		return &odigosv1alpha1.CostReductionRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Destination"):
 		return &odigosv1alpha1.DestinationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("DestinationMetricsSettings"):
+		return &odigosv1alpha1.DestinationMetricsSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationSpec"):
 		return &odigosv1alpha1.DestinationSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationStatus"):
 		return &odigosv1alpha1.DestinationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EnvVar"):
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
-		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("HighlyRelevantOperation"):
+		return &odigosv1alpha1.HighlyRelevantOperationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfig"):
 		return &odigosv1alpha1.InstrumentationConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfigSpec"):
@@ -77,14 +81,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationInstanceSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationInstanceStatus"):
 		return &odigosv1alpha1.InstrumentationInstanceStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfig"):
-		return &odigosv1alpha1.InstrumentationLibraryConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfigTraces"):
-		return &odigosv1alpha1.InstrumentationLibraryConfigTracesApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryGlobalId"):
 		return &odigosv1alpha1.InstrumentationLibraryGlobalIdApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryId"):
-		return &odigosv1alpha1.InstrumentationLibraryIdApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryStatus"):
 		return &odigosv1alpha1.InstrumentationLibraryStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRule"):
@@ -93,16 +91,34 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationRuleSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRuleStatus"):
 		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperation"):
+		return &odigosv1alpha1.NoisyOperationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("OdigosOwnMetricsSettings"):
+		return &odigosv1alpha1.OdigosOwnMetricsSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtherAgent"):
 		return &odigosv1alpha1.OtherAgentApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PodsManifestInjectionStatus"):
+		return &odigosv1alpha1.PodsManifestInjectionStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Processor"):
 		return &odigosv1alpha1.ProcessorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProcessorSpec"):
 		return &odigosv1alpha1.ProcessorSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ProcessorStatus"):
+		return &odigosv1alpha1.ProcessorStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("Recommendation"):
+		return &odigosv1alpha1.RecommendationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("RecommendationSpec"):
+		return &odigosv1alpha1.RecommendationSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("RecommendationStatus"):
+		return &odigosv1alpha1.RecommendationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RuntimeDetailsByContainer"):
 		return &odigosv1alpha1.RuntimeDetailsByContainerApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SdkConfig"):
-		return &odigosv1alpha1.SdkConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("Sampling"):
+		return &odigosv1alpha1.SamplingApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SamplingSpec"):
+		return &odigosv1alpha1.SamplingSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SamplingStatus"):
+		return &odigosv1alpha1.SamplingStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Source"):
 		return &odigosv1alpha1.SourceApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceSelector"):
@@ -116,6 +132,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 	return nil
 }
 
-func NewTypeConverter(scheme *runtime.Scheme) *testing.TypeConverter {
-	return &testing.TypeConverter{Scheme: scheme, TypeResolver: internal.Parser()}
+func NewTypeConverter(scheme *runtime.Scheme) managedfields.TypeConverter {
+	return managedfields.NewSchemeTypeConverter(scheme, internal.Parser())
 }

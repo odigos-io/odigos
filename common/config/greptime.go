@@ -45,11 +45,11 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 	cfg.Extensions[authExtensionName] = GenericMap{
 		"client_auth": GenericMap{
 			"username": basicUsername,
-			"password": "${GREPTIME_BASIC_PASSWORD}",
+			"password": SecretEnvPlaceholder("GREPTIME_BASIC_PASSWORD", dest),
 		},
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"auth": GenericMap{

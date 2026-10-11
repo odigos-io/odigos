@@ -9,6 +9,7 @@ rules:
       - ''
     resources:
       - pods
+      - services
     verbs:
       - get
       - list
@@ -35,8 +36,12 @@ rules:
       - get
       - list
       - watch
+  # with k8s-init-container, we don't run the odiglet init container
+  # and does not update the node label
+  {{- if not (eq .Values.instrumentor.mountMethod "k8s-init-container") }}
       - patch
       - update
+  {{- end }}
   - apiGroups:
       - odigos.io
     resources:
@@ -75,3 +80,49 @@ rules:
       - get
       - patch
       - update
+## related to node collector
+{{- $kubeletStatsDisabled := false }}
+{{- if .Values.metricsSources }}
+  {{- if .Values.metricsSources.kubeletStats }}
+    {{- if hasKey .Values.metricsSources.kubeletStats "disabled" }}
+      {{- $kubeletStatsDisabled = .Values.metricsSources.kubeletStats.disabled }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if not $kubeletStatsDisabled }}
+  - apiGroups:
+      - ''
+    resources:
+      - nodes/stats
+    verbs:
+      - get
+      - list
+{{- end }}
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
+      - deployments
+      - daemonsets
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - 'discovery.k8s.io'
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - list
+      - watch

@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -79,6 +80,78 @@ type CollectorsGroupResourcesSettings struct {
 	GomemlimitMiB int `json:"gomemlimitMiB"`
 }
 
+type ServiceGraphSettings struct {
+	// here so we can add service graph settings in the future without breaking backwards compatibility
+}
+
+// configuration for collecting and exporting odigos own metrics.
+// e.g. metrics about odigos components, and not about the user's application.
+type OdigosOwnMetricsSettings struct {
+
+	// if true, odigos will send all the metrics it collects about itself to the metrics pipeline,
+	// which will make them available to the metrics destinations.
+	// users can troubleshoot odigos itself by monitoring these metrics in their existing systems,
+	// and create their own dashboards, alerting, and more.
+	SendToMetricsDestinations bool `json:"sendToMetricsDestinations,omitempty"`
+
+	// if true, odigos will send all the metrics it collects about itself to the odigos metrics store,
+	// which is available to odigos UI.
+	// it can help in presenting a consistent view of odigos itself, without relying on user system and integrations.
+	SendToOdigosMetricsStore bool `json:"sendToOdigosMetricsStore,omitempty"`
+
+	// time interval for flusing metrics (format: 15s, 1m etc). defaults: 10s
+	Interval string `json:"interval,omitempty"`
+}
+
+type AgentsTelemetrySettings struct {
+	// here so we can add agents telemetry settings in the future without breaking backwards compatibility
+	// since the collector receives these data points in push mode, and does not record or collect them itself,
+	// it is not expected to have many or any settings here.
+}
+
+// CollectorsGroupTraceCorrelationsSettings holds trace correlations configuration
+// derived from OdigosConfiguration. Currently only relevant for the cluster gateway collector.
+type CollectorsGroupTraceCorrelationsSettings struct {
+	ServiceIO *common.TraceCorrelationsServiceIOConfiguration `json:"serviceIO,omitempty"`
+}
+
+type CollectorsGroupMetricsCollectionSettings struct {
+
+	// if not nil for node collector, it means span to metrics is enabled,
+	// and the node collector should set it up in the pipeline.
+	// span to metrics is the ability to calculate metrics like http requests/errors/duration etc
+	// from the individual spans recorded for relevant operation.
+	SpanMetrics *common.MetricsSourceSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
+
+	// if not nil for node collector, it means host metrics is enabled,
+	// and the opentelemetry collector "hostmetrics" receiver should be included in the pipeline.
+	// host metrics are metrics that are collected from the host node,
+	// such as cpu, memory, disk, network, etc.
+	HostMetrics *common.MetricsSourceHostMetricsConfiguration `json:"hostMetrics,omitempty"`
+
+	// if not nil for node collector, it means kubelet stats is enabled,
+	// and the opentelemetry collector "kubeletstats" receiver should be included in the pipeline.
+	// kubelet stats are metrics that are collected from the kubelet point of view,
+	// such as cpu, memory, disk, network, per pod, node and more.
+	KubeletStats *common.MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
+
+	// if not nil for cluster collector, it means service graph is enabled,
+	// and metrics for the "connectivity" between services should be calculated
+	// to be exported to metrics destinations.
+	ServiceGraph *ServiceGraphSettings `json:"serviceGraph,omitempty"`
+
+	// if not nil for node collector, it means that some metric destinations are
+	// intresseted in collecting metrics about: odigos, the collected data, and the pipeline itself.
+	// this allows for users to monitor and operate odigos within their existing system,
+	// create dashboards, alerting, and more.
+	OdigosOwnMetrics *OdigosOwnMetricsSettings `json:"odigosOwnMetrics,omitempty"`
+
+	// this part controls the metrics which are received from agents in the otlp receiver.
+	// it is generally enabled when we want to record metrics, and listed here for completeness.
+	// any "otlp receiver" specific settings can go here
+	AgentsTelemetry *AgentsTelemetrySettings `json:"agentsTelemetry,omitempty"`
+}
+
 // CollectorsGroupSpec defines the desired state of Collector
 type CollectorsGroupSpec struct {
 	Role CollectorsGroupRole `json:"role"`
@@ -87,16 +160,84 @@ type CollectorsGroupSpec struct {
 	// This can be used to resolve conflicting ports when a collector is using the host network.
 	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort"`
 
-	// Additional directory to mount in the node collector pod for logs.
-	// This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
-	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
-
 	// Resources [memory/cpu] settings for the collectors group.
 	// these settings are used to protect the collectors instances from:
 	// - running out of memory and being killed by the k8s OOM killer
 	// - consuming all available memory on the node which can lead to node instability
 	// - pushing back pressure to the instrumented applications
 	ResourcesSettings CollectorsGroupResourcesSettings `json:"resourcesSettings"`
+
+	// ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
+	// It is enabled by default and can be disabled by setting the enabled flag to false.
+	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
+
+	// ServiceGraphExtraDimensions are additional span attribute names to include as dimensions
+	// in the service graph metrics, on top of the default service.name dimension.
+	ServiceGraphExtraDimensions []string `json:"serviceGraphExtraDimensions,omitempty"`
+
+	// ServiceGraphVirtualNodePeerAttributes is an ordered list of span attributes used to identify
+	// uninstrumented (virtual) nodes in the service graph.
+	// The connector picks the first attribute that has a value on the span.
+	// When nil/empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+	ServiceGraphVirtualNodePeerAttributes []string `json:"serviceGraphVirtualNodePeerAttributes,omitempty"`
+
+	// Deprecated - use OtlpExporterConfiguration instead.
+	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
+
+	// OtlpExporterConfiguration is the configuration for the OTLP exporter from node collector to cluster gateway collector.
+	OtlpExporterConfiguration *common.OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+
+	// ResourceDetectors controls which OpenTelemetry resource detectors are enabled
+	// on the node collector's resourcedetection processor.
+	ResourceDetectors *common.ResourceDetectorsConfiguration `json:"resourceDetectors,omitempty"`
+
+	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
+
+	// for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+	// when unset or empty, no proxy will be used.
+	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
+
+	// configuration for metrics handling in this collectors group
+	// if metric collection is disabled, this will be nil
+	// the content is populated only if relevant to this collectors group
+	// it's being calculated based on active destinations and their settings,
+	// and global settings provided in the odigos configuration or instrumentation rules.
+	// it allows for the collector group reconciler to be simplified,
+	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
+	Metrics *CollectorsGroupMetricsCollectionSettings `json:"metrics,omitempty"`
+
+	// TraceCorrelations holds trace correlations configuration derived from OdigosConfiguration.
+	// Currently only relevant for the cluster gateway collector.
+	TraceCorrelations *CollectorsGroupTraceCorrelationsSettings `json:"traceCorrelations,omitempty"`
+
+	// Node selector for the collectors group deployment.
+	// Use this to force the gateway to run only on nodes with specific labels.
+	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+	// If no matching nodes exist, the pod will remain Pending.
+	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
+
+	// Deployment name for the collectors group deployment.
+	// Only relevant for cluster gateway collector.
+	DeploymentName string `json:"deploymentName,omitempty"`
+
+	// Sampling holds the sampling configuration derived from the OdigosConfiguration.
+	// Currently this is only relevant for the cluster gateway collector.
+	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
+
+	// Set to true to enable dry run mode for sampling.
+	// When enabled, odigos will invoke the sampling logic, but will not drop any traces.
+	// This is useful while evaluating sampling rules to check for effectiveness and correctness
+	// before committing to any changes that might lose data.
+	SamplingDryRun *bool `json:"samplingDryRun,omitempty"`
+
+	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+	// Capturing these attributes gives visibility into sampling decision-making and effective
+	// sampling percentages when viewing traces or querying the database with tools.
+	SpanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

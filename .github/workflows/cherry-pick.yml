@@ -1,0 +1,51 @@
+name: Cherry Pick to Release Branches
+
+on:
+  push:
+    branches:
+      - main
+
+permissions: read-all
+
+jobs:
+  extract-versions:
+    runs-on: depot-ubuntu-latest
+    permissions:
+      id-token: write
+    outputs:
+      run_cherry_pick: ${{ steps.extract.outputs.run_cherry_pick }}
+      versions: ${{ steps.extract.outputs.versions }}
+      pr_number: ${{ steps.extract.outputs.pr_number }}
+      merge_commit_sha: ${{ steps.extract.outputs.merge_commit_sha }}
+      pr_title: ${{ steps.extract.outputs.pr_title }}
+      pr_user_login: ${{ steps.extract.outputs.pr_user_login }}
+      original_pr_body: ${{ steps.extract.outputs.original_pr_body }}
+    steps:
+      - name: Extract cherry-pick targets
+        id: extract
+        uses: odigos-io/ci-core/cherry-pick@main
+        with:
+          operation: extract
+
+  cherry-pick:
+    needs: extract-versions
+    if: needs.extract-versions.outputs.run_cherry_pick == 'true'
+    runs-on: depot-ubuntu-latest
+    permissions:
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJson(needs.extract-versions.outputs.versions) }}
+    steps:
+      - name: Backport to release branch
+        uses: odigos-io/ci-core/cherry-pick@main
+        with:
+          operation: backport
+          version: ${{ matrix.version }}
+          merge-commit-sha: ${{ needs.extract-versions.outputs.merge_commit_sha }}
+          pr-number: ${{ needs.extract-versions.outputs.pr_number }}
+          pr-title: ${{ needs.extract-versions.outputs.pr_title }}
+          pr-user-login: ${{ needs.extract-versions.outputs.pr_user_login }}
+          original-pr-body: ${{ needs.extract-versions.outputs.original_pr_body }}
+          slack-webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}

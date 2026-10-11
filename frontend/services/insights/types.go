@@ -1,0 +1,916 @@
+package insights
+
+import "encoding/json"
+
+type TransactionKind string
+type DeviationClass string
+type SampleReason string
+type PolicyScope string
+type Severity string
+type FindingKind string
+type AnomalyStatus string
+type ViolationStatus string
+type RuleMode string
+type AnomalyResolution string
+type BulkResolution string
+type LearningMode string
+type LearningConditionType string
+type StorageHealthStatus string
+type StorageDiskStatus string
+
+const (
+	SampleReasonExample SampleReason = "example"
+)
+
+// AnomalyEvidenceSampleReason is the storage tag for an issue's evidence sample
+// (`anomaly:<signature>`). The GraphQL enum still uses the legacy token
+// `anomaly_evidence` for filters/display.
+func AnomalyEvidenceSampleReason(signature string) SampleReason {
+	return SampleReason("anomaly:" + signature)
+}
+
+type ListTransactionsParams struct {
+	Namespace   *string
+	Service     *string
+	Kind        *TransactionKind
+	WindowHours *int
+}
+
+type ListObservationsParams struct {
+	SampleReason *SampleReason
+}
+
+type ListFindingsParams struct {
+	WindowHours *int
+	Service     *string
+	Namespace   *string
+	Status      *string
+	Kind        *FindingKind
+}
+
+type ListAnomaliesParams struct {
+	WindowHours *int
+	Service     *string
+	Namespace   *string
+	Status      *string
+}
+
+type ListGuardrailViolationsParams struct {
+	WindowHours *int
+	Service     *string
+	Namespace   *string
+	Status      *string
+}
+
+type ServiceStat struct {
+	Namespace               string `json:"namespace"`
+	Service                 string `json:"service"`
+	TransactionCount        int64  `json:"transaction_count"`
+	Volume                  int64  `json:"volume"`
+	LastSeen                string `json:"last_seen"`
+	TransactionLimit        int64  `json:"transaction_limit"`
+	TransactionLimitReached bool   `json:"transaction_limit_reached"`
+}
+
+type ServiceProfile struct {
+	Namespace string   `json:"namespace"`
+	Service   string   `json:"service"`
+	Callers   []string `json:"callers"`
+	Callees   []string `json:"callees"`
+	Egress    []string `json:"egress"`
+	// Transactions are transaction identities in "KIND\toperation" format.
+	Transactions []string `json:"transactions"`
+}
+
+type BlastRadiusNode struct {
+	Namespace string `json:"namespace"`
+	Service   string `json:"service"`
+	IsVirtual bool   `json:"is_virtual"`
+}
+
+type BlastRadiusEdge struct {
+	ClientNamespace string `json:"client_namespace"`
+	ClientService   string `json:"client_service"`
+	ServerNamespace string `json:"server_namespace"`
+	ServerService   string `json:"server_service"`
+	ConnectionType  string `json:"connection_type"`
+	RequestCount    int64  `json:"request_count"`
+	FailedCount     int64  `json:"failed_count"`
+	LastSeen        string `json:"last_seen"`
+}
+
+type BlastRadiusSubgraph struct {
+	Root  BlastRadiusNode   `json:"root"`
+	Nodes []BlastRadiusNode `json:"nodes"`
+	Edges []BlastRadiusEdge `json:"edges"`
+}
+
+type TransactionIdentityValue struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type TransactionStat struct {
+	ID                 int64                      `json:"id"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Operation          string                     `json:"operation"`
+	OperationName      string                     `json:"operation_name"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions"`
+	Kind               TransactionKind            `json:"kind"`
+	Volume             int64                      `json:"volume"`
+	LastSeen           string                     `json:"last_seen"`
+	HasBaseline        *bool                      `json:"has_baseline,omitempty"`
+	Promoted           *bool                      `json:"promoted,omitempty"`
+	SaturatedClasses   []DeviationClass           `json:"saturated_classes,omitempty"`
+}
+
+type Transaction struct {
+	ID                 int64                      `json:"id"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Operation          string                     `json:"operation"`
+	OperationName      string                     `json:"operation_name"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions"`
+	Kind               TransactionKind            `json:"kind"`
+}
+
+type BaselineHistogramUnit string
+
+const (
+	BaselineHistogramUnitUs    BaselineHistogramUnit = "us"
+	BaselineHistogramUnitBytes BaselineHistogramUnit = "bytes"
+)
+
+type BaselineHistogramBar struct {
+	Lo    int64  `json:"lo"`
+	Hi    int64  `json:"hi"`
+	Count int64  `json:"count"`
+	Label string `json:"label"`
+}
+
+type BaselineHistogramSeries struct {
+	Name  string                 `json:"name"`
+	Label string                 `json:"label"`
+	Bars  []BaselineHistogramBar `json:"bars"`
+}
+
+type BaselineHistogram struct {
+	Unit              BaselineHistogramUnit     `json:"unit"`
+	LayoutFingerprint string                    `json:"layout_fingerprint,omitempty"`
+	Series            []BaselineHistogramSeries `json:"series"`
+}
+
+type BaselineClass struct {
+	TransactionID                int64              `json:"transaction_id"`
+	Class                        DeviationClass     `json:"class"`
+	ClassLabel                   string             `json:"class_label"`
+	ClassDescription             string             `json:"class_description"`
+	Data                         json.RawMessage    `json:"data,omitempty"`
+	Histogram                    *BaselineHistogram `json:"histogram,omitempty"`
+	DataSchemaVersion            *int               `json:"data_schema_version,omitempty"`
+	ObservationCount             int64              `json:"observation_count"`
+	Promoted                     bool               `json:"promoted"`
+	Saturated                    bool               `json:"saturated"`
+	LearningStartedAt            *string            `json:"learning_started_at,omitempty"`
+	LastChangedAt                *string            `json:"last_changed_at,omitempty"`
+	ObservationCountAtLastChange *int64             `json:"observation_count_at_last_change,omitempty"`
+	Learning                     BaselineLearning   `json:"learning"`
+}
+
+// BaselineLearningPhase is the coarse learning state for one baseline class.
+type BaselineLearningPhase string
+
+const (
+	BaselineLearningPhasePromoted BaselineLearningPhase = "promoted"
+	BaselineLearningPhaseEmpty    BaselineLearningPhase = "empty"
+	BaselineLearningPhaseLearning BaselineLearningPhase = "learning"
+	// BaselineLearningPhaseSaturated: the set crossed max_baseline_set_members;
+	// the class is frozen, never promoted and never scored.
+	BaselineLearningPhaseSaturated BaselineLearningPhase = "saturated"
+)
+
+// BaselineStabilityProgress is one stability dimension (observations count or duration minutes).
+type BaselineStabilityProgress struct {
+	Current         int64 `json:"current"`
+	Target          int64 `json:"target"`
+	DrivesPromotion bool  `json:"drives_promotion"`
+	Met             bool  `json:"met"`
+}
+
+// BaselineLearningStability holds both stability signals for UI progress copy.
+type BaselineLearningStability struct {
+	Observations BaselineStabilityProgress `json:"observations"`
+	Duration     BaselineStabilityProgress `json:"duration"`
+}
+
+// BaselineLearning is the computed learning/stability snapshot on each baseline row.
+type BaselineLearning struct {
+	Phase                       BaselineLearningPhase     `json:"phase"`
+	ObservationsSinceLastChange int64                     `json:"observations_since_last_change"`
+	QuietMinutes                int64                     `json:"quiet_minutes"`
+	Mode                        LearningMode              `json:"mode"`
+	ReadyToPromote              bool                      `json:"ready_to_promote"`
+	Stability                   BaselineLearningStability `json:"stability"`
+}
+
+type PromoteResult struct {
+	TransactionID int64          `json:"transaction_id"`
+	Class         DeviationClass `json:"class"`
+	Promoted      bool           `json:"promoted"`
+}
+
+type BulkPromoteRequest struct {
+	TransactionIDs []int64 `json:"transaction_ids"`
+}
+
+type BulkPromoteResult struct {
+	Promoted int `json:"promoted"`
+}
+
+type BulkDeleteRequest struct {
+	TransactionIDs []int64 `json:"transaction_ids"`
+}
+
+type BulkDeleteResult struct {
+	Deleted int `json:"deleted"`
+}
+
+type ObservationSummary struct {
+	TraceID       string       `json:"trace_id"`
+	TransactionID int64        `json:"transaction_id"`
+	ObservedAt    string       `json:"observed_at"`
+	DurationMs    int64        `json:"duration_ms"`
+	SampleReason  SampleReason `json:"sample_reason"`
+}
+
+type Observation struct {
+	TraceID       string       `json:"trace_id"`
+	TransactionID int64        `json:"transaction_id"`
+	ObservedAt    string       `json:"observed_at"`
+	DurationMs    int64        `json:"duration_ms"`
+	SampleReason  SampleReason `json:"sample_reason"`
+	RawOTLP       string       `json:"raw_otlp"`
+}
+
+type Policy struct {
+	ID            int64               `json:"id"`
+	Name          string              `json:"name"`
+	Enabled       bool                `json:"enabled"`
+	FireAtScore   int                 `json:"fire_at_score"`
+	SignalWeights map[string]int      `json:"signal_weights,omitempty"`
+	EnricherLists map[string][]string `json:"enricher_lists,omitempty"`
+	Scope         PolicyScope         `json:"scope"`
+	ScopeKey      string              `json:"scope_key"`
+}
+
+// LearningCondition is a single promotion criterion. JSON (un)marshaling is
+// defined in conversions.go because the REST wire form uses camelCase field
+// names — unlike the rest of the insights API, which is snake_case.
+type LearningCondition struct {
+	Type               LearningConditionType
+	MinObservations    *int64
+	MinDurationMinutes *int64
+	StableObservations *int64
+	StableMinutes      *int64
+}
+
+type LearningPolicy struct {
+	Class      DeviationClass      `json:"class"`
+	Mode       LearningMode        `json:"mode"`
+	Conditions []LearningCondition `json:"conditions,omitempty"`
+	MinMatches *int                `json:"min_matches,omitempty"`
+	Scope      PolicyScope         `json:"scope"`
+	ScopeKey   string              `json:"scope_key"`
+}
+
+type Finding struct {
+	Kind               FindingKind                `json:"kind"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Title              string                     `json:"title"`
+	Summary            string                     `json:"summary,omitempty"`
+	Operation          *string                    `json:"operation,omitempty"`
+	OperationName      *string                    `json:"operation_name,omitempty"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions,omitempty"`
+	Offending          *string                    `json:"offending,omitempty"`
+	Score              int                        `json:"score"`
+	Severity           Severity                   `json:"severity"`
+	Occurrences        int64                      `json:"occurrences"`
+	FirstSeen          *string                    `json:"first_seen,omitempty"`
+	LastSeen           string                     `json:"last_seen"`
+	Status             string                     `json:"status"`
+	TransactionID      *int64                     `json:"transaction_id,omitempty"`
+	Signature          *string                    `json:"signature,omitempty"`
+	TriggeredClasses   []DeviationClass           `json:"triggered_classes,omitempty"`
+	ScopeKey           *string                    `json:"scope_key,omitempty"`
+	RuleKey            *string                    `json:"rule_key,omitempty"`
+}
+
+type RiskSignal struct {
+	Source       string  `json:"source"`
+	Category     string  `json:"category"`
+	Weight       int     `json:"weight"`
+	Confidence   float64 `json:"confidence"`
+	Contribution int     `json:"contribution"`
+	Rationale    *string `json:"rationale,omitempty"`
+	Mitre        *string `json:"mitre,omitempty"`
+	Owasp        *string `json:"owasp,omitempty"`
+}
+
+type RiskAssessment struct {
+	Score            int          `json:"score"`
+	Severity         Severity     `json:"severity"`
+	Correlated       bool         `json:"correlated"`
+	CorrelationBonus int          `json:"correlation_bonus"`
+	FireAtScore      int          `json:"fire_at_score"`
+	Categories       []string     `json:"categories,omitempty"`
+	Signals          []RiskSignal `json:"signals"`
+}
+
+type AnomalySummary struct {
+	TransactionID      int64                      `json:"transaction_id"`
+	Signature          string                     `json:"signature"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Operation          string                     `json:"operation"`
+	OperationName      string                     `json:"operation_name"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions"`
+	Kind               *TransactionKind           `json:"kind,omitempty"`
+	TriggeredClasses   []DeviationClass           `json:"triggered_classes"`
+	Offending          *string                    `json:"offending,omitempty"`
+	PolicyID           *int64                     `json:"policy_id,omitempty"`
+	Occurrences        int64                      `json:"occurrences"`
+	MaxScore           int                        `json:"max_score"`
+	Severity           Severity                   `json:"severity"`
+	FirstSeen          *string                    `json:"first_seen,omitempty"`
+	LastSeen           *string                    `json:"last_seen,omitempty"`
+	LastTraceID        *string                    `json:"last_trace_id,omitempty"`
+	Status             AnomalyStatus              `json:"status"`
+}
+
+type AnomalyClassFindingKind string
+
+type AnomalySpanHighlight struct {
+	SpanID   string `json:"span_id"`
+	Severity string `json:"severity"`
+	Reason   string `json:"reason"`
+}
+
+type AnomalyAttrHighlight struct {
+	SpanID string `json:"span_id"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+type AnomalyMetricComparison struct {
+	Observed int64  `json:"observed"`
+	Baseline int64  `json:"baseline"`
+	Unit     string `json:"unit"`
+}
+
+type AnomalyClassFinding struct {
+	Class          DeviationClass           `json:"class"`
+	Kind           AnomalyClassFindingKind  `json:"kind"`
+	Title          string                   `json:"title"`
+	Summary        string                   `json:"summary"`
+	SpanHighlights []AnomalySpanHighlight   `json:"span_highlights,omitempty"`
+	AttrHighlights []AnomalyAttrHighlight   `json:"attr_highlights,omitempty"`
+	Metric         *AnomalyMetricComparison `json:"metric,omitempty"`
+	RawEvidence    json.RawMessage          `json:"raw_evidence,omitempty"`
+}
+
+type AnomalyIssue struct {
+	TransactionID      int64                      `json:"transaction_id"`
+	Signature          string                     `json:"signature"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Operation          string                     `json:"operation"`
+	OperationName      string                     `json:"operation_name"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions"`
+	Kind               *TransactionKind           `json:"kind,omitempty"`
+	TriggeredClasses   []DeviationClass           `json:"triggered_classes"`
+	Offending          *string                    `json:"offending,omitempty"`
+	Evidence           json.RawMessage            `json:"evidence"`
+	PolicyID           *int64                     `json:"policy_id,omitempty"`
+	Occurrences        int64                      `json:"occurrences"`
+	MaxScore           int                        `json:"max_score"`
+	Severity           Severity                   `json:"severity"`
+	FirstSeen          *string                    `json:"first_seen,omitempty"`
+	LastSeen           *string                    `json:"last_seen,omitempty"`
+	LastTraceID        *string                    `json:"last_trace_id,omitempty"`
+	Status             AnomalyStatus              `json:"status"`
+	Risk               *RiskAssessment            `json:"risk,omitempty"`
+	ClassFindings      []AnomalyClassFinding      `json:"class_findings"`
+	AnomalyTrace       *Observation               `json:"anomaly_trace,omitempty"`
+	BaselineTrace      *Observation               `json:"baseline_trace,omitempty"`
+}
+
+type AnomalyRef struct {
+	TransactionID int64  `json:"transaction_id"`
+	Signature     string `json:"signature"`
+}
+
+type BulkAnomalyRequest struct {
+	Resolution BulkResolution `json:"resolution"`
+	Items      []AnomalyRef   `json:"items"`
+}
+
+type BulkResolveResult struct {
+	Resolution string `json:"resolution"`
+	Resolved   int    `json:"resolved"`
+}
+
+type CorrelationRelation string
+
+// CorrelationRelation values for CorrelationSpec.Relation.
+const (
+	CorrelationRelationEquals    CorrelationRelation = "equals"
+	CorrelationRelationNotEquals CorrelationRelation = "not_equals"
+)
+
+// CorrelationSelector locates one attribute on one span within a trace.
+type CorrelationSelector struct {
+	Service string `json:"service"`
+	Span    string `json:"span"`
+	Attr    string `json:"attr"`
+	Extract string `json:"extract,omitempty"`
+}
+
+// CorrelationSpec is one cross-span consistency assertion for the
+// attribute_correlation rule: compare Left vs Right within a single trace.
+type CorrelationSpec struct {
+	Name     string              `json:"name"`
+	Left     CorrelationSelector `json:"left"`
+	Right    CorrelationSelector `json:"right"`
+	Relation CorrelationRelation `json:"relation"`
+	Severity Severity            `json:"severity,omitempty"`
+	Why      string              `json:"why,omitempty"`
+}
+
+type GuardrailRule struct {
+	Key       string   `json:"key"`
+	Label     string   `json:"label"`
+	Mode      RuleMode `json:"mode"`
+	Allowlist []string `json:"allowlist,omitempty"`
+	// Correlations is used by attribute_correlation (transaction-scoped).
+	Correlations []CorrelationSpec `json:"correlations,omitempty"`
+	// Origin is how the rule was created (e.g. auto_transaction_guardrail).
+	Origin string `json:"origin,omitempty"`
+}
+
+type Guardrail struct {
+	Scope    PolicyScope     `json:"scope"`
+	ScopeKey string          `json:"scope_key"`
+	Rules    []GuardrailRule `json:"rules"`
+}
+
+type GuardrailViolation struct {
+	Service     string          `json:"service"`
+	Namespace   string          `json:"namespace"`
+	ScopeKey    string          `json:"scope_key"`
+	RuleKey     string          `json:"rule_key"`
+	RuleLabel   string          `json:"rule_label"`
+	Offending   *string         `json:"offending,omitempty"`
+	Occurrences int64           `json:"occurrences"`
+	MaxScore    int             `json:"max_score"`
+	Severity    Severity        `json:"severity"`
+	LastSeen    *string         `json:"last_seen,omitempty"`
+	Status      ViolationStatus `json:"status"`
+}
+
+// GuardrailViolationDetail is the investigate payload for one violation
+// (GET /guardrails/violations/evidence). Never returned by list endpoints.
+type GuardrailViolationDetail struct {
+	Service        string                 `json:"service"`
+	Namespace      string                 `json:"namespace"`
+	ScopeKey       string                 `json:"scope_key"`
+	RuleKey        string                 `json:"rule_key"`
+	RuleLabel      string                 `json:"rule_label"`
+	Offending      string                 `json:"offending"`
+	Occurrences    int64                  `json:"occurrences"`
+	MaxScore       int                    `json:"max_score"`
+	Severity       Severity               `json:"severity"`
+	LastSeen       *string                `json:"last_seen,omitempty"`
+	Status         ViolationStatus        `json:"status"`
+	Summary        string                 `json:"summary"`
+	SpanHighlights []AnomalySpanHighlight `json:"span_highlights,omitempty"`
+	EvidenceTrace  *Observation           `json:"evidence_trace,omitempty"`
+}
+
+type ViolationActionRequest struct {
+	ScopeKey  string `json:"scope_key"`
+	RuleKey   string `json:"rule_key"`
+	Offending string `json:"offending"`
+}
+
+type GuardrailSeedRequest struct {
+	ScopeKey string              `json:"scope_key"`
+	Mode     *RuleMode           `json:"mode,omitempty"`
+	Items    map[string][]string `json:"items"`
+}
+
+type CatalogClass struct {
+	ID                  string  `json:"id"`
+	Label               string  `json:"label"`
+	Description         *string `json:"description,omitempty"`
+	BaselineLabel       string  `json:"baseline_label"`
+	BaselineDescription *string `json:"baseline_description,omitempty"`
+	Category            string  `json:"category"`
+	CategoryLabel       *string `json:"category_label,omitempty"`
+	Weight              int     `json:"weight"`
+	Mitre               *string `json:"mitre,omitempty"`
+	Owasp               *string `json:"owasp,omitempty"`
+}
+
+type EnricherList struct {
+	Key     string   `json:"key"`
+	Label   string   `json:"label"`
+	Hint    *string  `json:"hint,omitempty"`
+	Default []string `json:"default,omitempty"`
+}
+
+type CatalogEnricher struct {
+	Source      string        `json:"source"`
+	ParentClass string        `json:"parent_class"`
+	Category    string        `json:"category"`
+	Weight      int           `json:"weight"`
+	Label       string        `json:"label"`
+	Description *string       `json:"description,omitempty"`
+	List        *EnricherList `json:"list,omitempty"`
+}
+
+type CatalogCategory struct {
+	ID    string  `json:"id"`
+	Label string  `json:"label"`
+	Base  int     `json:"base"`
+	Mitre *string `json:"mitre,omitempty"`
+	Owasp *string `json:"owasp,omitempty"`
+}
+
+type CatalogGuardrailRule struct {
+	Key         string  `json:"key"`
+	Label       string  `json:"label"`
+	Description *string `json:"description,omitempty"`
+	Category    string  `json:"category"`
+	Weight      int     `json:"weight"`
+	Hint        *string `json:"hint,omitempty"`
+}
+
+type SeverityBand struct {
+	Severity Severity `json:"severity"`
+	MinScore int      `json:"min_score"`
+}
+
+type Catalog struct {
+	DeviationClasses []CatalogClass         `json:"deviation_classes"`
+	Enrichers        []CatalogEnricher      `json:"enrichers"`
+	Categories       []CatalogCategory      `json:"categories"`
+	GuardrailRules   []CatalogGuardrailRule `json:"guardrail_rules"`
+	SeverityBands    []SeverityBand         `json:"severity_bands"`
+	CorrelationBonus int                    `json:"correlation_bonus"`
+	Tags             map[string]string      `json:"tags"`
+}
+
+type SystemSamplingSettings struct {
+	ExamplesPerTransaction       int `json:"examples_per_transaction"`
+	ExampleSampleIntervalSeconds int `json:"example_sample_interval_seconds"`
+}
+
+type SystemRetentionSettings struct {
+	ObservationRetentionDays int `json:"observation_retention_days"`
+}
+
+type SystemFindingsSettings struct {
+	DefaultWindowHours int `json:"default_window_hours"`
+	MaxWindowHours     int `json:"max_window_hours"`
+}
+
+type SystemCapacitySettings struct {
+	MaxResidentTransactions   int `json:"max_resident_transactions"`
+	MaxBaselineSetMembers     int `json:"max_baseline_set_members"`
+	MaxTransactionsPerService int `json:"max_transactions_per_service,omitempty"`
+}
+
+type SystemWritebackSettings struct {
+	FlushIntervalSeconds int `json:"flush_interval_seconds"`
+}
+
+type SystemDetectionSettings struct {
+	AutoTransactionGuardrail bool `json:"auto_transaction_guardrail"`
+}
+
+type SystemTransactionIdentityDimension struct {
+	Key     string `json:"key"`
+	Enabled bool   `json:"enabled"`
+}
+
+type SystemIdentitySettings struct {
+	TransactionIdentityDimensions []SystemTransactionIdentityDimension `json:"transaction_identity_dimensions"`
+}
+
+type SystemSettings struct {
+	Sampling          SystemSamplingSettings  `json:"sampling"`
+	Retention         SystemRetentionSettings `json:"retention"`
+	Findings          SystemFindingsSettings  `json:"findings"`
+	Capacity          SystemCapacitySettings  `json:"capacity"`
+	Writeback         SystemWritebackSettings `json:"writeback"`
+	Detection         SystemDetectionSettings `json:"detection"`
+	Identity          SystemIdentitySettings  `json:"identity"`
+	ResetTransactions *bool                   `json:"reset_transactions,omitempty"`
+}
+
+type StorageConnection struct {
+	Reachable     bool    `json:"reachable"`
+	PingLatencyMs int64   `json:"ping_latency_ms"`
+	Version       string  `json:"version"`
+	Database      string  `json:"database"`
+	Error         *string `json:"error,omitempty"`
+}
+
+type StorageDisk struct {
+	InsightsBytes  int64             `json:"insights_bytes"`
+	TotalBytes     int64             `json:"total_bytes"`
+	UsedBytes      int64             `json:"used_bytes"`
+	AvailableBytes int64             `json:"available_bytes"`
+	UsedPercent    float64           `json:"used_percent"`
+	Status         StorageDiskStatus `json:"status"`
+}
+
+type StorageMemory struct {
+	ProcessRSSBytes  int64   `json:"process_rss_bytes"`
+	CgroupUsedBytes  int64   `json:"cgroup_used_bytes"`
+	CgroupTotalBytes int64   `json:"cgroup_total_bytes"`
+	UptimeSeconds    float64 `json:"uptime_seconds"`
+}
+
+type StorageQuery struct {
+	ElapsedSeconds float64 `json:"elapsed_seconds"`
+	User           string  `json:"user"`
+	MemoryBytes    int64   `json:"memory_bytes"`
+	Query          string  `json:"query"`
+	FinishedAt     *string `json:"finished_at,omitempty"`
+}
+
+type StorageQueries struct {
+	Active          int            `json:"active"`
+	LongestSeconds  float64        `json:"longest_seconds"`
+	PeakMemoryBytes int64          `json:"peak_memory_bytes"`
+	Items           []StorageQuery `json:"items"`
+	RecentHeaviest  []StorageQuery `json:"recent_heaviest"`
+	RecentLatest    []StorageQuery `json:"recent_latest"`
+}
+
+type StorageTable struct {
+	Name        string `json:"name"`
+	Rows        int64  `json:"rows"`
+	BytesOnDisk int64  `json:"bytes_on_disk"`
+	ActiveParts int64  `json:"active_parts"`
+}
+
+type StorageWritePressure struct {
+	UnfinishedMutations int64 `json:"unfinished_mutations"`
+	ActiveParts         int64 `json:"active_parts"`
+}
+
+type StorageWriteback struct {
+	FlushIntervalSeconds int     `json:"flush_interval_seconds"`
+	EverFlushed          bool    `json:"ever_flushed"`
+	LastFlushOK          bool    `json:"last_flush_ok"`
+	LastFlushAt          *string `json:"last_flush_at,omitempty"`
+	LastFlushError       *string `json:"last_flush_error,omitempty"`
+}
+
+type StorageHealth struct {
+	CheckedAt     string               `json:"checked_at"`
+	Status        StorageHealthStatus  `json:"status"`
+	Connection    StorageConnection    `json:"connection"`
+	Disk          StorageDisk          `json:"disk"`
+	Memory        StorageMemory        `json:"memory"`
+	Queries       StorageQueries       `json:"queries"`
+	Tables        []StorageTable       `json:"tables"`
+	WritePressure StorageWritePressure `json:"write_pressure"`
+	Writeback     StorageWriteback     `json:"writeback"`
+}
+
+// Guardrail recommendations (GET/POST /api/v1/recommendations*).
+//
+// The insights engine mines promoted transactions' stored relation samples for
+// attribute pairs that always agree and offers each one as a ready-made
+// attribute_correlation rule. The payload is render-ready: the engine writes
+// the title, summary and confidence reasons, so this layer only reshapes.
+
+type RecommendationKind string
+type RecommendationState string
+type RecommendationConfidenceLevel string
+
+// RecommendationKind values. Only attribute_correlation is mined today.
+const (
+	RecommendationKindAttributeCorrelation RecommendationKind = "attribute_correlation"
+	RecommendationKindServiceGuardrail     RecommendationKind = "service_guardrail"
+)
+
+// RecommendationState values: where the recommendation sits in its lifecycle.
+const (
+	RecommendationStateOpen      RecommendationState = "open"
+	RecommendationStateApplied   RecommendationState = "applied"
+	RecommendationStateDismissed RecommendationState = "dismissed"
+)
+
+type ListRecommendationsParams struct {
+	Kind          *RecommendationKind
+	State         *RecommendationState
+	TransactionID *int64
+	Service       *string
+	Namespace     *string
+	IncludeStale  *bool
+}
+
+// RecommendationExample is one stored sample the relation held on.
+type RecommendationExample struct {
+	TraceID    string `json:"trace_id"`
+	LeftValue  string `json:"left_value"`
+	RightValue string `json:"right_value"`
+	ObservedAt string `json:"observed_at"`
+}
+
+// RecommendationConfidence is why the engine believes the recommendation: stats
+// over what the miner read, plus live counters from evaluating the open
+// recommendation silently against real traffic.
+//
+// Only Level, Reasons, SampleCount, LiveHeld and LiveBroken are carried by both
+// kinds. HoldRatio, Observed, Held and Distinct describe a mined relation and
+// are absent on a service_guardrail, which is why the converter zeroes them out
+// per kind rather than trusting the decoded zero value.
+//
+// SampleCount, LiveHeld and LiveBroken keep their keys across kinds but change
+// meaning: on a service_guardrail they count promoted transactions and per-rule
+// checks summed over Rules, not relation samples and traces.
+//
+// LiveSince/LiveLast are RFC3339 but the engine emits them as a zero time
+// rather than omitting them until the first live trace is evaluated; see
+// isZeroTimestamp.
+type RecommendationConfidence struct {
+	Level       RecommendationConfidenceLevel `json:"level"`
+	HoldRatio   float64                       `json:"hold_ratio,omitempty"`
+	Observed    int                           `json:"observed,omitempty"`
+	Held        int                           `json:"held,omitempty"`
+	Distinct    int                           `json:"distinct,omitempty"`
+	SampleCount int                           `json:"sample_count"`
+	LiveHeld    int64                         `json:"live_held"`
+	LiveBroken  int64                         `json:"live_broken"`
+	LiveSince   string                        `json:"live_since,omitempty"`
+	LiveLast    string                        `json:"live_last,omitempty"`
+	Reasons     []string                      `json:"reasons"`
+}
+
+// RecommendationRule is one allowlist rule a service_guardrail recommendation
+// proposes, pre-filled from the profile the service was observed to follow.
+// Rules arrive in catalog order and only cover what the service does not
+// enforce yet, so applying extends a guardrail and never overrides a rule an
+// operator already set.
+//
+// LiveSince/LiveLast carry the same zero-time quirk as the confidence block.
+type RecommendationRule struct {
+	// Rule is the catalog key: allowed_callers, allowed_callees,
+	// allowed_egress or allowed_transactions. Left a plain string so a new
+	// catalog key does not break decoding.
+	Rule        string `json:"rule"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	// Items is the allowlist an apply would write, sorted. Service names,
+	// host[:port]s, or a transaction kind joined to its operation by a tab.
+	// Empty is meaningful and strict: enforcing forbids all of it.
+	Items      []string                      `json:"items"`
+	Confidence RecommendationConfidenceLevel `json:"confidence"`
+	// LiveChecked counts live traces of this service checked silently against
+	// the proposed list; LiveViolated, how many carried something outside it.
+	LiveChecked  int64  `json:"live_checked"`
+	LiveViolated int64  `json:"live_violated"`
+	LiveSince    string `json:"live_since,omitempty"`
+	LiveLast     string `json:"live_last,omitempty"`
+}
+
+// Recommendation is one mined recommendation the operator can apply, dismiss or
+// edit. The two kinds share this struct: every field that is not carried by
+// both is zero-valued on the other kind, so read it after switching on Kind
+// rather than treating an absent field as false or zero.
+type Recommendation struct {
+	ID    string              `json:"id"`
+	Kind  RecommendationKind  `json:"kind"`
+	State RecommendationState `json:"state"`
+	// Stale means the latest mining run no longer produced this row: the
+	// relation stopped holding, its samples aged out, or the service has
+	// nothing left to enforce.
+	Stale bool `json:"stale"`
+	// Rank orders the scope's recommendations, 0 = strongest.
+	Rank int `json:"rank"`
+	// Scope and ScopeKey are always set since 8.0.0: transaction / the decimal
+	// transaction id for attribute_correlation, service / "<namespace>/<service>"
+	// for service_guardrail.
+	Scope    PolicyScope `json:"scope"`
+	ScopeKey string      `json:"scope_key"`
+	// TransactionID, TransactionKind and Operation are attribute_correlation
+	// only; a service_guardrail is scoped to the service, not a transaction.
+	TransactionID   int64           `json:"transaction_id,omitempty"`
+	TransactionKind TransactionKind `json:"transaction_kind,omitempty"`
+	Service         string          `json:"service"`
+	Namespace       string          `json:"namespace"`
+	Operation       string          `json:"operation,omitempty"`
+	Title           string          `json:"title"`
+	Summary         string          `json:"summary"`
+	WhyItMatters    string          `json:"why_it_matters"`
+	// Transform is attribute_correlation only: how the two values relate —
+	// exact, core, digits or contains.
+	Transform string `json:"transform,omitempty"`
+	// Transport marks a relation the transport guarantees (the same field on
+	// both ends of one hop) rather than business logic. attribute_correlation
+	// only, and absent when false even there.
+	Transport bool `json:"transport,omitempty"`
+	// Spec is the exact rule an apply would add to the transaction guardrail.
+	// A pointer since 8.0.0: nil on every service_guardrail.
+	Spec *CorrelationSpec `json:"spec,omitempty"`
+	// Rules is service_guardrail only: the allowlist rules proposed for
+	// enforcement, in catalog order. It can be empty on an applied card, since
+	// rules the service already enforces are left out.
+	Rules []RecommendationRule `json:"rules,omitempty"`
+	// AppliedRules is service_guardrail only: the rule keys an apply turned on.
+	// Set while State is applied.
+	AppliedRules []string                 `json:"applied_rules,omitempty"`
+	Confidence   RecommendationConfidence `json:"confidence"`
+	// Examples is attribute_correlation only: up to three stored samples the
+	// relation held on.
+	Examples []RecommendationExample `json:"examples,omitempty"`
+	// AlreadyCovered is attribute_correlation only: the transaction guardrail
+	// already carries a rule on the same two attributes, so applying replaces
+	// it. Absent when false.
+	AlreadyCovered bool   `json:"already_covered,omitempty"`
+	MinedAt        string `json:"mined_at"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+}
+
+// RecommendationApplyItem is one recommendation to apply, optionally carrying
+// the operator's edits to the rule it creates.
+//
+// Spec and Rules belong to different kinds. Spec is validated before the kind
+// is known, so sending one with a service_guardrail id rejects the whole batch
+// even though it would be ignored.
+type RecommendationApplyItem struct {
+	ID   string           `json:"id"`
+	Spec *CorrelationSpec `json:"spec,omitempty"`
+	// Rules selects which of a service_guardrail's rules to turn on, by rule
+	// key. Omitted or empty means every rule on the card — there is no way to
+	// spell "apply nothing", so a caller that wants that skips the item.
+	Rules []string `json:"rules,omitempty"`
+}
+
+type RecommendationApplyRequest struct {
+	Items []RecommendationApplyItem `json:"items"`
+}
+
+type RecommendationIDsRequest struct {
+	IDs []string `json:"ids"`
+}
+
+type RecommendationItemError struct {
+	ID    string `json:"id"`
+	Error string `json:"error"`
+}
+
+// RecommendationBulkResult reports a bulk action. A bulk action never stops at
+// the first failure, so Done and Errors can both be non-empty — the engine
+// answers 422 in that case and the client still returns this body.
+type RecommendationBulkResult struct {
+	Done   int                       `json:"done"`
+	Failed int                       `json:"failed"`
+	Errors []RecommendationItemError `json:"errors"`
+}
+
+type RecommendationPreviewRequest struct {
+	TransactionID int64           `json:"transaction_id"`
+	Spec          CorrelationSpec `json:"spec"`
+}
+
+// RecommendationPreview is how an edited spec fares on the transaction's stored
+// relation samples, without persisting anything.
+type RecommendationPreview struct {
+	SampleCount     int                     `json:"sample_count"`
+	Observed        int                     `json:"observed"`
+	Held            int                     `json:"held"`
+	Distinct        int                     `json:"distinct"`
+	HoldRatio       float64                 `json:"hold_ratio"`
+	Examples        []RecommendationExample `json:"examples"`
+	CounterExamples []RecommendationExample `json:"counter_examples"`
+}
+
+// RecommendationRecomputeRequest queues a mining run. Pass either
+// TransactionID or the Namespace/Service pair, never both and never a namespace
+// without its service — the engine answers 400 for either. All three empty
+// sweeps every promoted transaction with unmined samples and every
+// fully-learned service.
+type RecommendationRecomputeRequest struct {
+	Namespace     string `json:"namespace,omitempty"`
+	Service       string `json:"service,omitempty"`
+	TransactionID int64  `json:"transaction_id,omitempty"`
+}

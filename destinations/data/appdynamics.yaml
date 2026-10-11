@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: APPDYNAMICS_APPLICATION_NAME
       displayName: Application Name
@@ -20,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: false
-        tooltip: 'Will define a namespace in AppDynamics'
+        tooltip: "Will define a namespace in AppDynamics"
     - name: APPDYNAMICS_ACCOUNT_NAME
       displayName: Account Name
       componentType: input

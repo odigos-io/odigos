@@ -5,12 +5,14 @@ export const CREATE_DESTINATION = gql`
     createNewDestination(destination: $destination) {
       id
       name
+      disabled
       dataStreamNames
       fields
       exportedSignals {
         logs
         metrics
         traces
+        profiles
       }
       destinationType {
         type
@@ -26,6 +28,9 @@ export const CREATE_DESTINATION = gql`
           traces {
             supported
           }
+          profiles {
+            supported
+          }
         }
       }
       conditions {
@@ -33,7 +38,6 @@ export const CREATE_DESTINATION = gql`
         type
         reason
         message
-        lastTransitionTime
       }
     }
   }

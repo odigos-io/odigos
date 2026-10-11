@@ -1,32 +1,40 @@
 package agentenabled
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
-	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
+	commonconsts "github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
-	distroTypes "github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/distroresolver"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
+	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type agentInjectedStatusCondition struct {
-
 	// The status represents 3 possible states for the agent injected:
 	// - True: agent is injected (e.g. instrumentation config is updated to inject the agent in webhook)
 	// - False: agent is not injected permanently (e.g. no supported agent can be injected to this workload due to unsupported runtimes, ignored containers, etc.)
@@ -42,14 +50,14 @@ type agentInjectedStatusCondition struct {
 	Message string
 }
 
-func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (ctrl.Result, error) {
+func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider, rolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter) (ctrl.Result, error) {
 	allInstrumentationConfigs := odigosv1.InstrumentationConfigList{}
 	listErr := c.List(ctx, &allInstrumentationConfigs)
 	if listErr != nil {
 		return ctrl.Result{}, listErr
 	}
 
-	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+	conf, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -57,12 +65,14 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	var allErrs error
 	aggregatedResult := ctrl.Result{}
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, workloadErr := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf)
+		res, workloadErr := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf, rolloutConcurrencyLimiter)
 		if workloadErr != nil {
 			allErrs = errors.Join(allErrs, workloadErr)
 		}
 		if !res.IsZero() {
-			if aggregatedResult.RequeueAfter == 0 {
+			if res.Requeue {
+				aggregatedResult.Requeue = res.Requeue
+			} else if aggregatedResult.RequeueAfter == 0 {
 				aggregatedResult.RequeueAfter = res.RequeueAfter
 			} else if res.RequeueAfter < aggregatedResult.RequeueAfter {
 				aggregatedResult.RequeueAfter = res.RequeueAfter
@@ -73,8 +83,8 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	return aggregatedResult, allErrs
 }
 
-func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration, rolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter) (ctrl.Result, error) {
+	logger := commonlogger.FromContext(ctx)
 
 	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName, namespace)
 	if err != nil {
@@ -88,43 +98,49 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw, conf)
-			return res, err
+			rolloutResult, doErr := rollout.Do(ctx, c, nil, pw, conf, distroProvider, rolloutConcurrencyLimiter)
+			return rolloutResult.Result, doErr
 		}
 		return ctrl.Result{}, err
 	}
-
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
-	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider)
+	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider, conf)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	err = c.Update(ctx, &ic)
 	if err != nil {
-		return utils.K8SUpdateErrorHandler(err)
+		return k8sutils.K8SUpdateErrorHandler(err)
 	}
 
 	cond := metav1.Condition{
-		Type:    odigosv1.AgentEnabledStatusConditionType,
+		Type:    agentInjectionEnabled.AgentEnabledType,
 		Status:  condition.Status,
 		Reason:  string(condition.Reason),
 		Message: condition.Message,
 	}
 
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, conf)
+	rolloutResult, doErr := rollout.Do(ctx, c, &ic, pw, conf, distroProvider, rolloutConcurrencyLimiter)
 
-	if rolloutChanged || agentEnabledChanged {
+	if rolloutResult.StatusChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
 		if updateErr != nil {
-			// if the update fails, we should not return an error, but rather log it and retry later.
-			return utils.K8SUpdateErrorHandler(updateErr)
+			return k8sutils.K8SUpdateErrorHandler(updateErr)
 		}
 	}
 
-	return res, err
+	return rolloutResult.Result, doErr
+}
+
+func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfig, newValue string) {
+	if ic.Spec.AgentsMetaHash == newValue {
+		return
+	}
+	ic.Spec.AgentsMetaHash = newValue
+	ic.Spec.AgentsMetaHashChangedTime = &metav1.Time{Time: time.Now()}
 }
 
 // this function receives a workload object, and updates the instrumentation config object ptr.
@@ -133,56 +149,179 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 // if the function returns without an error, it also returns an agentInjectedStatusCondition object
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
-func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-	cg, irls, effectiveConfig, err := getRelevantResources(ctx, c, pw)
+func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
+	logger := commonlogger.FromContext(ctx)
+	nodeCollectorsGroup, clusterCollectorsGroup, irls, agentLevelActions, samplingRules, workloadObj, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
 	}
 
+	// Check for workloads that are in backoff state and not eligible for instrumentation.
+	backoffCondition, err := hasUninstrumentedPodsWithBackoff(ctx, c, pw, ic, logger)
+	if err != nil {
+		return nil, err
+	}
+	if backoffCondition != nil {
+		// Set the WorkloadRollout condition
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1.WorkloadRolloutStatusConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  string(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff),
+			Message: "Workload has pods in backoff state - not eligible for instrumentation",
+		})
+		return backoffCondition, nil
+	}
+
 	// check if we are waiting for some transient prerequisites to be completed before injecting the agent
-	prerequisiteCompleted, reason, message := isReadyForInstrumentation(cg, ic)
+	prerequisiteCompleted, reason, message := isReadyForInstrumentation(nodeCollectorsGroup, ic)
 	if !prerequisiteCompleted {
 		ic.Spec.AgentInjectionEnabled = false
-		ic.Spec.AgentsMetaHash = ""
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		ic.Spec.Containers = []odigosv1.ContainerAgentConfig{}
+		status := metav1.ConditionUnknown
+		if r, ok := agentInjectionEnabled.AgentEnabledReasonByName(string(reason)); ok {
+			status = r.K8sConditionStatus
+		}
 		return &agentInjectedStatusCondition{
-			Status:  metav1.ConditionUnknown,
+			Status:  status,
 			Reason:  reason,
 			Message: message,
 		}, nil
 	}
 
 	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
-	distroPerLanguage := applyRulesForDistros(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
-	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff we'd like to stop
-	// instrumentating it and to disable future instrumentation of this service
-	crashDetected := ic.Status.RollbackOccurred
+	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
+	// instrumentating it and to disable future instrumentation of this service.
+	// Recovery from rollback is already handled in reconcileWorkload before this function is called.
+	rollbackOccurred := ic.Status.RollbackOccurred
+	// Get existing backoff reason from status conditions if available
+	crashLoopReason := odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff)
+	imagePullReason := odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonImagePullBackOff)
+	var existingBackoffReason odigosv1.AgentEnabledReason
+	for _, condition := range ic.Status.Conditions {
+		if condition.Type == agentInjectionEnabled.AgentEnabledType {
+			reason := odigosv1.AgentEnabledReason(condition.Reason)
+			if reason == crashLoopReason || reason == imagePullReason {
+				existingBackoffReason = reason
+				break
+			}
+		}
+	}
+	// If not found in conditions, check existing container configs
+	if existingBackoffReason == "" {
+		for _, container := range ic.Spec.Containers {
+			if container.AgentEnabledReason == crashLoopReason || container.AgentEnabledReason == imagePullReason {
+				existingBackoffReason = container.AgentEnabledReason
+				break
+			}
+		}
+	}
+	// If not found in containers and we are in rollback state, default to CrashLoopBackOff
+	if rollbackOccurred && existingBackoffReason == "" {
+		existingBackoffReason = crashLoopReason
+	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
-	// ContainersOverrides will always list all containers of the workloads, so we can use it to iterate.
-	for i := range ic.Spec.ContainersOverrides {
-		containerName := ic.Spec.ContainersOverrides[i].ContainerName
-		var containerRuntimeDetails *odigosv1.RuntimeDetailsByContainer
-		// always take the override if it exists, before taking the automatic runtime detection.
-		if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
-			containerRuntimeDetails = ic.Spec.ContainersOverrides[i].RuntimeInfo
-		} else {
-			// find this container by name in the automatic runtime detection
-			for j := range ic.Status.RuntimeDetailsByContainer {
-				if ic.Status.RuntimeDetailsByContainer[j].ContainerName == containerName {
-					containerRuntimeDetails = &ic.Status.RuntimeDetailsByContainer[j]
-					break
+	collectorConfigs := make([]commonapi.ContainerCollectorConfig, 0, len(ic.Spec.Containers))
+	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
+	podManifestInjectionOptional := true // pod manifest is optional, unless some container agent requires it
+
+	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
+		containerLanguage := common.UnknownProgrammingLanguage
+		if containerRuntimeDetails != nil && containerRuntimeDetails.Language != "" {
+			containerLanguage = containerRuntimeDetails.Language
+		}
+
+		// filter the relevant rules from irls for this container specifically
+		rulesForContainer := make([]odigosv1.InstrumentationRule, 0)
+		if irls != nil {
+			for _, rule := range *irls {
+				if scope.SourceScopeMatchesContainer(rule.Spec.Scopes, pw, containerLanguage) {
+					rulesForContainer = append(rulesForContainer, rule)
 				}
 			}
 		}
+		// Since we can have multiple rules editing the same target, sort the rules since the list order is not deterministic
+		// This will prevent magical behavior that will arise from the nondeterminism of rule applying due to ordering
+		slices.SortFunc(rulesForContainer, func(a, b odigosv1.InstrumentationRule) int {
+			if c := cmp.Compare(a.Namespace, b.Namespace); c != 0 {
+				return c
+			}
+			return cmp.Compare(a.Name, b.Name)
+		})
+
+		distroPerLanguage := distroresolver.CalculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, &rulesForContainer, distroProvider.Getter)
+
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
-		currentContainerConfig := containerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected, cg)
-		containersConfig = append(containersConfig, currentContainerConfig)
-	}
-	ic.Spec.Containers = containersConfig
+		containerOverride := ic.GetOverridesForContainer(containerName)
+		containerDistro, err := distroresolver.ResolveDistroForContainer(effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, containerName)
+		if err != nil {
+			// if we cannot match a distro for the container, we cannot instrument it.
+			// mark this in the container agent config and avoid any further processing.
+			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  err.AgentEnabledReason,
+				AgentEnabledMessage: err.AgentEnabledMessage,
+			})
+			continue
+		}
 
+		// calculate and verify there are enabled signals for this container.
+		enabledSignals, disabledInfo := signals.GetEnabledSignalsForContainer(nodeCollectorsGroup, &rulesForContainer)
+		if disabledInfo != nil {
+			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  disabledInfo.AgentEnabledReason,
+				AgentEnabledMessage: disabledInfo.AgentEnabledMessage,
+			})
+			continue
+		}
+
+		// calculate the dynamic configs for this container.
+		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, &rulesForContainer, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals, nodeCollectorsGroup, clusterCollectorsGroup)
+		if disabledInfo != nil {
+			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  disabledInfo.AgentEnabledReason,
+				AgentEnabledMessage: disabledInfo.AgentEnabledMessage,
+			})
+			continue
+		}
+
+		allowConcurrentAgents := resolveAllowConcurrentAgents(effectiveConfig, containerOverride)
+		agentConfig := calculateContainerAgentConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, rollbackOccurred, existingBackoffReason, allowConcurrentAgents)
+		// add the dynamic agent configs to enabled agents
+		if agentConfig.AgentEnabled {
+			agentConfig.Traces = dynamicContainerConfigs.AgentTracesConfig
+			agentConfig.Metrics = dynamicContainerConfigs.AgentMetricsConfig
+			agentConfig.Logs = dynamicContainerConfigs.AgentLogsConfig
+			agentConfig.AgentDiagnostics = dynamicContainerConfigs.AgentDiagnostics
+		}
+		containersConfig = append(containersConfig, agentConfig)
+
+		if agentConfig.AgentEnabled {
+			// add collector config for the container if there is any
+			if dynamicContainerConfigs.CollectorConfig != nil {
+				dynamicContainerConfigs.CollectorConfig.ContainerName = containerName
+				collectorConfigs = append(collectorConfigs, *dynamicContainerConfigs.CollectorConfig)
+			}
+
+			// if at least one container has agent enabled, and pod manifest injection is required,
+			// then the overall pod manifest injection is required.
+			if !agentConfig.PodManifestInjectionOptional {
+				podManifestInjectionOptional = false
+			}
+		}
+	}
+
+	ic.Spec.Containers = containersConfig
+	ic.Spec.PodManifestInjectionOptional = podManifestInjectionOptional
+	ic.Spec.WorkloadCollectorConfig = collectorConfigs
 	// after updating the container configs, we can go over them and produce a useful aggregated status for the user
 	// if any container is instrumented, we can set the status to true
 	// if all containers are not instrumented, we can set the status to false and provide a reason
@@ -203,265 +342,247 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	if len(instrumentedContainerNames) > 0 {
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
-		ic.Spec.AgentInjectionEnabled = !crashDetected
+		ic.Spec.AgentInjectionEnabled = !rollbackOccurred
+		ic.Spec.PodManifestInjectionOptional = ic.Spec.AgentInjectionEnabled && podManifestInjectionOptional
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
 		}
-		ic.Spec.AgentsMetaHash = string(agentsDeploymentHash)
+		updateInstrumentationConfigAgentsMetaHash(ic, string(agentsDeploymentHash))
 		return &agentInjectedStatusCondition{
-			Status:  metav1.ConditionTrue,
-			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
+			Status:  agentInjectionEnabled.AgentEnabledEnabledSuccessfully.K8sConditionStatus,
+			Reason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledSuccessfully),
 			Message: fmt.Sprintf("agent enabled in %d containers: %v", len(instrumentedContainerNames), instrumentedContainerNames),
 		}, nil
 	} else {
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
 		ic.Spec.AgentInjectionEnabled = false
-		ic.Spec.AgentsMetaHash = ""
+		ic.Spec.PodManifestInjectionOptional = false
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		return aggregatedCondition, nil
 	}
+}
+
+// hasUninstrumentedPodsWithBackoff checks if the workload has pods in backoff state before instrumentation.
+func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, logger *commonlogger.ContextLogger) (*agentInjectedStatusCondition, error) {
+	// CronJob and Job workloads don't have a label selector like Deployments/StatefulSets/DaemonSets,
+	// so we skip the backoff check for them. Their pods are managed differently through the Job controller.
+	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
+		return nil, nil
+	}
+
+	workloadClientObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
+	if getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadClientObj); getErr == nil {
+		hasPodInBackoff, backoffErr := rollout.WorkloadHasNonInstrumentedPodInBackoff(ctx, c, workloadClientObj)
+		if backoffErr != nil {
+			logger.Debug("failed to check for pods in backoff", "err", backoffErr, "workload", pw.Name, "namespace", pw.Namespace)
+			return nil, fmt.Errorf("failed to check for pods in backoff: %w", backoffErr)
+		}
+		if hasPodInBackoff {
+			logger.Debug("workload has pods in backoff state", "workload", pw.Name, "namespace", pw.Namespace)
+			return &agentInjectedStatusCondition{
+				Status:  agentInjectionEnabled.AgentEnabledCrashLoopBackOff.K8sConditionStatus,
+				Reason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff),
+				Message: "Workload has pods in backoff state before instrumentation - cannot instrument crashlooping workload",
+			}, nil
+		}
+	}
+	return nil, nil
 }
 
 func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentConfig) *agentInjectedStatusCondition {
 	if containerConfig.AgentEnabled {
 		// no expecting to hit this case, but for completeness
 		return &agentInjectedStatusCondition{
-			Status:  metav1.ConditionTrue,
-			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
+			Status:  agentInjectionEnabled.AgentEnabledEnabledSuccessfully.K8sConditionStatus,
+			Reason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledSuccessfully),
 			Message: fmt.Sprintf("agent enabled for container %s", containerConfig.ContainerName),
 		}
-	} else {
-		return &agentInjectedStatusCondition{
-			Status:  metav1.ConditionFalse,
-			Reason:  containerConfig.AgentEnabledReason,
-			Message: containerConfig.AgentEnabledMessage,
-		}
+	}
+
+	status := metav1.ConditionFalse
+	if r, ok := agentInjectionEnabled.AgentEnabledReasonByName(string(containerConfig.AgentEnabledReason)); ok {
+		status = r.K8sConditionStatus
+	}
+	return &agentInjectedStatusCondition{
+		Status:  status,
+		Reason:  containerConfig.AgentEnabledReason,
+		Message: containerConfig.AgentEnabledMessage,
 	}
 }
 
-func containerInstrumentationConfig(containerName string,
+func getEnvVarFromList(envVars []odigosv1.EnvVar, envVarName string) (string, bool) {
+	// here we check for the value of LD_PRELOAD in the EnvVars list,
+	// which returns the env as read from /proc to make sure if there is any value set,
+	// via any mechanism (manifest, device, script, other agent, etc.) then we are aware.
+	for _, envVar := range envVars {
+		if envVar.Name == envVarName {
+			return envVar.Value, true
+		}
+	}
+	return "", false
+}
+
+// will check if loader injection is supported based on the runtime inspection.
+// loader is only allowed if:
+// - LD_PRELOAD is not used in the container for some other purpose (other agent)
+// - container is not running in secure execution mode
+//
+// returns "nil" on success, and a agent disabled info with reason and message if not supported.
+func isLoaderInjectionSupportedByRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer) *odigosv1.AgentDisabledInfo {
+	// check for conditions to inject ldpreload when it is the only method configured.
+	secureExecution := runtimeDetails.SecureExecutionMode == nil || *runtimeDetails.SecureExecutionMode
+	if secureExecution {
+		return &odigosv1.AgentDisabledInfo{
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
+			AgentEnabledMessage: "container is running in secure execution mode and injection method is set to 'loader'",
+		}
+	}
+
+	odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
+	ldPreloadVal, ldPreloadFoundInInspection := getEnvVarFromList(runtimeDetails.EnvVars, commonconsts.LdPreloadEnvVarName)
+	ldPreloadUnsetOrExpected := !ldPreloadFoundInInspection || strings.Contains(ldPreloadVal, odigosLoaderPath)
+	if !ldPreloadUnsetOrExpected {
+		return &odigosv1.AgentDisabledInfo{
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
+			AgentEnabledMessage: "container is already using LD_PRELOAD env var, and injection method is set to 'loader'. current value: " + ldPreloadVal,
+		}
+	}
+
+	return nil
+}
+
+// Will calculate the env injection method for the container based on the relevant parameters.
+// returned paramters are:
+// - the env injection method to use for this container (may be nil if no injection should take place)
+// - a container agent config to signal any failures in using the loader in these conditions.
+//
+// second returned value acts as an "error" value, user should first check if it's not nil and handle any errors accordingly.
+func getEnvInjectionDecision(
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
-	distroPerLanguage map[common.ProgrammingLanguage]string,
-	distroGetter *distros.Getter,
-	crashDetected bool,
-	nodeCollectorsGroup *odigosv1.CollectorsGroup) odigosv1.ContainerAgentConfig {
-
-	// prepare the signal values based on the node collectors group.
-	// it is used later to populated enabled container config.
-	var tracesConfig *odigosv1.AgentTracesConfig
-	var metricsConfig *odigosv1.AgentMetricsConfig
-	var logsConfig *odigosv1.AgentLogsConfig
-	if nodeCollectorsGroup != nil {
-		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal) {
-			tracesConfig = &odigosv1.AgentTracesConfig{}
-		}
-		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal) {
-			metricsConfig = &odigosv1.AgentMetricsConfig{}
-		}
-		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.LogsObservabilitySignal) {
-			logsConfig = &odigosv1.AgentLogsConfig{}
+	distro *distro.OtelDistro,
+) (*common.EnvInjectionDecision, *odigosv1.AgentDisabledInfo) {
+	if effectiveConfig.AgentEnvVarsInjectionMethod == nil {
+		// this should never happen, as the config is reconciled with default value.
+		// it is only here as a safety net.
+		return nil, &odigosv1.AgentDisabledInfo{
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
+			AgentEnabledMessage: "no injection method configured for odigos agent",
 		}
 	}
 
-	// check if container is ignored by name, assuming IgnoredContainers is a short list.
-	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
-	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
-		if ignoredContainer == containerName {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:      containerName,
-				AgentEnabled:       false,
-				AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
-			}
+	// If we should try loader, check for this first
+	distroSupportsLoader := distro.RuntimeAgent != nil && distro.RuntimeAgent.LdPreloadInjectionSupported
+	loaderRequested := (*effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod || *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod)
+
+	if distroSupportsLoader && loaderRequested {
+		disabledInfo := isLoaderInjectionSupportedByRuntimeDetails(runtimeDetails)
+		if disabledInfo != nil {
+			// loader is requested by config and distro, but not supported by the runtime details.
+			if *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod {
+				// config requires us to use loader when it is supported by distro,
+				// thus we can't use it and need fail the injection.
+				return nil, disabledInfo
+			} // else - we will not return and continue to the next injection method.
+		} else {
+			// loader is requested by config and distro, and supported by the runtime details.
+			// thus, we can use the loader injection method in webhook.
+			loaderInjectionMethod := common.EnvInjectionDecisionLoader
+			return &loaderInjectionMethod, nil
 		}
 	}
 
-	if runtimeDetails == nil {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable,
-		}
+	// at this point, we know that either:
+	// - user configured to use pod manifest injection, or
+	// - user requested loader fallback to pod manifest, and we are at the fallback stage.
+	distroHasAppendEnvVar := len(distro.EnvironmentVariables.AppendOdigosVariables) > 0
+	if !distroHasAppendEnvVar {
+		// this is a common case, where a distro doesn't support nor loader or append env var injection.
+		// at the time of writing, this is golang, dotnet, php, ruby.
+		// for those we mark env injection as nil to denote "no injection"
+		// and return err as nil to denote "no error".
+		return nil, nil
 	}
 
-	// check unknown language first. if language is not supported, we can skip the rest of the checks.
-	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
-		}
-	}
+	envInjectionDecision := common.EnvInjectionDecisionPodManifest
+	return &envInjectionDecision, nil
+}
 
-	// check for deprecated "ignored" language
-	// TODO: remove this in odigos v1.1
-	if runtimeDetails.Language == common.IgnoredProgrammingLanguage {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
-		}
-	}
+func calculateContainerAgentConfig(containerName string,
+	d *distro.OtelDistro,
+	effectiveConfig *common.OdigosConfiguration,
+	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
+	rollbackOccurred bool,
+	existingBackoffReason odigosv1.AgentEnabledReason,
+	allowConcurrentAgents bool,
+) odigosv1.ContainerAgentConfig {
 
-	// get relevant distroName for the detected language
-	distroName, ok := distroPerLanguage[runtimeDetails.Language]
-	if !ok {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonNoAvailableAgent,
-		}
-	}
+	distroName := d.Name
 
-	distro := distroGetter.GetDistroByName(distroName)
-	if distro == nil {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonNoAvailableAgent,
-		}
-	}
-
-	// check if the runtime version is in supported range if it is provided
-	if runtimeDetails.RuntimeVersion != "" && len(distro.RuntimeEnvironments) == 1 {
-		constraint, err := version.NewConstraint(distro.RuntimeEnvironments[0].SupportedVersions)
-		if err != nil {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", distro.RuntimeEnvironments[0].SupportedVersions),
-			}
-		}
-		detectedVersion, err := version.NewVersion(runtimeDetails.RuntimeVersion)
-		if err != nil {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
-			}
-		}
-		if !constraint.Check(detectedVersion) {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distro.RuntimeEnvironments[0].Name, constraint, detectedVersion),
-			}
-		}
-	} else if runtimeDetails.RuntimeVersion == "" {
-		// If the runtime does not have a version, we can't replace placeholders
-		for _, staticVariable := range distro.EnvironmentVariables.StaticVariables {
-			// This is a placeholder for the runtime version, disable the agent
-			if strings.Contains(staticVariable.EnvValue, distroTypes.RuntimeVersionPlaceholderMajorMinor) {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-					AgentEnabledMessage: "runtime version is not available, but the distribution requires it to be set",
-				}
-			}
-		}
-	}
-
-	distroParameters := map[string]string{}
-	for _, parameterName := range distro.RequireParameters {
-		switch parameterName {
-		case common.LibcTypeDistroParameterName:
-			if runtimeDetails.LibCType == nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("missing required parameter '%s' for distro '%s'", common.LibcTypeDistroParameterName, distroName),
-				}
-			}
-			distroParameters[common.LibcTypeDistroParameterName] = string(*runtimeDetails.LibCType)
-
-		default:
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-				AgentEnabledMessage: fmt.Sprintf("unsupported parameter '%s' for distro '%s'", parameterName, distroName),
-			}
-		}
-	}
-
-	if crashDetected {
+	envInjectionDecision, envInjectionDisabledInfo := getEnvInjectionDecision(effectiveConfig, runtimeDetails, d)
+	if envInjectionDisabledInfo != nil {
+		// if we have a container agent config with reason and message, we return it.
+		// this is a failure to inject the agent, and we should not proceed with other checks.
 		return odigosv1.ContainerAgentConfig{
 			ContainerName:       containerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
-			AgentEnabledMessage: "Pods entered CrashLoopBackOff; instrumentation disabled",
+			AgentEnabledReason:  envInjectionDisabledInfo.AgentEnabledReason,
+			AgentEnabledMessage: envInjectionDisabledInfo.AgentEnabledMessage,
+		}
+	}
+
+	distroParameters, err := calculateDistroParams(d, runtimeDetails, envInjectionDecision)
+	if err != nil {
+		return *err
+	}
+
+	if rollbackOccurred {
+		message := fmt.Sprintf("Pods entered %s; instrumentation disabled", existingBackoffReason)
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  existingBackoffReason,
+			AgentEnabledMessage: message,
 			OtelDistroName:      distroName,
 			DistroParams:        distroParameters,
 		}
 	}
 
+	podManifestInjectionOptional := !distro.IsRestartRequired(d, effectiveConfig)
+
 	// check for presence of other agents
-	if runtimeDetails.OtherAgent != nil {
-		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
+	if len(runtimeDetails.OtherAgents) > 0 {
+		otherAgents := otherAgentNames(runtimeDetails.OtherAgents)
+		if !allowConcurrentAgents {
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonOtherAgentDetected,
-				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
+				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonOtherAgentDetected),
+				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent(s) [%s] detected running in the container", otherAgents),
 			}
-		} else {
-
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        true,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
-				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
-				OtelDistroName:      distroName,
-				DistroParams:        distroParameters,
-				Traces:              tracesConfig,
-				Metrics:             metricsConfig,
-				Logs:                logsConfig,
-			}
+		}
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:                containerName,
+			AgentEnabled:                 true,
+			PodManifestInjectionOptional: podManifestInjectionOptional,
+			AgentEnabledReason:           odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledWithOtherAgents),
+			AgentEnabledMessage:          fmt.Sprintf("we are operating alongside other instrumentation agent(s) [%s], which is not the recommended configuration. We suggest disabling them for optimal performance.", otherAgents),
+			OtelDistroName:               distroName,
+			DistroParams:                 distroParameters,
+			EnvInjectionMethod:           envInjectionDecision,
 		}
 	}
 
 	return odigosv1.ContainerAgentConfig{
-		ContainerName:  containerName,
-		AgentEnabled:   true,
-		OtelDistroName: distroName,
-		DistroParams:   distroParameters,
-		Traces:         tracesConfig,
-		Metrics:        metricsConfig,
-		Logs:           logsConfig,
+		ContainerName:                containerName,
+		AgentEnabled:                 true,
+		PodManifestInjectionOptional: podManifestInjectionOptional,
+		OtelDistroName:               distroName,
+		DistroParams:                 distroParameters,
+		EnvInjectionMethod:           envInjectionDecision,
 	}
-
-}
-
-func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
-	instrumentationRules *[]odigosv1.InstrumentationRule, dg *distros.Getter) map[common.ProgrammingLanguage]string {
-
-	distrosPerLanguage := make(map[common.ProgrammingLanguage]string, len(defaultDistros))
-	for lang, distroName := range defaultDistros {
-		distrosPerLanguage[lang] = distroName
-	}
-
-	for _, rule := range *instrumentationRules {
-		if rule.Spec.OtelDistros == nil {
-			continue
-		}
-		for _, distroName := range rule.Spec.OtelDistros.OtelDistroNames {
-			distro := dg.GetDistroByName(distroName)
-			if distro == nil {
-				continue
-			}
-
-			lang := distro.Language
-			distrosPerLanguage[lang] = distroName
-		}
-	}
-
-	return distrosPerLanguage
 }
 
 // This function checks if we are waiting for some transient prerequisites to be completed before injecting the agent.
@@ -483,17 +604,21 @@ func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 // - reason: AgentInjectionReason enum value that represents the reason why we are waiting
 // - message: human-readable message that describes the reason why we are waiting
 func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.InstrumentationConfig) (bool, odigosv1.AgentEnabledReason, string) {
-
 	// Check if the node collector is ready
 	isNodeCollectorReady, message := isNodeCollectorReady(cg)
 	if !isNodeCollectorReady {
-		return false, odigosv1.AgentEnabledReasonWaitingForNodeCollector, message
+		return false, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonWaitingForNodeCollector), message
+	}
+
+	gotReadySignals, message := gotReadySignals(cg)
+	if !gotReadySignals {
+		return false, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonNoCollectedSignals), message
 	}
 
 	// if there are any overrides, we use them (and exist early)
 	for _, containerOverride := range ic.Spec.ContainersOverrides {
 		if containerOverride.RuntimeInfo != nil {
-			return true, odigosv1.AgentEnabledReasonEnabledSuccessfully, ""
+			return true, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledSuccessfully), ""
 		}
 	}
 
@@ -504,15 +629,15 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 		for _, condition := range ic.Status.Conditions {
 			if condition.Type == odigosv1.RuntimeDetectionStatusConditionType {
 				if odigosv1.RuntimeDetectionReason(condition.Reason) == odigosv1.RuntimeDetectionReasonNoRunningPods {
-					return false, odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable, "agent will be enabled once runtime details from running pods is available"
+					return false, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonRuntimeDetailsUnavailable), "agent will be enabled once runtime details from running pods is available"
 				}
 			}
 		}
-		return false, odigosv1.AgentEnabledReasonWaitingForRuntimeInspection, "waiting for runtime inspection to complete"
+		return false, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonWaitingForRuntimeInspection), agentInjectionEnabled.AgentEnabledWaitingForRuntimeInspection.Message
 	}
 
 	// report success if both prerequisites are completed
-	return true, odigosv1.AgentEnabledReasonEnabledSuccessfully, ""
+	return true, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledSuccessfully), ""
 }
 
 func isNodeCollectorReady(cg *odigosv1.CollectorsGroup) (bool, string) {
@@ -526,4 +651,34 @@ func isNodeCollectorReady(cg *odigosv1.CollectorsGroup) (bool, string) {
 
 	// node collector is ready to receive telemetry
 	return true, ""
+}
+
+func gotReadySignals(cg *odigosv1.CollectorsGroup) (bool, string) {
+	if cg == nil {
+		return false, "waiting for OpenTelemetry Collector to be created"
+	}
+
+	if len(cg.Status.ReceiverSignals) == 0 {
+		return false, "no signals are being collected"
+	}
+
+	return true, ""
+}
+
+// resolveAllowConcurrentAgents returns the effective allow_concurrent_agents for a
+// container: container override wins when set, otherwise the global config (nil = false).
+func resolveAllowConcurrentAgents(cfg *common.OdigosConfiguration, containerOverride *odigosv1.ContainerOverride) bool {
+	if containerOverride != nil && containerOverride.AllowConcurrentAgents != nil {
+		return *containerOverride.AllowConcurrentAgents
+	}
+	return cfg.AllowConcurrentAgents != nil && *cfg.AllowConcurrentAgents
+}
+
+// otherAgentNames joins detected other-agent names for user-facing messages.
+func otherAgentNames(agents []odigosv1.OtherAgent) string {
+	names := make([]string, 0, len(agents))
+	for _, a := range agents {
+		names = append(names, a.Name)
+	}
+	return strings.Join(names, ", ")
 }

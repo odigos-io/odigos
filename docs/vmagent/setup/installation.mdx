@@ -1,39 +1,199 @@
 ---
 title: "Installation"
 sidebarTitle: "Installation"
+description: "Install the Odigos VM Agent on your Linux host"
 ---
 
-<Info> Odigos VM Agent is currently available with the Odigos Pro plan. Contact us for more info </Info>
+import EnterpriseVMAgent from '../../../snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
 
-1. After [setting up Odigos repositories](/vmagent/setup/preparation), `odigos` package is available through system's package manager:
+<EnterpriseVMAgent />
+
+<Info>
+  This page installs the VM Agent as a Linux system package. To run the agent as
+  a container instead — for example on immutable hosts or Compose-managed
+  fleets — see [Docker Deployment](/vmagent/setup/docker).
+</Info>
+
+## Configuring Package Sources (apt, dnf, rpm)
+
+To install the Odigos VM Agent, configure your package manager or obtain the RPM files.
 
 <Tabs>
-  <Tab title="APT">
+  <Tab title="DNF">
+    Using `dnf` (RHEL, Fedora, Rocky Linux):
+
     ```shell
-    sudo apt update
-    sudo apt install odigos
+    sudo rm /etc/yum.repos.d/odigos.repo
+    sudo tee /etc/yum.repos.d/odigos.repo > /dev/null <<'EOF'
+    [odigos]
+    name=Odigos Packages
+    baseurl=https://yum.odigos.io/projects/odigos-cloud/odigos-rpm
+    enabled=1
+    gpgcheck=0
+    repo_gpgcheck=0
+    EOF
+
+    sudo dnf makecache
     ```
   </Tab>
+  <Tab title="APT">
+    Using `apt` (Debian, Ubuntu):
+
+    ```shell
+    sudo mkdir -p /etc/apt/keyrings/
+
+    wget -q -O - https://apt.odigos.io/doc/repo-signing-key.gpg \
+      | gpg --dearmor \
+      | sudo tee /etc/apt/keyrings/odigos.gpg > /dev/null
+
+    echo "deb [signed-by=/etc/apt/keyrings/odigos.gpg] https://apt.odigos.io/projects/odigos-cloud odigos-apt main" \
+      | sudo tee /etc/apt/sources.list.d/odigos.list
+
+    sudo apt update
+    ```
+  </Tab>
+  <Tab title="RPM">
+
+    If you use a package manager other than `dnf` or `apt`, or prefer to install via RPM files, you can
+    install the VM Agent using RPM files. There are two files you will need to obtain:
+
+    - odigos-otelcol-\<otelcol-version\>.rpm
+    - odigos-\<agent-version\>.rpm
+
+    <Note>Obtain the rpm files from your Odigos support team</Note>
+
+  </Tab>
+</Tabs>
+
+## Root and non-root
+
+Fresh installs run as the unprivileged `odigos` user. The packaged unit still defaults to `User=root`; non-root mode is applied by the drop-in `/etc/systemd/system/odigos-vmagent.service.d/nonroot.conf` (capabilities, relocated writable trees, collector as a child process).
+
+| Mode | When to use |
+|---|---|
+| **Non-root** (default) | Typical hosts. The agent runs as `odigos` with a fixed set of Linux capabilities. |
+| **Root** | You need the agent to restart systemd units without a [polkit rule](/vmagent/setup/permissions#systemd-services), or the host cannot grant ambient capabilities (systemd older than 229). |
+
+**Precedence** (first match wins):
+
+1. Host cannot grant ambient capabilities (systemd older than 229 — RHEL 7, CentOS 7, default Amazon Linux 2) → **root**, even if you requested non-root. Check with `/usr/lib/odigos/bin/odigos-vmagent-caps --explain`.
+2. `ODIGOS_AGENT_USER_MODE=root` or `nonroot` in the environment of the package script (`apt` / `dnf` / `rpm`)
+3. Sticky file `/var/lib/odigos-agent/user-mode` (written automatically when the env is set; see below)
+4. Heuristic: non-root — including an upgrade of a host that is still on root
+
+<Note>
+  Non-root extra permissions — [additional permissions](/vmagent/setup/permissions#additional-permissions) for restarting sources, journal groups for `LOGS`, and the capability set — are documented in [Linux Permissions](/vmagent/setup/permissions).
+</Note>
+
+## Installation
+
+<Tabs>
   <Tab title="DNF">
+    Non-root (default), using `dnf` (RHEL, Fedora, Rocky Linux):
+
     ```shell
     sudo dnf install odigos
+    ```
+
+    Root:
+
+    ```shell
+    sudo ODIGOS_AGENT_USER_MODE=root dnf install odigos
+    ```
+  </Tab>
+  <Tab title="APT">
+    Non-root (default), using `apt` (Debian, Ubuntu):
+
+    ```shell
+    sudo apt install odigos
+    ```
+
+    Root:
+
+    ```shell
+    sudo ODIGOS_AGENT_USER_MODE=root apt install odigos
+    ```
+  </Tab>
+  <Tab title="RPM">
+
+    If you use a package manager other than `dnf` or `apt`, run the following to install the agent:
+
+    <Note>Replace \<otelcol-version\> and \<agent-version\> with the versions you downloaded.</Note>
+
+    Non-root (default):
+
+    ```shell
+    sudo rpm -ivh odigos-otelcol-<otelcol-version>.rpm odigos-<agent-version>.rpm
+    ```
+
+    Root:
+
+    ```shell
+    sudo ODIGOS_AGENT_USER_MODE=root rpm -ivh odigos-otelcol-<otelcol-version>.rpm odigos-<agent-version>.rpm
     ```
   </Tab>
 </Tabs>
 
-2. Add your Odigos Pro license key to the agent configuration file `/etc/odigos-vmagent/service.yaml`:
+To persist the choice independently of the install environment (the reliable method — `apt` / `dnf` may not forward `ODIGOS_AGENT_USER_MODE` into the package script):
 
 ```shell
-on_prem:
-  token: "<your_license_key>"
+# Before install or upgrade
+echo root | sudo tee /var/lib/odigos-agent/user-mode
+# or
+echo nonroot | sudo tee /var/lib/odigos-agent/user-mode
 ```
 
-3. Configure which systemd services to instrument and where to send telemetry data by editing the agent configuration file `/etc/odigos-vmagent/agent.yaml`. After installation, only `debug` destination is configured. That helps you to validate that Odigos is picking up telemetry on instrumented applications and can be removed once you don't need it. See the [Reference](/vmagent/configuration/reference) for more information.
+## Apply the license
 
-4. Start the Odigos VM Agent systemd service:
+`odictl` validates the token **before** writing it, so an invalid JWT cannot replace a working license. The file is stored at `/var/lib/odigos-agent/config/license.jwt` (the same path in root and non-root mode).
+
+```shell
+sudo odictl -odigos-license '<JWT>'
+```
+
+Wrap the token in single quotes so the shell does not alter it. Do not write the JWT into the file by hand — use `odictl` so it is validated first.
+
+<Note>
+  The config directory is owned by the agent user (`odigos` in non-root mode, `root` in root mode) and is not world-writable. Use `sudo` for `odictl -odigos-license` and for any YAML you place under `/var/lib/odigos-agent/config`.
+</Note>
+
+## Enable the VM Agent
+
+Enable and start `odigos-vmagent`. It does not start itself on a fresh install.
 
 ```shell
 sudo systemctl enable --now odigos-vmagent
 ```
 
-Odigos VM Agent is now installed on your system and enabled as a systemd service.
+<Warning>
+  **Do not** enable `odigos-otelcol.service` on a non-root install. The package disables that unit so it does not fight for ports. The non-root agent starts `odigos-otelcol` as a **child process** of `odigos-vmagent`.
+
+  In root mode the agent manages `odigos-otelcol.service` itself over systemd D-Bus. Enabling the collector unit separately is not required.
+</Warning>
+
+Confirm the agent is running:
+
+```shell
+sudo systemctl status odigos-vmagent
+```
+
+If you run Odigos Central, follow [Connecting VM Agent](/central/adding-connections/vmagent) to link this host to Central.
+
+## Layout
+
+Config, license, sources, destinations, actions, and rules live under one tree for both root and non-root:
+
+| Path | Purpose |
+|---|---|
+| `/var/lib/odigos-agent/config/` | Agent configuration and `license.jwt` |
+| `/var/lib/odigos-agent/user-mode` | Sticky `root` / `nonroot` preference |
+| `/var/lib/odigos-agent/log/` | Agent logs in non-root mode |
+| `/var/odigos/` | Instrumentation files (both modes; do not relocate) |
+| `/etc/odigos-otelcol/` | Collector configuration |
+| `/etc/systemd/system/odigos-vmagent.service.d/nonroot.conf` | Non-root user, capabilities, and environment |
+
+## Next steps
+
+- [Linux Permissions](/vmagent/setup/permissions) — capabilities, Docker group, journal groups for `LOGS`, and polkit for systemd restarts
+- [Add destinations](/vmagent/setup/configuration/add-destinations) and [add sources](/vmagent/setup/configuration/add-sources)
+- [odictl](/vmagent/setup/configuration/odictl)

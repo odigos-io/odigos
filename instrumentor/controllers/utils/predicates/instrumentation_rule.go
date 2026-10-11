@@ -5,40 +5,50 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-type OtelSdkInstrumentationRulePredicate struct{}
+type AgentInjectionRelevantRulesPredicate struct{}
 
-func (o OtelSdkInstrumentationRulePredicate) Create(e event.CreateEvent) bool {
-	// check if delete rule is for otel sdk
+func isRuleRelevantForAgentInjection(spec *odigosv1alpha1.InstrumentationRuleSpec) bool {
+	return spec.OtelDistros != nil ||
+		spec.HeadersCollection != nil ||
+		spec.TraceConfig != nil ||
+		spec.PayloadCollection != nil ||
+		spec.TraceVerbosity != nil ||
+		spec.CustomInstrumentations != nil ||
+		spec.CodeAttributes != nil ||
+		spec.EbpfLogCapture != nil ||
+		spec.AgentDiagnostics != nil ||
+		spec.NetworkMetrics != nil
+}
+
+func (o AgentInjectionRelevantRulesPredicate) Create(e event.CreateEvent) bool {
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)
 	if !ok {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil
+	return isRuleRelevantForAgentInjection(&instrumentationRule.Spec)
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Update(e event.UpdateEvent) bool {
-	oldInstrumentationRule, oldOk := e.ObjectOld.(*odigosv1alpha1.InstrumentationRule)
-	newInstrumentationRule, newOk := e.ObjectNew.(*odigosv1alpha1.InstrumentationRule)
+func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
+	old, oldOk := e.ObjectOld.(*odigosv1alpha1.InstrumentationRule)
+	new, newOk := e.ObjectNew.(*odigosv1alpha1.InstrumentationRule)
 
 	if !oldOk || !newOk {
 		return false
 	}
 
-	// only handle rules for otel sdks
-	return oldInstrumentationRule.Spec.OtelSdks != nil || newInstrumentationRule.Spec.OtelSdks != nil
+	return isRuleRelevantForAgentInjection(&old.Spec) || isRuleRelevantForAgentInjection(&new.Spec)
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Delete(e event.DeleteEvent) bool {
-	// check if delete rule is for otel sdk
+func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)
 	if !ok {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil
+	return isRuleRelevantForAgentInjection(&instrumentationRule.Spec)
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Generic(e event.GenericEvent) bool {
+func (i AgentInjectionRelevantRulesPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }

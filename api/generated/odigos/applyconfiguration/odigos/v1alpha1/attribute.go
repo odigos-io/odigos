@@ -19,6 +19,8 @@ package v1alpha1
 
 // AttributeApplyConfiguration represents a declarative configuration of the Attribute type for use
 // with apply.
+//
+// Attribute is a key-value pair that describes a component or instrumentation
 type AttributeApplyConfiguration struct {
 	Key   *string `json:"key,omitempty"`
 	Value *string `json:"value,omitempty"`

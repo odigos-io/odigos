@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: ELASTICSEARCH_URL
       displayName: Elasticsearch URL
@@ -20,22 +22,22 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: 'http://host:port'
-        tooltip: 'Elasticsearch endpoint. Port defaults to `9200` if not specified'
+        placeholder: "http://host:port"
+        tooltip: "Elasticsearch endpoint. Port defaults to `9200` if not specified"
     - name: ES_TRACES_INDEX
       displayName: Traces Index
       componentType: input
-      initialValue: 'trace_index'
+      initialValue: "trace_index"
       componentProps:
         type: text
-        tooltip: 'The name of the index where traces will be stored'
+        tooltip: "The name of the index where traces will be stored"
     - name: ES_LOGS_INDEX
       displayName: Logs Index
       componentType: input
-      initialValue: 'log_index'
+      initialValue: "log_index"
       componentProps:
         type: text
-        tooltip: 'The name of the index where logs will be stored.'
+        tooltip: "The name of the index where logs will be stored."
     - name: ELASTICSEARCH_BASIC_AUTH_ENABLED
       displayName: Enable HTTP Basic Authentication
       componentType: checkbox
@@ -43,52 +45,52 @@ spec:
       componentProps:
         required: false
       customReadDataLabels:
-        - condition: 'true'
-          title: 'Basic Auth'
-          value: 'Enabled'
-        - condition: 'false'
-          title: 'Basic Auth'
-          value: 'Disabled'
+        - condition: "true"
+          title: "Basic Auth"
+          value: "Enabled"
+        - condition: "false"
+          title: "Basic Auth"
+          value: "Disabled"
     - name: ELASTICSEARCH_USERNAME
       displayName: Username
       componentType: input
       componentProps:
         type: text
         required: false
-        tooltip: 'Username used for HTTP Basic Authentication'
-      renderCondition: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'true']
-      hideFromReadData: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'false']
+        tooltip: "Username used for HTTP Basic Authentication"
+      renderCondition: ["ELASTICSEARCH_BASIC_AUTH_ENABLED", "==", "true"]
+      hideFromReadData: ["ELASTICSEARCH_BASIC_AUTH_ENABLED", "==", "false"]
     - name: ELASTICSEARCH_PASSWORD
       displayName: Password
       componentType: input
       componentProps:
         type: password
         required: false
-        tooltip: 'Password used for HTTP Basic Authentication'
+        tooltip: "Password used for HTTP Basic Authentication"
       secret: true
-      renderCondition: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'true']
-      hideFromReadData: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'false']
+      renderCondition: ["ELASTICSEARCH_BASIC_AUTH_ENABLED", "==", "true"]
+      hideFromReadData: ["ELASTICSEARCH_BASIC_AUTH_ENABLED", "==", "false"]
     - name: ELASTICSEARCH_TLS_ENABLED
       displayName: Enable TLS
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Secure connection (Transport Layer Security)'
+        tooltip: "Secure connection (Transport Layer Security)"
       customReadDataLabels:
-        - condition: 'true'
-          title: 'TLS'
-          value: 'Encrypted'
-        - condition: 'false'
-          title: 'TLS'
-          value: 'Unencrypted'
+        - condition: "true"
+          title: "TLS"
+          value: "Encrypted"
+        - condition: "false"
+          title: "TLS"
+          value: "Unencrypted"
     - name: ELASTICSEARCH_CA_PEM
       displayName: CA Certificate
       componentType: textarea
       componentProps:
         type: text
         required: false
-        placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, provide the CA certificate to verify the server. If empty uses system root CA'
-      renderCondition: ['ELASTICSEARCH_TLS_ENABLED', '==', 'true']
-      hideFromReadData: ['true']
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "When using TLS, provide the CA certificate to verify the server. If empty uses system root CA"
+      renderCondition: ["ELASTICSEARCH_TLS_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]

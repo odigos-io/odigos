@@ -19,7 +19,7 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]stri
 		"actions": []GenericMap{
 			{
 				"key":    "better_stack_source_token",
-				"value":  "${BETTERSTACK_TOKEN}",
+				"value":  SecretEnvPlaceholder("BETTERSTACK_TOKEN", dest),
 				"action": "insert",
 			},
 		},
@@ -40,7 +40,7 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]stri
 	}
 
 	if isLoggingEnabled(dest) {
-		exporterName := "otlp/" + uniqueUri
+		exporterName := "otlp_grpc/" + uniqueUri
 		cfg.Exporters[exporterName] = GenericMap{
 			"endpoint": "https://in-otel.logs.betterstack.com:443",
 		}

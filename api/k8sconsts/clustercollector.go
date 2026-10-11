@@ -1,8 +1,10 @@
 package k8sconsts
 
 const (
-	OdigosClusterCollectorImage     = "odigos-collector"
-	OdigosClusterCollectorImageUBI9 = "odigos-collector-ubi9"
+	OdigosClusterCollectorImage                    = "odigos-collector"
+	OdigosClusterCollectorImageCertified           = "odigos-collector-rhel-certified"
+	OdigosClusterCollectorEnterpriseImage          = "odigos-enterprise-collector"
+	OdigosClusterCollectorEnterpriseImageCertified = "odigos-enterprise-collector-rhel-certified"
 
 	OdigosClusterCollectorDeploymentName = "odigos-gateway"
 	OdigosClusterCollectorConfigMapName  = OdigosClusterCollectorDeploymentName
@@ -11,11 +13,17 @@ const (
 	OdigosClusterCollectorCollectorGroupName = OdigosClusterCollectorDeploymentName
 	OdigosClusterCollectorConfigMapKey       = "collector-conf"
 
-	OdigosClusterCollectorServiceAccountName = "odigos-gateway"
-	OdigosClusterCollectorRoleName           = "odigos-gateway"
-	OdigosClusterCollectorRoleBindingName    = "odigos-gateway"
+	OdigosClusterCollectorServiceAccountName = OdigosClusterCollectorDeploymentName
+	OdigosClusterCollectorRoleName           = OdigosClusterCollectorDeploymentName
+	OdigosClusterCollectorRoleBindingName    = OdigosClusterCollectorDeploymentName
+
+	OdigosClusterCollectorHpaName = OdigosClusterCollectorDeploymentName
+
+	OdigosClusterCollectorContainerName = "gateway"
 
 	// The cluster gateway collector runs as a deployment and the pod is exposed as a service.
 	// Thus it cannot collide with other ports on the same node, and we can use an handy default port.
 	OdigosClusterCollectorOwnTelemetryPortDefault = int32(8888)
+
+	OdigosClusterCollectorTraceAggregationWaitDurationDefault = "30s"
 )

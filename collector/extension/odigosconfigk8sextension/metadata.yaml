@@ -1,0 +1,9 @@
+type: odigos_config_k8s
+github_project: odigos-io/odigos
+
+status:
+  class: extension
+  stability:
+    development: [extension]
+  codeowners:
+    active: [damemi]

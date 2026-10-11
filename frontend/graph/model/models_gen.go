@@ -6,78 +6,141 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
-type Action interface {
-	IsAction()
-	GetID() string
-	GetType() string
-	GetName() *string
-	GetNotes() *string
-	GetDisable() bool
-	GetSignals() []SignalType
+type Action struct {
+	ID          string                    `json:"id"`
+	Type        ActionType                `json:"type"`
+	Name        *string                   `json:"name,omitempty"`
+	Notes       *string                   `json:"notes,omitempty"`
+	Disabled    bool                      `json:"disabled"`
+	Signals     []SignalType              `json:"signals"`
+	Fields      *ActionFields             `json:"fields"`
+	ManagedBy   ManagedBy                 `json:"managedBy"`
+	UIGenerated bool                      `json:"uiGenerated"`
+	Conditions  []*Condition              `json:"conditions,omitempty"`
+	Statuses    []*DesiredConditionStatus `json:"statuses"`
+}
+
+type ActionFieldYamlProperties struct {
+	Name                string   `json:"name"`
+	DisplayName         string   `json:"displayName"`
+	ComponentType       string   `json:"componentType"`
+	ComponentProperties string   `json:"componentProperties"`
+	InitialValue        string   `json:"initialValue"`
+	RenderCondition     []string `json:"renderCondition"`
+}
+
+type ActionFields struct {
+	CollectContainerAttributes     *bool                            `json:"collectContainerAttributes,omitempty"`
+	CollectReplicaSetAttributes    *bool                            `json:"collectReplicaSetAttributes,omitempty"`
+	CollectWorkloadID              *bool                            `json:"collectWorkloadId,omitempty"`
+	CollectClusterID               *bool                            `json:"collectClusterId,omitempty"`
+	LabelsAttributes               []*K8sLabelAttribute             `json:"labelsAttributes,omitempty"`
+	AnnotationsAttributes          []*K8sAnnotationAttribute        `json:"annotationsAttributes,omitempty"`
+	ClusterAttributes              []*ClusterAttribute              `json:"clusterAttributes,omitempty"`
+	OverwriteExistingValues        *bool                            `json:"overwriteExistingValues,omitempty"`
+	AttributeNamesToDelete         []string                         `json:"attributeNamesToDelete,omitempty"`
+	Renames                        *string                          `json:"renames,omitempty"`
+	PiiCategories                  []string                         `json:"piiCategories,omitempty"`
+	CustomFormatMaskings           []*CustomFormatMasking           `json:"customFormatMaskings,omitempty"`
+	CustomRegexMaskings            []*CustomRegexMasking            `json:"customRegexMaskings,omitempty"`
+	URLTemplatizationRulesGroups   []*URLTemplatizationRulesGroup   `json:"urlTemplatizationRulesGroups,omitempty"`
+	URLTemplatizationDefaultGroups []*URLTemplatizationDefaultGroup `json:"urlTemplatizationDefaultGroups,omitempty"`
+	ExtractAttribute               *ExtractAttribute                `json:"extractAttribute,omitempty"`
+	Scopes                         *SourcesScopes                   `json:"scopes,omitempty"`
+	TemplatizeLiterals             *bool                            `json:"templatizeLiterals,omitempty"`
+	RemovePostgresCastOperator     *bool                            `json:"removePostgresCastOperator,omitempty"`
+}
+
+type ActionFieldsInput struct {
+	CollectContainerAttributes     *bool                                 `json:"collectContainerAttributes,omitempty"`
+	CollectReplicaSetAttributes    *bool                                 `json:"collectReplicaSetAttributes,omitempty"`
+	CollectWorkloadID              *bool                                 `json:"collectWorkloadId,omitempty"`
+	CollectClusterID               *bool                                 `json:"collectClusterId,omitempty"`
+	LabelsAttributes               []*K8sLabelAttributeInput             `json:"labelsAttributes,omitempty"`
+	AnnotationsAttributes          []*K8sAnnotationAttributeInput        `json:"annotationsAttributes,omitempty"`
+	ClusterAttributes              []*ClusterAttributeInput              `json:"clusterAttributes,omitempty"`
+	OverwriteExistingValues        *bool                                 `json:"overwriteExistingValues,omitempty"`
+	AttributeNamesToDelete         []string                              `json:"attributeNamesToDelete,omitempty"`
+	Renames                        *string                               `json:"renames,omitempty"`
+	PiiCategories                  []string                              `json:"piiCategories,omitempty"`
+	CustomFormatMaskings           []*CustomFormatMaskingInput           `json:"customFormatMaskings,omitempty"`
+	CustomRegexMaskings            []*CustomRegexMaskingInput            `json:"customRegexMaskings,omitempty"`
+	URLTemplatizationRulesGroups   []*URLTemplatizationRulesGroupInput   `json:"urlTemplatizationRulesGroups,omitempty"`
+	URLTemplatizationDefaultGroups []*URLTemplatizationDefaultGroupInput `json:"urlTemplatizationDefaultGroups,omitempty"`
+	ExtractAttribute               *ExtractAttributeInput                `json:"extractAttribute,omitempty"`
+	Scopes                         *SourcesScopesInput                   `json:"scopes,omitempty"`
+	TemplatizeLiterals             *bool                                 `json:"templatizeLiterals,omitempty"`
+	RemovePostgresCastOperator     *bool                                 `json:"removePostgresCastOperator,omitempty"`
 }
 
 type ActionInput struct {
-	Type    string       `json:"type"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details string       `json:"details"`
+	Type     ActionType         `json:"type"`
+	Name     *string            `json:"name,omitempty"`
+	Notes    *string            `json:"notes,omitempty"`
+	Disabled bool               `json:"disabled"`
+	Signals  []SignalType       `json:"signals"`
+	Fields   *ActionFieldsInput `json:"fields"`
 }
 
-type AddClusterInfoAction struct {
-	ID      string         `json:"id"`
-	Type    string         `json:"type"`
-	Name    *string        `json:"name,omitempty"`
-	Notes   *string        `json:"notes,omitempty"`
-	Disable bool           `json:"disable"`
-	Signals []SignalType   `json:"signals"`
-	Details []*ClusterInfo `json:"details"`
+type ActionTypeOption struct {
+	Type           string                       `json:"type"`
+	DisplayName    string                       `json:"displayName"`
+	Category       string                       `json:"category"`
+	Subtitle       string                       `json:"subtitle"`
+	Description    string                       `json:"description"`
+	AllowedSignals []SignalType                 `json:"allowedSignals"`
+	DocsURL        string                       `json:"docsUrl"`
+	Fields         []*ActionFieldYamlProperties `json:"fields"`
 }
 
-func (AddClusterInfoAction) IsAction()              {}
-func (this AddClusterInfoAction) GetID() string     { return this.ID }
-func (this AddClusterInfoAction) GetType() string   { return this.Type }
-func (this AddClusterInfoAction) GetName() *string  { return this.Name }
-func (this AddClusterInfoAction) GetNotes() *string { return this.Notes }
-func (this AddClusterInfoAction) GetDisable() bool  { return this.Disable }
-func (this AddClusterInfoAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+type AgentsInitContainerResourcesConfig struct {
+	RequestCPUm      *int `json:"requestCPUm,omitempty"`
+	LimitCPUm        *int `json:"limitCPUm,omitempty"`
+	RequestMemoryMiB *int `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB   *int `json:"limitMemoryMiB,omitempty"`
+}
+
+type AllowConcurrentAgentsConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type APIToken struct {
-	Token     string `json:"token"`
-	Name      string `json:"name"`
-	IssuedAt  int    `json:"issuedAt"`
-	ExpiresAt int    `json:"expiresAt"`
+	Token     string  `json:"token"`
+	Name      string  `json:"name"`
+	IssuedAt  int     `json:"issuedAt"`
+	ExpiresAt int     `json:"expiresAt"`
+	Message   *string `json:"message,omitempty"`
 }
 
-type AttributeFilters struct {
-	ServiceName           string                     `json:"serviceName"`
-	AttributeKey          string                     `json:"attributeKey"`
-	FallbackSamplingRatio float64                    `json:"fallbackSamplingRatio"`
-	Condition             *AttributeFiltersCondition `json:"condition"`
+type AutoRollbackConfig struct {
+	Disabled            *bool   `json:"disabled,omitempty"`
+	GraceTime           *string `json:"graceTime,omitempty"`
+	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
 }
 
-type AttributeFiltersCondition struct {
-	StringCondition  *StringCondition  `json:"stringCondition,omitempty"`
-	NumberCondition  *NumberCondition  `json:"numberCondition,omitempty"`
-	BooleanCondition *BooleanCondition `json:"booleanCondition,omitempty"`
-	JSONCondition    *JSONCondition    `json:"jsonCondition,omitempty"`
+type CardinalityControlConfig struct {
+	URLTemplatization *URLTemplatizationCardinalityControlConfig `json:"urlTemplatization,omitempty"`
 }
 
-type BooleanCondition struct {
-	Operation     BooleanOperation `json:"operation"`
-	ExpectedValue bool             `json:"expectedValue"`
+// Clearing buffered OTLP data for a workload slot
+type ClearProfilingBufferResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	ActiveSlots int    `json:"activeSlots"`
+}
+
+type ClusterAttribute struct {
+	AttributeName        string `json:"attributeName"`
+	AttributeStringValue string `json:"attributeStringValue"`
+}
+
+type ClusterAttributeInput struct {
+	AttributeName        string `json:"attributeName"`
+	AttributeStringValue string `json:"attributeStringValue"`
 }
 
 type ClusterCollectorAnalyze struct {
@@ -91,11 +154,6 @@ type ClusterCollectorAnalyze struct {
 	HealthyReplicas      *EntityProperty `json:"healthyReplicas,omitempty"`
 	FailedReplicas       *EntityProperty `json:"failedReplicas,omitempty"`
 	FailedReplicasReason *EntityProperty `json:"failedReplicasReason,omitempty"`
-}
-
-type ClusterInfo struct {
-	AttributeName        string  `json:"attributeName"`
-	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
 }
 
 type CodeAttributes struct {
@@ -116,25 +174,119 @@ type CodeAttributesInput struct {
 	Stacktrace *bool `json:"stacktrace,omitempty"`
 }
 
+type CollectorDaemonSetInfo struct {
+	Status                       WorkloadRolloutStatus `json:"status"`
+	Nodes                        *NodesSummary         `json:"nodes"`
+	ThroughputTracesBytesPerSec  *int                  `json:"throughputTracesBytesPerSec,omitempty"`
+	ThroughputMetricsBytesPerSec *int                  `json:"throughputMetricsBytesPerSec,omitempty"`
+	ThroughputLogsBytesPerSec    *int                  `json:"throughputLogsBytesPerSec,omitempty"`
+	Resources                    *Resources            `json:"resources,omitempty"`
+	ImageVersion                 *string               `json:"imageVersion,omitempty"`
+	LastRolloutAt                *string               `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress            bool                  `json:"rolloutInProgress"`
+	ManifestYaml                 string                `json:"manifestYAML"`
+	ConfigMapYaml                string                `json:"configMapYAML"`
+}
+
+type CollectorGatewayConfig struct {
+	MinReplicas                *int    `json:"minReplicas,omitempty"`
+	MaxReplicas                *int    `json:"maxReplicas,omitempty"`
+	RequestMemoryMiB           *int    `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int    `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int    `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int    `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int    `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int    `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int    `json:"goMemLimitMiB,omitempty"`
+	ServiceGraphDisabled       *bool   `json:"serviceGraphDisabled,omitempty"`
+	ClusterMetricsEnabled      *bool   `json:"clusterMetricsEnabled,omitempty"`
+	HTTPSProxyAddress          *string `json:"httpsProxyAddress,omitempty"`
+	NodeSelector               *string `json:"nodeSelector,omitempty"`
+}
+
+type CollectorNodeConfig struct {
+	CollectorOwnMetricsPort    *int                `json:"collectorOwnMetricsPort,omitempty"`
+	RequestMemoryMiB           *int                `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int                `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int                `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int                `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int                `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int                `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int                `json:"goMemLimitMiB,omitempty"`
+	K8sNodeLogsDirectory       *string             `json:"k8sNodeLogsDirectory,omitempty"`
+	EnableDataCompression      *bool               `json:"enableDataCompression,omitempty"`
+	OtlpExporterConfiguration  *OtlpExporterConfig `json:"otlpExporterConfiguration,omitempty"`
+}
+
+type CollectorPodMetrics struct {
+	MetricsAcceptedRps float64 `json:"metricsAcceptedRps"`
+	MetricsDroppedRps  float64 `json:"metricsDroppedRps"`
+	ExporterSuccessRps float64 `json:"exporterSuccessRps"`
+	ExporterFailedRps  float64 `json:"exporterFailedRps"`
+	Window             string  `json:"window"`
+	LastScrape         *string `json:"lastScrape,omitempty"`
+}
+
+type ComponentLogLevelsConfig struct {
+	Default      *OdigosLogLevel `json:"default,omitempty"`
+	Autoscaler   *OdigosLogLevel `json:"autoscaler,omitempty"`
+	Scheduler    *OdigosLogLevel `json:"scheduler,omitempty"`
+	Instrumentor *OdigosLogLevel `json:"instrumentor,omitempty"`
+	Odiglet      *OdigosLogLevel `json:"odiglet,omitempty"`
+	Deviceplugin *OdigosLogLevel `json:"deviceplugin,omitempty"`
+	UI           *OdigosLogLevel `json:"ui,omitempty"`
+	Collector    *OdigosLogLevel `json:"collector,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
-	APITokens            []*APIToken            `json:"apiTokens"`
+	Actions              []*Action              `json:"actions"`
+	DataStreams          []*DataStream          `json:"dataStreams"`
+	Destinations         []*Destination         `json:"destinations"`
+	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
+	Recommendations      []*Recommendation      `json:"recommendations"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
-	Sources              *PaginatedSources      `json:"sources"`
+	Sources              []*K8sActualSource     `json:"sources"`
 	Source               *K8sActualSource       `json:"source"`
-	Destinations         []*Destination         `json:"destinations"`
-	Actions              []*PipelineAction      `json:"actions"`
-	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
-	DataStreams          []*DataStream          `json:"dataStreams"`
+	APITokens            []*APIToken            `json:"apiTokens"`
 }
 
 type Condition struct {
-	Status             ConditionStatus `json:"status"`
-	Type               string          `json:"type"`
-	Reason             *string         `json:"reason,omitempty"`
-	Message            *string         `json:"message,omitempty"`
-	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
+	Status  ConditionStatus `json:"status"`
+	Type    string          `json:"type"`
+	Reason  *string         `json:"reason,omitempty"`
+	Message *string         `json:"message,omitempty"`
+}
+
+type Config struct {
+	Readonly              bool                `json:"readonly"`
+	PlatformType          ComputePlatformType `json:"platformType"`
+	Tier                  Tier                `json:"tier"`
+	OdigosVersion         string              `json:"odigosVersion"`
+	InstallationMethod    string              `json:"installationMethod"`
+	InstallationStatus    InstallationStatus  `json:"installationStatus"`
+	ClusterName           *string             `json:"clusterName,omitempty"`
+	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
+	InsightsEnabled       bool                `json:"insightsEnabled"`
+}
+
+type ConfigYaml struct {
+	Name        string             `json:"name"`
+	DisplayName string             `json:"displayName"`
+	Fields      []*ConfigYamlField `json:"fields"`
+}
+
+type ConfigYamlField struct {
+	DisplayName      string    `json:"displayName"`
+	ComponentType    FieldType `json:"componentType"`
+	IsHelmOnly       bool      `json:"isHelmOnly"`
+	IsEnterpriseOnly bool      `json:"isEnterpriseOnly"`
+	Description      string    `json:"description"`
+	HelmValuePath    string    `json:"helmValuePath"`
+	DocsLink         *string   `json:"docsLink,omitempty"`
+	ComponentProps   *string   `json:"componentProps,omitempty"`
+	RenderCondition  []string  `json:"renderCondition,omitempty"`
 }
 
 type ContainerAgentConfigAnalyze struct {
@@ -145,6 +297,18 @@ type ContainerAgentConfigAnalyze struct {
 	OtelDistroName *EntityProperty `json:"otelDistroName,omitempty"`
 }
 
+type ContainerOverview struct {
+	Name        string                   `json:"name"`
+	Image       *string                  `json:"image,omitempty"`
+	Status      ContainerLifecycleStatus `json:"status"`
+	StateReason *string                  `json:"stateReason,omitempty"`
+	Ready       bool                     `json:"ready"`
+	Started     bool                     `json:"started"`
+	Restarts    int                      `json:"restarts"`
+	StartedAt   *string                  `json:"startedAt,omitempty"`
+	Resources   *Resources               `json:"resources,omitempty"`
+}
+
 type ContainerRuntimeInfoAnalyze struct {
 	ContainerName  *EntityProperty   `json:"containerName"`
 	Language       *EntityProperty   `json:"language"`
@@ -152,10 +316,59 @@ type ContainerRuntimeInfoAnalyze struct {
 	EnvVars        []*EntityProperty `json:"envVars"`
 }
 
+type CostReductionRule struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	SourceScopes     *SourcesScopes                `json:"sourceScopes,omitempty"`
+	Operation        *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost float64                       `json:"percentageAtMost"`
+	Notes            *string                       `json:"notes,omitempty"`
+}
+
+type CostReductionRuleInput struct {
+	Name             graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled         graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes     graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Operation        graphql.Omittable[*TailSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtMost float64                                               `json:"percentageAtMost"`
+	Notes            graphql.Omittable[*string]                            `json:"notes,omitempty"`
+}
+
+type CustomFormatMasking struct {
+	LookupKey  string               `json:"lookupKey"`
+	DataFormat ExtractionDataFormat `json:"dataFormat"`
+}
+
+type CustomFormatMaskingInput struct {
+	LookupKey  string               `json:"lookupKey"`
+	DataFormat ExtractionDataFormat `json:"dataFormat"`
+}
+
+type CustomInstrumentations struct {
+	Golang []*GolangCustomProbe `json:"golang,omitempty"`
+	Java   []*JavaCustomProbe   `json:"java,omitempty"`
+	Php    []*PhpCustomProbe    `json:"php,omitempty"`
+}
+
+type CustomInstrumentationsInput struct {
+	Golang []*GolangCustomProbeInput `json:"golang,omitempty"`
+	Java   []*JavaCustomProbeInput   `json:"java,omitempty"`
+	Php    []*PhpCustomProbeInput    `json:"php,omitempty"`
+}
+
 type CustomReadDataLabel struct {
 	Condition string `json:"condition"`
 	Title     string `json:"title"`
 	Value     string `json:"value"`
+}
+
+type CustomRegexMasking struct {
+	Regex string `json:"regex"`
+}
+
+type CustomRegexMaskingInput struct {
+	Regex string `json:"regex"`
 }
 
 type DataStream struct {
@@ -176,37 +389,24 @@ type DbQueryPayloadCollectionInput struct {
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
-type DeleteAttributeAction struct {
-	ID      string       `json:"id"`
-	Type    string       `json:"type"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details []string     `json:"details"`
+type DesiredConditionActionItem struct {
+	Type       DesiredConditionActionItemType `json:"type"`
+	ButtonText string                         `json:"buttonText"`
 }
 
-func (DeleteAttributeAction) IsAction()              {}
-func (this DeleteAttributeAction) GetID() string     { return this.ID }
-func (this DeleteAttributeAction) GetType() string   { return this.Type }
-func (this DeleteAttributeAction) GetName() *string  { return this.Name }
-func (this DeleteAttributeAction) GetNotes() *string { return this.Notes }
-func (this DeleteAttributeAction) GetDisable() bool  { return this.Disable }
-func (this DeleteAttributeAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+type DesiredConditionStatus struct {
+	Name        string                        `json:"name"`
+	Status      DesiredStateProgress          `json:"status"`
+	ReasonEnum  *string                       `json:"reasonEnum,omitempty"`
+	Message     string                        `json:"message"`
+	ActionItems []*DesiredConditionActionItem `json:"actionItems,omitempty"`
 }
 
 type Destination struct {
 	ID              string                        `json:"id"`
 	Type            string                        `json:"type"`
 	Name            string                        `json:"name"`
+	Disabled        bool                          `json:"disabled"`
 	DataStreamNames []*string                     `json:"dataStreamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`
@@ -238,6 +438,7 @@ type DestinationInput struct {
 	CurrentStreamName string                `json:"currentStreamName"`
 	ExportedSignals   *ExportedSignalsInput `json:"exportedSignals"`
 	Fields            []*FieldInput         `json:"fields"`
+	Disabled          *bool                 `json:"disabled,omitempty"`
 }
 
 type DestinationTypesCategoryItem struct {
@@ -255,6 +456,95 @@ type DestinationsCategory struct {
 	Items       []*DestinationTypesCategoryItem `json:"items"`
 }
 
+type DiagnoseInput struct {
+	IncludeProfiles          *bool    `json:"includeProfiles,omitempty"`
+	IncludeMetrics           *bool    `json:"includeMetrics,omitempty"`
+	IncludeSourceWorkloads   *bool    `json:"includeSourceWorkloads,omitempty"`
+	SourceWorkloadNamespaces []string `json:"sourceWorkloadNamespaces,omitempty"`
+}
+
+type DiagnoseResponse struct {
+	Stats                    *DiagnoseStats `json:"stats"`
+	IncludeProfiles          bool           `json:"includeProfiles"`
+	IncludeMetrics           bool           `json:"includeMetrics"`
+	IncludeSourceWorkloads   bool           `json:"includeSourceWorkloads"`
+	SourceWorkloadNamespaces []string       `json:"sourceWorkloadNamespaces"`
+}
+
+type DiagnoseStats struct {
+	FileCount      int    `json:"fileCount"`
+	TotalSizeBytes int    `json:"totalSizeBytes"`
+	TotalSizeHuman string `json:"totalSizeHuman"`
+}
+
+// Disable profiling slot for a workload.
+type DisableProfilingResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	ActiveSlots int    `json:"activeSlots"`
+}
+
+type DistroParam struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type EffectiveConfig struct {
+	ConfigVersion                    int                                 `json:"configVersion"`
+	TelemetryEnabled                 *bool                               `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled                 *bool                               `json:"openshiftEnabled,omitempty"`
+	IgnoredNamespaces                []string                            `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                []string                            `json:"ignoredContainers,omitempty"`
+	IgnoreOdigosNamespace            *bool                               `json:"ignoreOdigosNamespace,omitempty"`
+	Psp                              *bool                               `json:"psp,omitempty"`
+	ImagePrefix                      *string                             `json:"imagePrefix,omitempty"`
+	SkipWebhookIssuerCreation        *bool                               `json:"skipWebhookIssuerCreation,omitempty"`
+	CollectorGateway                 *CollectorGatewayConfig             `json:"collectorGateway,omitempty"`
+	CollectorNode                    *CollectorNodeConfig                `json:"collectorNode,omitempty"`
+	Profiles                         []string                            `json:"profiles,omitempty"`
+	AllowConcurrentAgents            *AllowConcurrentAgentsConfig        `json:"allowConcurrentAgents,omitempty"`
+	UIMode                           *UIMode                             `json:"uiMode,omitempty"`
+	UIPaginationLimit                *int                                `json:"uiPaginationLimit,omitempty"`
+	UIRemoteURL                      *string                             `json:"uiRemoteUrl,omitempty"`
+	CentralBackendURL                *string                             `json:"centralBackendURL,omitempty"`
+	ClusterName                      *string                             `json:"clusterName,omitempty"`
+	Instrumentor                     *InstrumentorConfig                 `json:"instrumentor,omitempty"`
+	CustomContainerRuntimeSocketPath *string                             `json:"customContainerRuntimeSocketPath,omitempty"`
+	UserInstrumentationEnvs          *UserInstrumentationEnvsConfig      `json:"userInstrumentationEnvs,omitempty"`
+	NodeSelector                     *string                             `json:"nodeSelector,omitempty"`
+	Karpenter                        *KarpenterConfig                    `json:"karpenter,omitempty"`
+	Rollout                          *RolloutConfig                      `json:"rollout,omitempty"`
+	AutoRollback                     *AutoRollbackConfig                 `json:"autoRollback,omitempty"`
+	Oidc                             *OidcConfig                         `json:"oidc,omitempty"`
+	OdigletHealthProbeBindPort       *int                                `json:"odigletHealthProbeBindPort,omitempty"`
+	GoAutoOffsetsCron                *string                             `json:"goAutoOffsetsCron,omitempty"`
+	GoAutoOffsetsMode                *string                             `json:"goAutoOffsetsMode,omitempty"`
+	ClickhouseJSONTypeEnabled        *bool                               `json:"clickhouseJsonTypeEnabled,omitempty"`
+	ResourceSizePreset               *string                             `json:"resourceSizePreset,omitempty"`
+	Wasp                             *WaspConfig                         `json:"wasp,omitempty"`
+	MetricsSources                   *MetricsSourceConfig                `json:"metricsSources,omitempty"`
+	AgentsInitContainerResources     *AgentsInitContainerResourcesConfig `json:"agentsInitContainerResources,omitempty"`
+	TraceIDSuffix                    *string                             `json:"traceIdSuffix,omitempty"`
+	AllowedTestConnectionHosts       []string                            `json:"allowedTestConnectionHosts,omitempty"`
+	OdigosOwnTelemetryStore          *OdigosOwnTelemetryConfig           `json:"odigosOwnTelemetryStore,omitempty"`
+	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
+	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
+	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
+	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
+	CardinalityControl               *CardinalityControlConfig           `json:"cardinalityControl,omitempty"`
+	TraceCorrelations                *TraceCorrelationsConfig            `json:"traceCorrelations,omitempty"`
+	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
+	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
+}
+
+// Enabling profiling slot for a workload
+type EnableProfilingResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	MaxSlots    int    `json:"maxSlots"`
+	ActiveSlots int    `json:"activeSlots"`
+}
+
 type EntityProperty struct {
 	Name    string  `json:"name"`
 	Value   string  `json:"value"`
@@ -262,43 +552,45 @@ type EntityProperty struct {
 	Explain *string `json:"explain,omitempty"`
 }
 
-type ErrorSamplerAction struct {
-	ID      string       `json:"id"`
-	Type    string       `json:"type"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details string       `json:"details"`
-}
-
-func (ErrorSamplerAction) IsAction()              {}
-func (this ErrorSamplerAction) GetID() string     { return this.ID }
-func (this ErrorSamplerAction) GetType() string   { return this.Type }
-func (this ErrorSamplerAction) GetName() *string  { return this.Name }
-func (this ErrorSamplerAction) GetNotes() *string { return this.Notes }
-func (this ErrorSamplerAction) GetDisable() bool  { return this.Disable }
-func (this ErrorSamplerAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+type EnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type ExportedSignals struct {
-	Traces  bool `json:"traces"`
-	Metrics bool `json:"metrics"`
-	Logs    bool `json:"logs"`
+	Traces   bool `json:"traces"`
+	Metrics  bool `json:"metrics"`
+	Logs     bool `json:"logs"`
+	Profiles bool `json:"profiles"`
 }
 
 type ExportedSignalsInput struct {
-	Traces  bool `json:"traces"`
-	Metrics bool `json:"metrics"`
-	Logs    bool `json:"logs"`
+	Traces   bool `json:"traces"`
+	Metrics  bool `json:"metrics"`
+	Logs     bool `json:"logs"`
+	Profiles bool `json:"profiles"`
+}
+
+type ExtractAttribute struct {
+	Extractions []*Extraction `json:"extractions"`
+}
+
+type ExtractAttributeInput struct {
+	Extractions []*ExtractionInput `json:"extractions"`
+}
+
+type Extraction struct {
+	TargetAttributeName string                `json:"targetAttributeName"`
+	LookupKey           *string               `json:"lookupKey,omitempty"`
+	DataFormat          *ExtractionDataFormat `json:"dataFormat,omitempty"`
+	Regex               *string               `json:"regex,omitempty"`
+}
+
+type ExtractionInput struct {
+	TargetAttributeName string                `json:"targetAttributeName"`
+	LookupKey           *string               `json:"lookupKey,omitempty"`
+	DataFormat          *ExtractionDataFormat `json:"dataFormat,omitempty"`
+	Regex               *string               `json:"regex,omitempty"`
 }
 
 type FieldInput struct {
@@ -306,14 +598,131 @@ type FieldInput struct {
 	Value string `json:"value"`
 }
 
-type GetConfigResponse struct {
-	Installation InstallationStatus `json:"installation"`
-	Tier         Tier               `json:"tier"`
-	Readonly     bool               `json:"readonly"`
+type GatewayDeploymentInfo struct {
+	Status                       WorkloadRolloutStatus        `json:"status"`
+	Hpa                          *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
+	ThroughputTracesBytesPerSec  *int                         `json:"throughputTracesBytesPerSec,omitempty"`
+	ThroughputMetricsBytesPerSec *int                         `json:"throughputMetricsBytesPerSec,omitempty"`
+	ThroughputLogsBytesPerSec    *int                         `json:"throughputLogsBytesPerSec,omitempty"`
+	Resources                    *Resources                   `json:"resources,omitempty"`
+	ImageVersion                 *string                      `json:"imageVersion,omitempty"`
+	LastRolloutAt                *string                      `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress            bool                         `json:"rolloutInProgress"`
+	ManifestYaml                 string                       `json:"manifestYAML"`
+	ConfigMapYaml                string                       `json:"configMapYAML"`
 }
 
 type GetDestinationCategories struct {
 	Categories []*DestinationsCategory `json:"categories"`
+}
+
+type GoOffsetMinorVersion struct {
+	MinorVersion string   `json:"minorVersion"`
+	Versions     []string `json:"versions"`
+}
+
+type GoOffsetMinorVersionUpdate struct {
+	MinorVersion string                   `json:"minorVersion"`
+	IsNew        bool                     `json:"isNew"`
+	IsRemoved    bool                     `json:"isRemoved"`
+	Versions     []*GoOffsetVersionUpdate `json:"versions"`
+}
+
+type GoOffsetModule struct {
+	Module        string                  `json:"module"`
+	MinVersion    string                  `json:"minVersion"`
+	MaxVersion    string                  `json:"maxVersion"`
+	MinorVersions []*GoOffsetMinorVersion `json:"minorVersions"`
+}
+
+type GoOffsetModuleUpdate struct {
+	Module        string                        `json:"module"`
+	IsNew         bool                          `json:"isNew"`
+	IsRemoved     bool                          `json:"isRemoved"`
+	MinVersion    string                        `json:"minVersion"`
+	MaxVersion    string                        `json:"maxVersion"`
+	MinorVersions []*GoOffsetMinorVersionUpdate `json:"minorVersions"`
+}
+
+type GoOffsetVersionUpdate struct {
+	Version   string `json:"version"`
+	IsNew     bool   `json:"isNew"`
+	IsRemoved bool   `json:"isRemoved"`
+}
+
+type GoOffsets struct {
+	Installed bool              `json:"installed"`
+	Timestamp string            `json:"timestamp"`
+	Mods      []*GoOffsetModule `json:"mods"`
+}
+
+type GoOffsetsUpdateCheck struct {
+	HasUpdates        bool                    `json:"hasUpdates"`
+	CurrentTimestamp  string                  `json:"currentTimestamp"`
+	ProposedTimestamp string                  `json:"proposedTimestamp"`
+	Mods              []*GoOffsetModuleUpdate `json:"mods"`
+}
+
+type GolangCustomProbe struct {
+	PackageName        *string `json:"packageName,omitempty"`
+	FunctionName       *string `json:"functionName,omitempty"`
+	ReceiverName       *string `json:"receiverName,omitempty"`
+	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+}
+
+type GolangCustomProbeInput struct {
+	PackageName        *string `json:"packageName,omitempty"`
+	FunctionName       *string `json:"functionName,omitempty"`
+	ReceiverName       *string `json:"receiverName,omitempty"`
+	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+}
+
+type HeadSamplingHTTPClientMatcher struct {
+	ServerAddress       *string `json:"serverAddress,omitempty"`
+	TemplatedPath       *string `json:"templatedPath,omitempty"`
+	TemplatedPathPrefix *string `json:"templatedPathPrefix,omitempty"`
+	Method              *string `json:"method,omitempty"`
+}
+
+type HeadSamplingHTTPClientMatcherInput struct {
+	ServerAddress       *string `json:"serverAddress,omitempty"`
+	TemplatedPath       *string `json:"templatedPath,omitempty"`
+	TemplatedPathPrefix *string `json:"templatedPathPrefix,omitempty"`
+	Method              *string `json:"method,omitempty"`
+}
+
+type HeadSamplingHTTPServerMatcher struct {
+	Route       *string                          `json:"route,omitempty"`
+	RoutePrefix *string                          `json:"routePrefix,omitempty"`
+	Method      *string                          `json:"method,omitempty"`
+	QueryParams []*HeadSamplingQueryParamMatcher `json:"queryParams,omitempty"`
+}
+
+type HeadSamplingHTTPServerMatcherInput struct {
+	Route       *string                               `json:"route,omitempty"`
+	RoutePrefix *string                               `json:"routePrefix,omitempty"`
+	Method      *string                               `json:"method,omitempty"`
+	QueryParams []*HeadSamplingQueryParamMatcherInput `json:"queryParams,omitempty"`
+}
+
+type HeadSamplingOperationMatcher struct {
+	HTTPServer *HeadSamplingHTTPServerMatcher `json:"httpServer,omitempty"`
+	HTTPClient *HeadSamplingHTTPClientMatcher `json:"httpClient,omitempty"`
+}
+
+type HeadSamplingOperationMatcherInput struct {
+	HTTPServer *HeadSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
+	HTTPClient *HeadSamplingHTTPClientMatcherInput `json:"httpClient,omitempty"`
+}
+
+type HeadSamplingQueryParamMatcher struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
+}
+
+type HeadSamplingQueryParamMatcherInput struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
 }
 
 type HeadersCollection struct {
@@ -322,6 +731,37 @@ type HeadersCollection struct {
 
 type HeadersCollectionInput struct {
 	HeaderKeys []*string `json:"headerKeys,omitempty"`
+}
+
+type HighlyRelevantOperationRule struct {
+	RuleID            string                        `json:"ruleId"`
+	Name              *string                       `json:"name,omitempty"`
+	Disabled          bool                          `json:"disabled"`
+	SourceScopes      *SourcesScopes                `json:"sourceScopes,omitempty"`
+	Error             bool                          `json:"error"`
+	DurationAtLeastMs *int                          `json:"durationAtLeastMs,omitempty"`
+	Operation         *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtLeast *float64                      `json:"percentageAtLeast,omitempty"`
+	Notes             *string                       `json:"notes,omitempty"`
+}
+
+type HighlyRelevantOperationRuleInput struct {
+	Name              graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled          graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes      graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Error             graphql.Omittable[*bool]                              `json:"error,omitempty"`
+	DurationAtLeastMs graphql.Omittable[*int]                               `json:"durationAtLeastMs,omitempty"`
+	Operation         graphql.Omittable[*TailSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtLeast graphql.Omittable[*float64]                           `json:"percentageAtLeast,omitempty"`
+	Notes             graphql.Omittable[*string]                            `json:"notes,omitempty"`
+}
+
+type HorizontalPodAutoscalerInfo struct {
+	Min        *int         `json:"min,omitempty"`
+	Max        *int         `json:"max,omitempty"`
+	Current    *int         `json:"current,omitempty"`
+	Desired    *int         `json:"desired,omitempty"`
+	Conditions []*Condition `json:"conditions,omitempty"`
 }
 
 type HTTPPayloadCollection struct {
@@ -336,10 +776,1067 @@ type HTTPPayloadCollectionInput struct {
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
 }
 
+type Insights struct {
+	Services []*InsightsServiceStat `json:"services"`
+	// Every distinct service name Insights has seen. Cluster-wide candidate set for
+	// guardrail caller/callee allowlists — fetch once and combine with a service profile.
+	ServiceNames   []string                `json:"serviceNames"`
+	ServiceProfile *InsightsServiceProfile `json:"serviceProfile"`
+	// Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
+	BlastRadius         *InsightsBlastRadiusSubgraph  `json:"blastRadius"`
+	Transactions        []*InsightsTransactionStat    `json:"transactions"`
+	Transaction         *InsightsTransaction          `json:"transaction,omitempty"`
+	Baseline            []*InsightsBaselineClass      `json:"baseline"`
+	Observations        []*InsightsObservationSummary `json:"observations"`
+	Observation         *InsightsObservation          `json:"observation,omitempty"`
+	Findings            []*InsightsFinding            `json:"findings"`
+	Anomalies           []*InsightsAnomalySummary     `json:"anomalies"`
+	Anomaly             *InsightsAnomalyIssue         `json:"anomaly,omitempty"`
+	Policies            []*InsightsPolicy             `json:"policies"`
+	LearningPolicies    []*InsightsLearningPolicy     `json:"learningPolicies"`
+	Guardrails          []*InsightsGuardrail          `json:"guardrails"`
+	GuardrailViolations []*InsightsGuardrailViolation `json:"guardrailViolations"`
+	// Violation investigate payload (summary + evidence trace). Analogous to anomaly(...).
+	GuardrailViolation *InsightsGuardrailViolationDetail `json:"guardrailViolation,omitempty"`
+	// Guardrail rules the engine mined and offers for quick apply, strongest first
+	// within each scope: cross-span relations learned from a transaction's stored
+	// samples, and per-service allowlists learned from a service's profile. Stale
+	// rows (the latest mining run no longer produced them) are hidden unless
+	// `includeStale` is true.
+	//
+	// There is no scope filter — pass `kind` to get one kind's cards. `transactionId`
+	// narrows to transaction-scoped rows by construction, so combining it with
+	// `kind: service_guardrail` always comes back empty.
+	Recommendations []*InsightsRecommendation `json:"recommendations"`
+	Recommendation  *InsightsRecommendation   `json:"recommendation,omitempty"`
+	Catalog         *InsightsCatalog          `json:"catalog"`
+	SystemSettings  *InsightsSystemSettings   `json:"systemSettings"`
+	StorageHealth   *InsightsStorageHealth    `json:"storageHealth"`
+}
+
+type InsightsAnomalyAttrHighlight struct {
+	SpanID string `json:"spanId"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+// Render-ready explanation of one deviation class within an anomaly issue.
+// Built at read time; the UI should render title/summary/highlights and not parse raw evidence.
+type InsightsAnomalyClassFinding struct {
+	Class          InsightsDeviationClass           `json:"class"`
+	Kind           InsightsAnomalyClassFindingKind  `json:"kind"`
+	Title          string                           `json:"title"`
+	Summary        string                           `json:"summary"`
+	SpanHighlights []*InsightsAnomalySpanHighlight  `json:"spanHighlights,omitempty"`
+	AttrHighlights []*InsightsAnomalyAttrHighlight  `json:"attrHighlights,omitempty"`
+	Metric         *InsightsAnomalyMetricComparison `json:"metric,omitempty"`
+	// JSON-encoded original per-class evidence blob (fallback / debug).
+	RawEvidence *string `json:"rawEvidence,omitempty"`
+}
+
+type InsightsAnomalyIssue struct {
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+	Service       string `json:"service"`
+	Namespace     string `json:"namespace"`
+	// Full canonical identity string.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               *InsightsTransactionKind            `json:"kind,omitempty"`
+	TriggeredClasses   []InsightsDeviationClass            `json:"triggeredClasses"`
+	Offending          *string                             `json:"offending,omitempty"`
+	PolicyID           *string                             `json:"policyId,omitempty"`
+	Occurrences        int                                 `json:"occurrences"`
+	MaxScore           int                                 `json:"maxScore"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	FirstSeen          *string                             `json:"firstSeen,omitempty"`
+	LastSeen           *string                             `json:"lastSeen,omitempty"`
+	LastTraceID        *string                             `json:"lastTraceId,omitempty"`
+	Status             InsightsAnomalyStatus               `json:"status"`
+	// JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query.
+	Evidence string                  `json:"evidence"`
+	Risk     *InsightsRiskAssessment `json:"risk,omitempty"`
+	// One render-ready finding per triggered class (title, summary, highlights). Always present on detail.
+	ClassFindings []*InsightsAnomalyClassFinding `json:"classFindings"`
+	// Evidence sample for this issue including rawOtlp. Omitted when no sample was retained.
+	AnomalyTrace *InsightsObservation `json:"anomalyTrace,omitempty"`
+	// Learning-phase example sample including rawOtlp for baseline compare. Omitted when none exist.
+	BaselineTrace *InsightsObservation `json:"baselineTrace,omitempty"`
+}
+
+type InsightsAnomalyMetricComparison struct {
+	Observed int `json:"observed"`
+	Baseline int `json:"baseline"`
+	// us | bytes
+	Unit string `json:"unit"`
+}
+
+type InsightsAnomalyRefInput struct {
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+}
+
+type InsightsAnomalySpanHighlight struct {
+	SpanID string `json:"spanId"`
+	// high | medium | low
+	Severity string `json:"severity"`
+	Reason   string `json:"reason"`
+}
+
+type InsightsAnomalySummary struct {
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+	Service       string `json:"service"`
+	Namespace     string `json:"namespace"`
+	// Full canonical identity string.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               *InsightsTransactionKind            `json:"kind,omitempty"`
+	TriggeredClasses   []InsightsDeviationClass            `json:"triggeredClasses"`
+	Offending          *string                             `json:"offending,omitempty"`
+	PolicyID           *string                             `json:"policyId,omitempty"`
+	Occurrences        int                                 `json:"occurrences"`
+	MaxScore           int                                 `json:"maxScore"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	FirstSeen          *string                             `json:"firstSeen,omitempty"`
+	LastSeen           *string                             `json:"lastSeen,omitempty"`
+	LastTraceID        *string                             `json:"lastTraceId,omitempty"`
+	Status             InsightsAnomalyStatus               `json:"status"`
+}
+
+type InsightsBaselineClass struct {
+	TransactionID string                 `json:"transactionId"`
+	Class         InsightsDeviationClass `json:"class"`
+	// Human-readable name for what this class learns on a transaction
+	// (e.g. "Request latency" for D3_latency). Sourced from the risk catalog;
+	// UI should display this and keep `class` as the stable id for promote/reset.
+	ClassLabel string `json:"classLabel"`
+	// Tooltip text describing what this class learns for the transaction.
+	// Suitable for hover UI; not the finding/anomaly wording.
+	ClassDescription string `json:"classDescription"`
+	// JSON-encoded baseline data; shape varies per deviation class.
+	Data *string `json:"data,omitempty"`
+	// Chart-ready histogram for D3_latency / D7_payload_size. Omitted for other classes.
+	Histogram         *InsightsBaselineHistogram `json:"histogram,omitempty"`
+	DataSchemaVersion *int                       `json:"dataSchemaVersion,omitempty"`
+	ObservationCount  int                        `json:"observationCount"`
+	Promoted          bool                       `json:"promoted"`
+	// True when this class's set crossed maxBaselineSetMembers. The class is frozen
+	// at a truncated set, will never promote and is never scored.
+	// learning.phase is saturated.
+	Saturated                    bool                      `json:"saturated"`
+	LearningStartedAt            *string                   `json:"learningStartedAt,omitempty"`
+	LastChangedAt                *string                   `json:"lastChangedAt,omitempty"`
+	ObservationCountAtLastChange *int                      `json:"observationCountAtLastChange,omitempty"`
+	Learning                     *InsightsBaselineLearning `json:"learning"`
+}
+
+// Chart-ready exponential histogram for D3_latency and D7_payload_size.
+// Plot series[].bars; do not recompute bounds from raw data.
+type InsightsBaselineHistogram struct {
+	Unit              InsightsBaselineHistogramUnit      `json:"unit"`
+	LayoutFingerprint *string                            `json:"layoutFingerprint,omitempty"`
+	Series            []*InsightsBaselineHistogramSeries `json:"series"`
+}
+
+type InsightsBaselineHistogramBar struct {
+	Lo    int    `json:"lo"`
+	Hi    int    `json:"hi"`
+	Count int    `json:"count"`
+	Label string `json:"label"`
+}
+
+type InsightsBaselineHistogramSeries struct {
+	Name  string                          `json:"name"`
+	Label string                          `json:"label"`
+	Bars  []*InsightsBaselineHistogramBar `json:"bars"`
+}
+
+// Computed learning/stability snapshot for one baseline class against its
+// resolved learning policy. Always present, including on placeholder classes.
+type InsightsBaselineLearning struct {
+	Phase                       InsightsBaselineLearningPhase      `json:"phase"`
+	ObservationsSinceLastChange int                                `json:"observationsSinceLastChange"`
+	QuietMinutes                int                                `json:"quietMinutes"`
+	Mode                        InsightsLearningMode               `json:"mode"`
+	ReadyToPromote              bool                               `json:"readyToPromote"`
+	Stability                   *InsightsBaselineLearningStability `json:"stability"`
+}
+
+// Both stability signals so the UI can show "X / Y observations" and
+// "grew N minutes ago" together. Under `all`, one dimension `met` does not mean
+// the class promotes — use `readyToPromote`.
+type InsightsBaselineLearningStability struct {
+	Observations *InsightsBaselineStabilityProgress `json:"observations"`
+	Duration     *InsightsBaselineStabilityProgress `json:"duration"`
+}
+
+// One stability dimension. For observations, current/target is a count. For
+// duration, both are minutes. `target` is 0 when there is no policy target —
+// still render `current` as "grew N ago".
+type InsightsBaselineStabilityProgress struct {
+	Current         int  `json:"current"`
+	Target          int  `json:"target"`
+	DrivesPromotion bool `json:"drivesPromotion"`
+	Met             bool `json:"met"`
+}
+
+// A directed client -> server edge from the gateway servicegraph connector.
+// Request/failure counts are rough magnitude, not exact totals.
+type InsightsBlastRadiusEdge struct {
+	ClientNamespace string `json:"clientNamespace"`
+	ClientService   string `json:"clientService"`
+	ServerNamespace string `json:"serverNamespace"`
+	ServerService   string `json:"serverService"`
+	ConnectionType  string `json:"connectionType"`
+	RequestCount    int    `json:"requestCount"`
+	FailedCount     int    `json:"failedCount"`
+	LastSeen        string `json:"lastSeen"`
+}
+
+// One service (or virtual dependency) in a blast-radius subgraph. Identity is (namespace, service).
+type InsightsBlastRadiusNode struct {
+	Namespace string `json:"namespace"`
+	Service   string `json:"service"`
+	// True for an uninstrumented dependency (database, queue, external API).
+	// Virtual nodes are leaves — they have no outgoing calls.
+	IsVirtual bool `json:"isVirtual"`
+}
+
+// Neighborhood around an anchor service: callers and callees out to the requested hop depth.
+type InsightsBlastRadiusSubgraph struct {
+	Root  *InsightsBlastRadiusNode   `json:"root"`
+	Nodes []*InsightsBlastRadiusNode `json:"nodes"`
+	Edges []*InsightsBlastRadiusEdge `json:"edges"`
+}
+
+type InsightsBulkDeleteResult struct {
+	Deleted int `json:"deleted"`
+}
+
+type InsightsBulkPromoteResult struct {
+	Promoted int `json:"promoted"`
+}
+
+type InsightsBulkResolveResult struct {
+	Resolution string `json:"resolution"`
+	Resolved   int    `json:"resolved"`
+}
+
+type InsightsCatalog struct {
+	DeviationClasses []*InsightsCatalogClass         `json:"deviationClasses"`
+	Enrichers        []*InsightsCatalogEnricher      `json:"enrichers"`
+	Categories       []*InsightsCatalogCategory      `json:"categories"`
+	GuardrailRules   []*InsightsCatalogGuardrailRule `json:"guardrailRules"`
+	SeverityBands    []*InsightsSeverityBand         `json:"severityBands"`
+	CorrelationBonus int                             `json:"correlationBonus"`
+	// JSON-encoded map[string]string.
+	Tags string `json:"tags"`
+}
+
+type InsightsCatalogCategory struct {
+	ID    string  `json:"id"`
+	Label string  `json:"label"`
+	Base  int     `json:"base"`
+	Mitre *string `json:"mitre,omitempty"`
+	Owasp *string `json:"owasp,omitempty"`
+}
+
+type InsightsCatalogClass struct {
+	ID          string  `json:"id"`
+	Label       string  `json:"label"`
+	Description *string `json:"description,omitempty"`
+	// Transaction-baseline name for this class (what is learned). Distinct from finding-oriented `label`.
+	BaselineLabel string `json:"baselineLabel"`
+	// Tooltip for what this class learns on a transaction baseline.
+	BaselineDescription *string `json:"baselineDescription,omitempty"`
+	Category            string  `json:"category"`
+	CategoryLabel       *string `json:"categoryLabel,omitempty"`
+	Weight              int     `json:"weight"`
+	Mitre               *string `json:"mitre,omitempty"`
+	Owasp               *string `json:"owasp,omitempty"`
+}
+
+type InsightsCatalogEnricher struct {
+	Source      string                `json:"source"`
+	ParentClass string                `json:"parentClass"`
+	Category    string                `json:"category"`
+	Weight      int                   `json:"weight"`
+	Label       string                `json:"label"`
+	Description *string               `json:"description,omitempty"`
+	List        *InsightsEnricherList `json:"list,omitempty"`
+}
+
+type InsightsCatalogGuardrailRule struct {
+	Key         string  `json:"key"`
+	Label       string  `json:"label"`
+	Description *string `json:"description,omitempty"`
+	Category    string  `json:"category"`
+	Weight      int     `json:"weight"`
+	Hint        *string `json:"hint,omitempty"`
+}
+
+// Locates one attribute on one span within a trace (attribute_correlation rule).
+type InsightsCorrelationSelector struct {
+	// Owning service name of the span.
+	Service string `json:"service"`
+	// Span match — the span name or captured `code.function.name`.
+	Span string `json:"span"`
+	// Attribute key to read (e.g. return.value, arg.0, url.full).
+	Attr string `json:"attr"`
+	// Optional regex applied to the attribute value. Capture group 1 is used when
+	// present, otherwise the whole match. Empty = use the value verbatim.
+	Extract *string `json:"extract,omitempty"`
+}
+
+type InsightsCorrelationSelectorInput struct {
+	Service string  `json:"service"`
+	Span    string  `json:"span"`
+	Attr    string  `json:"attr"`
+	Extract *string `json:"extract,omitempty"`
+}
+
+// One cross-span consistency assertion for the attribute_correlation rule.
+type InsightsCorrelationSpec struct {
+	Name     string                       `json:"name"`
+	Left     *InsightsCorrelationSelector `json:"left"`
+	Right    *InsightsCorrelationSelector `json:"right"`
+	Relation InsightsCorrelationRelation  `json:"relation"`
+	// Risk of a violation of this rule. Defaults to critical when omitted on write.
+	Severity InsightsSeverity `json:"severity"`
+	// Operator rationale, shown in the finding.
+	Why *string `json:"why,omitempty"`
+}
+
+type InsightsCorrelationSpecInput struct {
+	Name     string                            `json:"name"`
+	Left     *InsightsCorrelationSelectorInput `json:"left"`
+	Right    *InsightsCorrelationSelectorInput `json:"right"`
+	Relation InsightsCorrelationRelation       `json:"relation"`
+	// Defaults to critical when omitted.
+	Severity *InsightsSeverity `json:"severity,omitempty"`
+	Why      *string           `json:"why,omitempty"`
+}
+
+type InsightsEnricherList struct {
+	Key     string   `json:"key"`
+	Label   string   `json:"label"`
+	Hint    *string  `json:"hint,omitempty"`
+	Default []string `json:"default,omitempty"`
+}
+
+type InsightsFinding struct {
+	Kind      InsightsFindingKind `json:"kind"`
+	Service   string              `json:"service"`
+	Namespace string              `json:"namespace"`
+	// Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
+	Title string `json:"title"`
+	// Render-ready one-line explanation so the list conveys the gist without opening
+	// investigate. Omits service and title (already on the row): anomalies name the
+	// deviated classes; violations name the rule and what broke it. Display as-is.
+	Summary string `json:"summary"`
+	// Full canonical transaction operation (anomalies only). Omitted for violations.
+	Operation *string `json:"operation,omitempty"`
+	// Entry-span operation without dimension suffixes (anomalies).
+	OperationName *string `json:"operationName,omitempty"`
+	// Parsed identity dimensions (anomalies only).
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions,omitempty"`
+	Offending          *string                             `json:"offending,omitempty"`
+	Score              int                                 `json:"score"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	Occurrences        int                                 `json:"occurrences"`
+	// Earliest occurrence of this finding (anomaly or guardrail violation).
+	FirstSeen *string `json:"firstSeen,omitempty"`
+	LastSeen  string  `json:"lastSeen"`
+	// Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).
+	Status string `json:"status"`
+	// Anomaly drill-down key; set when kind is anomaly.
+	TransactionID *string `json:"transactionId,omitempty"`
+	// Anomaly drill-down key; set when kind is anomaly.
+	Signature *string `json:"signature,omitempty"`
+	// Anomaly signal classes; empty/absent for violations.
+	TriggeredClasses []InsightsDeviationClass `json:"triggeredClasses,omitempty"`
+	// Violation drill-down key; set when kind is violation.
+	ScopeKey *string `json:"scopeKey,omitempty"`
+	// Violation drill-down key; set when kind is violation.
+	RuleKey *string `json:"ruleKey,omitempty"`
+}
+
+type InsightsGuardrail struct {
+	Scope InsightsPolicyScope `json:"scope"`
+	// `namespace/service` for service scope; numeric transaction id for transaction scope.
+	ScopeKey string                   `json:"scopeKey"`
+	Rules    []*InsightsGuardrailRule `json:"rules"`
+}
+
+type InsightsGuardrailInput struct {
+	Scope    InsightsPolicyScope           `json:"scope"`
+	ScopeKey string                        `json:"scopeKey"`
+	Rules    []*InsightsGuardrailRuleInput `json:"rules"`
+}
+
+type InsightsGuardrailRule struct {
+	Key       string           `json:"key"`
+	Label     string           `json:"label"`
+	Mode      InsightsRuleMode `json:"mode"`
+	Allowlist []string         `json:"allowlist,omitempty"`
+	// Cross-span correlation specs. Only used by `attribute_correlation`
+	// (transaction-scoped): each spec asserts two captured span attributes stay
+	// consistent within one trace.
+	Correlations []*InsightsCorrelationSpec `json:"correlations,omitempty"`
+	// How this rule was created. `auto_transaction_guardrail` means it was created
+	// automatically when the service's transactions promoted (not a manual edit).
+	Origin *string `json:"origin,omitempty"`
+}
+
+type InsightsGuardrailRuleInput struct {
+	Key       string           `json:"key"`
+	Label     string           `json:"label"`
+	Mode      InsightsRuleMode `json:"mode"`
+	Allowlist []string         `json:"allowlist,omitempty"`
+	// Required for `attribute_correlation` (transaction-scoped) rules.
+	Correlations []*InsightsCorrelationSpecInput `json:"correlations,omitempty"`
+	// Preserved on save so auto-created rules keep their origin across edits.
+	Origin *string `json:"origin,omitempty"`
+}
+
+type InsightsGuardrailSeedInput struct {
+	ScopeKey string            `json:"scopeKey"`
+	Mode     *InsightsRuleMode `json:"mode,omitempty"`
+	// JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress | allowed_transactions.
+	Items string `json:"items"`
+}
+
+type InsightsGuardrailViolation struct {
+	Service     string                  `json:"service"`
+	Namespace   string                  `json:"namespace"`
+	ScopeKey    string                  `json:"scopeKey"`
+	RuleKey     string                  `json:"ruleKey"`
+	RuleLabel   string                  `json:"ruleLabel"`
+	Offending   *string                 `json:"offending,omitempty"`
+	Occurrences int                     `json:"occurrences"`
+	MaxScore    int                     `json:"maxScore"`
+	Severity    InsightsSeverity        `json:"severity"`
+	LastSeen    *string                 `json:"lastSeen,omitempty"`
+	Status      InsightsViolationStatus `json:"status"`
+}
+
+// Full violation for investigate. Detail path only — includes summary, span
+// highlights, and optional evidenceTrace. Identity is (scopeKey, ruleKey, offending).
+type InsightsGuardrailViolationDetail struct {
+	Service     string                  `json:"service"`
+	Namespace   string                  `json:"namespace"`
+	ScopeKey    string                  `json:"scopeKey"`
+	RuleKey     string                  `json:"ruleKey"`
+	RuleLabel   string                  `json:"ruleLabel"`
+	Offending   string                  `json:"offending"`
+	Occurrences int                     `json:"occurrences"`
+	MaxScore    int                     `json:"maxScore"`
+	Severity    InsightsSeverity        `json:"severity"`
+	LastSeen    *string                 `json:"lastSeen,omitempty"`
+	Status      InsightsViolationStatus `json:"status"`
+	// One-line explanation of what broke (service, rule, offending).
+	Summary string `json:"summary"`
+	// Spans on the evidence trace that witness the forbidden edge.
+	SpanHighlights []*InsightsAnomalySpanHighlight `json:"spanHighlights,omitempty"`
+	// Captured sample including rawOtlp. Omitted when no sample was retained.
+	EvidenceTrace *InsightsObservation `json:"evidenceTrace,omitempty"`
+}
+
+type InsightsLearningCondition struct {
+	Type               InsightsLearningConditionType `json:"type"`
+	MinObservations    *int                          `json:"minObservations,omitempty"`
+	MinDurationMinutes *int                          `json:"minDurationMinutes,omitempty"`
+	StableObservations *int                          `json:"stableObservations,omitempty"`
+	StableMinutes      *int                          `json:"stableMinutes,omitempty"`
+}
+
+type InsightsLearningConditionInput struct {
+	Type               InsightsLearningConditionType `json:"type"`
+	MinObservations    *int                          `json:"minObservations,omitempty"`
+	MinDurationMinutes *int                          `json:"minDurationMinutes,omitempty"`
+	StableObservations *int                          `json:"stableObservations,omitempty"`
+	StableMinutes      *int                          `json:"stableMinutes,omitempty"`
+}
+
+type InsightsLearningPolicy struct {
+	Class      InsightsDeviationClass       `json:"class"`
+	Mode       InsightsLearningMode         `json:"mode"`
+	Conditions []*InsightsLearningCondition `json:"conditions,omitempty"`
+	MinMatches *int                         `json:"minMatches,omitempty"`
+	Scope      InsightsPolicyScope          `json:"scope"`
+	ScopeKey   string                       `json:"scopeKey"`
+}
+
+type InsightsLearningPolicyInput struct {
+	Class      InsightsDeviationClass            `json:"class"`
+	Mode       InsightsLearningMode              `json:"mode"`
+	Conditions []*InsightsLearningConditionInput `json:"conditions,omitempty"`
+	MinMatches *int                              `json:"minMatches,omitempty"`
+	Scope      InsightsPolicyScope               `json:"scope"`
+	ScopeKey   string                            `json:"scopeKey"`
+}
+
+type InsightsObservation struct {
+	TraceID       string               `json:"traceId"`
+	TransactionID string               `json:"transactionId"`
+	ObservedAt    string               `json:"observedAt"`
+	DurationMs    int                  `json:"durationMs"`
+	SampleReason  InsightsSampleReason `json:"sampleReason"`
+	// Base64-encoded OTLP protobuf; only available on the single-observation query.
+	RawOtlp string `json:"rawOtlp"`
+}
+
+type InsightsObservationSummary struct {
+	TraceID       string               `json:"traceId"`
+	TransactionID string               `json:"transactionId"`
+	ObservedAt    string               `json:"observedAt"`
+	DurationMs    int                  `json:"durationMs"`
+	SampleReason  InsightsSampleReason `json:"sampleReason"`
+}
+
+type InsightsPolicy struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Enabled     bool   `json:"enabled"`
+	FireAtScore int    `json:"fireAtScore"`
+	// JSON-encoded map[string]int of per-signal weights.
+	SignalWeights *string `json:"signalWeights,omitempty"`
+	// JSON-encoded map[string][]string of enricher keyword lists.
+	EnricherLists *string             `json:"enricherLists,omitempty"`
+	Scope         InsightsPolicyScope `json:"scope"`
+	ScopeKey      string              `json:"scopeKey"`
+}
+
+type InsightsPolicyInput struct {
+	// Server-assigned; omit on create (the policy key is scope + scopeKey).
+	ID          *string `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Enabled     bool    `json:"enabled"`
+	FireAtScore int     `json:"fireAtScore"`
+	// JSON-encoded map[string]int of per-signal weights.
+	SignalWeights *string `json:"signalWeights,omitempty"`
+	// JSON-encoded map[string][]string of enricher keyword lists.
+	EnricherLists *string             `json:"enricherLists,omitempty"`
+	Scope         InsightsPolicyScope `json:"scope"`
+	ScopeKey      string              `json:"scopeKey"`
+}
+
+type InsightsPromoteResult struct {
+	TransactionID string                 `json:"transactionId"`
+	Class         InsightsDeviationClass `json:"class"`
+	Promoted      bool                   `json:"promoted"`
+}
+
+// One mined recommendation the operator can apply as-is, adjust and apply, or
+// dismiss. The engine writes the presentation fields, so a client renders `title`,
+// `summary`, `whyItMatters` and `confidence.reasons` without knowing what the
+// numbers behind them mean.
+//
+// Both kinds share this type. The 16 non-null fields are the ones every kind
+// carries; every nullable field belongs to exactly one kind and is null on the
+// other, so read them after switching on `kind` — an absent field is "not this
+// kind", never "false" or "zero".
+type InsightsRecommendation struct {
+	ID    string                      `json:"id"`
+	Kind  InsightsRecommendationKind  `json:"kind"`
+	State InsightsRecommendationState `json:"state"`
+	// The latest mining run no longer produced this row: the relation stopped
+	// holding, its samples aged out, or the service has nothing left to enforce.
+	// Hidden from the list unless `includeStale` is set, and applying a stale
+	// `service_guardrail` fails — recompute it first.
+	Stale bool `json:"stale"`
+	// Position among the scope's recommendations, 0 = strongest.
+	Rank int `json:"rank"`
+	// The guardrail this would extend, with the same meaning as a guardrail's
+	// scope/scopeKey: `transaction` for `attribute_correlation`, `service` for
+	// `service_guardrail`.
+	Scope InsightsPolicyScope `json:"scope"`
+	// The scoped guardrail's key: the decimal transaction id for
+	// `attribute_correlation`, `"<namespace>/<service>"` for `service_guardrail`.
+	ScopeKey string `json:"scopeKey"`
+	// `attribute_correlation` only: the transaction the rule belongs to. Null on a
+	// `service_guardrail`, which is scoped to the service rather than to one
+	// transaction — so filtering `recommendations` by `transactionId` never returns
+	// a service card.
+	TransactionID *string `json:"transactionId,omitempty"`
+	// `attribute_correlation` only: that transaction's kind.
+	TransactionKind *InsightsTransactionKind `json:"transactionKind,omitempty"`
+	Service         string                   `json:"service"`
+	Namespace       string                   `json:"namespace"`
+	// `attribute_correlation` only: that transaction's operation.
+	Operation *string `json:"operation,omitempty"`
+	// One-line headline, e.g. "resolvePrincipal return.value matches getCart arg.0"
+	// or "Lock down account-service". It carries no counts — use `rules` for those.
+	Title string `json:"title"`
+	// One or two sentences on what was learned and what applying does.
+	Summary string `json:"summary"`
+	// The security story — what breaking this would mean, in plain words. Populated
+	// for both kinds: the mined relation's own reasoning for
+	// `attribute_correlation`, and a fixed sentence about first-appearance
+	// detection for `service_guardrail`.
+	WhyItMatters string `json:"whyItMatters"`
+	// `attribute_correlation` only: how the two values relate — `exact` (identical),
+	// `core` (identical after a constant prefix/suffix), `digits` (same numeric id),
+	// `contains` (one value is embedded in the other).
+	Transform *string `json:"transform,omitempty"`
+	// `attribute_correlation` only: guaranteed by the transport rather than by
+	// business logic — the same field on both ends of one hop, such as a Kafka
+	// message key on producer and consumer. A break means tampering in flight, not a
+	// business-logic bypass, so it is mined at low severity and ranked after every
+	// business relation.
+	Transport *bool `json:"transport,omitempty"`
+	// `attribute_correlation` only: the exact rule `applyInsightsRecommendations`
+	// would add to the transaction guardrail. Edit and pass it back to apply
+	// something different. Null on a `service_guardrail` — read `rules` instead.
+	Spec *InsightsCorrelationSpec `json:"spec,omitempty"`
+	// `service_guardrail` only: the allowlist rules proposed for enforcement, in
+	// catalog order. Only rules the service does not enforce yet are listed, so this
+	// can be empty on a card that has already been applied.
+	Rules []*InsightsRecommendationRule `json:"rules,omitempty"`
+	// `service_guardrail` only: the rule keys an apply actually turned on. Set while
+	// `state` is `applied`; rules listed in `rules` but missing here were left out
+	// by the operator.
+	AppliedRules []string                          `json:"appliedRules,omitempty"`
+	Confidence   *InsightsRecommendationConfidence `json:"confidence"`
+	// `attribute_correlation` only: up to three stored samples the relation held on.
+	Examples []*InsightsRecommendationExample `json:"examples,omitempty"`
+	// `attribute_correlation` only: the transaction's guardrail already has a rule
+	// on the same two attributes (e.g. written by hand), so applying would replace
+	// it.
+	AlreadyCovered *bool  `json:"alreadyCovered,omitempty"`
+	MinedAt        string `json:"minedAt"`
+	CreatedAt      string `json:"createdAt"`
+	UpdatedAt      string `json:"updatedAt"`
+}
+
+// One recommendation to apply, optionally with the operator's edits. Each field
+// belongs to one kind — sending a `spec` with a `service_guardrail` id is
+// rejected for the whole batch even though the spec would be ignored.
+type InsightsRecommendationApplyItemInput struct {
+	ID string `json:"id"`
+	// `attribute_correlation` only: an edited rule applied instead of the mined one.
+	// Left/right service, span and attr must match the recommendation; name,
+	// severity, why, relation and extract regexes may differ.
+	Spec *InsightsCorrelationSpecInput `json:"spec,omitempty"`
+	// `service_guardrail` only: which of the recommendation's `rules` to turn on, by
+	// rule key. Omitting it — or passing an empty list — turns on every rule on the
+	// card, so there is no way to spell "apply nothing": just do not send the item.
+	// A key that is not on the card fails that item alone.
+	Rules []string `json:"rules,omitempty"`
+}
+
+// Outcome of a bulk action. Items are independent — one failing does not stop the
+// rest — so `done` and `errors` can both be non-empty.
+type InsightsRecommendationBulkResult struct {
+	Done   int                                `json:"done"`
+	Failed int                                `json:"failed"`
+	Errors []*InsightsRecommendationItemError `json:"errors"`
+}
+
+// Why the engine believes the recommendation. `level` and `reasons` are
+// render-ready for both kinds; everything else needs the kind for context.
+//
+// The stored-sample stats (`holdRatio`, `observed`, `held`, `distinct`) describe a
+// mined relation and are null on a `service_guardrail`. The live counters come
+// from evaluating the open recommendation silently against real traffic and keep
+// growing until it is applied or dismissed.
+type InsightsRecommendationConfidence struct {
+	Level InsightsRecommendationConfidenceLevel `json:"level"`
+	// `attribute_correlation` only: held / observed on the stored samples (0..1).
+	HoldRatio *float64 `json:"holdRatio,omitempty"`
+	// `attribute_correlation` only: stored samples where both values were present.
+	Observed *int `json:"observed,omitempty"`
+	// `attribute_correlation` only: of those, how many satisfied the relation.
+	Held *int `json:"held,omitempty"`
+	// `attribute_correlation` only: distinct left-hand values seen agreeing. Guards
+	// against two attributes that merely share a constant.
+	Distinct *int `json:"distinct,omitempty"`
+	// What the lists were learned from. `attribute_correlation`: relation samples
+	// the mining run looked at. `service_guardrail`: promoted transactions of the
+	// service whose learned profile seeded the rules.
+	SampleCount int `json:"sampleCount"`
+	// `attribute_correlation`: live traces the relation held on.
+	// `service_guardrail`: the sum over `rules` of (liveChecked - liveViolated) —
+	// rule checks, not traces, so one trace can count once per rule.
+	LiveHeld int `json:"liveHeld"`
+	// `attribute_correlation`: live traces the relation broke on.
+	// `service_guardrail`: the sum over `rules` of liveViolated, again rule checks
+	// rather than traces.
+	LiveBroken int `json:"liveBroken"`
+	// Null until the first live trace was evaluated. On a `service_guardrail` this
+	// is the earliest of the listed rules' windows.
+	LiveSince *string `json:"liveSince,omitempty"`
+	// Null until the first live trace was evaluated. On a `service_guardrail` this
+	// is the latest of the listed rules' windows.
+	LiveLast *string `json:"liveLast,omitempty"`
+	// Render-ready evidence lines, e.g. "Held on 50 of 50 stored samples". Prose for
+	// both kinds — render them, do not parse them.
+	Reasons []string `json:"reasons"`
+}
+
+// One stored sample the relation held on, with the two values it compared.
+type InsightsRecommendationExample struct {
+	TraceID    string `json:"traceId"`
+	LeftValue  string `json:"leftValue"`
+	RightValue string `json:"rightValue"`
+	ObservedAt string `json:"observedAt"`
+}
+
+type InsightsRecommendationItemError struct {
+	ID    string `json:"id"`
+	Error string `json:"error"`
+}
+
+// How a spec fares on the transaction's stored relation samples. Backs the
+// "edit & apply" flow so the operator sees how often the rule would have held
+// before enforcing it.
+type InsightsRecommendationPreview struct {
+	SampleCount int                              `json:"sampleCount"`
+	Observed    int                              `json:"observed"`
+	Held        int                              `json:"held"`
+	Distinct    int                              `json:"distinct"`
+	HoldRatio   float64                          `json:"holdRatio"`
+	Examples    []*InsightsRecommendationExample `json:"examples"`
+	// Up to three samples where the relation did not hold.
+	CounterExamples []*InsightsRecommendationExample `json:"counterExamples"`
+}
+
+// One allowlist rule a `service_guardrail` recommendation proposes, pre-filled
+// from what the service was observed doing. Rules arrive in catalog order
+// (callers, callees, egress, transactions) and only cover what the service does
+// not enforce yet, so applying extends a guardrail and never overrides a rule an
+// operator already set.
+type InsightsRecommendationRule struct {
+	// Rule key: `allowed_callers`, `allowed_callees`, `allowed_egress` or
+	// `allowed_transactions`. A String rather than an enum on purpose — the catalog
+	// can gain keys without this schema changing under a running client.
+	Rule string `json:"rule"`
+	// Catalog label, e.g. "Allowed egress".
+	Label string `json:"label"`
+	// One line on what the rule enforces, from the catalog.
+	Description string `json:"description"`
+	// The allowlist an apply would write, sorted. Plain service names for
+	// `allowed_callers` and `allowed_callees`, `host` or `host:port` for
+	// `allowed_egress`, and the transaction kind joined to the operation by a
+	// literal tab (U+0009) for `allowed_transactions` — split on that tab to render
+	// the kind and the operation apart, never on a space.
+	//
+	// An empty list is meaningful and strict rather than missing data: the service
+	// was never seen doing this, so enforcing forbids all of it.
+	Items []string `json:"items"`
+	// This rule's own level: `low` once live traffic already went outside the list,
+	// `high` after enough silent checks held, `medium` otherwise. The card's
+	// `confidence.level` is the weakest rule's.
+	Confidence InsightsRecommendationConfidenceLevel `json:"confidence"`
+	// Live traces of this service checked silently against the proposed list.
+	LiveChecked int `json:"liveChecked"`
+	// Of those, how many carried something outside the list. Non-zero means real
+	// traffic already disagrees with what was learned — look before enforcing.
+	LiveViolated int `json:"liveViolated"`
+	// Null until the first live trace was checked against this rule.
+	LiveSince *string `json:"liveSince,omitempty"`
+	// Null until the first live trace was checked against this rule.
+	LiveLast *string `json:"liveLast,omitempty"`
+}
+
+type InsightsRiskAssessment struct {
+	Score            int                   `json:"score"`
+	Severity         InsightsSeverity      `json:"severity"`
+	Correlated       bool                  `json:"correlated"`
+	CorrelationBonus int                   `json:"correlationBonus"`
+	FireAtScore      int                   `json:"fireAtScore"`
+	Categories       []string              `json:"categories,omitempty"`
+	Signals          []*InsightsRiskSignal `json:"signals"`
+}
+
+type InsightsRiskSignal struct {
+	Source       string  `json:"source"`
+	Category     string  `json:"category"`
+	Weight       int     `json:"weight"`
+	Confidence   float64 `json:"confidence"`
+	Contribution int     `json:"contribution"`
+	Rationale    *string `json:"rationale,omitempty"`
+	Mitre        *string `json:"mitre,omitempty"`
+	Owasp        *string `json:"owasp,omitempty"`
+}
+
+type InsightsServiceProfile struct {
+	Namespace    string   `json:"namespace"`
+	Service      string   `json:"service"`
+	Callers      []string `json:"callers"`
+	Callees      []string `json:"callees"`
+	Egress       []string `json:"egress"`
+	Transactions []string `json:"transactions"`
+}
+
+type InsightsServiceStat struct {
+	Namespace        string `json:"namespace"`
+	Service          string `json:"service"`
+	TransactionCount int    `json:"transactionCount"`
+	Volume           int    `json:"volume"`
+	LastSeen         string `json:"lastSeen"`
+	// The maxTransactionsPerService setting in effect, so a client can explain
+	// transactionLimitReached without a second request.
+	TransactionLimit int `json:"transactionLimit"`
+	// True once the service holds transactionLimit transactions. Operations of this
+	// service not seen before are dropped and not learned.
+	TransactionLimitReached bool `json:"transactionLimitReached"`
+}
+
+type InsightsSeverityBand struct {
+	Severity InsightsSeverity `json:"severity"`
+	MinScore int              `json:"minScore"`
+}
+
+type InsightsStorageConnection struct {
+	Reachable     bool    `json:"reachable"`
+	PingLatencyMs int     `json:"pingLatencyMs"`
+	Version       string  `json:"version"`
+	Database      string  `json:"database"`
+	Error         *string `json:"error,omitempty"`
+}
+
+type InsightsStorageDisk struct {
+	InsightsBytes  int                       `json:"insightsBytes"`
+	TotalBytes     int                       `json:"totalBytes"`
+	UsedBytes      int                       `json:"usedBytes"`
+	AvailableBytes int                       `json:"availableBytes"`
+	UsedPercent    float64                   `json:"usedPercent"`
+	Status         InsightsStorageDiskStatus `json:"status"`
+}
+
+type InsightsStorageHealth struct {
+	CheckedAt     string                        `json:"checkedAt"`
+	Status        InsightsStorageHealthStatus   `json:"status"`
+	Connection    *InsightsStorageConnection    `json:"connection"`
+	Disk          *InsightsStorageDisk          `json:"disk"`
+	Memory        *InsightsStorageMemory        `json:"memory"`
+	Queries       *InsightsStorageQueries       `json:"queries"`
+	Tables        []*InsightsStorageTable       `json:"tables"`
+	WritePressure *InsightsStorageWritePressure `json:"writePressure"`
+	Writeback     *InsightsStorageWriteback     `json:"writeback"`
+}
+
+type InsightsStorageMemory struct {
+	ProcessRssBytes int `json:"processRssBytes"`
+	CgroupUsedBytes int `json:"cgroupUsedBytes"`
+	// 0 means no limit.
+	CgroupTotalBytes int     `json:"cgroupTotalBytes"`
+	UptimeSeconds    float64 `json:"uptimeSeconds"`
+}
+
+type InsightsStorageQueries struct {
+	Active          int                     `json:"active"`
+	LongestSeconds  float64                 `json:"longestSeconds"`
+	PeakMemoryBytes int                     `json:"peakMemoryBytes"`
+	Items           []*InsightsStorageQuery `json:"items"`
+	RecentHeaviest  []*InsightsStorageQuery `json:"recentHeaviest"`
+	RecentLatest    []*InsightsStorageQuery `json:"recentLatest"`
+}
+
+type InsightsStorageQuery struct {
+	ElapsedSeconds float64 `json:"elapsedSeconds"`
+	User           string  `json:"user"`
+	MemoryBytes    int     `json:"memoryBytes"`
+	Query          string  `json:"query"`
+	// Omitted for still-running queries.
+	FinishedAt *string `json:"finishedAt,omitempty"`
+}
+
+type InsightsStorageTable struct {
+	Name        string `json:"name"`
+	Rows        int    `json:"rows"`
+	BytesOnDisk int    `json:"bytesOnDisk"`
+	ActiveParts int    `json:"activeParts"`
+}
+
+type InsightsStorageWritePressure struct {
+	UnfinishedMutations int `json:"unfinishedMutations"`
+	ActiveParts         int `json:"activeParts"`
+}
+
+type InsightsStorageWriteback struct {
+	FlushIntervalSeconds int     `json:"flushIntervalSeconds"`
+	EverFlushed          bool    `json:"everFlushed"`
+	LastFlushOk          bool    `json:"lastFlushOk"`
+	LastFlushAt          *string `json:"lastFlushAt,omitempty"`
+	LastFlushError       *string `json:"lastFlushError,omitempty"`
+}
+
+type InsightsSystemCapacitySettings struct {
+	MaxResidentTransactions int `json:"maxResidentTransactions"`
+	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
+	// Max distinct transactions one service may add to the inventory. Once reached,
+	// operations not seen before are dropped, so span names carrying ids cannot grow
+	// the inventory without bound.
+	MaxTransactionsPerService int `json:"maxTransactionsPerService"`
+}
+
+type InsightsSystemCapacitySettingsInput struct {
+	MaxResidentTransactions int `json:"maxResidentTransactions"`
+	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
+	// Optional so clients built before it existed stay valid; when omitted the
+	// insights default applies.
+	MaxTransactionsPerService *int `json:"maxTransactionsPerService,omitempty"`
+}
+
+type InsightsSystemDetectionSettings struct {
+	// When true, automatically create an enforced allowed_transactions guardrail
+	// when a service finishes promoting. Applies only going forward — already-promoted
+	// services are not backfilled. Per-service disable uses rule mode off.
+	AutoTransactionGuardrail bool `json:"autoTransactionGuardrail"`
+}
+
+type InsightsSystemDetectionSettingsInput struct {
+	AutoTransactionGuardrail bool `json:"autoTransactionGuardrail"`
+}
+
+// Extra dimensions appended to transaction Operation before hashing.
+// Each enabled dimension multiplies cardinality. Use only low-cardinality attributes.
+type InsightsSystemIdentitySettings struct {
+	TransactionIdentityDimensions []*InsightsSystemTransactionIdentityDimension `json:"transactionIdentityDimensions"`
+}
+
+type InsightsSystemIdentitySettingsInput struct {
+	TransactionIdentityDimensions []*InsightsSystemTransactionIdentityDimensionInput `json:"transactionIdentityDimensions"`
+}
+
+type InsightsSystemRetentionSettings struct {
+	ObservationRetentionDays int `json:"observationRetentionDays"`
+}
+
+type InsightsSystemRetentionSettingsInput struct {
+	ObservationRetentionDays int `json:"observationRetentionDays"`
+}
+
+type InsightsSystemSamplingSettings struct {
+	ExamplesPerTransaction       int `json:"examplesPerTransaction"`
+	ExampleSampleIntervalSeconds int `json:"exampleSampleIntervalSeconds"`
+}
+
+type InsightsSystemSamplingSettingsInput struct {
+	ExamplesPerTransaction       int `json:"examplesPerTransaction"`
+	ExampleSampleIntervalSeconds int `json:"exampleSampleIntervalSeconds"`
+}
+
+type InsightsSystemSettings struct {
+	Sampling  *InsightsSystemSamplingSettings  `json:"sampling"`
+	Retention *InsightsSystemRetentionSettings `json:"retention"`
+	Capacity  *InsightsSystemCapacitySettings  `json:"capacity"`
+	Writeback *InsightsSystemWritebackSettings `json:"writeback"`
+	Detection *InsightsSystemDetectionSettings `json:"detection"`
+	Identity  *InsightsSystemIdentitySettings  `json:"identity"`
+}
+
+type InsightsSystemSettingsInput struct {
+	Sampling  *InsightsSystemSamplingSettingsInput  `json:"sampling"`
+	Retention *InsightsSystemRetentionSettingsInput `json:"retention"`
+	Capacity  *InsightsSystemCapacitySettingsInput  `json:"capacity"`
+	Writeback *InsightsSystemWritebackSettingsInput `json:"writeback"`
+	Detection *InsightsSystemDetectionSettingsInput `json:"detection"`
+	Identity  *InsightsSystemIdentitySettingsInput  `json:"identity"`
+	// Write-only. When true and identity dimensions changed vs stored settings,
+	// delete all transactions and related baselines/samples/findings before applying.
+	// Never returned by GET.
+	ResetTransactions *bool `json:"resetTransactions,omitempty"`
+}
+
+// One low-cardinality attribute (or built-in resolver key) folded into transaction identity
+// from the sub-transaction entry span only.
+type InsightsSystemTransactionIdentityDimension struct {
+	Key     string `json:"key"`
+	Enabled bool   `json:"enabled"`
+}
+
+type InsightsSystemTransactionIdentityDimensionInput struct {
+	Key     string `json:"key"`
+	Enabled bool   `json:"enabled"`
+}
+
+type InsightsSystemWritebackSettings struct {
+	FlushIntervalSeconds int `json:"flushIntervalSeconds"`
+}
+
+type InsightsSystemWritebackSettingsInput struct {
+	FlushIntervalSeconds int `json:"flushIntervalSeconds"`
+}
+
+type InsightsTransaction struct {
+	ID        string `json:"id"`
+	Service   string `json:"service"`
+	Namespace string `json:"namespace"`
+	// Full canonical identity string (hashed, guardrails). Includes [key=value] suffixes when identity dimensions are enabled.
+	Operation string `json:"operation"`
+	// Human-readable entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               InsightsTransactionKind             `json:"kind"`
+}
+
+// One parsed low-cardinality dimension from the stored operation identity suffix ([key=value]).
+// For display only — canonical identity remains in `operation`.
+type InsightsTransactionIdentityValue struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type InsightsTransactionStat struct {
+	ID        string `json:"id"`
+	Service   string `json:"service"`
+	Namespace string `json:"namespace"`
+	// Full canonical identity string (hashed). Includes [key=value] suffixes when identity dimensions are enabled.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               InsightsTransactionKind             `json:"kind"`
+	Volume             int                                 `json:"volume"`
+	LastSeen           string                              `json:"lastSeen"`
+	HasBaseline        *bool                               `json:"hasBaseline,omitempty"`
+	// True when every learned baseline class has finished learning: promoted, or
+	// saturated (see saturatedClasses).
+	Promoted *bool `json:"promoted,omitempty"`
+	// Baseline classes whose learned set crossed maxBaselineSetMembers. They are
+	// frozen, never promoted and never scored; the other classes keep working.
+	// Empty when no class saturated.
+	SaturatedClasses []InsightsDeviationClass `json:"saturatedClasses"`
+}
+
+type InsightsViolationActionInput struct {
+	ScopeKey  string `json:"scopeKey"`
+	RuleKey   string `json:"ruleKey"`
+	Offending string `json:"offending"`
+}
+
+type InstrumentationAgent struct {
+	Language                 string `json:"language"`
+	DistroName               string `json:"distroName"`
+	DistroDisplayName        string `json:"distroDisplayName"`
+	Description              string `json:"description"`
+	RuntimeEnvironment       string `json:"runtimeEnvironment"`
+	SupportedRuntimeVersions string `json:"supportedRuntimeVersions"`
+	Sources                  int    `json:"sources"`
+	IsDefault                bool   `json:"isDefault"`
+}
+
 type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
 	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
+}
+
+type InstrumentationInstanceComponent struct {
+	Name                     string                     `json:"name"`
+	Type                     *string                    `json:"type,omitempty"`
+	Healthy                  *bool                      `json:"healthy,omitempty"`
+	Message                  *string                    `json:"message,omitempty"`
+	LastStatusTime           *string                    `json:"lastStatusTime,omitempty"`
+	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
 type InstrumentationLibraryGlobalID struct {
@@ -355,29 +1852,70 @@ type InstrumentationLibraryGlobalIDInput struct {
 }
 
 type InstrumentationRule struct {
-	Type                     InstrumentationRuleType           `json:"type"`
-	RuleID                   string                            `json:"ruleId"`
-	RuleName                 *string                           `json:"ruleName,omitempty"`
-	Notes                    *string                           `json:"notes,omitempty"`
-	Disabled                 *bool                             `json:"disabled,omitempty"`
-	Mutable                  bool                              `json:"mutable"`
-	ProfileName              string                            `json:"profileName"`
-	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
-	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
-	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
-	HeadersCollection        *HeadersCollection                `json:"headersCollection,omitempty"`
-	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
+	Type                     InstrumentationRuleType            `json:"type"`
+	RuleID                   string                             `json:"ruleId"`
+	RuleName                 *string                            `json:"ruleName,omitempty"`
+	Notes                    *string                            `json:"notes,omitempty"`
+	Disabled                 *bool                              `json:"disabled,omitempty"`
+	Mutable                  bool                               `json:"mutable"`
+	ProfileName              string                             `json:"profileName"`
+	ManagedBy                ManagedBy                          `json:"managedBy"`
+	SourcesScopes            []*InstrumentationRuleSourcesScope `json:"sourcesScopes,omitempty"`
+	InstrumentationLibraries []*InstrumentationLibraryGlobalID  `json:"instrumentationLibraries,omitempty"`
+	Conditions               []*Condition                       `json:"conditions,omitempty"`
+	CodeAttributes           *CodeAttributes                    `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollection                 `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollection                 `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentations            `json:"customInstrumentations,omitempty"`
+	NetworkMetrics           *bool                              `json:"networkMetrics,omitempty"`
+}
+
+type InstrumentationRuleFieldYamlProperties struct {
+	Name                string   `json:"name"`
+	DisplayName         string   `json:"displayName"`
+	ComponentType       string   `json:"componentType"`
+	ComponentProperties string   `json:"componentProperties"`
+	InitialValue        string   `json:"initialValue"`
+	RenderCondition     []string `json:"renderCondition"`
 }
 
 type InstrumentationRuleInput struct {
-	RuleName                 *string                                `json:"ruleName,omitempty"`
-	Notes                    *string                                `json:"notes,omitempty"`
-	Disabled                 *bool                                  `json:"disabled,omitempty"`
-	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
-	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
-	CodeAttributes           *CodeAttributesInput                   `json:"codeAttributes,omitempty"`
-	HeadersCollection        *HeadersCollectionInput                `json:"headersCollection,omitempty"`
-	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
+	RuleName                 *string                                                    `json:"ruleName,omitempty"`
+	Notes                    *string                                                    `json:"notes,omitempty"`
+	Disabled                 *bool                                                      `json:"disabled,omitempty"`
+	Workloads                []*PodWorkloadInput                                        `json:"workloads,omitempty"`
+	SourcesScopes            graphql.Omittable[[]*InstrumentationRuleSourcesScopeInput] `json:"sourcesScopes,omitempty"`
+	InstrumentationLibraries graphql.Omittable[[]*InstrumentationLibraryGlobalIDInput]  `json:"instrumentationLibraries,omitempty"`
+	CodeAttributes           *CodeAttributesInput                                       `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollectionInput                                    `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollectionInput                                    `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentationsInput                               `json:"customInstrumentations,omitempty"`
+	NetworkMetrics           *bool                                                      `json:"networkMetrics,omitempty"`
+}
+
+type InstrumentationRuleSourcesScope struct {
+	WorkloadName      *string                   `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
+	ContainerName     *string                   `json:"containerName,omitempty"`
+	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
+}
+
+type InstrumentationRuleSourcesScopeInput struct {
+	WorkloadName      *string                   `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
+	ContainerName     *string                   `json:"containerName,omitempty"`
+	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
+}
+
+type InstrumentationRuleTypeOption struct {
+	Type               string                                    `json:"type"`
+	DisplayName        string                                    `json:"displayName"`
+	Description        string                                    `json:"description"`
+	SupportedLanguages []string                                  `json:"supportedLanguages"`
+	DocsURL            string                                    `json:"docsUrl"`
+	Fields             []*InstrumentationRuleFieldYamlProperties `json:"fields"`
 }
 
 type InstrumentationSourcesAnalyze struct {
@@ -387,10 +1925,20 @@ type InstrumentationSourcesAnalyze struct {
 	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
 }
 
-type JSONCondition struct {
-	Operation     JSONOperation `json:"operation"`
-	ExpectedValue *string       `json:"expectedValue,omitempty"`
-	JSONPath      *string       `json:"jsonPath,omitempty"`
+type InstrumentorConfig struct {
+	MountMethod                      *string `json:"mountMethod,omitempty"`
+	AgentEnvVarsInjectionMethod      *string `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool   `json:"checkDeviceHealthBeforeInjection,omitempty"`
+}
+
+type JavaCustomProbe struct {
+	ClassName  *string `json:"className,omitempty"`
+	MethodName *string `json:"methodName,omitempty"`
+}
+
+type JavaCustomProbeInput struct {
+	ClassName  *string `json:"className,omitempty"`
+	MethodName *string `json:"methodName,omitempty"`
 }
 
 type K8sActualNamespace struct {
@@ -401,56 +1949,33 @@ type K8sActualNamespace struct {
 }
 
 type K8sActualSource struct {
-	Namespace         string             `json:"namespace"`
-	Name              string             `json:"name"`
-	Kind              K8sResourceKind    `json:"kind"`
-	DataStreamNames   []*string          `json:"dataStreamNames"`
-	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
-	Selected          *bool              `json:"selected,omitempty"`
-	OtelServiceName   *string            `json:"otelServiceName,omitempty"`
-	Containers        []*SourceContainer `json:"containers,omitempty"`
-	Conditions        []*Condition       `json:"conditions,omitempty"`
+	Namespace                 string             `json:"namespace"`
+	Name                      string             `json:"name"`
+	Kind                      K8sResourceKind    `json:"kind"`
+	DataStreamNames           []*string          `json:"dataStreamNames"`
+	NumberOfInstances         *int               `json:"numberOfInstances,omitempty"`
+	Selected                  *bool              `json:"selected,omitempty"`
+	OtelServiceName           *string            `json:"otelServiceName,omitempty"`
+	Containers                []*SourceContainer `json:"containers,omitempty"`
+	Conditions                []*Condition       `json:"conditions,omitempty"`
+	ManifestYaml              *string            `json:"manifestYAML,omitempty"`
+	InstrumentationConfigYaml *string            `json:"instrumentationConfigYAML,omitempty"`
+	// Buffered CPU profile for this source
+	Profiling *SourceProfilingResult `json:"profiling,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
-	AnnotationKey string `json:"annotationKey"`
-	AttributeKey  string `json:"attributeKey"`
+	AnnotationKey string              `json:"annotationKey"`
+	AttributeKey  string              `json:"attributeKey"`
+	From          *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources   []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
-type K8sAttributes struct {
-	CollectContainerAttributes  bool                      `json:"collectContainerAttributes"`
-	CollectReplicaSetAttributes bool                      `json:"collectReplicaSetAttributes"`
-	CollectWorkloadID           bool                      `json:"collectWorkloadId"`
-	CollectClusterID            bool                      `json:"collectClusterId"`
-	LabelsAttributes            []*K8sLabelAttribute      `json:"labelsAttributes"`
-	AnnotationsAttributes       []*K8sAnnotationAttribute `json:"annotationsAttributes"`
-}
-
-type K8sAttributesAction struct {
-	ID      string         `json:"id"`
-	Type    string         `json:"type"`
-	Name    *string        `json:"name,omitempty"`
-	Notes   *string        `json:"notes,omitempty"`
-	Disable bool           `json:"disable"`
-	Signals []SignalType   `json:"signals"`
-	Details *K8sAttributes `json:"details"`
-}
-
-func (K8sAttributesAction) IsAction()              {}
-func (this K8sAttributesAction) GetID() string     { return this.ID }
-func (this K8sAttributesAction) GetType() string   { return this.Type }
-func (this K8sAttributesAction) GetName() *string  { return this.Name }
-func (this K8sAttributesAction) GetNotes() *string { return this.Notes }
-func (this K8sAttributesAction) GetDisable() bool  { return this.Disable }
-func (this K8sAttributesAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+type K8sAnnotationAttributeInput struct {
+	AnnotationKey string              `json:"annotationKey"`
+	AttributeKey  string              `json:"attributeKey"`
+	From          *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources   []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sDesiredNamespaceInput struct {
@@ -462,9 +1987,35 @@ type K8sDesiredSourceInput struct {
 	AutoInstrument *bool   `json:"autoInstrument,omitempty"`
 }
 
+type K8sHealthProbesSamplingConfig struct {
+	Enabled        *bool    `json:"enabled,omitempty"`
+	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
+}
+
+type K8sHealthProbesSamplingConfigInput struct {
+	Enabled        *bool    `json:"enabled,omitempty"`
+	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
+}
+
 type K8sLabelAttribute struct {
-	LabelKey     string `json:"labelKey"`
-	AttributeKey string `json:"attributeKey"`
+	LabelKey     string              `json:"labelKey"`
+	AttributeKey string              `json:"attributeKey"`
+	From         *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources  []K8sAttributesFrom `json:"fromSources,omitempty"`
+}
+
+type K8sLabelAttributeInput struct {
+	LabelKey     string              `json:"labelKey"`
+	AttributeKey string              `json:"attributeKey"`
+	From         *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources  []K8sAttributesFrom `json:"fromSources,omitempty"`
+}
+
+type K8sNamespace struct {
+	Name                     string         `json:"name"`
+	MarkedForInstrumentation bool           `json:"markedForInstrumentation"`
+	DataStreamNames          []string       `json:"dataStreamNames"`
+	Workloads                []*K8sWorkload `json:"workloads"`
 }
 
 type K8sNamespaceID struct {
@@ -477,31 +2028,390 @@ type K8sSourceID struct {
 	Name      string          `json:"name"`
 }
 
-type LatencySamplerAction struct {
-	ID      string       `json:"id"`
-	Type    string       `json:"type"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details []*string    `json:"details"`
+type K8sWorkload struct {
+	ID                         *K8sWorkloadID                       `json:"id"`
+	ServiceName                *string                              `json:"serviceName,omitempty"`
+	WorkloadOdigosHealthStatus *DesiredConditionStatus              `json:"workloadOdigosHealthStatus"`
+	Conditions                 *K8sWorkloadConditions               `json:"conditions"`
+	MarkedForInstrumentation   *K8sWorkloadMarkedForInstrumentation `json:"markedForInstrumentation"`
+	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
+	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
+	Rollout                    *K8sWorkloadRollout                  `json:"rollout"`
+	AutoRollback               *K8sWorkloadAutoRollback             `json:"autoRollback,omitempty"`
+	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
+	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
+	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
+	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
+	PodsOdigosHealthStatus     *DesiredConditionStatus              `json:"podsOdigosHealthStatus,omitempty"`
+	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus,omitempty"`
+	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
+	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
+	DataStreamNames            []string                             `json:"dataStreamNames"`
+	NumberOfInstances          *int                                 `json:"numberOfInstances,omitempty"`
+	RollbackOccurred           bool                                 `json:"rollbackOccurred"`
 }
 
-func (LatencySamplerAction) IsAction()              {}
-func (this LatencySamplerAction) GetID() string     { return this.ID }
-func (this LatencySamplerAction) GetType() string   { return this.Type }
-func (this LatencySamplerAction) GetName() *string  { return this.Name }
-func (this LatencySamplerAction) GetNotes() *string { return this.Notes }
-func (this LatencySamplerAction) GetDisable() bool  { return this.Disable }
-func (this LatencySamplerAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+type K8sWorkloadAgentEnabled struct {
+	AgentEnabled  bool                                `json:"agentEnabled"`
+	EnabledStatus *DesiredConditionStatus             `json:"enabledStatus"`
+	Containers    []*K8sWorkloadAgentEnabledContainer `json:"containers,omitempty"`
+}
+
+type K8sWorkloadAgentEnabledContainer struct {
+	ContainerName      string                                   `json:"containerName"`
+	AgentEnabled       bool                                     `json:"agentEnabled"`
+	AgentEnabledStatus *DesiredConditionStatus                  `json:"agentEnabledStatus"`
+	OtelDistroName     *string                                  `json:"otelDistroName,omitempty"`
+	EnvInjectionMethod *string                                  `json:"envInjectionMethod,omitempty"`
+	DistroParams       []*DistroParam                           `json:"distroParams,omitempty"`
+	Traces             *K8sWorkloadAgentEnabledContainerTraces  `json:"traces,omitempty"`
+	Metrics            *K8sWorkloadAgentEnabledContainerMetrics `json:"metrics,omitempty"`
+	Logs               *K8sWorkloadAgentEnabledContainerLogs    `json:"logs,omitempty"`
+}
+
+type K8sWorkloadAgentEnabledContainerLogs struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAgentEnabledContainerMetrics struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAgentEnabledContainerTraces struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAutoRollback struct {
+	AutoRollbackStatus *DesiredConditionStatus `json:"autoRollbackStatus"`
+	RollbackOccurred   bool                    `json:"rollbackOccurred"`
+}
+
+type K8sWorkloadConditions struct {
+	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
+	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
+	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	PodsManifestInjection *DesiredConditionStatus `json:"podsManifestInjection,omitempty"`
+	AutoRollback          *DesiredConditionStatus `json:"autoRollback,omitempty"`
+	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
+	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
+	ExpectingTelemetry    *DesiredConditionStatus `json:"expectingTelemetry,omitempty"`
+}
+
+type K8sWorkloadContainer struct {
+	ContainerName    string                                           `json:"containerName"`
+	RuntimeInfo      *K8sWorkloadRuntimeInfoContainer                 `json:"runtimeInfo,omitempty"`
+	AgentEnabled     *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
+	Overrides        *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
+	AgentConfig      *K8sWorkloadContainerAgentConfig                 `json:"agentConfig,omitempty"`
+	CollectorConfig  *K8sWorkloadContainerCollectorConfig             `json:"collectorConfig,omitempty"`
+	Instrumentations []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
+}
+
+type K8sWorkloadContainerAgentConfig struct {
+	Traces *K8sWorkloadContainerAgentConfigTraces `json:"traces,omitempty"`
+}
+
+type K8sWorkloadContainerAgentConfigTraces struct {
+	HeadSampling *K8sWorkloadContainerAgentConfigTracesHeadSampling `json:"headSampling,omitempty"`
+}
+
+type K8sWorkloadContainerAgentConfigTracesHeadSampling struct {
+	DryRun          *bool                                                              `json:"dryRun,omitempty"`
+	SpanMetricsMode *K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode  `json:"spanMetricsMode,omitempty"`
+	NoisyOperations []*K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation `json:"noisyOperations,omitempty"`
+}
+
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfig struct {
+	TailSampling *K8sWorkloadContainerCollectorConfigTailSampling `json:"tailSampling,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSampling struct {
+	NoisyOperations          []*K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation          `json:"noisyOperations,omitempty"`
+	HighlyRelevantOperations []*K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
+	CostReductionRules       []*K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule       `json:"costReductionRules,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost float64                       `json:"percentageAtMost"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation struct {
+	RuleID            string                        `json:"ruleId"`
+	Name              *string                       `json:"name,omitempty"`
+	Disabled          bool                          `json:"disabled"`
+	Error             bool                          `json:"error"`
+	DurationAtLeastMs *int                          `json:"durationAtLeastMs,omitempty"`
+	Operation         *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtLeast *float64                      `json:"percentageAtLeast,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
+}
+
+type K8sWorkloadContainerOverrides struct {
+	ContainerName         string                           `json:"containerName"`
+	RuntimeInfo           *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+	OtelDistroName        *string                          `json:"otelDistroName,omitempty"`
+	AllowConcurrentAgents *bool                            `json:"allowConcurrentAgents,omitempty"`
+}
+
+type K8sWorkloadID struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
+type K8sWorkloadIDInput struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
+type K8sWorkloadMarkedForInstrumentation struct {
+	MarkedForInstrumentation *bool  `json:"markedForInstrumentation,omitempty"`
+	DecisionEnum             string `json:"decisionEnum"`
+	Message                  string `json:"message"`
+}
+
+type K8sWorkloadPod struct {
+	PodName                        string                     `json:"podName"`
+	NodeName                       string                     `json:"nodeName"`
+	StartTime                      string                     `json:"startTime"`
+	AgentInjected                  bool                       `json:"agentInjected"`
+	StartedPostAgentMetaHashChange *bool                      `json:"startedPostAgentMetaHashChange,omitempty"`
+	AgentInjectedStatus            *DesiredConditionStatus    `json:"agentInjectedStatus"`
+	RunningLatestWorkloadRevision  *string                    `json:"runningLatestWorkloadRevision,omitempty"`
+	K8sHealthStatus                *DesiredConditionStatus    `json:"k8sHealthStatus"`
+	OdigosHealthStatus             *DesiredConditionStatus    `json:"odigosHealthStatus,omitempty"`
+	Containers                     []*K8sWorkloadPodContainer `json:"containers"`
+}
+
+type K8sWorkloadPodContainer struct {
+	ContainerName                   string                            `json:"containerName"`
+	OdigosInstrumentationDeviceName *string                           `json:"odigosInstrumentationDeviceName,omitempty"`
+	OtelDistroName                  *string                           `json:"otelDistroName,omitempty"`
+	Started                         *bool                             `json:"started,omitempty"`
+	Ready                           *bool                             `json:"ready,omitempty"`
+	IsCrashLoop                     *bool                             `json:"isCrashLoop,omitempty"`
+	RestartCount                    *int                              `json:"restartCount,omitempty"`
+	RunningStartedTime              *string                           `json:"runningStartedTime,omitempty"`
+	WaitingReasonEnum               *string                           `json:"waitingReasonEnum,omitempty"`
+	WaitingMessage                  *string                           `json:"waitingMessage,omitempty"`
+	K8sHealthStatus                 *DesiredConditionStatus           `json:"k8sHealthStatus"`
+	OdigosHealthStatus              *DesiredConditionStatus           `json:"odigosHealthStatus,omitempty"`
+	Processes                       []*K8sWorkloadPodContainerProcess `json:"processes"`
+}
+
+type K8sWorkloadPodContainerProcess struct {
+	Healthy               *bool                                            `json:"healthy,omitempty"`
+	HealthStatus          *DesiredConditionStatus                          `json:"healthStatus"`
+	IdentifyingAttributes []*K8sWorkloadPodContainerProcessAttribute       `json:"identifyingAttributes"`
+	Instrumentations      []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
+}
+
+type K8sWorkloadPodContainerProcessAttribute struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type K8sWorkloadPodContainerProcessInstrumentation struct {
+	Name                     string                     `json:"name"`
+	Type                     *string                    `json:"type,omitempty"`
+	Healthy                  *bool                      `json:"healthy,omitempty"`
+	Message                  *string                    `json:"message,omitempty"`
+	LastStatusTime           *string                    `json:"lastStatusTime,omitempty"`
+	IsStandardLibrary        *bool                      `json:"isStandardLibrary,omitempty"`
+	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
+}
+
+type K8sWorkloadPodsManifestInjectionOverview struct {
+	TotalPods                int  `json:"totalPods"`
+	TotalAgentNotAppliedPods int  `json:"totalAgentNotAppliedPods"`
+	AgentNotAppliedOk        bool `json:"agentNotAppliedOk"`
+	TotalAgentAppliedPods    int  `json:"totalAgentAppliedPods"`
+	AgentAppliedOk           bool `json:"agentAppliedOk"`
+	TotalAgentOutOfDatePods  int  `json:"totalAgentOutOfDatePods"`
+	AgentOutOfDateOk         bool `json:"agentOutOfDateOk"`
+}
+
+type K8sWorkloadRollout struct {
+	RolloutStatus                 *DesiredConditionStatus                   `json:"rolloutStatus,omitempty"`
+	PodsManifestInjectionStatus   *DesiredConditionStatus                   `json:"podsManifestInjectionStatus"`
+	PodsManifestInjectionOverview *K8sWorkloadPodsManifestInjectionOverview `json:"podsManifestInjectionOverview"`
+	AgentsMetaHashChangedTime     *string                                   `json:"agentsMetaHashChangedTime,omitempty"`
+}
+
+type K8sWorkloadRuntimeInfo struct {
+	Completed         bool                               `json:"completed"`
+	CompletedStatus   *DesiredConditionStatus            `json:"completedStatus"`
+	DetectedLanguages []ProgrammingLanguage              `json:"detectedLanguages,omitempty"`
+	Containers        []*K8sWorkloadRuntimeInfoContainer `json:"containers,omitempty"`
+}
+
+type K8sWorkloadRuntimeInfoContainer struct {
+	ContainerName           string              `json:"containerName"`
+	Language                ProgrammingLanguage `json:"language"`
+	RuntimeVersion          *string             `json:"runtimeVersion,omitempty"`
+	ProcessEnvVars          []*EnvVar           `json:"processEnvVars"`
+	ContainerRuntimeEnvVars []*EnvVar           `json:"containerRuntimeEnvVars,omitempty"`
+	CriErrorMessage         *string             `json:"criErrorMessage,omitempty"`
+	LibcType                *string             `json:"libcType,omitempty"`
+	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
+	OtherAgentNames         []string            `json:"otherAgentNames,omitempty"`
+}
+
+type K8sWorkloadTelemetryMetrics struct {
+	TotalDataSentBytes *int                                                 `json:"totalDataSentBytes,omitempty"`
+	ThroughputBytes    *int                                                 `json:"throughputBytes,omitempty"`
+	ExpectingTelemetry *K8sWorkloadTelemetryMetricsExpectingTelemetryStatus `json:"expectingTelemetry"`
+}
+
+type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
+	IsExpectingTelemetry    *bool                   `json:"isExpectingTelemetry,omitempty"`
+	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
+}
+
+type KarpenterConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LanguageConfig struct {
+	Enabled bool    `json:"enabled"`
+	EnvVars *string `json:"envVars,omitempty"`
+}
+
+type LiveTrafficLearningAutomaticRulesConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LiveTrafficLearningConfig struct {
+	Enabled                    *bool                                     `json:"enabled,omitempty"`
+	MaxExamplePathsPerWorkload *int                                      `json:"maxExamplePathsPerWorkload,omitempty"`
+	PathExampleIdleTTL         *string                                   `json:"pathExampleIdleTTL,omitempty"`
+	LearningInterval           *string                                   `json:"learningInterval,omitempty"`
+	RuleComputation            *LiveTrafficLearningRuleComputationConfig `json:"ruleComputation,omitempty"`
+	AutomaticRules             *LiveTrafficLearningAutomaticRulesConfig  `json:"automaticRules,omitempty"`
+}
+
+type LiveTrafficLearningRuleComputationConfig struct {
+	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
+}
+
+type LocalUIConfigAllowConcurrentAgentsInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LocalUIConfigAutoRollbackInput struct {
+	Disabled            *bool   `json:"disabled,omitempty"`
+	GraceTime           *string `json:"graceTime,omitempty"`
+	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
+}
+
+type LocalUIConfigCardinalityControlInput struct {
+	URLTemplatization *LocalUIConfigURLTemplatizationCardinalityControlInput `json:"urlTemplatization,omitempty"`
+}
+
+type LocalUIConfigComponentLogLevelsInput struct {
+	Default      *OdigosLogLevel `json:"default,omitempty"`
+	Autoscaler   *OdigosLogLevel `json:"autoscaler,omitempty"`
+	Scheduler    *OdigosLogLevel `json:"scheduler,omitempty"`
+	Instrumentor *OdigosLogLevel `json:"instrumentor,omitempty"`
+	Odiglet      *OdigosLogLevel `json:"odiglet,omitempty"`
+	Deviceplugin *OdigosLogLevel `json:"deviceplugin,omitempty"`
+	UI           *OdigosLogLevel `json:"ui,omitempty"`
+	Collector    *OdigosLogLevel `json:"collector,omitempty"`
+}
+
+type LocalUIConfigInput struct {
+	TelemetryEnabled      *bool                                    `json:"telemetryEnabled,omitempty"`
+	IgnoredNamespaces     []string                                 `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers     []string                                 `json:"ignoredContainers,omitempty"`
+	IgnoreOdigosNamespace *bool                                    `json:"ignoreOdigosNamespace,omitempty"`
+	ClusterName           *string                                  `json:"clusterName,omitempty"`
+	Instrumentor          *LocalUIConfigInstrumentorInput          `json:"instrumentor,omitempty"`
+	AllowConcurrentAgents *LocalUIConfigAllowConcurrentAgentsInput `json:"allowConcurrentAgents,omitempty"`
+	Rollout               *LocalUIConfigRolloutInput               `json:"rollout,omitempty"`
+	AutoRollback          *LocalUIConfigAutoRollbackInput          `json:"autoRollback,omitempty"`
+	GoAutoOffsetsCron     *string                                  `json:"goAutoOffsetsCron,omitempty"`
+	GoAutoOffsetsMode     *string                                  `json:"goAutoOffsetsMode,omitempty"`
+	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
+	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
+	TraceCorrelations     *LocalUIConfigTraceCorrelationsInput     `json:"traceCorrelations,omitempty"`
+	CardinalityControl    *LocalUIConfigCardinalityControlInput    `json:"cardinalityControl,omitempty"`
+}
+
+type LocalUIConfigInstrumentorInput struct {
+	AgentEnvVarsInjectionMethod      *EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool               `json:"checkDeviceHealthBeforeInjection,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningAutomaticRulesInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningInput struct {
+	MaxExamplePathsPerWorkload *int                                                  `json:"maxExamplePathsPerWorkload,omitempty"`
+	PathExampleIdleTTL         *string                                               `json:"pathExampleIdleTTL,omitempty"`
+	LearningInterval           *string                                               `json:"learningInterval,omitempty"`
+	RuleComputation            *LocalUIConfigLiveTrafficLearningRuleComputationInput `json:"ruleComputation,omitempty"`
+	AutomaticRules             *LocalUIConfigLiveTrafficLearningAutomaticRulesInput  `json:"automaticRules,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningRuleComputationInput struct {
+	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
+}
+
+type LocalUIConfigRolloutInput struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+	MaxConcurrentRollouts    *int  `json:"maxConcurrentRollouts,omitempty"`
+}
+
+type LocalUIConfigSamplingInput struct {
+	DryRun                  *bool                                     `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *LocalUIConfigSpanSamplingAttributesInput `json:"spanSamplingAttributes,omitempty"`
+	TailSampling            *TailSamplingConfigInput                  `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfigInput       `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+type LocalUIConfigSpanSamplingAttributesInput struct {
+	Disabled                       *bool `json:"disabled,omitempty"`
+	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
+	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
+}
+
+type LocalUIConfigTraceCorrelationsInput struct {
+	ServiceIo *LocalUIConfigTraceCorrelationsServiceIOInput `json:"serviceIO,omitempty"`
+}
+
+type LocalUIConfigTraceCorrelationsServiceIOInput struct {
+	Enabled              *bool    `json:"enabled,omitempty"`
+	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
+	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
+	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
+}
+
+type LocalUIConfigURLTemplatizationCardinalityControlInput struct {
+	LiveTrafficLearning *LocalUIConfigLiveTrafficLearningInput `json:"liveTrafficLearning,omitempty"`
 }
 
 type MessagingPayloadCollection struct {
@@ -512,6 +2422,63 @@ type MessagingPayloadCollection struct {
 type MessagingPayloadCollectionInput struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+}
+
+type MetricsSourceAgentJavaRuntimeMetricsConfig struct {
+	Disabled *bool                                    `json:"disabled,omitempty"`
+	Metrics  []*MetricsSourceAgentRuntimeMetricConfig `json:"metrics,omitempty"`
+}
+
+type MetricsSourceAgentMetricsConfig struct {
+	SpanMetrics    *MetricsSourceAgentSpanMetricsConfig    `json:"spanMetrics,omitempty"`
+	RuntimeMetrics *MetricsSourceAgentRuntimeMetricsConfig `json:"runtimeMetrics,omitempty"`
+}
+
+type MetricsSourceAgentRuntimeMetricConfig struct {
+	Name     *string `json:"name,omitempty"`
+	Disabled *bool   `json:"disabled,omitempty"`
+}
+
+type MetricsSourceAgentRuntimeMetricsConfig struct {
+	Java *MetricsSourceAgentJavaRuntimeMetricsConfig `json:"java,omitempty"`
+}
+
+type MetricsSourceAgentSpanMetricsConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type MetricsSourceConfig struct {
+	SpanMetrics      *MetricsSourceSpanMetricsConfig      `json:"spanMetrics,omitempty"`
+	HostMetrics      *MetricsSourceHostMetricsConfig      `json:"hostMetrics,omitempty"`
+	KubeletStats     *MetricsSourceKubeletStatsConfig     `json:"kubeletStats,omitempty"`
+	OdigosOwnMetrics *MetricsSourceOdigosOwnMetricsConfig `json:"odigosOwnMetrics,omitempty"`
+	AgentMetrics     *MetricsSourceAgentMetricsConfig     `json:"agentMetrics,omitempty"`
+}
+
+type MetricsSourceHostMetricsConfig struct {
+	Disabled *bool   `json:"disabled,omitempty"`
+	Interval *string `json:"interval,omitempty"`
+}
+
+type MetricsSourceKubeletStatsConfig struct {
+	Disabled *bool   `json:"disabled,omitempty"`
+	Interval *string `json:"interval,omitempty"`
+}
+
+type MetricsSourceOdigosOwnMetricsConfig struct {
+	Interval *string `json:"interval,omitempty"`
+}
+
+type MetricsSourceSpanMetricsConfig struct {
+	Disabled                     *bool    `json:"disabled,omitempty"`
+	Interval                     *string  `json:"interval,omitempty"`
+	MetricsExpiration            *string  `json:"metricsExpiration,omitempty"`
+	AdditionalDimensions         []string `json:"additionalDimensions,omitempty"`
+	HistogramDisabled            *bool    `json:"histogramDisabled,omitempty"`
+	HistogramBuckets             []string `json:"histogramBuckets,omitempty"`
+	IncludedProcessInDimensions  *bool    `json:"includedProcessInDimensions,omitempty"`
+	ExcludedResourceAttributes   []string `json:"excludedResourceAttributes,omitempty"`
+	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
 }
 
 type Mutation struct {
@@ -530,9 +2497,33 @@ type NodeCollectorAnalyze struct {
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
 }
 
-type NumberCondition struct {
-	Operation     NumberOperation `json:"operation"`
-	ExpectedValue float64         `json:"expectedValue"`
+type NodesSummary struct {
+	Desired int `json:"desired"`
+	Ready   int `json:"ready"`
+}
+
+type NoisyOperationRule struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	SourceScopes     *SourcesScopes                `json:"sourceScopes,omitempty"`
+	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
+	Notes            *string                       `json:"notes,omitempty"`
+}
+
+type NoisyOperationRuleInput struct {
+	Name             graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled         graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes     graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Operation        graphql.Omittable[*HeadSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtMost graphql.Omittable[*float64]                           `json:"percentageAtMost,omitempty"`
+	Notes            graphql.Omittable[*string]                            `json:"notes,omitempty"`
+}
+
+type NonIdentifyingAttribute struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type ObservabilitySignalSupport struct {
@@ -552,10 +2543,26 @@ type OdigosAnalyze struct {
 	HasErrors            bool                     `json:"hasErrors"`
 }
 
+type OdigosOwnTelemetryConfig struct {
+	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
+}
+
+type OidcConfig struct {
+	TenantURL    *string `json:"tenantUrl,omitempty"`
+	ClientID     *string `json:"clientId,omitempty"`
+	ClientSecret *string `json:"clientSecret,omitempty"`
+}
+
 type OtelAgentsAnalyze struct {
 	Created    *EntityProperty                `json:"created"`
 	CreateTime *EntityProperty                `json:"createTime,omitempty"`
 	Containers []*ContainerAgentConfigAnalyze `json:"containers"`
+}
+
+type OtlpExporterConfig struct {
+	EnableDataCompression *bool                 `json:"enableDataCompression,omitempty"`
+	Timeout               *string               `json:"timeout,omitempty"`
+	RetryOnFailure        *RetryOnFailureConfig `json:"retryOnFailure,omitempty"`
 }
 
 type OverviewMetricsResponse struct {
@@ -563,17 +2570,14 @@ type OverviewMetricsResponse struct {
 	Destinations []*SingleDestinationMetricsResponse `json:"destinations"`
 }
 
-type PaginatedSources struct {
-	NextPage string             `json:"nextPage"`
-	Items    []*K8sActualSource `json:"items"`
-}
-
 type PatchSourceRequestInput struct {
-	CurrentStreamName string  `json:"currentStreamName"`
-	OtelServiceName   *string `json:"otelServiceName,omitempty"`
-	ContainerName     *string `json:"containerName,omitempty"`
-	Language          *string `json:"language,omitempty"`
-	Version           *string `json:"version,omitempty"`
+	CurrentStreamName     string  `json:"currentStreamName"`
+	OtelServiceName       *string `json:"otelServiceName,omitempty"`
+	ContainerName         *string `json:"containerName,omitempty"`
+	Language              *string `json:"language,omitempty"`
+	Version               *string `json:"version,omitempty"`
+	OtelDistroName        *string `json:"otelDistroName,omitempty"`
+	AllowConcurrentAgents *bool   `json:"allowConcurrentAgents,omitempty"`
 }
 
 type PayloadCollection struct {
@@ -590,6 +2594,11 @@ type PayloadCollectionInput struct {
 	Messaging    *MessagingPayloadCollectionInput `json:"messaging,omitempty"`
 }
 
+type PeerSources struct {
+	Inbound  []*ServiceMapToSource `json:"inbound"`
+	Outbound []*ServiceMapToSource `json:"outbound"`
+}
+
 type PersistNamespaceItemInput struct {
 	Namespace         string `json:"namespace"`
 	Selected          bool   `json:"selected"`
@@ -604,38 +2613,14 @@ type PersistNamespaceSourceInput struct {
 	CurrentStreamName string          `json:"currentStreamName"`
 }
 
-type PiiMaskingAction struct {
-	ID      string       `json:"id"`
-	Type    string       `json:"type"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details []string     `json:"details,omitempty"`
+type PhpCustomProbe struct {
+	ClassName    *string `json:"className,omitempty"`
+	FunctionName *string `json:"functionName,omitempty"`
 }
 
-func (PiiMaskingAction) IsAction()              {}
-func (this PiiMaskingAction) GetID() string     { return this.ID }
-func (this PiiMaskingAction) GetType() string   { return this.Type }
-func (this PiiMaskingAction) GetName() *string  { return this.Name }
-func (this PiiMaskingAction) GetNotes() *string { return this.Notes }
-func (this PiiMaskingAction) GetDisable() bool  { return this.Disable }
-func (this PiiMaskingAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
-}
-
-type PipelineAction struct {
-	ID         string       `json:"id"`
-	Type       string       `json:"type"`
-	Spec       string       `json:"spec"`
-	Conditions []*Condition `json:"conditions,omitempty"`
+type PhpCustomProbeInput struct {
+	ClassName    *string `json:"className,omitempty"`
+	FunctionName *string `json:"functionName,omitempty"`
 }
 
 type PodAnalyze struct {
@@ -645,6 +2630,15 @@ type PodAnalyze struct {
 	AgentInjected                 *EntityProperty        `json:"agentInjected"`
 	RunningLatestWorkloadRevision *EntityProperty        `json:"runningLatestWorkloadRevision,omitempty"`
 	Containers                    []*PodContainerAnalyze `json:"containers"`
+	ManifestYaml                  *string                `json:"manifestYAML,omitempty"`
+}
+
+type PodCondition struct {
+	Type               *PodConditionType   `json:"type,omitempty"`
+	Status             *K8sConditionStatus `json:"status,omitempty"`
+	LastTransitionTime *string             `json:"lastTransitionTime,omitempty"`
+	Reason             *string             `json:"reason,omitempty"`
+	Message            *string             `json:"message,omitempty"`
 }
 
 type PodContainerAnalyze struct {
@@ -655,10 +2649,24 @@ type PodContainerAnalyze struct {
 	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
-type PodWorkload struct {
-	Namespace string          `json:"namespace"`
-	Name      string          `json:"name"`
-	Kind      K8sResourceKind `json:"kind"`
+type PodDetails struct {
+	Name         string               `json:"name"`
+	Namespace    string               `json:"namespace"`
+	Node         *string              `json:"node,omitempty"`
+	Status       *PodPhase            `json:"status,omitempty"`
+	Containers   []*ContainerOverview `json:"containers"`
+	ManifestYaml string               `json:"manifestYAML"`
+}
+
+type PodInfo struct {
+	Namespace         string               `json:"namespace"`
+	Name              string               `json:"name"`
+	Status            string               `json:"status"`
+	RestartsCount     int                  `json:"restartsCount"`
+	NodeName          string               `json:"nodeName"`
+	CreationTimestamp string               `json:"creationTimestamp"`
+	Image             string               `json:"image"`
+	CollectorMetrics  *CollectorPodMetrics `json:"collectorMetrics,omitempty"`
 }
 
 type PodWorkloadInput struct {
@@ -667,61 +2675,108 @@ type PodWorkloadInput struct {
 	Name      string          `json:"name"`
 }
 
-type ProbabilisticSamplerAction struct {
-	ID      string       `json:"id"`
-	Type    string       `json:"type"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details string       `json:"details"`
+type ProfilingConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
-func (ProbabilisticSamplerAction) IsAction()              {}
-func (this ProbabilisticSamplerAction) GetID() string     { return this.ID }
-func (this ProbabilisticSamplerAction) GetType() string   { return this.Type }
-func (this ProbabilisticSamplerAction) GetName() *string  { return this.Name }
-func (this ProbabilisticSamplerAction) GetNotes() *string { return this.Notes }
-func (this ProbabilisticSamplerAction) GetDisable() bool  { return this.Disable }
-func (this ProbabilisticSamplerAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+// In-memory profiling buffer stats
+type ProfilingSlots struct {
+	ActiveKeys          []string `json:"activeKeys"`
+	KeysWithData        []string `json:"keysWithData"`
+	TotalBytesUsed      int      `json:"totalBytesUsed"`
+	SlotMaxBytes        int      `json:"slotMaxBytes"`
+	MaxSlots            int      `json:"maxSlots"`
+	MaxTotalBytesBudget int      `json:"maxTotalBytesBudget"`
+	SlotTTLSeconds      int      `json:"slotTtlSeconds"`
+}
+
+type ProvenanceEntry struct {
+	HelmPath       string `json:"helmPath"`
+	ReconciledFrom string `json:"reconciledFrom"`
 }
 
 type Query struct {
 }
 
-type RenameAttributeAction struct {
-	ID      string       `json:"id"`
-	Type    string       `json:"type"`
-	Name    *string      `json:"name,omitempty"`
-	Notes   *string      `json:"notes,omitempty"`
-	Disable bool         `json:"disable"`
-	Signals []SignalType `json:"signals"`
-	Details string       `json:"details"`
+type Recommendation struct {
+	Name                    string                              `json:"name"`
+	Type                    string                              `json:"type"`
+	Applied                 bool                                `json:"applied"`
+	ConditionsMet           bool                                `json:"conditionsMet"`
+	Dismissed               bool                                `json:"dismissed"`
+	Oss                     bool                                `json:"oss"`
+	RequireOdigosDeployment bool                                `json:"requireOdigosDeployment"`
+	CatalogConditions       []*RecommendationCatalogCondition   `json:"catalogConditions"`
+	AppliedWhen             []*RecommendationAppliedWhen        `json:"appliedWhen"`
+	Categories              []string                            `json:"categories"`
+	Title                   string                              `json:"title"`
+	Summary                 string                              `json:"summary"`
+	Description             string                              `json:"description"`
+	DocsURL                 *string                             `json:"docsUrl,omitempty"`
+	Pros                    []string                            `json:"pros"`
+	Cons                    []string                            `json:"cons"`
+	Remediations            []*RecommendationCatalogRemediation `json:"remediations"`
 }
 
-func (RenameAttributeAction) IsAction()              {}
-func (this RenameAttributeAction) GetID() string     { return this.ID }
-func (this RenameAttributeAction) GetType() string   { return this.Type }
-func (this RenameAttributeAction) GetName() *string  { return this.Name }
-func (this RenameAttributeAction) GetNotes() *string { return this.Notes }
-func (this RenameAttributeAction) GetDisable() bool  { return this.Disable }
-func (this RenameAttributeAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+type RecommendationAppliedWhen struct {
+	Type       string  `json:"type"`
+	Expression *string `json:"expression,omitempty"`
+	ActionType *string `json:"actionType,omitempty"`
+}
+
+type RecommendationCatalogApplyExample struct {
+	Type    string `json:"type"`
+	Content string `json:"content"`
+}
+
+type RecommendationCatalogCondition struct {
+	Type string `json:"type"`
+}
+
+type RecommendationCatalogRemediation struct {
+	Type          string                               `json:"type"`
+	ButtonText    string                               `json:"buttonText"`
+	Tooltip       string                               `json:"tooltip"`
+	CanApplyViaUI bool                                 `json:"canApplyViaUi"`
+	ApplyExamples []*RecommendationCatalogApplyExample `json:"applyExamples"`
+}
+
+type RemoteConfig struct {
+	Rollout *RemoteConfigRollout `json:"rollout,omitempty"`
+}
+
+type RemoteConfigInput struct {
+	Rollout *RemoteConfigRolloutInput `json:"rollout,omitempty"`
+}
+
+type RemoteConfigRollout struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+}
+
+type RemoteConfigRolloutInput struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+}
+
+type ResourceAmounts struct {
+	CPU    *string `json:"cpu,omitempty"`
+	Memory *string `json:"memory,omitempty"`
+}
+
+type Resources struct {
+	Requests *ResourceAmounts `json:"requests,omitempty"`
+	Limits   *ResourceAmounts `json:"limits,omitempty"`
+}
+
+type RetryOnFailureConfig struct {
+	Enabled         *bool   `json:"enabled,omitempty"`
+	InitialInterval *string `json:"initialInterval,omitempty"`
+	MaxInterval     *string `json:"maxInterval,omitempty"`
+	MaxElapsedTime  *string `json:"maxElapsedTime,omitempty"`
+}
+
+type RolloutConfig struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+	MaxConcurrentRollouts    *int  `json:"maxConcurrentRollouts,omitempty"`
 }
 
 type RuntimeInfoAnalyze struct {
@@ -729,37 +2784,55 @@ type RuntimeInfoAnalyze struct {
 	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
-type ServiceNameFilters struct {
-	ServiceName           string  `json:"serviceName"`
-	SamplingRatio         float64 `json:"samplingRatio"`
-	FallbackSamplingRatio float64 `json:"fallbackSamplingRatio"`
+type Sampling struct {
+	Configs *SamplingConfigs `json:"configs"`
+	Rules   []*SamplingRules `json:"rules"`
 }
 
-type ServiceNameSamplerAction struct {
-	ID      string                `json:"id"`
-	Type    string                `json:"type"`
-	Name    *string               `json:"name,omitempty"`
-	Notes   *string               `json:"notes,omitempty"`
-	Disable bool                  `json:"disable"`
-	Signals []SignalType          `json:"signals"`
-	Details []*ServiceNameFilters `json:"details"`
+type SamplingConfig struct {
+	DryRun                  *bool                          `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *SpanSamplingAttributesConfig  `json:"spanSamplingAttributes,omitempty"`
+	TailSampling            *TailSamplingConfig            `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
 }
 
-func (ServiceNameSamplerAction) IsAction()              {}
-func (this ServiceNameSamplerAction) GetID() string     { return this.ID }
-func (this ServiceNameSamplerAction) GetType() string   { return this.Type }
-func (this ServiceNameSamplerAction) GetName() *string  { return this.Name }
-func (this ServiceNameSamplerAction) GetNotes() *string { return this.Notes }
-func (this ServiceNameSamplerAction) GetDisable() bool  { return this.Disable }
-func (this ServiceNameSamplerAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+type SamplingConfigInput struct {
+	TailSampling            *TailSamplingConfigInput            `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfigInput `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+type SamplingConfigs struct {
+	Effective               *SamplingConfig `json:"effective,omitempty"`
+	HelmDeployment          *SamplingConfig `json:"helmDeployment,omitempty"`
+	RemoteConfigFromCentral *SamplingConfig `json:"remoteConfigFromCentral,omitempty"`
+	LocalUIConfig           *SamplingConfig `json:"localUiConfig,omitempty"`
+}
+
+type SamplingRules struct {
+	ID                       string                         `json:"id"`
+	Name                     *string                        `json:"name,omitempty"`
+	NoisyOperations          []*NoisyOperationRule          `json:"noisyOperations"`
+	HighlyRelevantOperations []*HighlyRelevantOperationRule `json:"highlyRelevantOperations"`
+	CostReductionRules       []*CostReductionRule           `json:"costReductionRules"`
+}
+
+type ServiceMap struct {
+	Services []*ServiceMapFromSource `json:"services"`
+}
+
+type ServiceMapFromSource struct {
+	NodeID      string                `json:"nodeId"`
+	ServiceName string                `json:"serviceName"`
+	Services    []*ServiceMapToSource `json:"services"`
+}
+
+type ServiceMapToSource struct {
+	NodeID         string                     `json:"nodeId"`
+	IsVirtual      bool                       `json:"isVirtual"`
+	ServiceName    string                     `json:"serviceName"`
+	Requests       int                        `json:"requests"`
+	DateTime       string                     `json:"dateTime"`
+	NodeAttributes []*NonIdentifyingAttribute `json:"nodeAttributes"`
 }
 
 type SingleDestinationMetricsResponse struct {
@@ -805,42 +2878,89 @@ type SourceContainer struct {
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 }
 
-type SpanAttributeSamplerAction struct {
-	ID      string              `json:"id"`
-	Type    string              `json:"type"`
-	Name    *string             `json:"name,omitempty"`
-	Notes   *string             `json:"notes,omitempty"`
-	Disable bool                `json:"disable"`
-	Signals []SignalType        `json:"signals"`
-	Details []*AttributeFilters `json:"details"`
+// Pyroscope-style flame profile for one source (JSON string).
+type SourceProfilingResult struct {
+	ProfileJSON string `json:"profileJson"`
 }
 
-func (SpanAttributeSamplerAction) IsAction()              {}
-func (this SpanAttributeSamplerAction) GetID() string     { return this.ID }
-func (this SpanAttributeSamplerAction) GetType() string   { return this.Type }
-func (this SpanAttributeSamplerAction) GetName() *string  { return this.Name }
-func (this SpanAttributeSamplerAction) GetNotes() *string { return this.Notes }
-func (this SpanAttributeSamplerAction) GetDisable() bool  { return this.Disable }
-func (this SpanAttributeSamplerAction) GetSignals() []SignalType {
-	if this.Signals == nil {
-		return nil
-	}
-	interfaceSlice := make([]SignalType, 0, len(this.Signals))
-	for _, concrete := range this.Signals {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
+type SourcesScopes struct {
+	Sources    []*K8sWorkloadID           `json:"sources,omitempty"`
+	Namespaces []string                   `json:"namespaces,omitempty"`
+	Languages  []SamplingWorkloadLanguage `json:"languages,omitempty"`
 }
 
-type StringCondition struct {
-	Operation     StringOperation `json:"operation"`
-	ExpectedValue *string         `json:"expectedValue,omitempty"`
+type SourcesScopesInput struct {
+	Sources    []*K8sSourceID             `json:"sources,omitempty"`
+	Namespaces []string                   `json:"namespaces,omitempty"`
+	Languages  []SamplingWorkloadLanguage `json:"languages,omitempty"`
+}
+
+type SpanSamplingAttributesConfig struct {
+	Disabled                       *bool `json:"disabled,omitempty"`
+	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
+	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
 }
 
 type SupportedSignals struct {
-	Traces  *ObservabilitySignalSupport `json:"traces"`
-	Metrics *ObservabilitySignalSupport `json:"metrics"`
-	Logs    *ObservabilitySignalSupport `json:"logs"`
+	Traces   *ObservabilitySignalSupport `json:"traces"`
+	Metrics  *ObservabilitySignalSupport `json:"metrics"`
+	Logs     *ObservabilitySignalSupport `json:"logs"`
+	Profiles *ObservabilitySignalSupport `json:"profiles"`
+}
+
+type TailSamplingConfig struct {
+	Disabled                     *bool                       `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string                     `json:"traceAggregationWaitDuration,omitempty"`
+	NoisyOperationsEnforcement   *NoisyOperationsEnforcement `json:"noisyOperationsEnforcement,omitempty"`
+}
+
+type TailSamplingConfigInput struct {
+	Disabled                     *bool                       `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string                     `json:"traceAggregationWaitDuration,omitempty"`
+	NoisyOperationsEnforcement   *NoisyOperationsEnforcement `json:"noisyOperationsEnforcement,omitempty"`
+}
+
+type TailSamplingHTTPServerMatcher struct {
+	Route       *string `json:"route,omitempty"`
+	RoutePrefix *string `json:"routePrefix,omitempty"`
+	Method      *string `json:"method,omitempty"`
+}
+
+type TailSamplingHTTPServerMatcherInput struct {
+	Route       *string `json:"route,omitempty"`
+	RoutePrefix *string `json:"routePrefix,omitempty"`
+	Method      *string `json:"method,omitempty"`
+}
+
+type TailSamplingKafkaMatcher struct {
+	KafkaTopic *string `json:"kafkaTopic,omitempty"`
+}
+
+type TailSamplingKafkaMatcherInput struct {
+	KafkaTopic *string `json:"kafkaTopic,omitempty"`
+}
+
+type TailSamplingOperationMatcher struct {
+	HTTPServer    *TailSamplingHTTPServerMatcher `json:"httpServer,omitempty"`
+	KafkaConsumer *TailSamplingKafkaMatcher      `json:"kafkaConsumer,omitempty"`
+	KafkaProducer *TailSamplingKafkaMatcher      `json:"kafkaProducer,omitempty"`
+}
+
+type TailSamplingOperationMatcherInput struct {
+	HTTPServer    *TailSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
+	KafkaConsumer *TailSamplingKafkaMatcherInput      `json:"kafkaConsumer,omitempty"`
+	KafkaProducer *TailSamplingKafkaMatcherInput      `json:"kafkaProducer,omitempty"`
+}
+
+type TemplatizationWorkloadFilter struct {
+	Kind *K8sResourceKind `json:"kind,omitempty"`
+	Name *string          `json:"name,omitempty"`
+}
+
+type TemplatizationWorkloadFilterInput struct {
+	Kind *K8sResourceKind `json:"kind,omitempty"`
+	Name *string          `json:"name,omitempty"`
 }
 
 type TestConnectionResponse struct {
@@ -851,62 +2971,197 @@ type TestConnectionResponse struct {
 	Reason          *string `json:"reason,omitempty"`
 }
 
-type BooleanOperation string
-
-const (
-	BooleanOperationExists BooleanOperation = "exists"
-	BooleanOperationEquals BooleanOperation = "equals"
-)
-
-var AllBooleanOperation = []BooleanOperation{
-	BooleanOperationExists,
-	BooleanOperationEquals,
+type TraceCorrelations struct {
+	Workloads []*TraceCorrelationsWorkload `json:"workloads"`
 }
 
-func (e BooleanOperation) IsValid() bool {
+type TraceCorrelationsConfig struct {
+	ServiceIo *TraceCorrelationsServiceIOConfig `json:"serviceIO,omitempty"`
+}
+
+type TraceCorrelationsInputGroup struct {
+	Attributes []*NonIdentifyingAttribute       `json:"attributes"`
+	Outputs    []*TraceCorrelationsOutputSeries `json:"outputs"`
+}
+
+type TraceCorrelationsOutputSeries struct {
+	Attributes      []*NonIdentifyingAttribute `json:"attributes"`
+	ConnectionCount int                        `json:"connectionCount"`
+	FirstDetectedAt string                     `json:"firstDetectedAt"`
+}
+
+type TraceCorrelationsServiceIOConfig struct {
+	Enabled              *bool    `json:"enabled,omitempty"`
+	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
+	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
+	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
+}
+
+type TraceCorrelationsTimeRangeInput struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
+type TraceCorrelationsWorkload struct {
+	Namespace             string                         `json:"namespace"`
+	Kind                  K8sResourceKind                `json:"kind"`
+	Name                  string                         `json:"name"`
+	ContainerName         string                         `json:"containerName"`
+	TelemetrySdkLanguage  *string                        `json:"telemetrySdkLanguage,omitempty"`
+	ProcessRuntimeName    *string                        `json:"processRuntimeName,omitempty"`
+	ProcessRuntimeVersion *string                        `json:"processRuntimeVersion,omitempty"`
+	Inputs                []*TraceCorrelationsInputGroup `json:"inputs"`
+}
+
+type URLTemplatizationRule struct {
+	Template string   `json:"template"`
+	Notes    *string  `json:"notes,omitempty"`
+	Examples []string `json:"examples,omitempty"`
+}
+
+type URLTemplatizationRuleInput struct {
+	Template string   `json:"template"`
+	Notes    *string  `json:"notes,omitempty"`
+	Examples []string `json:"examples,omitempty"`
+}
+
+type URLTemplatizationCardinalityControlConfig struct {
+	LiveTrafficLearning *LiveTrafficLearningConfig `json:"liveTrafficLearning,omitempty"`
+}
+
+type URLTemplatizationDefaultGroup struct {
+	Scopes     *SourcesScopes                      `json:"scopes,omitempty"`
+	Disabled   *bool                               `json:"disabled,omitempty"`
+	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
+}
+
+type URLTemplatizationDefaultGroupInput struct {
+	Scopes     *SourcesScopesInput                      `json:"scopes,omitempty"`
+	Disabled   *bool                                    `json:"disabled,omitempty"`
+	SkipPolicy *URLTemplatizationDefaultSkipPolicyInput `json:"skipPolicy,omitempty"`
+}
+
+type URLTemplatizationDefaultSkipPolicy struct {
+	SkipForNonSuccessCodes *bool `json:"skipForNonSuccessCodes,omitempty"`
+	SkipHTTPStatusCodes    []int `json:"skipHttpStatusCodes,omitempty"`
+}
+
+type URLTemplatizationDefaultSkipPolicyInput struct {
+	SkipForNonSuccessCodes *bool `json:"skipForNonSuccessCodes,omitempty"`
+	SkipHTTPStatusCodes    []int `json:"skipHttpStatusCodes,omitempty"`
+}
+
+type URLTemplatizationRulesGroup struct {
+	Scopes                    *SourcesScopes                  `json:"scopes,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRule        `json:"templatizationRules"`
+	FilterK8sNamespace        *string                         `json:"filterK8sNamespace,omitempty"`
+	FilterK8sWorkloadKind     *K8sResourceKind                `json:"filterK8sWorkloadKind,omitempty"`
+	FilterK8sWorkloadName     *string                         `json:"filterK8sWorkloadName,omitempty"`
+	FilterProgrammingLanguage *string                         `json:"filterProgrammingLanguage,omitempty"`
+	WorkloadFilters           []*TemplatizationWorkloadFilter `json:"workloadFilters,omitempty"`
+	Notes                     *string                         `json:"notes,omitempty"`
+}
+
+type URLTemplatizationRulesGroupInput struct {
+	Scopes                    *SourcesScopesInput                  `json:"scopes,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRuleInput        `json:"templatizationRules"`
+	FilterK8sNamespace        *string                              `json:"filterK8sNamespace,omitempty"`
+	FilterK8sWorkloadKind     *K8sResourceKind                     `json:"filterK8sWorkloadKind,omitempty"`
+	FilterK8sWorkloadName     *string                              `json:"filterK8sWorkloadName,omitempty"`
+	FilterProgrammingLanguage *string                              `json:"filterProgrammingLanguage,omitempty"`
+	WorkloadFilters           []*TemplatizationWorkloadFilterInput `json:"workloadFilters,omitempty"`
+	Notes                     *string                              `json:"notes,omitempty"`
+}
+
+type UserInstrumentationEnvsConfig struct {
+	Languages *string `json:"languages,omitempty"`
+}
+
+type WaspConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type WorkloadFilter struct {
+	Namespace                *string          `json:"namespace,omitempty"`
+	Kind                     *K8sResourceKind `json:"kind,omitempty"`
+	Name                     *string          `json:"name,omitempty"`
+	MarkedForInstrumentation *bool            `json:"markedForInstrumentation,omitempty"`
+}
+
+type ActionType string
+
+const (
+	ActionTypeK8sAttributesResolver ActionType = "K8sAttributesResolver"
+	ActionTypeAddClusterInfo        ActionType = "AddClusterInfo"
+	ActionTypeDeleteAttribute       ActionType = "DeleteAttribute"
+	ActionTypeRenameAttribute       ActionType = "RenameAttribute"
+	ActionTypePiiMasking            ActionType = "PiiMasking"
+	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
+	ActionTypeExtractAttribute      ActionType = "ExtractAttribute"
+	ActionTypeDbQueryTemplatization ActionType = "DbQueryTemplatization"
+	ActionTypeInferDbAttributes     ActionType = "InferDbAttributes"
+	ActionTypeUnknownType           ActionType = "UnknownType"
+)
+
+var AllActionType = []ActionType{
+	ActionTypeK8sAttributesResolver,
+	ActionTypeAddClusterInfo,
+	ActionTypeDeleteAttribute,
+	ActionTypeRenameAttribute,
+	ActionTypePiiMasking,
+	ActionTypeURLTemplatization,
+	ActionTypeExtractAttribute,
+	ActionTypeDbQueryTemplatization,
+	ActionTypeInferDbAttributes,
+	ActionTypeUnknownType,
+}
+
+func (e ActionType) IsValid() bool {
 	switch e {
-	case BooleanOperationExists, BooleanOperationEquals:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeExtractAttribute, ActionTypeDbQueryTemplatization, ActionTypeInferDbAttributes, ActionTypeUnknownType:
 		return true
 	}
 	return false
 }
 
-func (e BooleanOperation) String() string {
+func (e ActionType) String() string {
 	return string(e)
 }
 
-func (e *BooleanOperation) UnmarshalGQL(v any) error {
+func (e *ActionType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = BooleanOperation(str)
+	*e = ActionType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid BooleanOperation", str)
+		return fmt.Errorf("%s is not a valid ActionType", str)
 	}
 	return nil
 }
 
-func (e BooleanOperation) MarshalGQL(w io.Writer) {
+func (e ActionType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type ComputePlatformType string
 
 const (
-	ComputePlatformTypeK8s ComputePlatformType = "K8S"
-	ComputePlatformTypeVM  ComputePlatformType = "VM"
+	ComputePlatformTypeK8s       ComputePlatformType = "k8s"
+	ComputePlatformTypeVM        ComputePlatformType = "vm"
+	ComputePlatformTypeConnector ComputePlatformType = "connector"
 )
 
 var AllComputePlatformType = []ComputePlatformType{
 	ComputePlatformTypeK8s,
 	ComputePlatformTypeVM,
+	ComputePlatformTypeConnector,
 }
 
 func (e ComputePlatformType) IsValid() bool {
 	switch e {
-	case ComputePlatformTypeK8s, ComputePlatformTypeVM:
+	case ComputePlatformTypeK8s, ComputePlatformTypeVM, ComputePlatformTypeConnector:
 		return true
 	}
 	return false
@@ -978,6 +3233,1260 @@ func (e ConditionStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type ContainerLifecycleStatus string
+
+const (
+	ContainerLifecycleStatusRunning    ContainerLifecycleStatus = "Running"
+	ContainerLifecycleStatusWaiting    ContainerLifecycleStatus = "Waiting"
+	ContainerLifecycleStatusTerminated ContainerLifecycleStatus = "Terminated"
+)
+
+var AllContainerLifecycleStatus = []ContainerLifecycleStatus{
+	ContainerLifecycleStatusRunning,
+	ContainerLifecycleStatusWaiting,
+	ContainerLifecycleStatusTerminated,
+}
+
+func (e ContainerLifecycleStatus) IsValid() bool {
+	switch e {
+	case ContainerLifecycleStatusRunning, ContainerLifecycleStatusWaiting, ContainerLifecycleStatusTerminated:
+		return true
+	}
+	return false
+}
+
+func (e ContainerLifecycleStatus) String() string {
+	return string(e)
+}
+
+func (e *ContainerLifecycleStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ContainerLifecycleStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ContainerLifecycleStatus", str)
+	}
+	return nil
+}
+
+func (e ContainerLifecycleStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type DesiredConditionActionItemType string
+
+const (
+	DesiredConditionActionItemTypeRolloutWorkload                      DesiredConditionActionItemType = "RolloutWorkload"
+	DesiredConditionActionItemTypeAllowConcurrentAgentsForContainer    DesiredConditionActionItemType = "AllowConcurrentAgentsForContainer"
+	DesiredConditionActionItemTypeDisallowConcurrentAgentsForContainer DesiredConditionActionItemType = "DisallowConcurrentAgentsForContainer"
+)
+
+var AllDesiredConditionActionItemType = []DesiredConditionActionItemType{
+	DesiredConditionActionItemTypeRolloutWorkload,
+	DesiredConditionActionItemTypeAllowConcurrentAgentsForContainer,
+	DesiredConditionActionItemTypeDisallowConcurrentAgentsForContainer,
+}
+
+func (e DesiredConditionActionItemType) IsValid() bool {
+	switch e {
+	case DesiredConditionActionItemTypeRolloutWorkload, DesiredConditionActionItemTypeAllowConcurrentAgentsForContainer, DesiredConditionActionItemTypeDisallowConcurrentAgentsForContainer:
+		return true
+	}
+	return false
+}
+
+func (e DesiredConditionActionItemType) String() string {
+	return string(e)
+}
+
+func (e *DesiredConditionActionItemType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DesiredConditionActionItemType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DesiredConditionActionItemType", str)
+	}
+	return nil
+}
+
+func (e DesiredConditionActionItemType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type DesiredStateProgress string
+
+const (
+	DesiredStateProgressError       DesiredStateProgress = "Error"
+	DesiredStateProgressFailure     DesiredStateProgress = "Failure"
+	DesiredStateProgressNotice      DesiredStateProgress = "Notice"
+	DesiredStateProgressPending     DesiredStateProgress = "Pending"
+	DesiredStateProgressWaiting     DesiredStateProgress = "Waiting"
+	DesiredStateProgressUnsupported DesiredStateProgress = "Unsupported"
+	DesiredStateProgressDisabled    DesiredStateProgress = "Disabled"
+	DesiredStateProgressSuccess     DesiredStateProgress = "Success"
+	DesiredStateProgressIrrelevant  DesiredStateProgress = "Irrelevant"
+	DesiredStateProgressUnknown     DesiredStateProgress = "Unknown"
+)
+
+var AllDesiredStateProgress = []DesiredStateProgress{
+	DesiredStateProgressError,
+	DesiredStateProgressFailure,
+	DesiredStateProgressNotice,
+	DesiredStateProgressPending,
+	DesiredStateProgressWaiting,
+	DesiredStateProgressUnsupported,
+	DesiredStateProgressDisabled,
+	DesiredStateProgressSuccess,
+	DesiredStateProgressIrrelevant,
+	DesiredStateProgressUnknown,
+}
+
+func (e DesiredStateProgress) IsValid() bool {
+	switch e {
+	case DesiredStateProgressError, DesiredStateProgressFailure, DesiredStateProgressNotice, DesiredStateProgressPending, DesiredStateProgressWaiting, DesiredStateProgressUnsupported, DesiredStateProgressDisabled, DesiredStateProgressSuccess, DesiredStateProgressIrrelevant, DesiredStateProgressUnknown:
+		return true
+	}
+	return false
+}
+
+func (e DesiredStateProgress) String() string {
+	return string(e)
+}
+
+func (e *DesiredStateProgress) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DesiredStateProgress(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DesiredStateProgress", str)
+	}
+	return nil
+}
+
+func (e DesiredStateProgress) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type EnvInjectionMethod string
+
+const (
+	EnvInjectionMethodLoader                      EnvInjectionMethod = "loader"
+	EnvInjectionMethodPodManifest                 EnvInjectionMethod = "pod_manifest"
+	EnvInjectionMethodLoaderFallbackToPodManifest EnvInjectionMethod = "loader_fallback_to_pod_manifest"
+)
+
+var AllEnvInjectionMethod = []EnvInjectionMethod{
+	EnvInjectionMethodLoader,
+	EnvInjectionMethodPodManifest,
+	EnvInjectionMethodLoaderFallbackToPodManifest,
+}
+
+func (e EnvInjectionMethod) IsValid() bool {
+	switch e {
+	case EnvInjectionMethodLoader, EnvInjectionMethodPodManifest, EnvInjectionMethodLoaderFallbackToPodManifest:
+		return true
+	}
+	return false
+}
+
+func (e EnvInjectionMethod) String() string {
+	return string(e)
+}
+
+func (e *EnvInjectionMethod) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EnvInjectionMethod(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EnvInjectionMethod", str)
+	}
+	return nil
+}
+
+func (e EnvInjectionMethod) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ExtractionDataFormat string
+
+const (
+	ExtractionDataFormatJSON         ExtractionDataFormat = "json"
+	ExtractionDataFormatSQL          ExtractionDataFormat = "sql"
+	ExtractionDataFormatResourcePath ExtractionDataFormat = "resource_path"
+)
+
+var AllExtractionDataFormat = []ExtractionDataFormat{
+	ExtractionDataFormatJSON,
+	ExtractionDataFormatSQL,
+	ExtractionDataFormatResourcePath,
+}
+
+func (e ExtractionDataFormat) IsValid() bool {
+	switch e {
+	case ExtractionDataFormatJSON, ExtractionDataFormatSQL, ExtractionDataFormatResourcePath:
+		return true
+	}
+	return false
+}
+
+func (e ExtractionDataFormat) String() string {
+	return string(e)
+}
+
+func (e *ExtractionDataFormat) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ExtractionDataFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ExtractionDataFormat", str)
+	}
+	return nil
+}
+
+func (e ExtractionDataFormat) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FieldType string
+
+const (
+	FieldTypeInput         FieldType = "input"
+	FieldTypeMultiInput    FieldType = "multiInput"
+	FieldTypeKeyValuePairs FieldType = "keyValuePairs"
+	FieldTypeTextarea      FieldType = "textarea"
+	FieldTypeDropdown      FieldType = "dropdown"
+	FieldTypeCheckbox      FieldType = "checkbox"
+	FieldTypeToggle        FieldType = "toggle"
+	FieldTypeTime          FieldType = "time"
+)
+
+var AllFieldType = []FieldType{
+	FieldTypeInput,
+	FieldTypeMultiInput,
+	FieldTypeKeyValuePairs,
+	FieldTypeTextarea,
+	FieldTypeDropdown,
+	FieldTypeCheckbox,
+	FieldTypeToggle,
+	FieldTypeTime,
+}
+
+func (e FieldType) IsValid() bool {
+	switch e {
+	case FieldTypeInput, FieldTypeMultiInput, FieldTypeKeyValuePairs, FieldTypeTextarea, FieldTypeDropdown, FieldTypeCheckbox, FieldTypeToggle, FieldTypeTime:
+		return true
+	}
+	return false
+}
+
+func (e FieldType) String() string {
+	return string(e)
+}
+
+func (e *FieldType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FieldType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FieldType", str)
+	}
+	return nil
+}
+
+func (e FieldType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyClassFindingKind string
+
+const (
+	InsightsAnomalyClassFindingKindStructural InsightsAnomalyClassFindingKind = "structural"
+	InsightsAnomalyClassFindingKindMetric     InsightsAnomalyClassFindingKind = "metric"
+)
+
+var AllInsightsAnomalyClassFindingKind = []InsightsAnomalyClassFindingKind{
+	InsightsAnomalyClassFindingKindStructural,
+	InsightsAnomalyClassFindingKindMetric,
+}
+
+func (e InsightsAnomalyClassFindingKind) IsValid() bool {
+	switch e {
+	case InsightsAnomalyClassFindingKindStructural, InsightsAnomalyClassFindingKindMetric:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyClassFindingKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyClassFindingKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyClassFindingKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyClassFindingKind", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyClassFindingKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyResolution string
+
+const (
+	InsightsAnomalyResolutionAccept  InsightsAnomalyResolution = "accept"
+	InsightsAnomalyResolutionDismiss InsightsAnomalyResolution = "dismiss"
+	InsightsAnomalyResolutionReopen  InsightsAnomalyResolution = "reopen"
+)
+
+var AllInsightsAnomalyResolution = []InsightsAnomalyResolution{
+	InsightsAnomalyResolutionAccept,
+	InsightsAnomalyResolutionDismiss,
+	InsightsAnomalyResolutionReopen,
+}
+
+func (e InsightsAnomalyResolution) IsValid() bool {
+	switch e {
+	case InsightsAnomalyResolutionAccept, InsightsAnomalyResolutionDismiss, InsightsAnomalyResolutionReopen:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyResolution) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyResolution) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyResolution(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyResolution", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyResolution) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyStatus string
+
+const (
+	InsightsAnomalyStatusOpen      InsightsAnomalyStatus = "open"
+	InsightsAnomalyStatusAccepted  InsightsAnomalyStatus = "accepted"
+	InsightsAnomalyStatusDismissed InsightsAnomalyStatus = "dismissed"
+)
+
+var AllInsightsAnomalyStatus = []InsightsAnomalyStatus{
+	InsightsAnomalyStatusOpen,
+	InsightsAnomalyStatusAccepted,
+	InsightsAnomalyStatusDismissed,
+}
+
+func (e InsightsAnomalyStatus) IsValid() bool {
+	switch e {
+	case InsightsAnomalyStatusOpen, InsightsAnomalyStatusAccepted, InsightsAnomalyStatusDismissed:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsBaselineHistogramUnit string
+
+const (
+	InsightsBaselineHistogramUnitUs    InsightsBaselineHistogramUnit = "us"
+	InsightsBaselineHistogramUnitBytes InsightsBaselineHistogramUnit = "bytes"
+)
+
+var AllInsightsBaselineHistogramUnit = []InsightsBaselineHistogramUnit{
+	InsightsBaselineHistogramUnitUs,
+	InsightsBaselineHistogramUnitBytes,
+}
+
+func (e InsightsBaselineHistogramUnit) IsValid() bool {
+	switch e {
+	case InsightsBaselineHistogramUnitUs, InsightsBaselineHistogramUnitBytes:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBaselineHistogramUnit) String() string {
+	return string(e)
+}
+
+func (e *InsightsBaselineHistogramUnit) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBaselineHistogramUnit(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBaselineHistogramUnit", str)
+	}
+	return nil
+}
+
+func (e InsightsBaselineHistogramUnit) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Coarse learning state for one baseline class. `promoted` means the baseline is
+// frozen. `empty` means it has never grown. `learning` means it has grown and is
+// still in the learning phase. `saturated` means the set crossed
+// maxBaselineSetMembers; the class is frozen, will not promote and is not enforced.
+type InsightsBaselineLearningPhase string
+
+const (
+	InsightsBaselineLearningPhasePromoted  InsightsBaselineLearningPhase = "promoted"
+	InsightsBaselineLearningPhaseEmpty     InsightsBaselineLearningPhase = "empty"
+	InsightsBaselineLearningPhaseLearning  InsightsBaselineLearningPhase = "learning"
+	InsightsBaselineLearningPhaseSaturated InsightsBaselineLearningPhase = "saturated"
+)
+
+var AllInsightsBaselineLearningPhase = []InsightsBaselineLearningPhase{
+	InsightsBaselineLearningPhasePromoted,
+	InsightsBaselineLearningPhaseEmpty,
+	InsightsBaselineLearningPhaseLearning,
+	InsightsBaselineLearningPhaseSaturated,
+}
+
+func (e InsightsBaselineLearningPhase) IsValid() bool {
+	switch e {
+	case InsightsBaselineLearningPhasePromoted, InsightsBaselineLearningPhaseEmpty, InsightsBaselineLearningPhaseLearning, InsightsBaselineLearningPhaseSaturated:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBaselineLearningPhase) String() string {
+	return string(e)
+}
+
+func (e *InsightsBaselineLearningPhase) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBaselineLearningPhase(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBaselineLearningPhase", str)
+	}
+	return nil
+}
+
+func (e InsightsBaselineLearningPhase) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsBulkResolution string
+
+const (
+	InsightsBulkResolutionAccept  InsightsBulkResolution = "accept"
+	InsightsBulkResolutionDismiss InsightsBulkResolution = "dismiss"
+)
+
+var AllInsightsBulkResolution = []InsightsBulkResolution{
+	InsightsBulkResolutionAccept,
+	InsightsBulkResolutionDismiss,
+}
+
+func (e InsightsBulkResolution) IsValid() bool {
+	switch e {
+	case InsightsBulkResolutionAccept, InsightsBulkResolutionDismiss:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBulkResolution) String() string {
+	return string(e)
+}
+
+func (e *InsightsBulkResolution) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBulkResolution(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBulkResolution", str)
+	}
+	return nil
+}
+
+func (e InsightsBulkResolution) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Relation asserted between two correlated attribute values within one trace.
+type InsightsCorrelationRelation string
+
+const (
+	InsightsCorrelationRelationEquals    InsightsCorrelationRelation = "equals"
+	InsightsCorrelationRelationNotEquals InsightsCorrelationRelation = "not_equals"
+)
+
+var AllInsightsCorrelationRelation = []InsightsCorrelationRelation{
+	InsightsCorrelationRelationEquals,
+	InsightsCorrelationRelationNotEquals,
+}
+
+func (e InsightsCorrelationRelation) IsValid() bool {
+	switch e {
+	case InsightsCorrelationRelationEquals, InsightsCorrelationRelationNotEquals:
+		return true
+	}
+	return false
+}
+
+func (e InsightsCorrelationRelation) String() string {
+	return string(e)
+}
+
+func (e *InsightsCorrelationRelation) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsCorrelationRelation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsCorrelationRelation", str)
+	}
+	return nil
+}
+
+func (e InsightsCorrelationRelation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsDeviationClass string
+
+const (
+	InsightsDeviationClassD1CallEdges   InsightsDeviationClass = "D1_call_edges"
+	InsightsDeviationClassD2Egress      InsightsDeviationClass = "D2_egress"
+	InsightsDeviationClassD3Latency     InsightsDeviationClass = "D3_latency"
+	InsightsDeviationClassD4ArgsReturns InsightsDeviationClass = "D4_args_returns"
+	InsightsDeviationClassD5Libraries   InsightsDeviationClass = "D5_libraries"
+	InsightsDeviationClassD6DbAccess    InsightsDeviationClass = "D6_db_access"
+	InsightsDeviationClassD7PayloadSize InsightsDeviationClass = "D7_payload_size"
+)
+
+var AllInsightsDeviationClass = []InsightsDeviationClass{
+	InsightsDeviationClassD1CallEdges,
+	InsightsDeviationClassD2Egress,
+	InsightsDeviationClassD3Latency,
+	InsightsDeviationClassD4ArgsReturns,
+	InsightsDeviationClassD5Libraries,
+	InsightsDeviationClassD6DbAccess,
+	InsightsDeviationClassD7PayloadSize,
+}
+
+func (e InsightsDeviationClass) IsValid() bool {
+	switch e {
+	case InsightsDeviationClassD1CallEdges, InsightsDeviationClassD2Egress, InsightsDeviationClassD3Latency, InsightsDeviationClassD4ArgsReturns, InsightsDeviationClassD5Libraries, InsightsDeviationClassD6DbAccess, InsightsDeviationClassD7PayloadSize:
+		return true
+	}
+	return false
+}
+
+func (e InsightsDeviationClass) String() string {
+	return string(e)
+}
+
+func (e *InsightsDeviationClass) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsDeviationClass(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsDeviationClass", str)
+	}
+	return nil
+}
+
+func (e InsightsDeviationClass) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsFindingKind string
+
+const (
+	InsightsFindingKindAnomaly   InsightsFindingKind = "anomaly"
+	InsightsFindingKindViolation InsightsFindingKind = "violation"
+)
+
+var AllInsightsFindingKind = []InsightsFindingKind{
+	InsightsFindingKindAnomaly,
+	InsightsFindingKindViolation,
+}
+
+func (e InsightsFindingKind) IsValid() bool {
+	switch e {
+	case InsightsFindingKindAnomaly, InsightsFindingKindViolation:
+		return true
+	}
+	return false
+}
+
+func (e InsightsFindingKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsFindingKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsFindingKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsFindingKind", str)
+	}
+	return nil
+}
+
+func (e InsightsFindingKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsLearningConditionType string
+
+const (
+	InsightsLearningConditionTypeMinObservations    InsightsLearningConditionType = "min_observations"
+	InsightsLearningConditionTypeMinDuration        InsightsLearningConditionType = "min_duration"
+	InsightsLearningConditionTypeStableObservations InsightsLearningConditionType = "stable_observations"
+	InsightsLearningConditionTypeStableDuration     InsightsLearningConditionType = "stable_duration"
+)
+
+var AllInsightsLearningConditionType = []InsightsLearningConditionType{
+	InsightsLearningConditionTypeMinObservations,
+	InsightsLearningConditionTypeMinDuration,
+	InsightsLearningConditionTypeStableObservations,
+	InsightsLearningConditionTypeStableDuration,
+}
+
+func (e InsightsLearningConditionType) IsValid() bool {
+	switch e {
+	case InsightsLearningConditionTypeMinObservations, InsightsLearningConditionTypeMinDuration, InsightsLearningConditionTypeStableObservations, InsightsLearningConditionTypeStableDuration:
+		return true
+	}
+	return false
+}
+
+func (e InsightsLearningConditionType) String() string {
+	return string(e)
+}
+
+func (e *InsightsLearningConditionType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsLearningConditionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsLearningConditionType", str)
+	}
+	return nil
+}
+
+func (e InsightsLearningConditionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsLearningMode string
+
+const (
+	InsightsLearningModeAll InsightsLearningMode = "all"
+	InsightsLearningModeAny InsightsLearningMode = "any"
+	InsightsLearningModeKOf InsightsLearningMode = "k_of"
+)
+
+var AllInsightsLearningMode = []InsightsLearningMode{
+	InsightsLearningModeAll,
+	InsightsLearningModeAny,
+	InsightsLearningModeKOf,
+}
+
+func (e InsightsLearningMode) IsValid() bool {
+	switch e {
+	case InsightsLearningModeAll, InsightsLearningModeAny, InsightsLearningModeKOf:
+		return true
+	}
+	return false
+}
+
+func (e InsightsLearningMode) String() string {
+	return string(e)
+}
+
+func (e *InsightsLearningMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsLearningMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsLearningMode", str)
+	}
+	return nil
+}
+
+func (e InsightsLearningMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsPolicyScope string
+
+const (
+	InsightsPolicyScopeGlobal      InsightsPolicyScope = "global"
+	InsightsPolicyScopeService     InsightsPolicyScope = "service"
+	InsightsPolicyScopeTransaction InsightsPolicyScope = "transaction"
+)
+
+var AllInsightsPolicyScope = []InsightsPolicyScope{
+	InsightsPolicyScopeGlobal,
+	InsightsPolicyScopeService,
+	InsightsPolicyScopeTransaction,
+}
+
+func (e InsightsPolicyScope) IsValid() bool {
+	switch e {
+	case InsightsPolicyScopeGlobal, InsightsPolicyScopeService, InsightsPolicyScopeTransaction:
+		return true
+	}
+	return false
+}
+
+func (e InsightsPolicyScope) String() string {
+	return string(e)
+}
+
+func (e *InsightsPolicyScope) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsPolicyScope(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsPolicyScope", str)
+	}
+	return nil
+}
+
+func (e InsightsPolicyScope) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// How much the engine trusts the relation. `low` means live traffic has already
+// broken it, so applying would fire violations immediately.
+type InsightsRecommendationConfidenceLevel string
+
+const (
+	InsightsRecommendationConfidenceLevelHigh   InsightsRecommendationConfidenceLevel = "high"
+	InsightsRecommendationConfidenceLevelMedium InsightsRecommendationConfidenceLevel = "medium"
+	InsightsRecommendationConfidenceLevelLow    InsightsRecommendationConfidenceLevel = "low"
+)
+
+var AllInsightsRecommendationConfidenceLevel = []InsightsRecommendationConfidenceLevel{
+	InsightsRecommendationConfidenceLevelHigh,
+	InsightsRecommendationConfidenceLevelMedium,
+	InsightsRecommendationConfidenceLevelLow,
+}
+
+func (e InsightsRecommendationConfidenceLevel) IsValid() bool {
+	switch e {
+	case InsightsRecommendationConfidenceLevelHigh, InsightsRecommendationConfidenceLevelMedium, InsightsRecommendationConfidenceLevelLow:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRecommendationConfidenceLevel) String() string {
+	return string(e)
+}
+
+func (e *InsightsRecommendationConfidenceLevel) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRecommendationConfidenceLevel(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRecommendationConfidenceLevel", str)
+	}
+	return nil
+}
+
+func (e InsightsRecommendationConfidenceLevel) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// What applying the recommendation would write. `attribute_correlation` adds one
+// cross-span rule to a transaction's guardrail; `service_guardrail` pre-fills a
+// service's allowlist rules from the profile it was observed to follow.
+//
+// The two kinds share one type: the fields a kind does not carry are null, so a
+// client switches on `kind` rather than on a union.
+type InsightsRecommendationKind string
+
+const (
+	InsightsRecommendationKindAttributeCorrelation InsightsRecommendationKind = "attribute_correlation"
+	InsightsRecommendationKindServiceGuardrail     InsightsRecommendationKind = "service_guardrail"
+)
+
+var AllInsightsRecommendationKind = []InsightsRecommendationKind{
+	InsightsRecommendationKindAttributeCorrelation,
+	InsightsRecommendationKindServiceGuardrail,
+}
+
+func (e InsightsRecommendationKind) IsValid() bool {
+	switch e {
+	case InsightsRecommendationKindAttributeCorrelation, InsightsRecommendationKindServiceGuardrail:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRecommendationKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsRecommendationKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRecommendationKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRecommendationKind", str)
+	}
+	return nil
+}
+
+func (e InsightsRecommendationKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Lifecycle bucket. `open` awaits a decision, `applied` became a guardrail rule,
+// `dismissed` was rejected (sticky across re-mining).
+type InsightsRecommendationState string
+
+const (
+	InsightsRecommendationStateOpen      InsightsRecommendationState = "open"
+	InsightsRecommendationStateApplied   InsightsRecommendationState = "applied"
+	InsightsRecommendationStateDismissed InsightsRecommendationState = "dismissed"
+)
+
+var AllInsightsRecommendationState = []InsightsRecommendationState{
+	InsightsRecommendationStateOpen,
+	InsightsRecommendationStateApplied,
+	InsightsRecommendationStateDismissed,
+}
+
+func (e InsightsRecommendationState) IsValid() bool {
+	switch e {
+	case InsightsRecommendationStateOpen, InsightsRecommendationStateApplied, InsightsRecommendationStateDismissed:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRecommendationState) String() string {
+	return string(e)
+}
+
+func (e *InsightsRecommendationState) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRecommendationState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRecommendationState", str)
+	}
+	return nil
+}
+
+func (e InsightsRecommendationState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsRuleMode string
+
+const (
+	InsightsRuleModeSuggest InsightsRuleMode = "suggest"
+	InsightsRuleModeEnforce InsightsRuleMode = "enforce"
+)
+
+var AllInsightsRuleMode = []InsightsRuleMode{
+	InsightsRuleModeSuggest,
+	InsightsRuleModeEnforce,
+}
+
+func (e InsightsRuleMode) IsValid() bool {
+	switch e {
+	case InsightsRuleModeSuggest, InsightsRuleModeEnforce:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRuleMode) String() string {
+	return string(e)
+}
+
+func (e *InsightsRuleMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRuleMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRuleMode", str)
+	}
+	return nil
+}
+
+func (e InsightsRuleMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsSampleReason string
+
+const (
+	InsightsSampleReasonExample         InsightsSampleReason = "example"
+	InsightsSampleReasonAnomalyEvidence InsightsSampleReason = "anomaly_evidence"
+	// Guardrail violation evidence sample (`guardrail:<rule>:<offending>` in storage).
+	InsightsSampleReasonGuardrailEvidence InsightsSampleReason = "guardrail_evidence"
+)
+
+var AllInsightsSampleReason = []InsightsSampleReason{
+	InsightsSampleReasonExample,
+	InsightsSampleReasonAnomalyEvidence,
+	InsightsSampleReasonGuardrailEvidence,
+}
+
+func (e InsightsSampleReason) IsValid() bool {
+	switch e {
+	case InsightsSampleReasonExample, InsightsSampleReasonAnomalyEvidence, InsightsSampleReasonGuardrailEvidence:
+		return true
+	}
+	return false
+}
+
+func (e InsightsSampleReason) String() string {
+	return string(e)
+}
+
+func (e *InsightsSampleReason) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsSampleReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsSampleReason", str)
+	}
+	return nil
+}
+
+func (e InsightsSampleReason) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsSeverity string
+
+const (
+	InsightsSeverityInfo     InsightsSeverity = "info"
+	InsightsSeverityLow      InsightsSeverity = "low"
+	InsightsSeverityMedium   InsightsSeverity = "medium"
+	InsightsSeverityHigh     InsightsSeverity = "high"
+	InsightsSeverityCritical InsightsSeverity = "critical"
+)
+
+var AllInsightsSeverity = []InsightsSeverity{
+	InsightsSeverityInfo,
+	InsightsSeverityLow,
+	InsightsSeverityMedium,
+	InsightsSeverityHigh,
+	InsightsSeverityCritical,
+}
+
+func (e InsightsSeverity) IsValid() bool {
+	switch e {
+	case InsightsSeverityInfo, InsightsSeverityLow, InsightsSeverityMedium, InsightsSeverityHigh, InsightsSeverityCritical:
+		return true
+	}
+	return false
+}
+
+func (e InsightsSeverity) String() string {
+	return string(e)
+}
+
+func (e *InsightsSeverity) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsSeverity(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsSeverity", str)
+	}
+	return nil
+}
+
+func (e InsightsSeverity) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsStorageDiskStatus string
+
+const (
+	InsightsStorageDiskStatusOk       InsightsStorageDiskStatus = "ok"
+	InsightsStorageDiskStatusWarning  InsightsStorageDiskStatus = "warning"
+	InsightsStorageDiskStatusCritical InsightsStorageDiskStatus = "critical"
+)
+
+var AllInsightsStorageDiskStatus = []InsightsStorageDiskStatus{
+	InsightsStorageDiskStatusOk,
+	InsightsStorageDiskStatusWarning,
+	InsightsStorageDiskStatusCritical,
+}
+
+func (e InsightsStorageDiskStatus) IsValid() bool {
+	switch e {
+	case InsightsStorageDiskStatusOk, InsightsStorageDiskStatusWarning, InsightsStorageDiskStatusCritical:
+		return true
+	}
+	return false
+}
+
+func (e InsightsStorageDiskStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsStorageDiskStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsStorageDiskStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsStorageDiskStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsStorageDiskStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsStorageHealthStatus string
+
+const (
+	InsightsStorageHealthStatusHealthy     InsightsStorageHealthStatus = "healthy"
+	InsightsStorageHealthStatusDegraded    InsightsStorageHealthStatus = "degraded"
+	InsightsStorageHealthStatusCritical    InsightsStorageHealthStatus = "critical"
+	InsightsStorageHealthStatusUnreachable InsightsStorageHealthStatus = "unreachable"
+)
+
+var AllInsightsStorageHealthStatus = []InsightsStorageHealthStatus{
+	InsightsStorageHealthStatusHealthy,
+	InsightsStorageHealthStatusDegraded,
+	InsightsStorageHealthStatusCritical,
+	InsightsStorageHealthStatusUnreachable,
+}
+
+func (e InsightsStorageHealthStatus) IsValid() bool {
+	switch e {
+	case InsightsStorageHealthStatusHealthy, InsightsStorageHealthStatusDegraded, InsightsStorageHealthStatusCritical, InsightsStorageHealthStatusUnreachable:
+		return true
+	}
+	return false
+}
+
+func (e InsightsStorageHealthStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsStorageHealthStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsStorageHealthStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsStorageHealthStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsStorageHealthStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsTransactionKind string
+
+const (
+	InsightsTransactionKindHTTP     InsightsTransactionKind = "HTTP"
+	InsightsTransactionKindGrpc     InsightsTransactionKind = "GRPC"
+	InsightsTransactionKindConsumer InsightsTransactionKind = "CONSUMER"
+	InsightsTransactionKindProducer InsightsTransactionKind = "PRODUCER"
+	InsightsTransactionKindCron     InsightsTransactionKind = "CRON"
+	InsightsTransactionKindInternal InsightsTransactionKind = "INTERNAL"
+)
+
+var AllInsightsTransactionKind = []InsightsTransactionKind{
+	InsightsTransactionKindHTTP,
+	InsightsTransactionKindGrpc,
+	InsightsTransactionKindConsumer,
+	InsightsTransactionKindProducer,
+	InsightsTransactionKindCron,
+	InsightsTransactionKindInternal,
+}
+
+func (e InsightsTransactionKind) IsValid() bool {
+	switch e {
+	case InsightsTransactionKindHTTP, InsightsTransactionKindGrpc, InsightsTransactionKindConsumer, InsightsTransactionKindProducer, InsightsTransactionKindCron, InsightsTransactionKindInternal:
+		return true
+	}
+	return false
+}
+
+func (e InsightsTransactionKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsTransactionKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsTransactionKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsTransactionKind", str)
+	}
+	return nil
+}
+
+func (e InsightsTransactionKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsViolationStatus string
+
+const (
+	InsightsViolationStatusOpen      InsightsViolationStatus = "open"
+	InsightsViolationStatusDismissed InsightsViolationStatus = "dismissed"
+	InsightsViolationStatusAccepted  InsightsViolationStatus = "accepted"
+)
+
+var AllInsightsViolationStatus = []InsightsViolationStatus{
+	InsightsViolationStatusOpen,
+	InsightsViolationStatusDismissed,
+	InsightsViolationStatusAccepted,
+}
+
+func (e InsightsViolationStatus) IsValid() bool {
+	switch e {
+	case InsightsViolationStatusOpen, InsightsViolationStatusDismissed, InsightsViolationStatusAccepted:
+		return true
+	}
+	return false
+}
+
+func (e InsightsViolationStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsViolationStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsViolationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsViolationStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsViolationStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type InstallationStatus string
 
 const (
@@ -1024,22 +4533,26 @@ func (e InstallationStatus) MarshalGQL(w io.Writer) {
 type InstrumentationRuleType string
 
 const (
-	InstrumentationRuleTypeCodeAttributes    InstrumentationRuleType = "CodeAttributes"
-	InstrumentationRuleTypeHeadersCollection InstrumentationRuleType = "HeadersCollection"
-	InstrumentationRuleTypePayloadCollection InstrumentationRuleType = "PayloadCollection"
-	InstrumentationRuleTypeUnknownType       InstrumentationRuleType = "UnknownType"
+	InstrumentationRuleTypeCodeAttributes        InstrumentationRuleType = "CodeAttributes"
+	InstrumentationRuleTypeHeadersCollection     InstrumentationRuleType = "HeadersCollection"
+	InstrumentationRuleTypePayloadCollection     InstrumentationRuleType = "PayloadCollection"
+	InstrumentationRuleTypeCustomInstrumentation InstrumentationRuleType = "CustomInstrumentation"
+	InstrumentationRuleTypeNetworkMetrics        InstrumentationRuleType = "NetworkMetrics"
+	InstrumentationRuleTypeUnknownType           InstrumentationRuleType = "UnknownType"
 )
 
 var AllInstrumentationRuleType = []InstrumentationRuleType{
 	InstrumentationRuleTypeCodeAttributes,
 	InstrumentationRuleTypeHeadersCollection,
 	InstrumentationRuleTypePayloadCollection,
+	InstrumentationRuleTypeCustomInstrumentation,
+	InstrumentationRuleTypeNetworkMetrics,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeNetworkMetrics, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false
@@ -1066,66 +4579,106 @@ func (e InstrumentationRuleType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type JSONOperation string
+type K8sAttributesFrom string
 
 const (
-	JSONOperationExists         JSONOperation = "exists"
-	JSONOperationEquals         JSONOperation = "equals"
-	JSONOperationNotEquals      JSONOperation = "not_equals"
-	JSONOperationIsValidJSON    JSONOperation = "is_valid_json"
-	JSONOperationIsInvalidJSON  JSONOperation = "is_invalid_json"
-	JSONOperationJsonpathExists JSONOperation = "jsonpath_exists"
-	JSONOperationKeyEquals      JSONOperation = "key_equals"
-	JSONOperationKeyNotEquals   JSONOperation = "key_not_equals"
+	K8sAttributesFromPod       K8sAttributesFrom = "pod"
+	K8sAttributesFromNamespace K8sAttributesFrom = "namespace"
+	K8sAttributesFromNode      K8sAttributesFrom = "node"
 )
 
-var AllJSONOperation = []JSONOperation{
-	JSONOperationExists,
-	JSONOperationEquals,
-	JSONOperationNotEquals,
-	JSONOperationIsValidJSON,
-	JSONOperationIsInvalidJSON,
-	JSONOperationJsonpathExists,
-	JSONOperationKeyEquals,
-	JSONOperationKeyNotEquals,
+var AllK8sAttributesFrom = []K8sAttributesFrom{
+	K8sAttributesFromPod,
+	K8sAttributesFromNamespace,
+	K8sAttributesFromNode,
 }
 
-func (e JSONOperation) IsValid() bool {
+func (e K8sAttributesFrom) IsValid() bool {
 	switch e {
-	case JSONOperationExists, JSONOperationEquals, JSONOperationNotEquals, JSONOperationIsValidJSON, JSONOperationIsInvalidJSON, JSONOperationJsonpathExists, JSONOperationKeyEquals, JSONOperationKeyNotEquals:
+	case K8sAttributesFromPod, K8sAttributesFromNamespace, K8sAttributesFromNode:
 		return true
 	}
 	return false
 }
 
-func (e JSONOperation) String() string {
+func (e K8sAttributesFrom) String() string {
 	return string(e)
 }
 
-func (e *JSONOperation) UnmarshalGQL(v any) error {
+func (e *K8sAttributesFrom) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = JSONOperation(str)
+	*e = K8sAttributesFrom(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid JsonOperation", str)
+		return fmt.Errorf("%s is not a valid K8sAttributesFrom", str)
 	}
 	return nil
 }
 
-func (e JSONOperation) MarshalGQL(w io.Writer) {
+func (e K8sAttributesFrom) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type K8sConditionStatus string
+
+const (
+	K8sConditionStatusTrue    K8sConditionStatus = "True"
+	K8sConditionStatusFalse   K8sConditionStatus = "False"
+	K8sConditionStatusUnknown K8sConditionStatus = "Unknown"
+)
+
+var AllK8sConditionStatus = []K8sConditionStatus{
+	K8sConditionStatusTrue,
+	K8sConditionStatusFalse,
+	K8sConditionStatusUnknown,
+}
+
+func (e K8sConditionStatus) IsValid() bool {
+	switch e {
+	case K8sConditionStatusTrue, K8sConditionStatusFalse, K8sConditionStatusUnknown:
+		return true
+	}
+	return false
+}
+
+func (e K8sConditionStatus) String() string {
+	return string(e)
+}
+
+func (e *K8sConditionStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = K8sConditionStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid K8sConditionStatus", str)
+	}
+	return nil
+}
+
+func (e K8sConditionStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type K8sResourceKind string
 
 const (
-	K8sResourceKindDeployment  K8sResourceKind = "Deployment"
-	K8sResourceKindDaemonSet   K8sResourceKind = "DaemonSet"
-	K8sResourceKindStatefulSet K8sResourceKind = "StatefulSet"
-	K8sResourceKindCronJob     K8sResourceKind = "CronJob"
+	K8sResourceKindDeployment            K8sResourceKind = "Deployment"
+	K8sResourceKindDaemonSet             K8sResourceKind = "DaemonSet"
+	K8sResourceKindStatefulSet           K8sResourceKind = "StatefulSet"
+	K8sResourceKindCronJob               K8sResourceKind = "CronJob"
+	K8sResourceKindJob                   K8sResourceKind = "Job"
+	K8sResourceKindConfigMap             K8sResourceKind = "ConfigMap"
+	K8sResourceKindPod                   K8sResourceKind = "Pod"
+	K8sResourceKindStaticPod             K8sResourceKind = "StaticPod"
+	K8sResourceKindDeploymentConfig      K8sResourceKind = "DeploymentConfig"
+	K8sResourceKindRollout               K8sResourceKind = "Rollout"
+	K8sResourceKindInstrumentationConfig K8sResourceKind = "InstrumentationConfig"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
@@ -1133,11 +4686,18 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
 	K8sResourceKindCronJob,
+	K8sResourceKindJob,
+	K8sResourceKindConfigMap,
+	K8sResourceKindPod,
+	K8sResourceKindStaticPod,
+	K8sResourceKindDeploymentConfig,
+	K8sResourceKindRollout,
+	K8sResourceKindInstrumentationConfig,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout, K8sResourceKindInstrumentationConfig:
 		return true
 	}
 	return false
@@ -1164,54 +4724,406 @@ func (e K8sResourceKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type NumberOperation string
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode string
 
 const (
-	NumberOperationExists             NumberOperation = "exists"
-	NumberOperationEquals             NumberOperation = "equals"
-	NumberOperationNotEquals          NumberOperation = "not_equals"
-	NumberOperationGreaterThan        NumberOperation = "greater_than"
-	NumberOperationLessThan           NumberOperation = "less_than"
-	NumberOperationGreaterThanOrEqual NumberOperation = "greater_than_or_equal"
-	NumberOperationLessThanOrEqual    NumberOperation = "less_than_or_equal"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = "sampled_spans_only"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans         K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = "all_spans"
 )
 
-var AllNumberOperation = []NumberOperation{
-	NumberOperationExists,
-	NumberOperationEquals,
-	NumberOperationNotEquals,
-	NumberOperationGreaterThan,
-	NumberOperationLessThan,
-	NumberOperationGreaterThanOrEqual,
-	NumberOperationLessThanOrEqual,
+var AllK8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = []K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode{
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly,
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans,
 }
 
-func (e NumberOperation) IsValid() bool {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) IsValid() bool {
 	switch e {
-	case NumberOperationExists, NumberOperationEquals, NumberOperationNotEquals, NumberOperationGreaterThan, NumberOperationLessThan, NumberOperationGreaterThanOrEqual, NumberOperationLessThanOrEqual:
+	case K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly, K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans:
 		return true
 	}
 	return false
 }
 
-func (e NumberOperation) String() string {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) String() string {
 	return string(e)
 }
 
-func (e *NumberOperation) UnmarshalGQL(v any) error {
+func (e *K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = NumberOperation(str)
+	*e = K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid NumberOperation", str)
+		return fmt.Errorf("%s is not a valid K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode", str)
 	}
 	return nil
 }
 
-func (e NumberOperation) MarshalGQL(w io.Writer) {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ManagedBy string
+
+const (
+	ManagedByProfile           ManagedBy = "Profile"
+	ManagedByOdigosUI          ManagedBy = "OdigosUi"
+	ManagedByInterrogationLoop ManagedBy = "InterrogationLoop"
+	ManagedByUnknown           ManagedBy = "Unknown"
+)
+
+var AllManagedBy = []ManagedBy{
+	ManagedByProfile,
+	ManagedByOdigosUI,
+	ManagedByInterrogationLoop,
+	ManagedByUnknown,
+}
+
+func (e ManagedBy) IsValid() bool {
+	switch e {
+	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByUnknown:
+		return true
+	}
+	return false
+}
+
+func (e ManagedBy) String() string {
+	return string(e)
+}
+
+func (e *ManagedBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ManagedBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ManagedBy", str)
+	}
+	return nil
+}
+
+func (e ManagedBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ManifestFormat string
+
+const (
+	ManifestFormatYaml ManifestFormat = "YAML"
+	ManifestFormatJSON ManifestFormat = "JSON"
+)
+
+var AllManifestFormat = []ManifestFormat{
+	ManifestFormatYaml,
+	ManifestFormatJSON,
+}
+
+func (e ManifestFormat) IsValid() bool {
+	switch e {
+	case ManifestFormatYaml, ManifestFormatJSON:
+		return true
+	}
+	return false
+}
+
+func (e ManifestFormat) String() string {
+	return string(e)
+}
+
+func (e *ManifestFormat) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ManifestFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ManifestFormat", str)
+	}
+	return nil
+}
+
+func (e ManifestFormat) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MountMethod string
+
+const (
+	MountMethodK8sVirtualDevice MountMethod = "k8s_virtual_device"
+	MountMethodK8sHostPath      MountMethod = "k8s_host_path"
+	MountMethodK8sInitContainer MountMethod = "k8s_init_container"
+	MountMethodK8sCsiDriver     MountMethod = "k8s_csi_driver"
+)
+
+var AllMountMethod = []MountMethod{
+	MountMethodK8sVirtualDevice,
+	MountMethodK8sHostPath,
+	MountMethodK8sInitContainer,
+	MountMethodK8sCsiDriver,
+}
+
+func (e MountMethod) IsValid() bool {
+	switch e {
+	case MountMethodK8sVirtualDevice, MountMethodK8sHostPath, MountMethodK8sInitContainer, MountMethodK8sCsiDriver:
+		return true
+	}
+	return false
+}
+
+func (e MountMethod) String() string {
+	return string(e)
+}
+
+func (e *MountMethod) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MountMethod(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MountMethod", str)
+	}
+	return nil
+}
+
+func (e MountMethod) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type NoisyOperationsEnforcement string
+
+const (
+	NoisyOperationsEnforcementAuto   NoisyOperationsEnforcement = "auto"
+	NoisyOperationsEnforcementAlways NoisyOperationsEnforcement = "always"
+)
+
+var AllNoisyOperationsEnforcement = []NoisyOperationsEnforcement{
+	NoisyOperationsEnforcementAuto,
+	NoisyOperationsEnforcementAlways,
+}
+
+func (e NoisyOperationsEnforcement) IsValid() bool {
+	switch e {
+	case NoisyOperationsEnforcementAuto, NoisyOperationsEnforcementAlways:
+		return true
+	}
+	return false
+}
+
+func (e NoisyOperationsEnforcement) String() string {
+	return string(e)
+}
+
+func (e *NoisyOperationsEnforcement) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = NoisyOperationsEnforcement(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid NoisyOperationsEnforcement", str)
+	}
+	return nil
+}
+
+func (e NoisyOperationsEnforcement) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OdigosComponent string
+
+const (
+	OdigosComponentAutoscaler   OdigosComponent = "autoscaler"
+	OdigosComponentScheduler    OdigosComponent = "scheduler"
+	OdigosComponentInstrumentor OdigosComponent = "instrumentor"
+	OdigosComponentOdiglet      OdigosComponent = "odiglet"
+	OdigosComponentDeviceplugin OdigosComponent = "deviceplugin"
+	OdigosComponentUI           OdigosComponent = "ui"
+	OdigosComponentCollector    OdigosComponent = "collector"
+)
+
+var AllOdigosComponent = []OdigosComponent{
+	OdigosComponentAutoscaler,
+	OdigosComponentScheduler,
+	OdigosComponentInstrumentor,
+	OdigosComponentOdiglet,
+	OdigosComponentDeviceplugin,
+	OdigosComponentUI,
+	OdigosComponentCollector,
+}
+
+func (e OdigosComponent) IsValid() bool {
+	switch e {
+	case OdigosComponentAutoscaler, OdigosComponentScheduler, OdigosComponentInstrumentor, OdigosComponentOdiglet, OdigosComponentDeviceplugin, OdigosComponentUI, OdigosComponentCollector:
+		return true
+	}
+	return false
+}
+
+func (e OdigosComponent) String() string {
+	return string(e)
+}
+
+func (e *OdigosComponent) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OdigosComponent(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OdigosComponent", str)
+	}
+	return nil
+}
+
+func (e OdigosComponent) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OdigosLogLevel string
+
+const (
+	OdigosLogLevelError OdigosLogLevel = "error"
+	OdigosLogLevelWarn  OdigosLogLevel = "warn"
+	OdigosLogLevelInfo  OdigosLogLevel = "info"
+	OdigosLogLevelDebug OdigosLogLevel = "debug"
+)
+
+var AllOdigosLogLevel = []OdigosLogLevel{
+	OdigosLogLevelError,
+	OdigosLogLevelWarn,
+	OdigosLogLevelInfo,
+	OdigosLogLevelDebug,
+}
+
+func (e OdigosLogLevel) IsValid() bool {
+	switch e {
+	case OdigosLogLevelError, OdigosLogLevelWarn, OdigosLogLevelInfo, OdigosLogLevelDebug:
+		return true
+	}
+	return false
+}
+
+func (e OdigosLogLevel) String() string {
+	return string(e)
+}
+
+func (e *OdigosLogLevel) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OdigosLogLevel(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OdigosLogLevel", str)
+	}
+	return nil
+}
+
+func (e OdigosLogLevel) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PodConditionType string
+
+const (
+	PodConditionTypePodScheduled    PodConditionType = "PodScheduled"
+	PodConditionTypeInitialized     PodConditionType = "Initialized"
+	PodConditionTypeContainersReady PodConditionType = "ContainersReady"
+	PodConditionTypeReady           PodConditionType = "Ready"
+	PodConditionTypeOther           PodConditionType = "Other"
+)
+
+var AllPodConditionType = []PodConditionType{
+	PodConditionTypePodScheduled,
+	PodConditionTypeInitialized,
+	PodConditionTypeContainersReady,
+	PodConditionTypeReady,
+	PodConditionTypeOther,
+}
+
+func (e PodConditionType) IsValid() bool {
+	switch e {
+	case PodConditionTypePodScheduled, PodConditionTypeInitialized, PodConditionTypeContainersReady, PodConditionTypeReady, PodConditionTypeOther:
+		return true
+	}
+	return false
+}
+
+func (e PodConditionType) String() string {
+	return string(e)
+}
+
+func (e *PodConditionType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PodConditionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PodConditionType", str)
+	}
+	return nil
+}
+
+func (e PodConditionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PodPhase string
+
+const (
+	PodPhasePending   PodPhase = "Pending"
+	PodPhaseRunning   PodPhase = "Running"
+	PodPhaseSucceeded PodPhase = "Succeeded"
+	PodPhaseFailed    PodPhase = "Failed"
+	PodPhaseUnknown   PodPhase = "Unknown"
+)
+
+var AllPodPhase = []PodPhase{
+	PodPhasePending,
+	PodPhaseRunning,
+	PodPhaseSucceeded,
+	PodPhaseFailed,
+	PodPhaseUnknown,
+}
+
+func (e PodPhase) IsValid() bool {
+	switch e {
+	case PodPhasePending, PodPhaseRunning, PodPhaseSucceeded, PodPhaseFailed, PodPhaseUnknown:
+		return true
+	}
+	return false
+}
+
+func (e PodPhase) String() string {
+	return string(e)
+}
+
+func (e *PodPhase) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PodPhase(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PodPhase", str)
+	}
+	return nil
+}
+
+func (e PodPhase) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1264,23 +5176,76 @@ func (e ProgrammingLanguage) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type SamplingWorkloadLanguage string
+
+const (
+	SamplingWorkloadLanguageJava       SamplingWorkloadLanguage = "java"
+	SamplingWorkloadLanguagePython     SamplingWorkloadLanguage = "python"
+	SamplingWorkloadLanguageGo         SamplingWorkloadLanguage = "go"
+	SamplingWorkloadLanguageDotnet     SamplingWorkloadLanguage = "dotnet"
+	SamplingWorkloadLanguageJavascript SamplingWorkloadLanguage = "javascript"
+	SamplingWorkloadLanguagePhp        SamplingWorkloadLanguage = "php"
+	SamplingWorkloadLanguageRuby       SamplingWorkloadLanguage = "ruby"
+)
+
+var AllSamplingWorkloadLanguage = []SamplingWorkloadLanguage{
+	SamplingWorkloadLanguageJava,
+	SamplingWorkloadLanguagePython,
+	SamplingWorkloadLanguageGo,
+	SamplingWorkloadLanguageDotnet,
+	SamplingWorkloadLanguageJavascript,
+	SamplingWorkloadLanguagePhp,
+	SamplingWorkloadLanguageRuby,
+}
+
+func (e SamplingWorkloadLanguage) IsValid() bool {
+	switch e {
+	case SamplingWorkloadLanguageJava, SamplingWorkloadLanguagePython, SamplingWorkloadLanguageGo, SamplingWorkloadLanguageDotnet, SamplingWorkloadLanguageJavascript, SamplingWorkloadLanguagePhp, SamplingWorkloadLanguageRuby:
+		return true
+	}
+	return false
+}
+
+func (e SamplingWorkloadLanguage) String() string {
+	return string(e)
+}
+
+func (e *SamplingWorkloadLanguage) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SamplingWorkloadLanguage(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SamplingWorkloadLanguage", str)
+	}
+	return nil
+}
+
+func (e SamplingWorkloadLanguage) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type SignalType string
 
 const (
-	SignalTypeTraces  SignalType = "TRACES"
-	SignalTypeMetrics SignalType = "METRICS"
-	SignalTypeLogs    SignalType = "LOGS"
+	SignalTypeTraces   SignalType = "TRACES"
+	SignalTypeMetrics  SignalType = "METRICS"
+	SignalTypeLogs     SignalType = "LOGS"
+	SignalTypeProfiles SignalType = "PROFILES"
 )
 
 var AllSignalType = []SignalType{
 	SignalTypeTraces,
 	SignalTypeMetrics,
 	SignalTypeLogs,
+	SignalTypeProfiles,
 }
 
 func (e SignalType) IsValid() bool {
 	switch e {
-	case SignalTypeTraces, SignalTypeMetrics, SignalTypeLogs:
+	case SignalTypeTraces, SignalTypeMetrics, SignalTypeLogs, SignalTypeProfiles:
 		return true
 	}
 	return false
@@ -1354,55 +5319,6 @@ func (e SpanKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type StringOperation string
-
-const (
-	StringOperationExists      StringOperation = "exists"
-	StringOperationEquals      StringOperation = "equals"
-	StringOperationNotEquals   StringOperation = "not_equals"
-	StringOperationContains    StringOperation = "contains"
-	StringOperationNotContains StringOperation = "not_contains"
-	StringOperationRegex       StringOperation = "regex"
-)
-
-var AllStringOperation = []StringOperation{
-	StringOperationExists,
-	StringOperationEquals,
-	StringOperationNotEquals,
-	StringOperationContains,
-	StringOperationNotContains,
-	StringOperationRegex,
-}
-
-func (e StringOperation) IsValid() bool {
-	switch e {
-	case StringOperationExists, StringOperationEquals, StringOperationNotEquals, StringOperationContains, StringOperationNotContains, StringOperationRegex:
-		return true
-	}
-	return false
-}
-
-func (e StringOperation) String() string {
-	return string(e)
-}
-
-func (e *StringOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = StringOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid StringOperation", str)
-	}
-	return nil
-}
-
-func (e StringOperation) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 type Tier string
 
 const (
@@ -1443,5 +5359,103 @@ func (e *Tier) UnmarshalGQL(v any) error {
 }
 
 func (e Tier) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UIMode string
+
+const (
+	UIModeDefault  UIMode = "default"
+	UIModeReadonly UIMode = "readonly"
+)
+
+var AllUIMode = []UIMode{
+	UIModeDefault,
+	UIModeReadonly,
+}
+
+func (e UIMode) IsValid() bool {
+	switch e {
+	case UIModeDefault, UIModeReadonly:
+		return true
+	}
+	return false
+}
+
+func (e UIMode) String() string {
+	return string(e)
+}
+
+func (e *UIMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UIMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UiMode", str)
+	}
+	return nil
+}
+
+func (e UIMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Rollout/availability status of a workload.
+//
+// - Healthy: All desired replicas are updated, available, and ready.
+// - Updating: Workload is progressing towards desired state (e.g., updating pods).
+// - Degraded: Progressing but with availability issues (e.g., not enough available replicas).
+// - Failed: Progress deadline exceeded or an unrecoverable error occurred.
+// - Down: No available replicas.
+// - Unknown: Status cannot be determined from current signals.
+type WorkloadRolloutStatus string
+
+const (
+	WorkloadRolloutStatusHealthy  WorkloadRolloutStatus = "Healthy"
+	WorkloadRolloutStatusUpdating WorkloadRolloutStatus = "Updating"
+	WorkloadRolloutStatusDegraded WorkloadRolloutStatus = "Degraded"
+	WorkloadRolloutStatusFailed   WorkloadRolloutStatus = "Failed"
+	WorkloadRolloutStatusDown     WorkloadRolloutStatus = "Down"
+	WorkloadRolloutStatusUnknown  WorkloadRolloutStatus = "Unknown"
+)
+
+var AllWorkloadRolloutStatus = []WorkloadRolloutStatus{
+	WorkloadRolloutStatusHealthy,
+	WorkloadRolloutStatusUpdating,
+	WorkloadRolloutStatusDegraded,
+	WorkloadRolloutStatusFailed,
+	WorkloadRolloutStatusDown,
+	WorkloadRolloutStatusUnknown,
+}
+
+func (e WorkloadRolloutStatus) IsValid() bool {
+	switch e {
+	case WorkloadRolloutStatusHealthy, WorkloadRolloutStatusUpdating, WorkloadRolloutStatusDegraded, WorkloadRolloutStatusFailed, WorkloadRolloutStatusDown, WorkloadRolloutStatusUnknown:
+		return true
+	}
+	return false
+}
+
+func (e WorkloadRolloutStatus) String() string {
+	return string(e)
+}
+
+func (e *WorkloadRolloutStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WorkloadRolloutStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WorkloadRolloutStatus", str)
+	}
+	return nil
+}
+
+func (e WorkloadRolloutStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,25 +21,26 @@ func GetWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Cli
 	return instrumentationConfig, nil
 }
 
-func FilterRelevantSdk(instrumentationConfig *v1alpha1.InstrumentationConfig, programmingLanguage string) (*protobufs.AgentConfigFile, error) {
-	relevantSdkConfig := v1alpha1.SdkConfig{}
+func FilterRelevantContainerConfig(instrumentationConfig *v1alpha1.InstrumentationConfig, containerName string) (*protobufs.AgentConfigFile, string, error) {
+	containerConfig := v1alpha1.ContainerAgentConfig{}
 
-	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-		if common.MapOdigosToSemConv(sdkConfig.Language) == programmingLanguage {
-			relevantSdkConfig = sdkConfig
+	for _, container := range instrumentationConfig.Spec.Containers {
+		if container.ContainerName == containerName {
+			containerConfig = container
+			break
 		}
 	}
 
-	remoteConfigInstrumentationConfigBytes, err := json.Marshal(relevantSdkConfig)
+	remoteConfigContainerConfigBytes, err := json.Marshal(containerConfig)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	instrumentationConfigContent := protobufs.AgentConfigFile{
-		Body:        remoteConfigInstrumentationConfigBytes,
+	containerConfigContent := protobufs.AgentConfigFile{
+		Body:        remoteConfigContainerConfigBytes,
 		ContentType: "application/json",
 	}
 
-	return &instrumentationConfigContent, nil
+	return &containerConfigContent, string(RemoteConfigContainerConfigSectionName), nil
 
 }

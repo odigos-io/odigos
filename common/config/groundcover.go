@@ -38,11 +38,11 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return nil, err
 	}
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"apikey": "${GROUNDCOVER_API_KEY}",
+			"apikey": SecretEnvPlaceholder("GROUNDCOVER_API_KEY", dest),
 		},
 	}
 

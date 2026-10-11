@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     odigos.io/system-object: "true"
   name: instrumentationrules.odigos.io
@@ -39,6 +39,29 @@ spec:
             type: object
           spec:
             properties:
+              agentDiagnostics:
+                description: Configure the agent own logging configuration.
+                properties:
+                  odigosLogLevel:
+                    description: The log level of the odigos agent itself (startup,
+                      config, features, insttrumentation loading, etc.)
+                    enum:
+                    - error
+                    - warn
+                    - info
+                    - debug
+                    type: string
+                  openTelemetryComponentsLogLevel:
+                    description: |-
+                      The log level of the OpenTelemetry components (Sdk, instrumentation libraries, detectors, etc.)
+                      If unset, no OpenTelemetry components logs will be collected.
+                    enum:
+                    - error
+                    - warn
+                    - info
+                    - debug
+                    type: string
+                type: object
               codeAttributes:
                 description: Configure which code attributes should be recorded as
                   span attributes.
@@ -74,10 +97,116 @@ spec:
                       if unset, the value will resolve from other relevant rules, or fallback to false
                     type: boolean
                 type: object
+              customInstrumentations:
+                description: Add custom instrumentation probes
+                properties:
+                  cpp:
+                    items:
+                      properties:
+                        signature:
+                          description: |-
+                            function signature to add custom probe for.
+                            the following scenarios are possible:
+                            namespace::class::function - for example std::vector::push_back - all overloads of this function
+                            namespace::function - targeting a function (and its possible overloads) in a specific namespac
+                            function - for C-like functions a single function name can be used: e.g SSL_write
+                          type: string
+                      required:
+                      - signature
+                      type: object
+                    type: array
+                  golang:
+                    items:
+                      description: |-
+                        golang custom probe contains the details for a custom probe for golang applications,
+                        which includes the package name, function name or receiver name and method name to be instrumented.
+                      properties:
+                        functionName:
+                          description: |-
+                            FunctionName is the name of the golang function to be instrumented, ie package name is "net/http" and the function
+                            name will be "ListenAndServe"; Function name is disallowed if ReceiverName and ReceiverMethodName are provided
+                          type: string
+                        packageName:
+                          description: PackageName is the name of the golang package
+                            (ie net/http); Package name is always required
+                          type: string
+                        receiverMethodName:
+                          description: |-
+                            ReceiverMethodName is the name of the golang method, given a receiver struct, to be instrumented
+                            for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
+                            ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
+                          type: string
+                        receiverName:
+                          description: |-
+                            ReceiverName is the name of the golang receiver struct to be instrumented, ie for the "net/http" package, "response" is a receiver struct
+                            ReceiverName is disallowed if FunctionName is provided; Receiver must be a concrete type (not an interface)
+                          type: string
+                      required:
+                      - packageName
+                      type: object
+                    type: array
+                  java:
+                    items:
+                      description: |-
+                        java custom probe contains the details for a custom probe for java applications,
+                        which includes the class name and method name to be instrumented.
+                      properties:
+                        className:
+                          type: string
+                        methodName:
+                          type: string
+                      type: object
+                    type: array
+                  php:
+                    items:
+                      description: |-
+                        PhpCustomProbe contains the details for a custom probe for PHP applications.
+                        className is optional; when empty, functionName refers to a global function.
+                      properties:
+                        className:
+                          type: string
+                        functionName:
+                          type: string
+                      required:
+                      - functionName
+                      type: object
+                    type: array
+                type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
                 type: boolean
+              ebpfLogCapture:
+                description: |-
+                  Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+                  will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+                  register instrumented processes for eBPF log capture.
+                properties:
+                  enabled:
+                    description: |-
+                      Enabled switches the logs pipeline to use only the eBPF receiver,
+                      replacing the filelog receiver, and enables eBPF-based log capture
+                      in odiglet for instrumented processes.
+                    type: boolean
+                type: object
+              headSamplingFallbackFraction:
+                description: |-
+                  Configure general fraction of traces to record if none of the rules evaluate to true.
+                  this can help in reducing very noisy and heavy traffic services.
+                  note that traces will be dropped regardless of thier attributes/errors/importance.
+                  @deprecated: use odigos config to set this value instead.
+                properties:
+                  fractionToKeep:
+                    default: 1
+                    description: |-
+                      The fraction of traces to keep if none of the head sampling rules evaluate to true.
+                      should be in range [0, 1]
+                      0 means no traces will be recorded (unless they matched a rule to keep)
+                      1 (default) means all traces will be recorded
+                    maximum: 1
+                    minimum: 0
+                    type: number
+                type: object
               headersCollection:
                 description: Allows to configure the collection of http headers for
                   different types of payloads.
@@ -118,6 +247,7 @@ spec:
                       - postgres
                       - unknown
                       - ignored
+                      - '*'
                       type: string
                     name:
                       description: The name of the instrumentation library
@@ -138,6 +268,10 @@ spec:
                   - name
                   type: object
                 type: array
+              networkMetrics:
+                description: Configure network flow and TCP stats metrics for scoped
+                  workloads.
+                type: object
               notes:
                 description: 'A free-form text field that allows you to attach notes
                   regarding the rule for convenience. For example: why it was added.
@@ -157,26 +291,6 @@ spec:
                 required:
                 - otelDistroNames
                 type: object
-              otelSdks:
-                description: 'Deprecated: use OtelDistros instead.'
-                properties:
-                  otelSdkByLanguage:
-                    additionalProperties:
-                      properties:
-                        sdkTier:
-                          type: string
-                        sdkType:
-                          description: 'Odigos supports two types of OpenTelemetry
-                            SDKs: native and ebpf.'
-                          type: string
-                      required:
-                      - sdkTier
-                      - sdkType
-                      type: object
-                    type: object
-                required:
-                - otelSdkByLanguage
-                type: object
               payloadCollection:
                 description: Allows to configure payload collection aspects for different
                   types of payloads.
@@ -186,9 +300,8 @@ spec:
                       workload and instrumentation libraries
                     properties:
                       dropPartialPayloads:
-                        description: |-
-                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        description: If payload exceeds MaxPayloadLength, controls
+                          whether to truncate it or drop it entirely.
                         type: boolean
                       maxPayloadLength:
                         description: |-
@@ -196,6 +309,12 @@ spec:
                           If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
                         format: int64
                         type: integer
+                      sanitizationPolicy:
+                        description: |-
+                          The sanitization policy to use for collecting the DB query payloads.
+                          If not specified, the default sanitization policy will be used:
+                          (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
+                        type: string
                     type: object
                   httpRequest:
                     description: |-
@@ -203,9 +322,8 @@ spec:
                       Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
                     properties:
                       dropPartialPayloads:
-                        description: |-
-                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        description: If payload exceeds MaxPayloadLength, controls
+                          whether to truncate it or drop it entirely.
                         type: boolean
                       maxPayloadLength:
                         description: |-
@@ -228,9 +346,8 @@ spec:
                       Can be a client response or a server response, depending on the instrumentation library
                     properties:
                       dropPartialPayloads:
-                        description: |-
-                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        description: If payload exceeds MaxPayloadLength, controls
+                          whether to truncate it or drop it entirely.
                         type: boolean
                       maxPayloadLength:
                         description: |-
@@ -252,9 +369,8 @@ spec:
                       workload and instrumentation libraries
                     properties:
                       dropPartialPayloads:
-                        description: |-
-                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        description: If payload exceeds MaxPayloadLength, controls
+                          whether to truncate it or drop it entirely.
                         type: boolean
                       maxPayloadLength:
                         description: |-
@@ -269,6 +385,62 @@ spec:
                   convenience. Odigos does not use or assume any meaning from this
                   field.
                 type: string
+              scopes:
+                description: SourcesScopes lists SourcesScope entries to which the
+                  rule should be applied. If unset or empty, the rule applies to all
+                  workloads.
+                properties:
+                  languages:
+                    items:
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - php
+                      - ruby
+                      - rust
+                      - cplusplus
+                      - mysql
+                      - nginx
+                      - redis
+                      - postgres
+                      - unknown
+                      - ignored
+                      - '*'
+                      type: string
+                    type: array
+                  namespaces:
+                    items:
+                      type: string
+                    type: array
+                  sources:
+                    items:
+                      description: |-
+                        PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                        It contains essential details about the controller such as its Name, Namespace, and Kind.
+                        'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                        This struct is useful for identifying and interacting with the overarching entity
+                        that governs the lifecycle and behavior of a Pod, especially in contexts where
+                        understanding the relationship between a Pod and its controlling workload is crucial.
+                      properties:
+                        kind:
+                          description: |-
+                            1. the pascal case representation of the workload kind
+                            it is used in k8s api objects as the `Kind` field.
+                          type: string
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                type: object
               traceConfig:
                 description: Configure the tracing configuration for the library.
                 properties:
@@ -276,35 +448,83 @@ spec:
                     description: Disabled will disable tracing for the rule.
                     type: boolean
                 type: object
-              workloads:
-                description: An array of workload objects (name, namespace, kind)
-                  to which the rule should be applied. If not specified, the rule
-                  will be applied to all workloads. empty array will render the rule
-                  inactive.
-                items:
-                  description: |-
-                    PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
-                    It contains essential details about the controller such as its Name, Namespace, and Kind.
-                    'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
-                    This struct is useful for identifying and interacting with the overarching entity
-                    that governs the lifecycle and behavior of a Pod, especially in contexts where
-                    understanding the relationship between a Pod and its controlling workload is crucial.
-                  properties:
-                    kind:
-                      description: |-
-                        1. the pascal case representation of the workload kind
-                        it is used in k8s api objects as the `Kind` field.
-                      type: string
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                  required:
-                  - kind
-                  - name
-                  - namespace
-                  type: object
-                type: array
+              traceVerbosity:
+                description: Configure the verbosity of the traces for the library.
+                properties:
+                  disabledLibraries:
+                    description: |-
+                      instrumentation libraries to configure
+                      the library name shouold be the same as the "instrumentation scope name" that can be found on the generate span attributes.
+                    items:
+                      properties:
+                        Language:
+                          description: the programming language of the relevant library
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        libraryName:
+                          description: |-
+                            the name of the library to configure. required.
+                            exact syntax and format depends on the programming language.
+                          type: string
+                      required:
+                      - Language
+                      - libraryName
+                      type: object
+                    type: array
+                  enabledLibraries:
+                    description: |-
+                      for instrumentation libraries that are disabled by default, this field can be used to enable them.
+                      the list of such libraries is small and depends on the language and agent type.
+                      common example: nodejs fs, dns, net instrumentations are disabled by default and can be opt-in for trace collection.
+                    items:
+                      properties:
+                        Language:
+                          description: the programming language of the relevant library
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        libraryName:
+                          description: |-
+                            the name of the library to configure. required.
+                            exact syntax and format depends on the programming language.
+                          type: string
+                      required:
+                      - Language
+                      - libraryName
+                      type: object
+                    type: array
+                type: object
             type: object
           status:
             properties:

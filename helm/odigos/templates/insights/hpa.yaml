@@ -1,0 +1,83 @@
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+{{- /*
+  min/max default to the gateway bounds (unless overridden in values); scale
+  behavior is hardcoded to mirror the gateway (fast up, slow down).
+*/}}
+{{- $ac := .Values.insights.autoscaling -}}
+{{- $minReplicas := int (include "collector.gateway.minReplicas" .) -}}
+{{- if hasKey $ac "minReplicas" -}}{{- $minReplicas = int $ac.minReplicas -}}{{- end -}}
+{{- $maxReplicas := int (include "collector.gateway.maxReplicas" .) -}}
+{{- if hasKey $ac "maxReplicas" -}}{{- $maxReplicas = int $ac.maxReplicas -}}{{- end -}}
+{{- if gt $minReplicas $maxReplicas -}}
+  {{- fail (printf "insights.autoscaling: resolved minReplicas (%d) must be <= maxReplicas (%d)" $minReplicas $maxReplicas) -}}
+{{- end -}}
+{{- $vk := .Capabilities.KubeVersion.Version -}}
+{{- if semverCompare "<1.23-0" $vk }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: odigos-insights
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-insights
+    odigos.io/system-object: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: odigos-insights
+  minReplicas: {{ $minReplicas }}
+  maxReplicas: {{ $maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.insights.autoscaling.cpuTargetUtilization }}
+{{- else }}
+{{- if semverCompare "<1.25-0" $vk }}
+apiVersion: autoscaling/v2beta2
+{{- else }}
+apiVersion: autoscaling/v2
+{{- end }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: odigos-insights
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-insights
+    odigos.io/system-object: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: odigos-insights
+  minReplicas: {{ $minReplicas }}
+  maxReplicas: {{ $maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.insights.autoscaling.cpuTargetUtilization }}
+  # Fast scale-up, slow scale-down — mirrors the gateway HPA to avoid oscillation.
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      selectPolicy: Max
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 900
+      selectPolicy: Min
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+{{- end }}
+{{- end }}

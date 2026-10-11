@@ -1,20 +1,32 @@
 import { create } from 'zustand';
-import { StatusType } from '@odigos/ui-kit/types';
+import { BadgeProps } from '@odigos/ui-kit/components';
+
+export enum StatusKeys {
+  Token = 'token',
+  Backend = 'backend',
+  Instrumentation = 'instrumentation',
+}
+
+export interface StatusValues extends BadgeProps {
+  tooltip?: string;
+}
 
 interface StoreValues {
-  status: StatusType;
-  title: string;
-  message: string;
+  [StatusKeys.Token]?: StatusValues;
+  [StatusKeys.Backend]?: StatusValues;
+  [StatusKeys.Instrumentation]?: StatusValues;
 }
 
 interface StoreSetters {
-  setStatusStore: (s: StoreValues) => void;
+  setStatusStore: (k: keyof StoreValues, v?: StatusValues) => void;
+  resetStatusStore: (k: keyof StoreValues) => void;
 }
 
 export const useStatusStore = create<StoreValues & StoreSetters>((set) => ({
-  status: StatusType.Default,
-  title: 'Connecting...',
-  message: '',
+  [StatusKeys.Token]: undefined,
+  [StatusKeys.Backend]: undefined,
+  [StatusKeys.Instrumentation]: undefined,
 
-  setStatusStore: (s) => set(s),
+  setStatusStore: (k, v) => set({ [k]: v }),
+  resetStatusStore: (k) => set({ [k]: undefined }),
 }));

@@ -1,5 +1,25 @@
 import { gql } from '@apollo/client';
 
+export const GET_INSTRUMENTATION_RULE_TYPES = gql`
+  query GetInstrumentationRuleTypes {
+    instrumentationRuleTypes {
+      type
+      displayName
+      description
+      supportedLanguages
+      docsUrl
+      fields {
+        name
+        displayName
+        componentType
+        componentProperties
+        initialValue
+        renderCondition
+      }
+    }
+  }
+`;
+
 export const GET_INSTRUMENTATION_RULES = gql`
   query GetInstrumentationRules {
     computePlatform {
@@ -11,6 +31,19 @@ export const GET_INSTRUMENTATION_RULES = gql`
         disabled
         mutable
         profileName
+        managedBy
+        conditions {
+          status
+          type
+          reason
+          message
+        }
+        sourcesScopes {
+          workloadName
+          workloadKind
+          workloadNamespace
+          workloadLanguage
+        }
         payloadCollection {
           httpRequest {
             mimeTypes
@@ -42,6 +75,23 @@ export const GET_INSTRUMENTATION_RULES = gql`
         headersCollection {
           headerKeys
         }
+        customInstrumentations {
+          golang {
+            packageName
+            functionName
+            receiverName
+            receiverMethodName
+          }
+          java {
+            methodName
+            className
+          }
+          php {
+            className
+            functionName
+          }
+        }
+        networkMetrics
       }
     }
   }

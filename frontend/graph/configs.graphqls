@@ -1,0 +1,478 @@
+# Config contains key information about the cluster and the installation
+
+enum InstallationStatus {
+  NEW
+  APPS_SELECTED
+  FINISHED
+}
+
+type Config {
+  readonly: Boolean!
+  platformType: ComputePlatformType!
+  tier: Tier!
+  odigosVersion: String!
+  installationMethod: String!
+  installationStatus: InstallationStatus!
+  clusterName: String
+  isCentralProxyRunning: Boolean
+  insightsEnabled: Boolean!
+}
+
+# Effective configuration, reflects the actual values applied to the cluster
+
+enum OdigosLogLevel {
+  error
+  warn
+  info
+  debug
+}
+
+enum OdigosComponent {
+  autoscaler
+  scheduler
+  instrumentor
+  odiglet
+  deviceplugin
+  ui
+  collector
+}
+
+enum UiMode {
+  default
+  readonly
+}
+
+enum MountMethod {
+  k8s_virtual_device
+  k8s_host_path
+  k8s_init_container
+  k8s_csi_driver
+}
+
+enum EnvInjectionMethod {
+  loader
+  pod_manifest
+  loader_fallback_to_pod_manifest
+}
+
+# Provenance: maps each helm value path to the ConfigMap it originated from
+
+type ProvenanceEntry {
+  helmPath: String!
+  reconciledFrom: String!
+}
+
+# Nested config types with direct scalar leaf fields
+
+type ComponentLogLevelsConfig {
+  default: OdigosLogLevel
+  autoscaler: OdigosLogLevel
+  scheduler: OdigosLogLevel
+  instrumentor: OdigosLogLevel
+  odiglet: OdigosLogLevel
+  deviceplugin: OdigosLogLevel
+  ui: OdigosLogLevel
+  collector: OdigosLogLevel
+}
+
+type RetryOnFailureConfig {
+  enabled: Boolean
+  initialInterval: String
+  maxInterval: String
+  maxElapsedTime: String
+}
+
+type OtlpExporterConfig {
+  enableDataCompression: Boolean
+  timeout: String
+  retryOnFailure: RetryOnFailureConfig
+}
+
+type CollectorNodeConfig {
+  collectorOwnMetricsPort: Int
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+  requestCPUm: Int
+  limitCPUm: Int
+  memoryLimiterLimitMiB: Int
+  memoryLimiterSpikeLimitMiB: Int
+  goMemLimitMiB: Int
+  k8sNodeLogsDirectory: String
+  enableDataCompression: Boolean
+  otlpExporterConfiguration: OtlpExporterConfig
+}
+
+type CollectorGatewayConfig {
+  minReplicas: Int
+  maxReplicas: Int
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+  requestCPUm: Int
+  limitCPUm: Int
+  memoryLimiterLimitMiB: Int
+  memoryLimiterSpikeLimitMiB: Int
+  goMemLimitMiB: Int
+  serviceGraphDisabled: Boolean
+  clusterMetricsEnabled: Boolean
+  httpsProxyAddress: String
+  nodeSelector: String # JSON string representation of map[string]string
+}
+
+type LanguageConfig {
+  enabled: Boolean!
+  envVars: String # JSON string representation of map[string]string
+}
+
+type UserInstrumentationEnvsConfig {
+  languages: String # JSON string representation of map[ProgrammingLanguage]LanguageConfig
+}
+
+type RolloutConfig {
+  automaticRolloutDisabled: Boolean
+  maxConcurrentRollouts: Int
+}
+
+type AutoRollbackConfig {
+  disabled: Boolean
+  graceTime: String
+  stabilityWindowTime: String
+}
+
+type InstrumentorConfig {
+  mountMethod: String
+  agentEnvVarsInjectionMethod: String
+  checkDeviceHealthBeforeInjection: Boolean
+}
+
+type AllowConcurrentAgentsConfig {
+  enabled: Boolean
+}
+
+type WaspConfig {
+  enabled: Boolean
+}
+
+type ProfilingConfig {
+  enabled: Boolean
+}
+
+type LiveTrafficLearningAutomaticRulesConfig {
+  enabled: Boolean
+}
+
+type LiveTrafficLearningRuleComputationConfig {
+  minObservationsForRule: Int
+  minCardinalityForTemplating: Int
+}
+
+type LiveTrafficLearningConfig {
+  enabled: Boolean
+  maxExamplePathsPerWorkload: Int
+  pathExampleIdleTTL: String
+  learningInterval: String
+  ruleComputation: LiveTrafficLearningRuleComputationConfig
+  automaticRules: LiveTrafficLearningAutomaticRulesConfig
+}
+
+type UrlTemplatizationCardinalityControlConfig {
+  liveTrafficLearning: LiveTrafficLearningConfig
+}
+
+type CardinalityControlConfig {
+  urlTemplatization: UrlTemplatizationCardinalityControlConfig
+}
+
+type TraceCorrelationsServiceIOConfig {
+  enabled: Boolean
+  inputSpanAttributes: [String!]
+  outputSpanAttributes: [String!]
+  metricsFlushInterval: String
+}
+
+type TraceCorrelationsConfig {
+  serviceIO: TraceCorrelationsServiceIOConfig
+}
+
+type KarpenterConfig {
+  enabled: Boolean
+}
+
+type OidcConfig {
+  tenantUrl: String
+  clientId: String
+  clientSecret: String
+}
+
+type MetricsSourceSpanMetricsConfig {
+  disabled: Boolean
+  interval: String
+  metricsExpiration: String
+  additionalDimensions: [String!]
+  histogramDisabled: Boolean
+  histogramBuckets: [String!]
+  includedProcessInDimensions: Boolean
+  excludedResourceAttributes: [String!]
+  resourceMetricsKeyAttributes: [String!]
+}
+
+type MetricsSourceHostMetricsConfig {
+  disabled: Boolean
+  interval: String
+}
+
+type MetricsSourceKubeletStatsConfig {
+  disabled: Boolean
+  interval: String
+}
+
+type MetricsSourceOdigosOwnMetricsConfig {
+  interval: String
+}
+
+type MetricsSourceAgentSpanMetricsConfig {
+  enabled: Boolean
+}
+
+type MetricsSourceAgentRuntimeMetricConfig {
+  name: String
+  disabled: Boolean
+}
+
+type MetricsSourceAgentJavaRuntimeMetricsConfig {
+  disabled: Boolean
+  metrics: [MetricsSourceAgentRuntimeMetricConfig!]
+}
+
+type MetricsSourceAgentRuntimeMetricsConfig {
+  java: MetricsSourceAgentJavaRuntimeMetricsConfig
+}
+
+type MetricsSourceAgentMetricsConfig {
+  spanMetrics: MetricsSourceAgentSpanMetricsConfig
+  runtimeMetrics: MetricsSourceAgentRuntimeMetricsConfig
+}
+
+type MetricsSourceConfig {
+  spanMetrics: MetricsSourceSpanMetricsConfig
+  hostMetrics: MetricsSourceHostMetricsConfig
+  kubeletStats: MetricsSourceKubeletStatsConfig
+  odigosOwnMetrics: MetricsSourceOdigosOwnMetricsConfig
+  agentMetrics: MetricsSourceAgentMetricsConfig
+}
+
+type AgentsInitContainerResourcesConfig {
+  requestCPUm: Int
+  limitCPUm: Int
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+}
+
+type OdigosOwnTelemetryConfig {
+  metricsStoreDisabled: Boolean
+}
+
+type EffectiveConfig {
+  configVersion: Int!
+  telemetryEnabled: Boolean
+  openshiftEnabled: Boolean
+  ignoredNamespaces: [String!]
+  ignoredContainers: [String!]
+  ignoreOdigosNamespace: Boolean
+  psp: Boolean
+  imagePrefix: String
+  skipWebhookIssuerCreation: Boolean
+  collectorGateway: CollectorGatewayConfig
+  collectorNode: CollectorNodeConfig
+  profiles: [String!]
+  allowConcurrentAgents: AllowConcurrentAgentsConfig
+  uiMode: UiMode
+  uiPaginationLimit: Int
+  uiRemoteUrl: String
+  centralBackendURL: String
+  clusterName: String
+  instrumentor: InstrumentorConfig
+  customContainerRuntimeSocketPath: String
+  userInstrumentationEnvs: UserInstrumentationEnvsConfig
+  nodeSelector: String # JSON string representation of map[string]string
+  karpenter: KarpenterConfig
+  rollout: RolloutConfig
+  autoRollback: AutoRollbackConfig
+  oidc: OidcConfig
+  odigletHealthProbeBindPort: Int
+  goAutoOffsetsCron: String
+  goAutoOffsetsMode: String
+  clickhouseJsonTypeEnabled: Boolean
+  resourceSizePreset: String
+  wasp: WaspConfig
+  metricsSources: MetricsSourceConfig
+  agentsInitContainerResources: AgentsInitContainerResourcesConfig
+  traceIdSuffix: String
+  allowedTestConnectionHosts: [String!]
+  odigosOwnTelemetryStore: OdigosOwnTelemetryConfig
+  imagePullSecrets: [String!]
+  componentLogLevels: ComponentLogLevelsConfig
+  sampling: SamplingConfig
+  profiling: ProfilingConfig
+  cardinalityControl: CardinalityControlConfig
+  traceCorrelations: TraceCorrelationsConfig
+  provenance: [ProvenanceEntry!]
+  manifestYAML: String
+}
+
+# Remote configuration managed by central-backend
+# These settings take precedence over Helm values and persist through upgrades
+
+type RemoteConfigRollout {
+  automaticRolloutDisabled: Boolean
+}
+type RemoteConfig {
+  rollout: RemoteConfigRollout
+}
+
+input RemoteConfigRolloutInput {
+  automaticRolloutDisabled: Boolean
+}
+input RemoteConfigInput {
+  rollout: RemoteConfigRolloutInput
+}
+
+input LocalUiConfigRolloutInput {
+  automaticRolloutDisabled: Boolean
+  maxConcurrentRollouts: Int
+}
+
+input LocalUiConfigAutoRollbackInput {
+  disabled: Boolean
+  graceTime: String
+  stabilityWindowTime: String
+}
+
+input LocalUiConfigInstrumentorInput {
+  agentEnvVarsInjectionMethod: EnvInjectionMethod
+  checkDeviceHealthBeforeInjection: Boolean
+}
+
+input LocalUiConfigAllowConcurrentAgentsInput {
+  enabled: Boolean
+}
+
+input LocalUiConfigSpanSamplingAttributesInput {
+  disabled: Boolean
+  samplingCategoryDisabled: Boolean
+  traceDecidingRuleDisabled: Boolean
+  spanDecisionAttributesDisabled: Boolean
+}
+
+input LocalUiConfigSamplingInput {
+  dryRun: Boolean
+  spanSamplingAttributes: LocalUiConfigSpanSamplingAttributesInput
+  tailSampling: TailSamplingConfigInput
+  k8sHealthProbesSampling: K8sHealthProbesSamplingConfigInput
+}
+
+input LocalUiConfigComponentLogLevelsInput {
+  default: OdigosLogLevel
+  autoscaler: OdigosLogLevel
+  scheduler: OdigosLogLevel
+  instrumentor: OdigosLogLevel
+  odiglet: OdigosLogLevel
+  deviceplugin: OdigosLogLevel
+  ui: OdigosLogLevel
+  collector: OdigosLogLevel
+}
+
+input LocalUiConfigTraceCorrelationsServiceIOInput {
+  enabled: Boolean
+  inputSpanAttributes: [String!]
+  outputSpanAttributes: [String!]
+  metricsFlushInterval: String
+}
+
+input LocalUiConfigTraceCorrelationsInput {
+  serviceIO: LocalUiConfigTraceCorrelationsServiceIOInput
+}
+
+input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
+  enabled: Boolean
+}
+
+input LocalUiConfigLiveTrafficLearningRuleComputationInput {
+  minObservationsForRule: Int
+  minCardinalityForTemplating: Int
+}
+
+input LocalUiConfigLiveTrafficLearningInput {
+  # enabled is Helm-only (deploys cacheDb); UI may override
+  # maxExamplePathsPerWorkload, pathExampleIdleTTL, learningInterval,
+  # ruleComputation, and automaticRules.
+  maxExamplePathsPerWorkload: Int
+  pathExampleIdleTTL: String
+  learningInterval: String
+  ruleComputation: LocalUiConfigLiveTrafficLearningRuleComputationInput
+  automaticRules: LocalUiConfigLiveTrafficLearningAutomaticRulesInput
+}
+
+input LocalUiConfigUrlTemplatizationCardinalityControlInput {
+  liveTrafficLearning: LocalUiConfigLiveTrafficLearningInput
+}
+
+input LocalUiConfigCardinalityControlInput {
+  urlTemplatization: LocalUiConfigUrlTemplatizationCardinalityControlInput
+}
+
+input LocalUiConfigInput {
+  telemetryEnabled: Boolean
+  ignoredNamespaces: [String!]
+  ignoredContainers: [String!]
+  ignoreOdigosNamespace: Boolean
+  clusterName: String
+  instrumentor: LocalUiConfigInstrumentorInput
+  allowConcurrentAgents: LocalUiConfigAllowConcurrentAgentsInput
+  rollout: LocalUiConfigRolloutInput
+  autoRollback: LocalUiConfigAutoRollbackInput
+  goAutoOffsetsCron: String
+  goAutoOffsetsMode: String
+  sampling: LocalUiConfigSamplingInput
+  componentLogLevels: LocalUiConfigComponentLogLevelsInput
+  traceCorrelations: LocalUiConfigTraceCorrelationsInput
+  cardinalityControl: LocalUiConfigCardinalityControlInput
+}
+
+type ConfigYamlField {
+  displayName: String!
+  componentType: FieldType!
+  isHelmOnly: Boolean!
+  isEnterpriseOnly: Boolean!
+  description: String!
+  helmValuePath: String!
+  docsLink: String
+  componentProps: String # JSON string representation of map[string]any
+  renderCondition: [String!] # Conditional rendering: either ["true"|"false"] or [helmValuePath, comparison, value]
+}
+
+type ConfigYaml {
+  name: String!
+  displayName: String!
+  fields: [ConfigYamlField!]!
+}
+
+extend type Query {
+  # key information about the cluster and the installation (self-defined config for UI control and usage)
+  config: Config
+  # odigos-remote-config ConfigMap managed by central-backend (deprecated, will be removed in the future)
+  remoteConfig: RemoteConfig
+  # effective-config ConfigMap, reflects the actual values applied to the cluster (by odigos-configuration, odigos-remote-config, etc.)
+  effectiveConfig: EffectiveConfig
+  # config yamls, used for UI to display the config options
+  configYamls: [ConfigYaml!]!
+}
+
+extend type Mutation {
+  updateRemoteConfig(config: RemoteConfigInput!): Boolean!
+  setComponentLogLevel(
+    component: OdigosComponent
+    level: OdigosLogLevel!
+  ): Boolean!
+  updateLocalUiConfig(config: LocalUiConfigInput!): Boolean!
+  resetLocalUiConfigToFactoryDefaults: Boolean!
+}

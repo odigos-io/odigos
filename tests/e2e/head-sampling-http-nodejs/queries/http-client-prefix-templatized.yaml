@@ -1,0 +1,20 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: Client outbound prefix and templatized path sampling (50% dry-run)
+query: |
+  length([?
+    span.serviceName == 'head-sampling-http-client' &&
+    span.kind == 'client' &&
+    span.spanAttributes."odigos.sampling.category" == 'noise' &&
+    span.spanAttributes."odigos.sampling.dry_run" == `true` &&
+    span.spanAttributes."odigos.sampling.trace.deciding_rule.keep_percentage" == `50` &&
+    (
+      span.spanAttributes."url.path" == '/http-match/prefix/segment' ||
+      span.spanAttributes."url.path" == '/http-match/prefix/segment/nested' ||
+      span.spanAttributes."url.path" == '/http-match/texact/out-peer-res' ||
+      span.spanAttributes."url.path" == '/http-match/tprefix/out-peer-tenant/items' ||
+      span.spanAttributes."url.path" == '/http-match/tprefix/out-peer-tenant/items/out-peer-item'
+    )
+  ]) > `0`
+expected:
+  minimum: 1

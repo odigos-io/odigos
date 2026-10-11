@@ -1,0 +1,38 @@
+---
+title: 'Uninstall'
+description: 'Remove Odigos Central from your cluster using the CLI or Helm.'
+sidebarTitle: 'Uninstall'
+---
+
+To completely remove Odigos Central:
+
+## Using CLI
+
+```bash
+odigos pro central uninstall
+```
+
+**Options:**
+
+| Flag                | Default          | Description              |
+| ------------------- | ---------------- | ------------------------ |
+| `--namespace`, `-n` | `odigos-central` | Target namespace         |
+| `--yes`             | `false`          | Skip confirmation prompt |
+
+**Example:**
+
+```bash
+odigos pro central uninstall --namespace odigos-central --yes
+```
+
+## Using Helm
+
+```bash
+helm uninstall odigos-central --namespace odigos-central
+kubectl delete namespace odigos-central
+```
+
+<Warning>
+  Uninstalling Odigos Central will disconnect all remote clusters. Make sure to
+  plan for this accordingly.
+</Warning>

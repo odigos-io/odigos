@@ -17,15 +17,17 @@ type ManagerOpts struct {
 	// NodeSelector is a Kubernetes NodeSelector that will be applied to all Odigos components.
 	// Note that Odigos will only be able to instrument applications on the same node.
 	NodeSelector map[string]string
+	// ImagePullSecrets is a list of Secret names to use for pulling images from private registries.
+	ImagePullSecrets []string
 }
 
 type ImageReferences struct {
 	AutoscalerImage     string
 	CollectorImage      string
+	InitContainerImage  string
 	InstrumentorImage   string
 	OdigletImage        string
 	KeyvalProxyImage    string
-	SchedulerImage      string
 	UIImage             string
 	CentralProxyImage   string
 	CentralBackendImage string

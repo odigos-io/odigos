@@ -1,0 +1,74 @@
+# Workload Rollout Assertions
+# Verifies that all deployments have completed their rollouts successfully with correct replica counts and revision
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-minimum-version
+  namespace: default
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+  labels:
+    app: nodejs-minimum-version
+    odigos.io/e2e: test-workload
+spec:
+  replicas: 1
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-latest-version
+  namespace: default
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+  labels:
+    app: nodejs-latest-version
+    odigos.io/e2e: test-workload
+spec:
+  replicas: 1
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-version
+  namespace: default
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+  labels:
+    app: java-supported-version
+    odigos.io/e2e: test-workload
+spec:
+  replicas: 1
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-latest-version
+  namespace: default
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+  labels:
+    app: python-latest-version
+    odigos.io/e2e: test-workload
+spec:
+  replicas: 1
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1

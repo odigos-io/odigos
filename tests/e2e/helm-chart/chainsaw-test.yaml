@@ -10,20 +10,47 @@ spec:
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Verify Central enterprise registry pull secret rendering
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              P="../../.."
+              ./check-central-registry-pull-secret.sh "$P"
+
+    - name: Install - Simple Demo Apps
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
+    # Install Odigos with legacy field names to test backward compatibility and mirroring:
+    # - Uses legacy field "memoryLimit" (instead of "limitMemoryMiB")
+    # - Uses field "limitCPUm" (consistent with values.yaml)
+    # - Does NOT set memory/CPU requests to test mirroring functionality
+    # - Expected: requests should mirror the limit values (560Mi memory, 550m CPU)
     - name: Install Odigos
       try:
         - script:
-            timeout: 3m
+            timeout: 2m
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set nodeSelector."kubernetes\.io/os"=linux \
+                  --set collectorNode.memoryLimit=560 \
+                  --set collectorNode.limitCPUm=550
               else
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                  --set image.tag=e2e-test \
+                  --set nodeSelector."kubernetes\.io/os"=linux \
+                  --set collectorNode.memoryLimit=560 \
+                  --set collectorNode.limitCPUm=550
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
-
     - name: Verify Odigos Installation
       try:
         - script:
@@ -50,9 +77,23 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
 
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
 
+    - name: Verify Backward Compatibility in helm chart fields - Legacy Fields & Mirroring
+      try:
+        - assert:
+            timeout: 1m10s
+            file: verify-datacollection-resources.yaml
+
+    - name: Verify Backward Compatibility in helm chart fields - New Fields & Mirroring
+      try:
+        - script:
+            timeout: 1m10s
+            content: |
+              echo "🚀 Running resource verification script..."
+              P="../../.."
+              ./check-data-collection-resources.sh "$P"
       catch:
         - script:
             content: |
@@ -69,7 +110,7 @@ spec:
     - name: Assert Trace DB is up
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: Add Destination
@@ -77,21 +118,10 @@ spec:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
-    - name: Install - Simple Demo Apps
+    - name: Assert - Simple Demo Apps Installed
       try:
-        - apply:
-            file: ../../common/apply/install-simple-demo.yaml
-        - script:
-            timeout: 2m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
         - assert:
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Instrument Namespace
@@ -99,34 +129,23 @@ spec:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
-    - name: Ruby Detected, Rollout Restart
-      try:
-        - assert:
-            timeout: 3m
-            file: ../../common/assert/ruby-partial-runtime-detected.yaml
-        - script:
-            timeout: 1m
-            content: |
-              kubectl rollout restart deployment geolocation
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=60s
-
     - name: Assert Runtime Detected
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
 
     - name: Odigos pipeline ready
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m30s
             file: ../../common/assert/simple-demo-instrumented-full.yaml
 
     - name: Generate Traffic
@@ -134,7 +153,7 @@ spec:
         - apply:
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
         - delete:
@@ -143,7 +162,7 @@ spec:
     - name: Wait For Trace
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
@@ -191,7 +210,7 @@ spec:
     - name: Verify collector metrics are collected by the UI
       try:
         - script:
-            timeout: 5m
+            timeout: 2m
             content: |
               while true; do
                 ../../common/assert_collector_metrics_from_ui.sh odigos-test
@@ -201,17 +220,24 @@ spec:
                 sleep 5
               done
 
+    - name: Verify collector metrics survive UI pod restart
+      try:
+        - script:
+            timeout: 1m40s
+            content: |
+              ../../common/assert_collector_metrics_survive_ui_restart.sh odigos-test
+
     - name: Uninstall Odigos
       try:
         - script:
-            timeout: 3m
+            timeout: 1m40s
             content: |
               helm uninstall odigos -n odigos-test
 
     - name: Verify Odigos Uninstallation
       try:
         - script:
-            timeout: 1m
+            timeout: 1m20s
             content: |
               for i in $(seq 1 10); do
                 if ../../common/assert_odigos_uninstalled.sh; then

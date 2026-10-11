@@ -2,21 +2,17 @@
 
 import React, { type PropsWithChildren } from 'react';
 import dynamic from 'next/dynamic';
-import { useDarkMode } from '@odigos/ui-kit/store';
-import ApolloProvider from '@/lib/apollo-provider';
 
 const ThemeProvider = dynamic(() => import('@/lib/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
-  const { darkMode } = useDarkMode();
-
   return (
     <html lang='en'>
       <head>
         <link rel='manifest' href='/manifest.json' />
         <link rel='icon' href='/favicon.svg' type='image/svg' />
         <meta name='description' content='Odigos' />
-        <title>Odigos</title>
+        <title>Odigos UI</title>
       </head>
 
       <body
@@ -25,12 +21,10 @@ function RootLayout({ children }: PropsWithChildren) {
           width: '100vw',
           height: '100vh',
           margin: 0,
-          backgroundColor: darkMode ? '#111111' : '#EEEEEE',
+          backgroundColor: '#151618',
         }}
       >
-        <ThemeProvider>
-          <ApolloProvider>{children}</ApolloProvider>
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

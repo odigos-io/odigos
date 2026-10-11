@@ -6,14 +6,45 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services"
 )
 
+func SecurityHeadersMiddleware(c *gin.Context) {
+	// Skip CSP for static files and playground to avoid blocking JavaScript resources
+	if !isStaticFile(c.Request.URL.Path) && c.Request.URL.Path != "/playground" {
+		// connect-src allows the public Go offsets bucket: the browser downloads the
+		// manifest itself (the UI pod may have no outbound internet). @odigos/ui-kit
+		// fetches it from GO_OFFSETS_PUBLIC_URL, which must stay in this bucket.
+		c.Writer.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' ws: wss: "+consts.GoOffsetsPublicBucketURL+";")
+	}
+	c.Writer.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	c.Writer.Header().Set("X-Frame-Options", "DENY")
+	c.Next()
+}
+
+// isStaticFile checks if the request is for a static file
+func isStaticFile(path string) bool {
+	staticExtensions := []string{".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".eot"}
+	for _, ext := range staticExtensions {
+		if len(path) >= len(ext) && path[len(path)-len(ext):] == ext {
+			return true
+		}
+	}
+	// Also check for Next.js static paths
+	if len(path) >= 7 && path[:7] == "/_next/" {
+		return true
+	}
+	return false
+}
+
 func OidcMiddleware(ctx context.Context) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// every rejection below must abort: callers gate the protected handler on
+		// c.IsAborted(), and writing a response does not stop the chain on its own.
 		oauth2Config, err := services.GetOidcOauthConfig(ctx)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC OAuth2 config: %s", err.Error())})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC OAuth2 config: %s", err.Error())})
 			return
 		}
 
@@ -24,24 +55,25 @@ func OidcMiddleware(ctx context.Context) gin.HandlerFunc {
 			// If no token is present, redirect to OIDC auth
 			if token == "" {
 				services.RedirectToOidcAuth(c, oauth2Config)
+				c.Abort()
 				return
 			}
 
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC token from cookies: %s", err.Error())})
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC token from cookies: %s", err.Error())})
 				return
 			}
 
 			oidcTokenVerifier, err := services.GetOidcTokenVerifier(ctx)
 			if err != nil || oidcTokenVerifier == nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC token verifier: %s", err.Error())})
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error getting OIDC token verifier: %v", err)})
 				return
 			}
 
 			// Verify the OIDC token
 			idToken, err := oidcTokenVerifier.Verify(ctx, token)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error verifiying OIDC token: %s", err.Error())})
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Error verifiying OIDC token: %s", err.Error())})
 				return
 			}
 

@@ -66,7 +66,7 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 	basicAuthUsername := dest.GetConfig()[esUsername]
 	if basicAuthUsername != "" {
 		exporterConfig["user"] = basicAuthUsername
-		exporterConfig["password"] = fmt.Sprintf("${%s}", esPassword)
+		exporterConfig["password"] = SecretEnvPlaceholder(esPassword, dest)
 	}
 
 	exporterName := "elasticsearch/" + dest.GetID()

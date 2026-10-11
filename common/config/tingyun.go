@@ -29,7 +29,7 @@ func (j *Tingyun) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		return nil, err
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 	}
@@ -39,7 +39,7 @@ func (j *Tingyun) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		"attributes": []GenericMap{
 			{
 				"key":    "tingyun.license",
-				"value":  "${TINGYUN_LICENSE_KEY}",
+				"value":  SecretEnvPlaceholder("TINGYUN_LICENSE_KEY", dest),
 				"action": "insert",
 			},
 		},

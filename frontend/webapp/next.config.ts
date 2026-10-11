@@ -1,4 +1,10 @@
 import type { NextConfig } from 'next';
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+// Bundle analyzer configuration
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const nextConfig: NextConfig = {
   output: 'export',
@@ -8,7 +14,25 @@ const nextConfig: NextConfig = {
   },
   compiler: {
     styledComponents: true,
+    // Remove console.logs in production
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Enable compression
+  compress: true,
+  // Enable source maps only in development
+  productionBrowserSourceMaps: false,
+  // Enable experimental optimizations
+  experimental: {
+    // Enable tree shaking for better bundle optimization
+    optimizePackageImports: ['@apollo/client', '@odigos/ui-kit', 'graphql', 'react', 'react-dom', 'react-error-boundary', 'rxjs', 'styled-components', 'zustand'],
+  },
+  // Turbopack configuration (empty config silences the warning)
+  turbopack: {
+    resolveAlias: {
+      'styled-components': './node_modules/styled-components',
+      zustand: './node_modules/zustand',
+    },
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

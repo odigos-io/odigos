@@ -1,0 +1,6 @@
+# Delete Traffic Generator Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: step-01-generate-traffic
+  namespace: default

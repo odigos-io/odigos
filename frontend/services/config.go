@@ -2,114 +2,83 @@ package services
 
 import (
 	"context"
-	"errors"
-	"log"
+	"encoding/json"
+	"fmt"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/config"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
-type InstallationStatus string
+func GetConfigYamls() ([]*model.ConfigYaml, error) {
+	var resp []*model.ConfigYaml
 
-const (
-	NewInstallation InstallationStatus = "NEW"
-	Finished        InstallationStatus = "FINISHED"
-)
+	for _, cfg := range config.Get() {
+		var fields []*model.ConfigYamlField
+		for _, f := range cfg.Spec.Fields {
+			field := &model.ConfigYamlField{
+				DisplayName:      f.DisplayName,
+				ComponentType:    model.FieldType(f.ComponentType),
+				IsHelmOnly:       f.IsHelmOnly,
+				IsEnterpriseOnly: f.IsEnterpriseOnly,
+				Description:      f.Description,
+				HelmValuePath:    f.HelmValuePath,
+				RenderCondition:  f.RenderCondition,
+			}
 
-var (
-	ErrorIsReadonly = errors.New("cannot execute this mutation in readonly mode")
-)
+			if f.DocsLink != "" {
+				field.DocsLink = &f.DocsLink
+			}
 
-func GetConfig(ctx context.Context) model.GetConfigResponse {
-	var response model.GetConfigResponse
+			if len(f.ComponentProps) > 0 {
+				propsJSON, err := json.Marshal(f.ComponentProps)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal component props: %w", err)
+				}
+				s := string(propsJSON)
+				field.ComponentProps = &s
+			}
 
-	response.Readonly = IsReadonlyMode(ctx)
+			fields = append(fields, field)
+		}
 
-	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-	if err != nil {
-		response.Tier = model.Tier(common.CommunityOdigosTier)
-	} else {
-		response.Tier = model.Tier(odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey])
+		resp = append(resp, &model.ConfigYaml{
+			Name:        cfg.Metadata.Name,
+			DisplayName: cfg.Metadata.DisplayName,
+			Fields:      fields,
+		})
 	}
 
-	if !isSourceCreated(ctx) && !isDestinationConnected(ctx) {
-		response.Installation = model.InstallationStatus(NewInstallation)
-	} else {
-		response.Installation = model.InstallationStatus(Finished)
-	}
-
-	return response
+	return resp, nil
 }
 
-func IsReadonlyMode(ctx context.Context) bool {
+// GetEffectiveConfigWithRawYAML retrieves the effective config along with its raw YAML representation.
+func GetEffectiveConfigWithRawYAML(ctx context.Context, c client.Client) (*common.OdigosConfiguration, string, error) {
 	ns := env.GetCurrentNamespace()
 
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	var cm v1.ConfigMap
+	err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosEffectiveConfigName}, &cm)
 	if err != nil {
-		log.Printf("Error getting config maps: %v\n", err)
-		return false
+		return nil, "", client.IgnoreNotFound(err)
 	}
+
+	if cm.Data == nil || cm.Data[consts.OdigosConfigurationFileName] == "" {
+		return nil, "", nil
+	}
+
+	rawYAML := cm.Data[consts.OdigosConfigurationFileName]
 
 	var odigosConfig common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
-		log.Printf("Error parsing YAML: %v\n", err)
-		return false
+	if err := yaml.Unmarshal([]byte(rawYAML), &odigosConfig); err != nil {
+		return nil, "", fmt.Errorf("failed to parse odigos config: %w", err)
 	}
 
-	return odigosConfig.UiMode == common.UiModeReadonly
-}
-
-func isSourceCreated(ctx context.Context) bool {
-	ns := env.GetCurrentNamespace()
-
-	nsList, err := getRelevantNameSpaces(ctx, ns)
-	if err != nil {
-		log.Printf("Error listing namespaces: %v\n", err)
-		return false
-	}
-
-	for _, ns := range nsList {
-		sourceList, err := kube.DefaultClient.OdigosClient.Sources(ns.Namespace).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			log.Printf("Error listing sources: %v\n", err)
-			return false
-		}
-
-		if len(sourceList.Items) > 0 {
-			allDisabled := true
-
-			for _, source := range sourceList.Items {
-				if !source.Spec.DisableInstrumentation {
-					// Found an enabled source, no need to keep checking
-					return true
-				}
-			}
-
-			// If we get here, all sources were disabled
-			if allDisabled {
-				continue
-			}
-		}
-	}
-
-	return false
-}
-
-func isDestinationConnected(ctx context.Context) bool {
-	ns := env.GetCurrentNamespace()
-
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		log.Printf("Error listing destinations: %v\n", err)
-		return false
-	}
-
-	return len(dests.Items) > 0
+	return &odigosConfig, rawYAML, nil
 }

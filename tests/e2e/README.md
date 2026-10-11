@@ -30,11 +30,12 @@ Install these tools once when setting up your local testing environment the firs
   go install github.com/kyverno/chainsaw@latest
   ```
 
-- yq and jq installed:
+- yq, jq, and ko installed:
 
 ```bash
 brew install yq
 brew install jq
+brew install ko
 ```
 
 ### Preparing
@@ -72,6 +73,11 @@ Scenarios should be placed in the `tests/e2e/<scenraio-name>` directory and Trac
 
 After writing and testing new scenario, you should also add it to the GitHub Action file location at:
 `.github/workflows/e2e.yaml` to run it on every pull request.
+
+### Karpenter mount-methods
+
+`tests/e2e/karpenter-mount-methods` needs Karpenter KWOK (Go + ko).
+Local: `chainsaw test tests/e2e/karpenter-mount-methods`.
 
 ## Working with simple-trace-db
 

@@ -23,11 +23,11 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		return nil, errors.New("New relic endpoint not specified, gateway will not be configured for New Relic")
 	}
 
-	exporterName := "otlp/newrelic-" + dest.GetID()
+	exporterName := "otlp_grpc/newrelic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:4317", endpoint),
 		"headers": GenericMap{
-			"api-key": "${NEWRELIC_API_KEY}",
+			"api-key": SecretEnvPlaceholder("NEWRELIC_API_KEY", dest),
 		},
 	}
 	var pipelineNames []string
@@ -40,9 +40,22 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	if isMetricsEnabled(dest) {
+		// Add cumulativetodelta processor to convert cumulative metrics to delta for New Relic
+		cumulativeToDeltaProcessorName := "cumulativetodelta/newrelic-" + dest.GetID()
+		currentConfig.Processors[cumulativeToDeltaProcessorName] = GenericMap{
+			"include": GenericMap{
+				"metrics": []string{
+					"jvm.gc.duration",
+					"jvm.cpu.time",
+				},
+				"match_type": "strict",
+			},
+		}
+
 		metricsPipelineName := "metrics/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters:  []string{exporterName},
+			Processors: []string{cumulativeToDeltaProcessorName},
 		}
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}

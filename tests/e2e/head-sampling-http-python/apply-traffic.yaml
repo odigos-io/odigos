@@ -1,0 +1,104 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: head-sampling-http-server-curls
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: head-sampling-http-server-curls
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: curl
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              BASE_URL="http://head-sampling-http-server:8080"
+              echo "BASE_URL=${BASE_URL}"
+              call_many() {
+                count=$1
+                path=$2
+                echo "GET ${BASE_URL}${path} x${count}"
+                i=1
+                while [ $i -le $count ]; do
+                  curl -sS -f -o /dev/null "${BASE_URL}${path}"
+                  i=$((i + 1))
+                done
+              }
+              echo "GET ${BASE_URL}/http-match/control/no-rule"
+              curl -sS -f -o /dev/null "${BASE_URL}/http-match/control/no-rule"
+              call_many 20 "/http-match/exact/target"
+              call_many 20 "/http-match/prefix/segment"
+              call_many 20 "/http-match/prefix/segment/nested"
+              call_many 20 "/http-match/texact/res-42"
+              call_many 20 "/http-match/tprefix/tenant-a/items"
+              call_many 20 "/http-match/tprefix/tenant-b/items/item-7"
+              echo "all curls succeeded"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubelet-health-probes-query-params-curls
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: kubelet-health-probes-query-params-curls
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: curl
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              BASE_URL="http://kubelet-health-probes-query-params:8080"
+              echo "BASE_URL=${BASE_URL}"
+              call_graphql_many() {
+                count=$1
+                query=$2
+                operation_name=$3
+                variables=$4
+                label=$5
+                echo "GET ${BASE_URL}/graphql (${label}) x${count}"
+                i=1
+                while [ $i -le $count ]; do
+                  if [ -n "${variables}" ]; then
+                    curl -sS -f -G -o /dev/null \
+                      --data-urlencode "query=${query}" \
+                      --data-urlencode "variables=${variables}" \
+                      "${BASE_URL}/graphql"
+                  elif [ -n "${operation_name}" ]; then
+                    curl -sS -f -G -o /dev/null \
+                      --data-urlencode "query=${query}" \
+                      --data-urlencode "operationName=${operation_name}" \
+                      "${BASE_URL}/graphql"
+                  else
+                    curl -sS -f -G -o /dev/null \
+                      --data-urlencode "query=${query}" \
+                      "${BASE_URL}/graphql"
+                  fi
+                  i=$((i + 1))
+                done
+              }
+              GET_USER_QUERY='query GetUser { user { id name } }'
+              LIST_ITEMS_QUERY='query ListItems { items { id title } }'
+              GET_ITEM_QUERY='query GetItem($id: ID!) { item(id: $id) { id title } }'
+              call_graphql_many 20 "${GET_USER_QUERY}" "" "" "one query param"
+              call_graphql_many 20 "${LIST_ITEMS_QUERY}" "ListItems" "" "query + operationName"
+              call_graphql_many 20 "${GET_ITEM_QUERY}" "GetItem" '{"id":"42"}' "query + variables"
+              echo "all graphql curls succeeded"

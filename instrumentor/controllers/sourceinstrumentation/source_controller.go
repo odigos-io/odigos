@@ -8,10 +8,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
@@ -21,7 +21,7 @@ type SourceReconciler struct {
 }
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	source := &v1alpha1.Source{}
 	var err error
 	err = r.Get(ctx, req.NamespacedName, source)
@@ -33,6 +33,9 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	var result ctrl.Result
 	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
 		result, err = syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Namespace)
+	} else if source.Spec.MatchWorkloadNameAsRegex {
+		// For regex sources, sync all matching workloads
+		result, err = syncRegexSourceWorkloads(ctx, r.Client, r.Scheme, source)
 	} else {
 		// Get the object referenced by the Source to check whether the workload is being actively instrumented.
 		// The Source itself doesn't have enough information about the global state of this workload:

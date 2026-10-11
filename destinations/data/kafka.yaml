@@ -13,41 +13,43 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: KAFKA_PROTOCOL_VERSION
       displayName: Protocol Version
       componentType: input
       componentProps:
         required: true
-        placeholder: '2.0.0'
-        tooltip: 'Kafka protocol version.'
+        placeholder: "2.0.0"
+        tooltip: "Kafka protocol version."
     - name: KAFKA_BROKERS
       displayName: Brokers
       componentType: multiInput
       componentProps:
         required: false
-        tooltip: 'The list of kafka brokers'
+        tooltip: "The list of kafka brokers"
       initialValue: '["localhost:9092"]'
     - name: KAFKA_RESOLVE_CANONICAL_BOOTSTRAP_SERVERS_ONLY
       displayName: Resolve Canonical Bootstrap Servers Only
       componentType: checkbox
       componentProps:
         required: false
-        tooltip: 'Whether to resolve then reverse-lookup broker IPs during startup.'
+        tooltip: "Whether to resolve then reverse-lookup broker IPs during startup."
       initialValue: false
     - name: KAFKA_CLIENT_ID
       displayName: Client ID
       componentType: input
       componentProps:
         required: false
-        tooltip: 'The client ID to configure the Sarama Kafka client with. The client ID will be used for all produce requests.'
-      initialValue: 'sarama'
+        tooltip: "The client ID to configure the Sarama Kafka client with. The client ID will be used for all produce requests."
+      initialValue: "sarama"
     - name: KAFKA_TOPIC
       displayName: Topic
       componentType: input
       componentProps:
         required: false
-        tooltip: 'The name of the default kafka topic to export to (default = otlp_spans for traces, otlp_metrics for metrics, otlp_logs for logs).'
+        tooltip: "The name of the default kafka topic to export to (default = otlp_spans for traces, otlp_metrics for metrics, otlp_logs for logs)."
     - name: KAFKA_TOPIC_FROM_ATTRIBUTE
       displayName: Topic from Attribute
       componentType: input
@@ -62,28 +64,28 @@ spec:
           - otlp_proto
           - otlp_json
         required: false
-        tooltip: 'The encoding of the traces sent to kafka.'
-      initialValue: 'otlp_proto'
+        tooltip: "The encoding of the traces sent to kafka."
+      initialValue: "otlp_proto"
     - name: KAFKA_PARTITION_TRACES_BY_ID
       displayName: Partition Traces by ID
       componentType: checkbox
       componentProps:
         required: false
-        tooltip: 'Configures the exporter to include the trace ID as the message key in trace messages sent to kafka. Please note: this setting does not have any effect on Jaeger encoding exporters since Jaeger exporters include trace ID as the message key by default.'
+        tooltip: "Configures the exporter to include the trace ID as the message key in trace messages sent to kafka. Please note: this setting does not have any effect on Jaeger encoding exporters since Jaeger exporters include trace ID as the message key by default."
       initialValue: false
     - name: KAFKA_PARTITION_METRICS_BY_RESOURCE_ATTRIBUTES
       displayName: Partition Metrics by Resource Attributes
       componentType: checkbox
       componentProps:
         required: false
-        tooltip: 'Configures the exporter to include the hash of sorted resource attributes as the message partitioning key in metric messages sent to kafka.'
+        tooltip: "Configures the exporter to include the hash of sorted resource attributes as the message partitioning key in metric messages sent to kafka."
       initialValue: false
     - name: KAFKA_PARTITION_LOGS_BY_RESOURCE_ATTRIBUTES
       displayName: Partition Logs by Resource Attributes
       componentType: checkbox
       componentProps:
         required: false
-        tooltip: 'Configures the exporter to include the hash of sorted resource attributes as the message partitioning key in log messages sent to kafka.'
+        tooltip: "Configures the exporter to include the hash of sorted resource attributes as the message partitioning key in log messages sent to kafka."
       initialValue: false
     - name: KAFKA_AUTH_METHOD
       displayName: Auth Method
@@ -94,16 +96,16 @@ spec:
           - none
           - plain_text
         required: true
-        tooltip: 'The auth method to use.'
-      initialValue: 'none'
+        tooltip: "The auth method to use."
+      initialValue: "none"
     - name: KAFKA_USERNAME
       displayName: Username
       componentType: input
       componentProps:
         required: false
-        tooltip: 'The username to use.'
-      renderCondition: ['KAFKA_AUTH_METHOD', '==', 'plain_text']
-      hideFromReadData: ['KAFKA_AUTH_METHOD', '!=', 'plain_text']
+        tooltip: "The username to use."
+      renderCondition: ["KAFKA_AUTH_METHOD", "==", "plain_text"]
+      hideFromReadData: ["KAFKA_AUTH_METHOD", "!=", "plain_text"]
     - name: KAFKA_PASSWORD
       displayName: Password
       componentType: input
@@ -111,37 +113,37 @@ spec:
       componentProps:
         type: password
         required: false
-        tooltip: 'The password to use.'
-      renderCondition: ['KAFKA_AUTH_METHOD', '==', 'plain_text']
-      hideFromReadData: ['KAFKA_AUTH_METHOD', '!=', 'plain_text']
+        tooltip: "The password to use."
+      renderCondition: ["KAFKA_AUTH_METHOD", "==", "plain_text"]
+      hideFromReadData: ["KAFKA_AUTH_METHOD", "!=", "plain_text"]
     - name: KAFKA_METADATA_FULL
       displayName: Metadata Full
       componentType: checkbox
       componentProps:
         required: false
-        tooltip: 'Whether to maintain a full set of metadata. When disabled, the client does not make the initial request to broker at the startup.'
+        tooltip: "Whether to maintain a full set of metadata. When disabled, the client does not make the initial request to broker at the startup."
       initialValue: false
     - name: KAFKA_METADATA_MAX_RETRY
       displayName: Metadata Max Retry
       componentType: input
       componentProps:
         required: false
-        tooltip: 'The number of retries to get metadata.'
-      initialValue: '3'
+        tooltip: "The number of retries to get metadata."
+      initialValue: "3"
     - name: KAFKA_METADATA_BACKOFF_RETRY
       displayName: Metadata Backoff Retry
       componentType: input
       componentProps:
         required: false
-        tooltip: 'How long to wait between metadata retries.'
-      initialValue: '250ms'
+        tooltip: "How long to wait between metadata retries."
+      initialValue: "250ms"
     - name: KAFKA_TIMEOUT
       displayName: Timeout
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Is the timeout for every attempt to send data to the backend.'
-      initialValue: '5s'
+        tooltip: "Is the timeout for every attempt to send data to the backend."
+      initialValue: "5s"
     - name: KAFKA_RETRY_ON_FAILURE_ENABLED
       displayName: Enable Retry on Failure
       componentType: checkbox
@@ -153,42 +155,42 @@ spec:
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Time to wait after the first failure before retrying; ignored if `enabled` is `false`.'
-      initialValue: '5s'
-      renderCondition: ['KAFKA_RETRY_ON_FAILURE_ENABLED', '==', 'true']
-      hideFromReadData: ['KAFKA_RETRY_ON_FAILURE_ENABLED', '==', 'false']
+        tooltip: "Time to wait after the first failure before retrying; ignored if `enabled` is `false`."
+      initialValue: "5s"
+      renderCondition: ["KAFKA_RETRY_ON_FAILURE_ENABLED", "==", "true"]
+      hideFromReadData: ["KAFKA_RETRY_ON_FAILURE_ENABLED", "==", "false"]
     - name: KAFKA_RETRY_ON_FAILURE_MAX_INTERVAL
       displayName: Max Interval
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Is the upper bound on backoff; ignored if `enabled` is `false`.'
-      initialValue: '30s'
-      renderCondition: ['KAFKA_RETRY_ON_FAILURE_ENABLED', '==', 'true']
-      hideFromReadData: ['KAFKA_RETRY_ON_FAILURE_ENABLED', '==', 'false']
+        tooltip: "Is the upper bound on backoff; ignored if `enabled` is `false`."
+      initialValue: "30s"
+      renderCondition: ["KAFKA_RETRY_ON_FAILURE_ENABLED", "==", "true"]
+      hideFromReadData: ["KAFKA_RETRY_ON_FAILURE_ENABLED", "==", "false"]
     - name: KAFKA_RETRY_ON_FAILURE_MAX_ELAPSED_TIME
       displayName: Max Elapsed Time
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Is the maximum amount of time spent trying to send a batch; ignored if `enabled` is `false`.'
-      initialValue: '120s'
-      renderCondition: ['KAFKA_RETRY_ON_FAILURE_ENABLED', '==', 'true']
-      hideFromReadData: ['KAFKA_RETRY_ON_FAILURE_ENABLED', '==', 'false']
+        tooltip: "Is the maximum amount of time spent trying to send a batch; ignored if `enabled` is `false`."
+      initialValue: "120s"
+      renderCondition: ["KAFKA_RETRY_ON_FAILURE_ENABLED", "==", "true"]
+      hideFromReadData: ["KAFKA_RETRY_ON_FAILURE_ENABLED", "==", "false"]
     - name: KAFKA_PRODUCER_MAX_MESSAGE_BYTES
       displayName: Producer Max Message Bytes
       componentType: input
       componentProps:
         required: false
-        tooltip: 'The maximum permitted size of a message in bytes.'
-      initialValue: '1000000'
+        tooltip: "The maximum permitted size of a message in bytes."
+      initialValue: "1000000"
     - name: KAFKA_PRODUCER_REQUIRED_ACKS
       displayName: Producer Required Acks
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Controls when a message is regarded as transmitted.'
-      initialValue: '1'
+        tooltip: "Controls when a message is regarded as transmitted."
+      initialValue: "1"
     - name: KAFKA_PRODUCER_COMPRESSION
       displayName: Producer Compression
       componentType: dropdown
@@ -200,15 +202,15 @@ spec:
           - lz4
           - zstd
         required: false
-        tooltip: 'The compression used when producing messages to kafka.'
-      initialValue: 'none'
+        tooltip: "The compression used when producing messages to kafka."
+      initialValue: "none"
     - name: KAFKA_PRODUCER_FLUSH_MAX_MESSAGES
       displayName: Producer Flush Max Messages
       componentType: input
       componentProps:
         required: false
-        tooltip: 'The maximum number of messages the producer will send in a single broker request.'
-      initialValue: '0'
+        tooltip: "The maximum number of messages the producer will send in a single broker request."
+      initialValue: "0"
   note:
     type: Note
     content: |

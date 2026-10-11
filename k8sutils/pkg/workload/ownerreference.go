@@ -1,11 +1,11 @@
 package workload
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -13,8 +13,8 @@ import (
 )
 
 // PodWorkloadObjectOrError is the same as PodWorkloadObject but returns an error if the workload is not found.
-func PodWorkloadObjectOrError(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
-	pw, err := PodWorkloadObject(ctx, pod)
+func PodWorkloadObjectOrError(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
+	pw, err := PodWorkloadObject(pod)
 	if err != nil {
 		return nil, err
 	}
@@ -28,9 +28,9 @@ func PodWorkloadObjectOrError(ctx context.Context, pod *corev1.Pod) (*k8sconsts.
 
 // PodWorkload returns the workload object that manages the provided pod.
 // If the pod is not owned by a controller, it returns a nil workload with no error.
-func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
+func PodWorkloadObject(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
-		workloadName, workloadKind, err := GetWorkloadFromOwnerReference(owner)
+		workloadName, workloadKind, err := GetWorkloadFromOwnerReference(owner, pod)
 		if err != nil {
 			if errors.Is(err, ErrKindNotSupported) {
 				continue
@@ -51,48 +51,57 @@ func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWork
 
 // GetWorkloadFromOwnerReference retrieves both the workload name and workload kind
 // from the provided owner reference.
-func GetWorkloadFromOwnerReference(ownerReference metav1.OwnerReference) (workloadName string, workloadKind k8sconsts.WorkloadKind, err error) {
-	return GetWorkloadNameAndKind(ownerReference.Name, ownerReference.Kind)
+func GetWorkloadFromOwnerReference(
+	ownerReference metav1.OwnerReference, pod *corev1.Pod,
+) (workloadName string, workloadKind k8sconsts.WorkloadKind, err error) {
+	return GetWorkloadNameAndKind(ownerReference.Name, ownerReference.Kind, pod)
 }
 
-func GetWorkloadNameAndKind(ownerName, ownerKind string) (string, k8sconsts.WorkloadKind, error) {
-	if ownerKind == "ReplicaSet" {
-		return extractDeploymentInfo(ownerName)
+func GetWorkloadNameAndKind(ownerName, ownerKind string, pod *corev1.Pod) (string, k8sconsts.WorkloadKind, error) {
+	switch ownerKind {
+	case "ReplicaSet":
+		return determineReplicaSetOwner(ownerName, pod)
+	case "ReplicationController":
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeploymentConfig)
+	case "Job":
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindCronJob)
+	case "Node":
+		if IsStaticPod(pod) {
+			return pod.Name, k8sconsts.WorkloadKindStaticPod, nil
+		}
+		return "", "", errors.New("node owned pod which is not static, currently not supported as a workload")
+	default:
+		return extractInfoWithoutSuffix(ownerName, ownerKind)
 	}
-	// A CronJobs owner is a Job kind, but since we're not supporting instrumenting (at a source level) regular Jobs, this will suffice
-	if ownerKind == "CronJob" || ownerKind == "Job" {
-		return extractJobInfo(ownerName)
-	}
-	return handleNonReplicaSet(ownerName, ownerKind)
 }
 
-func extractJobInfo(jobName string) (string, k8sconsts.WorkloadKind, error) {
-	hyphenIndex := strings.Index(jobName, "-")
+// ReplicaSets can be created from either Deployment or (Argo) Rollout kinds, so determine which one is that
+func determineReplicaSetOwner(ownerName string, pod *corev1.Pod) (string, k8sconsts.WorkloadKind, error) {
+	// If we find a label associated with Argo rollouts, it is an Rollout kind
+	if _, ok := pod.Labels[argorolloutsv1alpha1.DefaultRolloutUniqueLabelKey]; ok {
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindArgoRollout)
+	} else { // If not, default to Deployment kind
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeployment)
+	}
+}
+
+// extractInfoWithSuffix strips Kubernetes-generated suffixes from owner reference names.
+// ReplicaSets and Jobs get unique suffixes appended (e.g., "app-name-7d4c8b5f9b").
+// This extracts the base name by removing everything after the last hyphen,
+// enabling grouping of resources by their logical application identity..
+func extractInfoWithSuffix(fullName string, kind k8sconsts.WorkloadKind) (string, k8sconsts.WorkloadKind, error) {
+	hyphenIndex := strings.LastIndex(fullName, "-")
 	if hyphenIndex == -1 {
-		return "", "", fmt.Errorf("job name '%s' does not contain a hyphen", jobName)
+		return "", "", fmt.Errorf("%s name '%s' does not contain a hyphen", kind, fullName)
 	}
-
-	name := jobName[:hyphenIndex]
-	return name, k8sconsts.WorkloadKindCronJob, nil
+	return fullName[:hyphenIndex], kind, nil
 }
 
-// extractDeploymentInfo extracts deployment information from a ReplicaSet name
-func extractDeploymentInfo(replicaSetName string) (string, k8sconsts.WorkloadKind, error) {
-	hyphenIndex := strings.LastIndex(replicaSetName, "-")
-	if hyphenIndex == -1 {
-		return "", "", fmt.Errorf("replicaset name '%s' does not contain a hyphen", replicaSetName)
-	}
-
-	deploymentName := replicaSetName[:hyphenIndex]
-	return deploymentName, k8sconsts.WorkloadKindDeployment, nil
-}
-
-// handleNonReplicaSet processes non-ReplicaSet workload types
-func handleNonReplicaSet(ownerName, ownerKind string) (string, k8sconsts.WorkloadKind, error) {
+// extractInfoWithoutSuffix processes non-suffix-based workload names
+func extractInfoWithoutSuffix(ownerName, ownerKind string) (string, k8sconsts.WorkloadKind, error) {
 	workloadKind := WorkloadKindFromString(ownerKind)
 	if workloadKind == "" {
 		return "", "", ErrKindNotSupported
 	}
-
 	return ownerName, workloadKind, nil
 }

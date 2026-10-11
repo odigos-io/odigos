@@ -24,10 +24,18 @@ import (
 
 // CollectorsGroupStatusApplyConfiguration represents a declarative configuration of the CollectorsGroupStatus type for use
 // with apply.
+//
+// CollectorsGroupStatus defines the observed state of Collector
 type CollectorsGroupStatusApplyConfiguration struct {
-	Ready           *bool                            `json:"ready,omitempty"`
-	ReceiverSignals []common.ObservabilitySignal     `json:"receiverSignals,omitempty"`
-	Conditions      []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	Ready *bool `json:"ready,omitempty"`
+	// Receiver Signals are the signals (trace, metrics, logs) that the collector has setup
+	// an otlp receiver for, thus it can accept data from an upstream component.
+	// this is used to determine if a workload should export each signal or not.
+	// this list is calculated based on the odigos destinations that were configured
+	ReceiverSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
+	// Represents the observations of a collectorsroup's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
+	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
 // CollectorsGroupStatusApplyConfiguration constructs a declarative configuration of the CollectorsGroupStatus type for use with

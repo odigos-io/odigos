@@ -1,24 +1,35 @@
 module github.com/odigos-io/odigos/instrumentation
 
-go 1.24.0
+go 1.26.2
 
 require (
-	github.com/go-logr/logr v1.4.3
-	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/runtime-detector v0.0.7
-	go.opentelemetry.io/otel v1.35.0
-	go.opentelemetry.io/otel/metric v1.35.0
-	golang.org/x/sync v0.14.0
+	github.com/cilium/ebpf v0.20.0
+	github.com/go-logr/logr v1.4.4
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/distros v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/runtime-detector v0.0.25
+	go.opentelemetry.io/otel v1.46.0
+	go.opentelemetry.io/otel/metric v1.46.0
+	golang.org/x/sync v0.22.0
 )
 
 require (
-	github.com/cilium/ebpf v0.17.3 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/hashicorp/go-version v1.7.0 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/otel/trace v1.35.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	github.com/go-logr/zapr v1.3.0 // indirect
+	github.com/hashicorp/go-version v1.9.0 // indirect
+	github.com/jsimonetti/rtnetlink/v2 v2.0.3 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+	go.opentelemetry.io/otel/trace v1.46.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.28.0 // indirect
+	go.uber.org/zap/exp v0.3.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	sigs.k8s.io/controller-runtime v0.23.3 // indirect
 )
 
 replace github.com/odigos-io/odigos/common => ../common
+
+replace github.com/odigos-io/odigos/distros => ../distros

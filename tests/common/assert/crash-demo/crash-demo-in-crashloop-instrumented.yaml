@@ -31,15 +31,11 @@ spec:
   - agentEnabled: true
     containerName: api
     otelDistroName: nodejs-community
-  sdkConfigs:
-  - language: javascript
-    payloadCollection: {}
   serviceName: otel-crash-demo
 status:
   (status.rollbackOccurred || `false`): false
   runtimeDetailsByContainer:
   - containerName: api
     language: javascript
-    runtimeUpdateState: Succeeded
     runtimeVersion: 20.19.2
     secureExecutionMode: false

@@ -8,12 +8,15 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/odigos-io/odigos/common/otheragent"
 )
 
 const (
 	NodeVersionConst   = "NODE_VERSION"
 	PythonVersionConst = "PYTHON_VERSION"
 	JavaVersionConst   = "JAVA_VERSION"
+	JavaHomeConst      = "JAVA_HOME"
 	PhpVersionConst    = "PHP_VERSION"
 	RubyVersionConst   = "RUBY_VERSION"
 )
@@ -21,39 +24,30 @@ const (
 const (
 	// https://elixir.bootlin.com/linux/v6.5.5/source/include/uapi/linux/auxvec.h
 	AT_SECURE = 23
+
+	defaultProcDir = "/proc"
 )
+
+var procDir = func() string {
+	dir, ok := os.LookupEnv("ODIGOS_PROC_DIR")
+	if !ok || dir == "" {
+		return defaultProcDir
+	}
+	return dir
+}()
+
+func HostProcDir() string {
+	return procDir
+}
 
 // LangsVersionEnvs is a map of environment variables used for detecting the versions of different languages
 var LangsVersionEnvs = map[string]struct{}{
 	NodeVersionConst:   {},
 	PythonVersionConst: {},
 	JavaVersionConst:   {},
+	JavaHomeConst:      {},
 	PhpVersionConst:    {},
 	RubyVersionConst:   {},
-}
-
-const (
-	NewRelicAgentName  = "New Relic Agent"
-	DynatraceAgentName = "Dynatrace Agent"
-	DataDogAgentName   = "Datadog Agent"
-)
-
-const (
-	NewRelicAgentEnv                 = "NEW_RELIC_CONFIG_FILE"
-	DynatraceDynamizerEnv            = "DT_DYNAMIZER_TARGET_EXE"
-	DynatraceDynamizerExeSubString   = "oneagentdynamizer"
-	DynatraceFullStackEnvValuePrefix = "/dynatrace/"
-	DataDogAgentEnv                  = "DD_TRACE_AGENT_URL"
-)
-
-var OtherAgentEnvs = map[string]string{
-	NewRelicAgentEnv:      NewRelicAgentName,
-	DynatraceDynamizerEnv: DynatraceAgentName,
-	DataDogAgentEnv:       DataDogAgentName,
-}
-
-var OtherAgentCmdSubString = map[string]string{
-	"newrelic.jar": NewRelicAgentName,
 }
 
 type Details struct {
@@ -97,9 +91,14 @@ func (pcx *ProcessContext) CloseFiles() error {
 	return err
 }
 
+// ProcFilePath constructs the file path for a given process ID and file name in the /proc filesystem.
+func ProcFilePath(pid int, fileName string) string {
+	return fmt.Sprintf("%s/%d/%s", procDir, pid, fileName)
+}
+
 func (pcx *ProcessContext) GetExeFile() (ProcessFile, error) {
 	if pcx.exeFile == nil {
-		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
+		path := ProcFilePath(pcx.ProcessID, "exe")
 		fileData, err := os.Open(path)
 		if err != nil {
 			return nil, err
@@ -116,7 +115,7 @@ func (pcx *ProcessContext) GetExeFile() (ProcessFile, error) {
 
 func (pcx *ProcessContext) GetMapsFile() (ProcessFile, error) {
 	if pcx.mapsFile == nil {
-		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
+		mapsPath := ProcFilePath(pcx.ProcessID, "maps")
 		fileData, err := os.Open(mapsPath)
 		if err != nil {
 			return nil, err
@@ -146,15 +145,30 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 	return value, exists
 }
 
+// Cmdline returns the process command line.
+func (pcx *ProcessContext) Cmdline() string { return pcx.CmdLine }
+
+// LookupEnv returns an env var value from the collected DetailedEnvs. The
+// other-agent detection keys are collected up front (see getRelevantEnvVars),
+// so env-based detection reads them from here without touching /proc again.
+func (pcx *ProcessContext) LookupEnv(key string) (string, bool) {
+	return pcx.GetDetailedEnvsValue(key)
+}
+
+// MapsReader returns a reader over the process memory maps for library-load detection.
+func (pcx *ProcessContext) MapsReader() (io.Reader, error) {
+	return pcx.GetMapsFile()
+}
+
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
-func FindAllProcesses(predicate func(string) bool, runtimeDetectionEnvs map[string]struct{}) ([]Details, error) {
-	dirs, err := os.ReadDir("/proc")
+func FindAllProcesses(predicate func(int) bool) ([]int, error) {
+	dirs, err := os.ReadDir(procDir)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Details
+	var result []int
 	for _, di := range dirs {
 		if !di.IsDir() {
 			continue
@@ -169,12 +183,54 @@ func FindAllProcesses(predicate func(string) bool, runtimeDetectionEnvs map[stri
 
 		// predicate is optional, and can be used to filter the results
 		// plus avoid doing unnecessary work (e.g. reading the command line and exe name)
-		if predicate != nil && !predicate(dirName) {
+		if predicate != nil && !predicate(pid) {
 			continue
 		}
 
-		details := GetPidDetails(pid, runtimeDetectionEnvs)
-		result = append(result, details)
+		result = append(result, pid)
+	}
+	return result, nil
+}
+
+// Group processes by a key returned by the predicate function.
+// The predicate function should return the key and a boolean indicating whether to include the process in the result.
+// If the boolean is false, the process will be skipped.
+// The function returns a map where the keys are the keys returned by the predicate function
+// and the values are maps of process IDs that belong to each key.
+func Group[K comparable](predicate func(int) (K, bool)) (map[K]map[int]struct{}, error) {
+	if predicate == nil {
+		return nil, errors.New("predicate must be provided for grouping")
+	}
+
+	dirs, err := os.ReadDir(procDir)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[K]map[int]struct{})
+	for _, di := range dirs {
+		if !di.IsDir() {
+			continue
+		}
+
+		dirName := di.Name()
+
+		pid, isProcessDirectory := isDirectoryPid(dirName)
+		if !isProcessDirectory {
+			continue
+		}
+
+		k, ok := predicate(pid)
+		if !ok {
+			continue
+		}
+
+		_, keyExists := result[k]
+		if !keyExists {
+			result[k] = make(map[int]struct{})
+		}
+
+		result[k][pid] = struct{}{}
 	}
 
 	return result, nil
@@ -205,7 +261,7 @@ func GetPidDetails(pid int, runtimeDetectionEnvs map[string]struct{}) Details {
 // For instance, if a process was started from /usr/bin/python,
 // the exe symbolic link in that process's /proc directory will point to /usr/bin/python.
 func getExePath(pid int) string {
-	exeFileName := fmt.Sprintf("/proc/%d/exe", pid)
+	exeFileName := ProcFilePath(pid, "exe")
 	exePath, err := os.Readlink(exeFileName)
 	if err != nil {
 		// Read link may fail if target process runs not as root
@@ -217,7 +273,7 @@ func getExePath(pid int) string {
 // reads the command line arguments of a Linux process from
 // the cmdline file in the /proc filesystem and converts them into a string
 func getCommandLine(pid int) string {
-	cmdLineFileName := fmt.Sprintf("/proc/%d/cmdline", pid)
+	cmdLineFileName := ProcFilePath(pid, "cmdline")
 	fileContent, err := os.ReadFile(cmdLineFileName)
 	if err != nil {
 		// Ignore errors
@@ -228,7 +284,7 @@ func getCommandLine(pid int) string {
 }
 
 func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) ProcessEnvs {
-	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
+	envFileName := ProcFilePath(pid, "environ")
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
 		// TODO: if we fail to read the environment variables, we should probably return an error
@@ -260,15 +316,19 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 		envName := envParts[0]
 		envDetectionValue := envParts[1]
 
-		if _, ok := runtimeDetectionEnvs[envName]; ok {
-			overWriteEnvsResult[envName] = envDetectionValue
+		if runtimeDetectionEnvs != nil {
+			if _, ok := runtimeDetectionEnvs[envName]; ok {
+				overWriteEnvsResult[envName] = envDetectionValue
+			}
 		}
 
 		if _, ok := LangsVersionEnvs[envName]; ok {
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 
-		if _, ok := OtherAgentEnvs[envName]; ok {
+		// Collect the keys the shared other-agent detector inspects, so detection
+		// can read them off the process env without any caller wiring.
+		if _, ok := otheragent.AgentDetectionEnvKeys[envName]; ok {
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 	}
@@ -282,7 +342,7 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 }
 
 func isSecureExecutionMode(pid int) (bool, error) {
-	path := fmt.Sprintf("/proc/%d/auxv", pid)
+	path := ProcFilePath(pid, "auxv")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return false, fmt.Errorf("failed to read auxv: %w", err)

@@ -1,0 +1,8 @@
+type: odigoslogsresourceattrsprocessor
+status:
+  class: processor
+  stability:
+    beta: [logs]
+  distributions: [contrib]
+  codeowners:
+    active: [natyharary]

@@ -35,10 +35,14 @@ func createTracesProcessor(
 	nextConsumer consumer.Traces,
 ) (processor.Traces, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newUrlTemplateProcessor(set, oCfg)
+	proc, err := newUrlTemplateProcessor(set, oCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return processorhelper.NewTraces(ctx, set, cfg, nextConsumer, tmp.processTraces, processorhelper.WithCapabilities(consumerCapabilities))
+	return processorhelper.NewTraces(ctx, set, cfg, nextConsumer, proc.processTraces,
+		processorhelper.WithCapabilities(consumerCapabilities),
+		processorhelper.WithStart(proc.Start),
+		processorhelper.WithShutdown(proc.Shutdown),
+	)
 }

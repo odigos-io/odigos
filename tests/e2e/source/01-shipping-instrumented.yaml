@@ -1,0 +1,22 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-shipping
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: shipping
+spec:
+  agentInjectionEnabled: true
+  containers:
+    - agentEnabled: true
+      containerName: shipping
+      otelDistroName: opentelemetry-ebpf-instrumentation
+  serviceName: shipping-reported
+status:
+  runtimeDetailsByContainer:
+    - containerName: shipping
+      language: cplusplus

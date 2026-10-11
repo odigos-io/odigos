@@ -5,22 +5,30 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common/consts"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
-const otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
+const (
+	otelServiceNameEnvVarName        = "OTEL_SERVICE_NAME"
+	otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
+
+	// used when OTEL_RESOURCE_ATTRIBUTES is already set,
+	// so we can pass our values without overwriting or modifying the existing environment variable.
+	odigosResourceAttributesEnvVarName = "ODIGOS_RESOURCE_ATTRIBUTES"
+)
 
 type resourceAttribute struct {
 	Key   attribute.Key
 	Value string
 }
 
-func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName string) []resourceAttribute {
+func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName string, ownerReferences []metav1.OwnerReference) []resourceAttribute {
 	workloadKindKey := getWorkloadKindAttributeKey(podWorkload.Kind)
-	return []resourceAttribute{
+	resourceAttributes := []resourceAttribute{
 		{
 			Key:   semconv.K8SPodNameKey,
 			Value: "$(ODIGOS_POD_NAME)",
@@ -37,7 +45,55 @@ func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName stri
 			Key:   workloadKindKey,
 			Value: podWorkload.Name,
 		},
+		{
+			// Add Odigos-specific attribute to track the actual workload kind
+			// This is needed because some workload types (like DeploymentConfig)
+			// use the same semconv key as other types (Deployment)
+			Key:   attribute.Key(consts.OdigosWorkloadKindAttribute),
+			Value: string(podWorkload.Kind),
+		},
+		{
+			Key:   attribute.Key(consts.OdigosWorkloadNameAttribute),
+			Value: podWorkload.Name,
+		},
 	}
+	// Get otel resource attributes for the owner reference (job/replicaset name and uid)
+	// This is more efficient than doing this in the k8s attributes processor in the collector
+	resourceAttributes = append(resourceAttributes, getOwnerReferenceAttributes(ownerReferences)...)
+	return resourceAttributes
+}
+
+func getOwnerReferenceAttributes(ownerReferences []metav1.OwnerReference) []resourceAttribute {
+	resourceAttributes := []resourceAttribute{}
+	for _, ownerReference := range ownerReferences {
+		switch ownerReference.Kind {
+		case "Job":
+			resourceAttributes = append(resourceAttributes,
+				resourceAttribute{
+					Key:   semconv.K8SJobNameKey,
+					Value: ownerReference.Name,
+				},
+				resourceAttribute{
+					Key:   semconv.K8SJobUIDKey,
+					Value: string(ownerReference.UID),
+				},
+			)
+		case "ReplicaSet":
+			resourceAttributes = append(resourceAttributes,
+				resourceAttribute{
+					Key:   semconv.K8SReplicaSetNameKey,
+					Value: ownerReference.Name,
+				},
+			)
+			resourceAttributes = append(resourceAttributes,
+				resourceAttribute{
+					Key:   semconv.K8SReplicaSetUIDKey,
+					Value: string(ownerReference.UID),
+				},
+			)
+		}
+	}
+	return resourceAttributes
 }
 
 func getWorkloadKindAttributeKey(workloadKind k8sconsts.WorkloadKind) attribute.Key {
@@ -48,6 +104,16 @@ func getWorkloadKindAttributeKey(workloadKind k8sconsts.WorkloadKind) attribute.
 		return semconv.K8SStatefulSetNameKey
 	case k8sconsts.WorkloadKindDaemonSet:
 		return semconv.K8SDaemonSetNameKey
+	case k8sconsts.WorkloadKindCronJob:
+		return semconv.K8SCronJobNameKey
+	case k8sconsts.WorkloadKindJob:
+		return semconv.K8SJobNameKey
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		// OpenShift DeploymentConfig - use Deployment key as closest analog
+		return semconv.K8SDeploymentNameKey
+	case k8sconsts.WorkloadKindArgoRollout:
+		// Argo Rollout - use custom key since there's no semconv for it
+		return attribute.Key(k8sconsts.K8SArgoRolloutNameAttribute)
 	}
 	return attribute.Key("")
 }
@@ -60,14 +126,18 @@ func getResourceAttributesEnvVarValue(ra []resourceAttribute) string {
 	return strings.Join(attrs, ",")
 }
 
-func InjectOtelResourceAndServiceNameEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, pw k8sconsts.PodWorkload, serviceName string) EnvVarNamesMap {
-
+func InjectOtelResourceAndServiceNameEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, pw k8sconsts.PodWorkload, serviceName string, ownerReferences []metav1.OwnerReference) EnvVarNamesMap {
 	// OTEL_SERVICE_NAME
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName, nil)
+	existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName)
 
-	// OTEL_RESOURCE_ATTRIBUTES
-	resourceAttributes := getResourceAttributes(pw, container.Name)
+	// OTEL_RESOURCE_ATTRIBUTES or ODIGOS_RESOURCE_ATTRIBUTES
+	resourceAttributes := getResourceAttributes(pw, container.Name, ownerReferences)
 	resourceAttributesEnvValue := getResourceAttributesEnvVarValue(resourceAttributes)
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, otelResourceAttributesEnvVarName, resourceAttributesEnvValue, nil)
+
+	if _, exists := existingEnvNames[otelResourceAttributesEnvVarName]; !exists {
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, otelResourceAttributesEnvVarName, resourceAttributesEnvValue)
+	} else {
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, odigosResourceAttributesEnvVarName, resourceAttributesEnvValue)
+	}
 	return existingEnvNames
 }

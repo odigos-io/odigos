@@ -1,0 +1,31 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+## See it in action!
+
+The clip below shows the full path on a host: enabling `profiling.enabled` via `odictl`, adding a Pyroscope destination, and the resulting flame graph in the Pyroscope UI.
+
+<img
+  src="/images/vmagent/profiling/vm-profiling-demo.gif"
+  alt="End-to-end VM Agent profiling demo: enable profiling, add destination, view flame graph"
+/>
+
+## What is continuous CPU profiling?
+
+CPU profiling samples what your processes are doing on the CPU. Over time, those samples form a **flame graph** that shows which functions and libraries consume the most CPU time.
+
+Unlike traces, which tell you *that* a request was slow, profiles show *where* CPU time was spent. Use profiles after traces (or metrics) point you at a hot service.
+
+## How it works on the VM Agent
+
+1. You enable the profiling pipeline in agent config (`profiling.enabled: true`).
+2. **odigos-otelcol** runs the OpenTelemetry [eBPF profiler](https://github.com/open-telemetry/opentelemetry-ebpf-profiler) receiver on the host.
+3. Profiles are exported as using **OTLP Profiles** protocol to a destination which supports OTLP profiles.
+
+## Prerequisites
+
+- Linux host meeting [VM Agent system requirements](../../setup/system-requirements) (eBPF-capable kernel).
+- VM Agent installed and running ([Installation](../../setup/installation)).
+- At least one [source](../../setup/configuration/add-sources) enabled for the workloads you want to profile.
+- A destination that accepts the **PROFILES** signal (see [Export to Pyroscope](./export-pyroscope) for the recommended setup).
+
+<GettingHelp />

@@ -101,7 +101,11 @@ func sharedConfig(dest ExporterConfigurer) (GenericMap, error) {
 
 	logRetention, exists := config[AWS_CLOUDWATCH_LOG_RETENTION]
 	if exists {
-		exporterConfig["log_retention"] = parseInt(logRetention)
+		logRetentionValue, err := parseInt(AWS_CLOUDWATCH_LOG_RETENTION, logRetention)
+		if err != nil {
+			return nil, err
+		}
+		exporterConfig["log_retention"] = logRetentionValue
 	}
 
 	tags, exists := config[AWS_CLOUDWATCH_TAGS]

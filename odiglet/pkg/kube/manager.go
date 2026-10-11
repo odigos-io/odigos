@@ -3,24 +3,26 @@ package kube
 import (
 	"fmt"
 
+	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentation"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/loglevel"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,9 +31,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
-var (
-	scheme = runtime.NewScheme()
-)
+var scheme = runtime.NewScheme()
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -39,21 +39,19 @@ func init() {
 }
 
 type KubeManagerOptions struct {
-	Mgr           ctrl.Manager
-	Clientset     *kubernetes.Clientset
-	ConfigUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	CriClient     *criwrapper.CriClient
+	Mgr                     ctrl.Manager
+	ConfigUpdates           chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	InstrumentationRequests ebpf.K8sInstrumentationRequests
+	CriClient               *criwrapper.CriClient
 	// map where keys are the names of the environment variables that participate in append mechanism
 	// they need to be recorded by runtime detection into the runtime info, and this list instruct what to collect.
 	AppendEnvVarNames map[string]struct{}
 }
 
-func CreateManager() (ctrl.Manager, error) {
-	log.Logger.V(0).Info("Starting reconcileres for runtime details")
-	ctrl.SetLogger(log.Logger)
+func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (ctrl.Manager, error) {
+	commonlogger.LoggerCompat().With("subsystem", "runtimedetails").Info("Starting reconcilers for runtime details")
+	ctrl.SetLogger(commonlogger.ToLogr())
 
-	odigosNs := env.Current.Namespace
-	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
 
 	metricsBindAddress := "0"
@@ -73,27 +71,33 @@ func CreateManager() (ctrl.Manager, error) {
 				&corev1.Pod{}: {
 					Field: currentNodeSelector,
 				},
-				&odigosv1.CollectorsGroup{}: { // Used by OpAMP server to figure out which signals are collected
-					Field: nsSelector,
+				&corev1.ConfigMap{}: {
+					Field: fields.AndSelectors(
+						fields.OneTermEqualSelector("metadata.namespace", env.GetCurrentNamespace()),
+						fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName),
+					),
 				},
 			},
 		},
 		Metrics: metricsserver.Options{
 			BindAddress: metricsBindAddress,
 		},
-		HealthProbeBindAddress: ":8081",
+		HealthProbeBindAddress: fmt.Sprintf(":%d", instrumentationMgrOpts.OdigletHealthProbeBindPort),
 	})
 }
 
-func SetupWithManager(kubeManagerOptions KubeManagerOptions) error {
-
-	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient, kubeManagerOptions.AppendEnvVarNames)
+func SetupWithManager(kubeManagerOptions KubeManagerOptions, distributionGetter *distros.Getter) error {
+	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.CriClient, kubeManagerOptions.AppendEnvVarNames)
 	if err != nil {
 		return err
 	}
 
-	err = instrumentation_ebpf.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.ConfigUpdates)
+	err = instrumentation_ebpf.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.ConfigUpdates, kubeManagerOptions.InstrumentationRequests, distributionGetter)
 	if err != nil {
+		return err
+	}
+
+	if err = loglevel.SetupWithManager(kubeManagerOptions.Mgr); err != nil {
 		return err
 	}
 

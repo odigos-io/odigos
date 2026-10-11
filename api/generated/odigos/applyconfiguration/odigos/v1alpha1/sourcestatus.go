@@ -24,6 +24,8 @@ import (
 // SourceStatusApplyConfiguration represents a declarative configuration of the SourceStatus type for use
 // with apply.
 type SourceStatusApplyConfiguration struct {
+	// Represents the observations of a source's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

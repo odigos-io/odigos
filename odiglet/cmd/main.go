@@ -1,27 +1,44 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
 
+	"github.com/odigos-io/odigos/common/capabilities"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/odiglet"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	_ "net/http/pprof"
 
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"), "odiglet")
+	klog.SetLogger(commonlogger.ToLogr())
+	logger := commonlogger.LoggerCompat().With("subsystem", "startup")
+
+	var healthProbeBindPort int
+	flag.IntVar(&healthProbeBindPort, "health-probe-bind-port", k8sconsts.OdigletDefaultHealthProbeBindPort, "The port the probe endpoint binds to.")
+	flag.Parse()
+
+	if err := capabilities.AlignEffectiveCapToPermitted(); err != nil {
+		logger.Warn("failed to align effective capabilities to permitted set", "err", err)
+	}
+
 	// Init Kubernetes clientset
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
@@ -43,69 +60,81 @@ func main() {
 		odiglet.OdigletInitPhase(clientset)
 	}
 
-	if err := log.Init(); err != nil {
-		panic(err)
-	}
-
-	log.Logger.V(0).Info("Starting odiglet")
+	logger.Info("Starting odiglet")
 
 	// Load env
 	if err := env.Load(); err != nil {
-		log.Logger.Error(err, "Failed to load env")
+		logger.Error("Failed to load env", "err", err)
 		os.Exit(1)
 	}
 
 	dg, err := distros.NewCommunityGetter()
 	if err != nil {
-		log.Logger.Error(err, "Failed to create distro getter")
-		os.Exit(1)
-	}
-
-	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
-		Factories:          ebpfInstrumentationFactories(),
-		DistributionGetter: dg,
-	}
-
-	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), instrumentationManagerOptions)
-	if err != nil {
-		log.Logger.Error(err, "Failed to initialize odiglet")
+		logger.Error("Failed to create distro getter", "err", err)
 		os.Exit(1)
 	}
 
 	ctx := signals.SetupSignalHandler()
+
+	// create a single gRPC connection that will be shared across instrumentations
+	// of different processes and different languages.
+	// this allows us to keep a single connection to the local collector.
+	// we share the underlying connection transport, but each instrumentation can have
+	// its own exporter with its own lifecycle.
+	// using WithGRPCConn when creating the exporter allows us to manage the lifecycle of this connection
+	// which is open the entire lifecycle of the odiglet.
+	otlpCommonConn, err := grpc.NewClient(
+		fmt.Sprintf("localhost:%d", consts.OTLPPort),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		logger.Error("failed to create a gRPC connection to local collector", "error", err)
+		os.Exit(1)
+	}
+	defer func() {
+		err := otlpCommonConn.Close()
+		if err != nil {
+			logger.Error("failed to close common OTLP connection", "error", err)
+		}
+	}()
+
+	factories, err := ebpfInstrumentationFactories(otlpCommonConn)
+	if err != nil {
+		logger.Error("failed to create ebpf factories: %w", err)
+		os.Exit(1)
+	}
+
+	// OBI (traces distro + network-metrics generic) is wired centrally in odiglet.New, since
+	// it is identical for OSS and enterprise.
+	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
+		Factories:                  factories,
+		DistributionGetter:         dg,
+		OdigletHealthProbeBindPort: healthProbeBindPort,
+	}
+
+	o, err := odiglet.New(clientset, instrumentationManagerOptions)
+	if err != nil {
+		logger.Error("Failed to initialize odiglet", "err", err)
+		os.Exit(1)
+	}
 	o.Run(ctx)
 
-	log.Logger.V(0).Info("odiglet exiting")
+	logger.Info("odiglet exiting")
 }
 
-func deviceInjectionCallbacks() instrumentation.OtelSdksLsf {
-	return map[common.ProgrammingLanguage]map[common.OtelSdk]instrumentation.LangSpecificFunc{
-		common.GoProgrammingLanguage: {
-			common.OtelSdkEbpfCommunity: instrumentlang.Go,
-		},
-		common.JavaProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Java,
-		},
-		common.PythonProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Python,
-		},
-		common.JavascriptProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.NodeJS,
-		},
-		common.DotNetProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.DotNet,
-		},
-		common.NginxProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Nginx,
-		},
+// ebpfInstrumentationFactories builds the distro -> factory map used by the instrumentation
+// manager. Only distros with a dedicated eBPF instrumentation are listed.
+//
+// OBI (the traces distro factory and the network-metrics generic factory) is not listed here;
+// it is wired centrally in odiglet.New since it is identical for OSS and enterprise. Natively-
+// instrumented distros have no factory of their own and are picked up by generic factories.
+func ebpfInstrumentationFactories(otlpCommon *grpc.ClientConn) (map[string]commonInstrumentation.Factory, error) {
+	goFactory, err := sdks.NewGoInstrumentationFactory(otlpCommon)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create go instrumentation factory: %w", err)
 	}
-}
 
-func ebpfInstrumentationFactories() map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory {
-	return map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory{
-		commonInstrumentation.OtelDistribution{
-			Language: common.GoProgrammingLanguage,
-			OtelSdk:  common.OtelSdkEbpfCommunity,
-		}: sdks.NewGoInstrumentationFactory(),
-	}
+	return map[string]commonInstrumentation.Factory{
+		"golang-community": goFactory,
+	}, nil
 }

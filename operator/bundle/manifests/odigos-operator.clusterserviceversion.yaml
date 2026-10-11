@@ -19,8 +19,8 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:18fe631d8d79ffb6f78350e514ce58087416a207e616270ed5034cf5a02d4cbc
-    createdAt: "2025-06-16T16:37:47Z"
+    containerImage: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified@sha256:0e1865721f5bc9e8f49e4cbcfc2854b08b73e4606de080e17e406b5d3e8a5dbb
+    createdAt: "2026-09-22T14:41:37Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -30,10 +30,14 @@ metadata:
     features.operators.openshift.io/token-auth-azure: "false"
     features.operators.openshift.io/token-auth-gcp: "false"
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for enterprise features)
-    operators.operatorframework.io/builder: operator-sdk-v1.40.0
+    operators.operatorframework.io/builder: operator-sdk-v1.42.3
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
-  name: odigos-operator.v1.0.198
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/os.linux: supported
+  name: odigos-operator.v1.37.1
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -59,8 +63,8 @@ spec:
             displayName: Telemetry Enabled
             path: telemetryEnabled
           - description: |-
-              (Optional) UIMode sets the UI mode to either "default" or "readonly".
-              In "default" mode the UI is fully interactive, allowing users to view and edit
+              (Optional) UIMode sets the UI mode to either "normal" or "readonly".
+              In "normal" mode the UI is fully interactive, allowing users to view and edit
               Odigos configuration and settings. In "readonly" mode, the UI can only be
               used to view current Odigos configuration and is not interactive.
               Default=default
@@ -82,10 +86,16 @@ spec:
           - description: |-
               (Optional) ImagePrefix is a prefix for all container images.
               This should only be used if you are pulling Odigos images from the non-default registry.
-              Default: registry.odigos.io
-              Default (OpenShift): registry.connect.redhat.com
+              Default (community): docker.io/keyval
+              Default (enterprise): registry.odigos.io
+              Default (OpenShift): registry.connect.redhat.com/odigos
             displayName: Image Prefix
             path: imagePrefix
+          - description: |-
+              (Optional) LogLevel sets the default log level for all Odigos components (e.g. autoscaler, odiglet, scheduler).
+              Accepted values: debug, info, warn, error. Default=info when unset.
+            displayName: Log Level
+            path: logLevel
           - description: |-
               (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
               One of "k8s-virtual-device" (default) or "k8s-host-path".
@@ -125,7 +135,7 @@ spec:
     With Odigos installed, follow the Odigos docs at docs.odigos.io for instructions on instrumenting applications and configuring destinations.
   displayName: Odigos Operator
   icon:
-    - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAtMiAxNiAxNiIgZmlsbD0iIzE1MTUxNSI+CiAgPHBhdGgKICAgIGQ9Ik01LjE3MjE1IDkuMDE4ODRMMi4xODM3NyA3LjY5ODEzQzEuNDgxNTkgNy4zODczMiAxLjA0NDggNi43MzY3NyAxLjA0NDggNS45OTk0OEMxLjA0NDggNS4yNjIyIDEuNDgwNTYgNC42MTE2NSAyLjE4Mzc3IDQuMzAwODNMNi4zNjE3MiAyLjQ1MzQ5TDYuNDUxNTYgMi40MTQyNVYwSDEuNjYxMjdDMS4wNDE3IDAgMC41Mzg4MTggMC40NzgxIDAuNTM4ODE4IDEuMDY3NzJWMTAuOTMxMkMwLjUzODgxOCAxMS41MjA5IDEuMDQxNyAxMS45OTkgMS42NjEyNyAxMS45OTlINS44MzMwM0g2LjQ1MjU5VjkuNTY4Mkw1LjE3MzE5IDkuMDE3ODFINS4xNzIxNVY5LjAxODg0WiIgLz4KICA8cGF0aAogICAgZD0iTTE0LjMzOTcgMEg5LjU0ODRWMi40NDExTDEwLjgwNDEgMi45ODExNUwxMC44MDEgMi45Njk4TDEzLjgxNjIgNC4zMDI5QzE0LjUxODQgNC42MTM3MiAxNC45NTUyIDUuMjY0MjYgMTQuOTU1MiA2LjAwMTU1QzE0Ljk1NTIgNi43Mzg4MyAxNC41MTk0IDcuMzg5MzggMTMuODE2MiA3LjcwMDJMMTAuMTY0OSA5LjMxNDE3TDkuNTQ3MzYgOS41NzY0NlYxMkgxNC4zMzg3QzE0Ljk1ODMgMTIgMTUuNDYxMSAxMS41MjE5IDE1LjQ2MTEgMTAuOTMyM1YxLjA2NzcyQzE1LjQ2MTEgMC40NzgxIDE0Ljk1ODMgMCAxNC4zMzg3IDBIMTQuMzM5N1oiIC8+CiAgPHBhdGgKICAgIGQ9Ik04LjAwMDQ4IDguNDc5NzJDOS4zNjk3MiA4LjQ3OTcyIDEwLjQ4MDggNy4zNjk2NiAxMC40ODA4IDUuOTk5MzhDMTAuNDgwOCA0LjYyOTEgOS4zNzA3NiAzLjUxOTA0IDguMDAwNDggMy41MTkwNEM2LjYzMDIgMy41MTkwNCA1LjUyMDE0IDQuNjI5MSA1LjUyMDE0IDUuOTk5MzhDNS41MjAxNCA3LjM2OTY2IDYuNjMwMiA4LjQ3OTcyIDguMDAwNDggOC40Nzk3MloiIC8+Cjwvc3ZnPg==
+    - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAxNDIgMTQyIj4KICA8ZGVmcz4KICAgIDxjbGlwUGF0aCBpZD0iYSI+CiAgICAgIDxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0wIDBoMTQxLjY0djE0MS42NEgweiIvPgogICAgPC9jbGlwUGF0aD4KICA8L2RlZnM+CiAgPGcgY2xpcC1wYXRoPSJ1cmwoI2EpIj4KICAgIDxwYXRoIGZpbGw9IiMxQTFBMUEiIGQ9Ik0xMTUuMTkzIDBIMjYuNDQ3QzExLjg0MSAwIDAgMTEuODQgMCAyNi40NDd2ODguNzQ2YzAgMTQuNjA2IDExLjg0IDI2LjQ0NyAyNi40NDcgMjYuNDQ3aDg4Ljc0NmMxNC42MDYgMCAyNi40NDctMTEuODQxIDI2LjQ0Ny0yNi40NDdWMjYuNDQ3QzE0MS42NCAxMS44NDEgMTI5Ljc5OSAwIDExNS4xOTMgMFoiLz4KICAgIDxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik01Mi4wMzYgODQuMDEzIDM2LjQ0MyA5OS42MDZhMS45NzMgMS45NzMgMCAwIDEtMS40NjguNTc0IDEuOTUgMS45NSAwIDAgMS0xLjQ2OS0uNzU1IDQ2LjYgNDYuNiAwIDAgMS02LjA5OC0xMC40OCAzLjIyNSAzLjIyNSAwIDAgMS0uMTg3LTEuODg2IDMuMjg1IDMuMjg1IDAgMCAxIC45LTEuNjc0bDEyLjE4NC0xMi4xODRhMy4yNSAzLjI1IDAgMCAwIC45NTUtMi4zMDNjMC0uODM0LS4zMTQtMS42NzQtLjk1NS0yLjMxNEwyOC4wMzEgNTYuMzA5YTMuMjc1IDMuMjc1IDAgMCAxLS45NjEtMi4zODEgMy4xNSAzLjE1IDAgMCAxIC4yNDEtMS4xNjcgNDYuODI3IDQ2LjgyNyAwIDAgMSA2LjA2Mi0xMC41MzQgMS45NDQgMS45NDQgMCAwIDEgMS40MjYtLjc2MWMuNTM4LS4wMzcgMS4xLjE1IDEuNTE3LjU3NGwxNS43MzIgMTUuNzMyYTIuNjEzIDIuNjEzIDAgMCAxIDAgMy42OThsLTcuMTIgNy4xMmEzLjI0OCAzLjI0OCAwIDAgMC0uOTU0IDIuMzA4YzAgLjgzNC4zMiAxLjY3NS45NTUgMi4zMWw3LjEyIDcuMTE4YTIuNjE0IDIuNjE0IDAgMCAxIDAgMy43bC0uMDEzLS4wMTNabTQ3LjYzNi00Ny42MzZMODMuMjc2IDUyLjc3M2EzLjk2IDMuOTYgMCAwIDEtMi43NzQgMS4xNDhINjEuMjdjLS41MiAwLTEuMDI4LS4xMDItMS41LS4yOTVhMy44MTcgMy44MTcgMCAwIDEtMS4yNjgtLjg1M0w0Mi4wMjggMzYuMjk4YTEuOTggMS45OCAwIDAgMS0uNTc1LTEuNTE3Yy4wMy0uNTQ0LjI5LTEuMDcuNzYyLTEuNDI2YTQ2LjgyMiA0Ni44MjIgMCAwIDEgMTAuNTEtNi4wNzQgMy4yNDggMy4yNDggMCAwIDEgMS43NTItLjIwNSAzLjI5MyAzLjI5MyAwIDAgMSAxLjgwMi45MThMNjguNTgyIDQwLjNhMy4yNjIgMy4yNjIgMCAwIDAgNC42MTcgMEw4NS40NSAyOC4wNWEzLjMwMyAzLjMwMyAwIDAgMSAxLjY3NS0uOSAzLjIxNiAzLjIxNiAwIDAgMSAxLjg4NS4xODYgNDYuNzM3IDQ2LjczNyAwIDAgMSAxMC40OCA2LjA5OWMuOTM3LjcxOSAxLjAxNSAyLjEwMy4xODEgMi45Mzd2LjAwNlpNNzAuNzk2IDgxLjE2YzUuNjcgMCAxMC4yNjgtNC41OTYgMTAuMjY4LTEwLjI2NyAwLTUuNjcxLTQuNTk3LTEwLjI2OS0xMC4yNjgtMTAuMjY5cy0xMC4yNjkgNC41OTgtMTAuMjY5IDEwLjI2OGMwIDUuNjcyIDQuNTk4IDEwLjI2OSAxMC4yNjkgMTAuMjY5Wm0tMjguNzc0IDI0LjEwMyAxNi4zOTYtMTYuMzk2Yy4zMi0uMzIuNjktLjU4IDEuMDk0LS43NjhhMy45MDcgMy45MDcgMCAwIDEgMS42OC0uMzhoMTkuMjMxYy41MiAwIDEuMDI4LjEwMiAxLjQ5OS4yOTUuNDcxLjE5NC45MDcuNDg0IDEuMjcuODUzbDE2LjQ3NCAxNi40NzVjLjM3NS4zNzQuNTY4Ljg2NC41NzQgMS4zNDdhMS45NDIgMS45NDIgMCAwIDEtLjc2MSAxLjU5IDQ2LjgzIDQ2LjgzIDAgMCAxLTEwLjUxIDYuMDc0IDMuMjE2IDMuMjE2IDAgMCAxLTEuODg2LjE4MSAzLjI3NyAzLjI3NyAwIDAgMS0xLjY2OC0uODk0TDczLjExIDEwMS4zMzVhMy4yNDcgMy4yNDcgMCAwIDAtMi4zMDgtLjk1NWMtLjgzNCAwLTEuNjc1LjMyLTIuMzEuOTU1bC0xMi4yNSAxMi4yNWMtLjQyOS40MjktLjk2LjcyNi0xLjUyMy44NjVhMy4yNDEgMy4yNDEgMCAwIDEtMi4wMzYtLjE1MiA0Ni42OTggNDYuNjk4IDAgMCAxLTEwLjQ4LTYuMDk4IDEuOTY3IDEuOTY3IDAgMCAxLS43NTYtMS40MjYgMS45NTMgMS45NTMgMCAwIDEgLjU3NS0xLjUxMVptNDcuNTgyLTQ3LjYzNiAxNS41OTMtMTUuNTkzYTEuOTc0IDEuOTc0IDAgMCAxIDEuNTEtLjU3NCAxLjk3IDEuOTcgMCAwIDEgMS40MjcuNzU1IDQ2LjYwNyA0Ni42MDcgMCAwIDEgNi4wOTggMTAuNDhjLjEyNy4zMDIuMjA1LjYyMi4yMzYuOTM3YTMuMjggMy4yOCAwIDAgMS0uOTQ5IDIuNjIzbC0xMi4xODQgMTIuMTg0YTMuMjQ3IDMuMjQ3IDAgMCAwLS45NTUgMi4zMDhjMCAuODM1LjMyIDEuNjc0Ljk1NSAyLjMxbDEyLjI3NCAxMi4yNzRjLjQ2Ni40NjUuNzY4IDEuMDQ1Ljg5NSAxLjY2OGEzLjE5MSAzLjE5MSAwIDAgMS0uMTgyIDEuODggNDYuODMyIDQ2LjgzMiAwIDAgMS02LjA2MSAxMC41MzQgMS45NzcgMS45NzcgMCAwIDEtMS4yNDUuNzQzIDEuOTcyIDEuOTcyIDAgMCAxLTEuNjk5LS41NUw4OS41ODYgODMuODc0YTIuNjEzIDIuNjEzIDAgMCAxIDAtMy42OThsNy4xMi03LjEyYTMuMjUgMy4yNSAwIDAgMCAuOTU0LTIuMjQyIDMuMjU1IDMuMjU1IDAgMCAwLS45NTUtMi4zNzVsLTcuMTItNy4xMmEyLjYxNCAyLjYxNCAwIDAgMSAwLTMuNjk5bC4wMTkuMDA3WiIvPgogIDwvZz4KPC9zdmc+Cg==
       mediatype: image/svg+xml
   install:
     spec:
@@ -137,9 +147,11 @@ spec:
                 - configmaps
                 - endpoints
                 - secrets
+                - services
               verbs:
                 - create
                 - delete
+                - deletecollection
                 - get
                 - list
                 - patch
@@ -158,7 +170,10 @@ spec:
                 - events
               verbs:
                 - create
+                - get
+                - list
                 - patch
+                - watch
             - apiGroups:
                 - ""
               resources:
@@ -167,6 +182,19 @@ spec:
                 - get
                 - list
                 - patch
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - namespaces/status
+                - nodes/spec
+                - nodes/stats
+                - replicationcontrollers
+                - replicationcontrollers/status
+                - resourcequotas
+              verbs:
+                - get
+                - list
                 - watch
             - apiGroups:
                 - ""
@@ -181,22 +209,17 @@ spec:
             - apiGroups:
                 - ""
               resources:
-                - nodes/proxy
-                - nodes/stats
-              verbs:
-                - get
-                - list
-            - apiGroups:
-                - ""
-              resources:
                 - pods
               verbs:
+                - delete
                 - get
                 - list
                 - watch
             - apiGroups:
                 - ""
               resources:
+                - pods/log
+                - pods/proxy
                 - pods/status
               verbs:
                 - get
@@ -212,25 +235,13 @@ spec:
                 - patch
                 - watch
             - apiGroups:
-                - ""
-              resources:
-                - services
-              verbs:
-                - create
-                - delete
-                - deletecollection
-                - get
-                - list
-                - patch
-                - update
-                - watch
-            - apiGroups:
                 - actions.odigos.io
               resources:
                 - '*'
               verbs:
                 - create
                 - delete
+                - deletecollection
                 - get
                 - list
                 - patch
@@ -264,6 +275,18 @@ spec:
               verbs:
                 - create
                 - delete
+                - deletecollection
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - apiregistration.k8s.io
+              resources:
+                - apiservices
+              verbs:
+                - create
                 - get
                 - list
                 - patch
@@ -303,23 +326,80 @@ spec:
               verbs:
                 - get
             - apiGroups:
+                - apps
+              resources:
+                - deployments/scale
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - apps.openshift.io
+              resources:
+                - deploymentconfigs
+                - deploymentconfigs/finalizers
+              verbs:
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - argoproj.io
+              resources:
+                - rollouts
+              verbs:
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - argoproj.io
+              resources:
+                - rollouts/finalizers
+              verbs:
+                - update
+            - apiGroups:
                 - autoscaling
               resources:
                 - horizontalpodautoscalers
               verbs:
                 - create
                 - delete
+                - get
+                - list
                 - patch
                 - update
+                - watch
             - apiGroups:
                 - batch
               resources:
                 - cronjobs
               verbs:
+                - create
+                - delete
                 - get
                 - list
                 - patch
                 - update
+                - watch
+            - apiGroups:
+                - batch
+              resources:
+                - cronjobs/finalizers
+                - jobs/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - batch
+              resources:
+                - jobs
+              verbs:
+                - create
+                - delete
+                - get
+                - list
                 - watch
             - apiGroups:
                 - coordination.k8s.io
@@ -332,6 +412,24 @@ spec:
                 - list
                 - patch
                 - update
+                - watch
+            - apiGroups:
+                - discovery.k8s.io
+              resources:
+                - endpointslices
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - extensions
+              resources:
+                - daemonsets
+                - deployments
+                - replicasets
+              verbs:
+                - get
+                - list
                 - watch
             - apiGroups:
                 - odigos.io
@@ -353,7 +451,30 @@ spec:
                 - destinations/status
                 - instrumentationconfigs/status
                 - instrumentationinstances/status
+                - processors/status
               verbs:
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - odigos.io
+              resources:
+                - instrumentationrules/status
+                - recommendations/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - odigos.io
+              resources:
+                - recommendations
+                - sampling
+              verbs:
+                - create
+                - delete
                 - get
                 - list
                 - patch
@@ -403,6 +524,7 @@ spec:
               verbs:
                 - create
                 - delete
+                - deletecollection
                 - get
                 - list
                 - patch
@@ -463,24 +585,34 @@ spec:
                         valueFrom:
                           configMapKeyRef:
                             key: ODIGOS_VERSION
-                            name: odigos-operator-odigos-version-kfkk8hb6bf
+                            name: odigos-operator-odigos-version-fcd8mft7hk
                       - name: RELATED_IMAGE_AUTOSCALER
-                        value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:68997fccdd5448cfbd64057bf72866c970183980fedc145fcf92bc6dd9d68a30
+                        value: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified@sha256:ffa0f5d3a1b6c60e711be114dc441c6755fdac6f6a5353615e07ad7da072a463
                       - name: RELATED_IMAGE_COLLECTOR
-                        value: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:603af2d091b354d5b574667b48ab12f091173b22381f1ae0042cc4324af23120
+                        value: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified@sha256:488c4231f28436d5eabd461c153d6d30d26938f01bcf6c54cf2e8d0d27dc64c7
+                      - name: RELATED_IMAGE_ENTERPRISE_COLLECTOR
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified@sha256:edc9a8e31d51a8e630898945d426e276be27716def7b9943dce0778818edc4fe
                       - name: RELATED_IMAGE_FRONTEND
-                        value: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:f53181c61b833b4f3f731f61bb404a3c2f9ce603c961caf431e613b4c7f39303
+                        value: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified@sha256:7b9ac5637b1a3c6322f87a570a3de7dbe141c2b040f750a79aeab1c8d2e408c5
                       - name: RELATED_IMAGE_INSTRUMENTOR
-                        value: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:48b15ec1ae2eae9c85303c9ea6cd46bdd0829a34deafbe66102343e6e48864c0
+                        value: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified@sha256:974e58b6181b07a179ad7f087e3dad880ae172d63d0c755915e3ab9deca7f666
                       - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
-                        value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:5b13c53996d72c3940c9a10f835ae446697e2669a7fadb69255853ba0d3e298a
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified@sha256:fd9bca58ec209885ac105ecc8653378a67d31c413531052921abc65782205542
+                      - name: RELATED_IMAGE_ENTERPRISE_UI
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified@sha256:a105d9f49e81482b0fca523cd82a82ba8f18dcca6e9b87f8fc1940a9132fba13
                       - name: RELATED_IMAGE_ODIGLET
-                        value: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:e970daa5cf9b88768030f55c0be8dd2b8d9c979f90aa080b3d74ebf8cb7c6153
+                        value: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified@sha256:9dd2560cb803ca09372c0bb0c501544bd09858c6d80c265af235ceffa01ccfa2
                       - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
-                        value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:64f900bebd1548b6229237a73afe248963599aa582eac014f6b1857baeac7c50
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified@sha256:c48b4899843ac8f86c3843b44ca6a020be5d7ae5b3e86115fa5a26343df4d8eb
+                      - name: RELATED_IMAGE_AGENTS
+                        value: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified@sha256:12bc5746ce169f7105ab024361faa3032ee676480c415eb8b2b356125e5ee935
+                      - name: RELATED_IMAGE_ENTERPRISE_AGENTS
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified@sha256:58af181f9ec02ddb3d3e57b2abd373005cdc5a3a12ddd52ab290281aef80eca9
                       - name: RELATED_IMAGE_SCHEDULER
-                        value: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:ea16dbb7124f3d3dc16e31a20e3451c256d7bd27d1fa113ed43a6ed40cd4a82d
-                    image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:18fe631d8d79ffb6f78350e514ce58087416a207e616270ed5034cf5a02d4cbc
+                        value: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified@sha256:d3978183134c41d4ac561fd26e0c3483bd94d86e590fd2f4bd3242ac49ee688c
+                      - name: RELATED_IMAGE_CLI
+                        value: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified@sha256:982f1e7c057a3b62569d74d65b709e8112e6151eee06ba6b6e07f14cd271fade
+                    image: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified@sha256:0e1865721f5bc9e8f49e4cbcfc2854b08b73e4606de080e17e406b5d3e8a5dbb
                     livenessProbe:
                       httpGet:
                         path: /healthz
@@ -573,33 +705,49 @@ spec:
     - email: mike@odigos.io
       name: Mike Dame
   maturity: alpha
-  minKubeVersion: 1.20.15
+  minKubeVersion: 1.19.0
   provider:
     name: Odigos
     url: https://odigos.io
   relatedImages:
-    - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:ea16dbb7124f3d3dc16e31a20e3451c256d7bd27d1fa113ed43a6ed40cd4a82d
-      name: scheduler
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:5b13c53996d72c3940c9a10f835ae446697e2669a7fadb69255853ba0d3e298a
-      name: enterprise_instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:18fe631d8d79ffb6f78350e514ce58087416a207e616270ed5034cf5a02d4cbc
-      name: odigos-certified-operator-ubi9-18fe631d8d79ffb6f78350e514ce58087416a207e616270ed5034cf5a02d4cbc-annotation
-    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:603af2d091b354d5b574667b48ab12f091173b22381f1ae0042cc4324af23120
-      name: collector
-    - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:48b15ec1ae2eae9c85303c9ea6cd46bdd0829a34deafbe66102343e6e48864c0
-      name: instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:e970daa5cf9b88768030f55c0be8dd2b8d9c979f90aa080b3d74ebf8cb7c6153
-      name: odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:64f900bebd1548b6229237a73afe248963599aa582eac014f6b1857baeac7c50
-      name: enterprise-odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:18fe631d8d79ffb6f78350e514ce58087416a207e616270ed5034cf5a02d4cbc
-      name: manager
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:64f900bebd1548b6229237a73afe248963599aa582eac014f6b1857baeac7c50
-      name: enterprise_odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:68997fccdd5448cfbd64057bf72866c970183980fedc145fcf92bc6dd9d68a30
-      name: autoscaler
-    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:f53181c61b833b4f3f731f61bb404a3c2f9ce603c961caf431e613b4c7f39303
+    - image: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified@sha256:7b9ac5637b1a3c6322f87a570a3de7dbe141c2b040f750a79aeab1c8d2e408c5
       name: frontend
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:5b13c53996d72c3940c9a10f835ae446697e2669a7fadb69255853ba0d3e298a
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified@sha256:c48b4899843ac8f86c3843b44ca6a020be5d7ae5b3e86115fa5a26343df4d8eb
+      name: enterprise-odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-agents-rhel-certified@sha256:12bc5746ce169f7105ab024361faa3032ee676480c415eb8b2b356125e5ee935
+      name: agents
+    - image: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified@sha256:d3978183134c41d4ac561fd26e0c3483bd94d86e590fd2f4bd3242ac49ee688c
+      name: scheduler
+    - image: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified@sha256:0e1865721f5bc9e8f49e4cbcfc2854b08b73e4606de080e17e406b5d3e8a5dbb
+      name: manager
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified@sha256:fd9bca58ec209885ac105ecc8653378a67d31c413531052921abc65782205542
+      name: enterprise_instrumentor
+    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified@sha256:ffa0f5d3a1b6c60e711be114dc441c6755fdac6f6a5353615e07ad7da072a463
+      name: autoscaler
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified@sha256:edc9a8e31d51a8e630898945d426e276be27716def7b9943dce0778818edc4fe
+      name: enterprise-collector
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified@sha256:a105d9f49e81482b0fca523cd82a82ba8f18dcca6e9b87f8fc1940a9132fba13
+      name: enterprise-ui
+    - image: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified@sha256:9dd2560cb803ca09372c0bb0c501544bd09858c6d80c265af235ceffa01ccfa2
+      name: odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified@sha256:58af181f9ec02ddb3d3e57b2abd373005cdc5a3a12ddd52ab290281aef80eca9
+      name: enterprise-agents
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified@sha256:c48b4899843ac8f86c3843b44ca6a020be5d7ae5b3e86115fa5a26343df4d8eb
+      name: enterprise_odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-agents-rhel-certified@sha256:58af181f9ec02ddb3d3e57b2abd373005cdc5a3a12ddd52ab290281aef80eca9
+      name: enterprise_agents
+    - image: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified@sha256:0e1865721f5bc9e8f49e4cbcfc2854b08b73e4606de080e17e406b5d3e8a5dbb
+      name: odigos-operator-rhel-certified-0e1865721f5bc9e8f49e4cbcfc2854b08b73e4606de080e17e406b5d3e8a5dbb-annotation
+    - image: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified@sha256:982f1e7c057a3b62569d74d65b709e8112e6151eee06ba6b6e07f14cd271fade
+      name: cli
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified@sha256:edc9a8e31d51a8e630898945d426e276be27716def7b9943dce0778818edc4fe
+      name: enterprise_collector
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified@sha256:a105d9f49e81482b0fca523cd82a82ba8f18dcca6e9b87f8fc1940a9132fba13
+      name: enterprise_ui
+    - image: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified@sha256:974e58b6181b07a179ad7f087e3dad880ae172d63d0c755915e3ab9deca7f666
+      name: instrumentor
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified@sha256:fd9bca58ec209885ac105ecc8653378a67d31c413531052921abc65782205542
       name: enterprise-instrumentor
-  version: 1.0.198
+    - image: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified@sha256:488c4231f28436d5eabd461c153d6d30d26938f01bcf6c54cf2e8d0d27dc64c7
+      name: collector
+  version: 1.37.1

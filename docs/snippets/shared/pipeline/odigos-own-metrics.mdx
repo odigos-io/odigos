@@ -1,0 +1,70 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+## Overview
+
+Odigos collects **own metrics** about its pipeline — collector throughput, export rates, eBPF instrumentation counters, and other internal telemetry. These metrics describe Odigos itself, not your application workloads.
+
+By default, the bundled metrics store is **disabled** (`ownTelemetry.metricsStore.disabled: true`). When you enable it, Odigos deploys a VictoriaMetrics instance (`odigos-victoriametrics`) in the Odigos namespace and routes own metrics there so the UI can query them.
+
+## What enabling the metrics store does
+
+When `ownTelemetry.metricsStore.disabled` is set to `false`:
+
+1. **VictoriaMetrics is deployed** — a single-replica `odigos-victoriametrics` Deployment with 1-day retention stores own metrics inside the cluster.
+2. **Collectors report own telemetry** — node collectors and the cluster gateway scrape their OpenTelemetry internal `/metrics` endpoints and forward the data through the gateway to VictoriaMetrics.
+3. **Odiglet instrumentation metrics are collected** — node collectors scrape eBPF instrumentation counters from odiglet and forward them through the gateway to the store.
+4. **Odigos UI representation** — metrics are display under "collectors pipeline".
+
+Separately from the metrics store, collectors always export traffic-size metrics directly to the UI server over OTLP. That path powers **per-source and per-destination throughput** (`throughputBytes`, `totalDataSent`) in the UI without requiring the metrics store.
+
+## Enabling
+
+The metrics store is disabled by default to keep the Odigos footprint minimal on small clusters.
+
+<Tabs>
+  <Tab title="Helm yaml">
+    ```yaml
+    ownTelemetry:
+      metricsStore:
+        disabled: false
+    ```
+  </Tab>
+  <Tab title="Helm command">
+    ```bash
+    helm upgrade --install odigos odigos/odigos \
+      --namespace odigos-system \
+      --reuse-values \
+      --set ownTelemetry.metricsStore.disabled=false
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration options
+
+### Export to external metrics destinations
+
+You can also send own metrics to your existing metrics backends by enabling **Collect Odigos own metrics** on a metrics destination. When either the metrics store or at least one such destination is enabled, collectors start the own-metrics collection pipeline.
+
+See [Odigos own metrics settings](/api-reference/odigos.io.v1alpha1#odigos-io-v1alpha1-OdigosOwnMetricsSettings) in the API reference for the full `OdigosOwnMetricsSettings` schema.
+
+## Resource footprint
+
+The bundled VictoriaMetrics instance requests roughly:
+
+| Resource | Request | Limit |
+|----------|---------|-------|
+| CPU      | 100m    | 500m  |
+| Memory   | 512Mi   | 2Gi   |
+
+Metrics are retained for **1 day** on ephemeral storage (`emptyDir`).
+
+## Using own metrics for sizing
+
+Own metrics help you understand how much telemetry Odigos is processing before you change [ResourceSizePreset](./configuration#1-using-sizing-configuration) or collector resources.
+
+1. Enable the metrics store.
+2. Instrument representative workloads and let traffic run for a few minutes.
+3. Check **source throughput** and **destination throughput** in the Odigos UI.
+4. Compare total span throughput (bytes/sec) with the [Benchmarks](./benchmarks) preset tables to pick `size_s` through `size_xl`.
+
+<GettingHelp />

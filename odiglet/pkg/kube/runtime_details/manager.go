@@ -7,13 +7,11 @@ import (
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient, appendEnvVarNames map[string]struct{}) error {
-
+func SetupWithManager(mgr ctrl.Manager, criClient *criwrapper.CriClient, appendEnvVarNames map[string]struct{}) error {
 	runtimeDetectionEnvs := map[string]struct{}{
 		// LD_PRELOAD is special, and is always collected.
 		// It has special handling that does not require it to be set in the "AppendOdigosVariables" list.
@@ -23,7 +21,17 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		runtimeDetectionEnvs[envName] = struct{}{}
 	}
 
-	readyPred := &odigospredicate.AllContainersReadyPredicate{}
+	// Runnable that runs once on startup to batch-scan all relevant
+	// processes on the node and update their runtime details if required.
+	if err := mgr.Add(&startupRuntimeDetection{
+		client:               mgr.GetClient(),
+		criClient:            criClient,
+		runtimeDetectionEnvs: runtimeDetectionEnvs,
+	}); err != nil {
+		return err
+	}
+
+	readyPred := &odigospredicate.AllContainersBecomeReadyPredicate{}
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("Odiglet-RuntimeDetails-Pods").
@@ -31,7 +39,6 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		Complete(&PodsReconciler{
 			Client:               mgr.GetClient(),
 			Scheme:               mgr.GetScheme(),
-			Clientset:            clientset,
 			CriClient:            criClient,
 			RuntimeDetectionEnvs: runtimeDetectionEnvs,
 		})
@@ -47,7 +54,6 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		Complete(&InstrumentationConfigReconciler{
 			Client:               mgr.GetClient(),
 			Scheme:               mgr.GetScheme(),
-			Clientset:            clientset,
 			CriClient:            criClient,
 			RuntimeDetectionEnvs: runtimeDetectionEnvs,
 		})

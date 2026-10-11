@@ -18,9 +18,14 @@ package v1alpha1
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// InstrumentationRuleVerified indicates that the InstrumentationRule has been successfully verified.
+	InstrumentationRuleVerified = "InstrumentationRuleValidation"
 )
 
 // Includes the instrumentation library name, span kind (for golang) and language
@@ -49,8 +54,8 @@ type InstrumentationRuleSpec struct {
 	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
 	Disabled bool `json:"disabled,omitempty"`
 
-	// An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
-	Workloads *[]k8sconsts.PodWorkload `json:"workloads,omitempty"`
+	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
 
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
@@ -60,9 +65,6 @@ type InstrumentationRuleSpec struct {
 
 	// Allows to configure payload collection aspects for different types of payloads.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
-
-	// Deprecated: use OtelDistros instead.
-	OtelSdks *instrumentationrules.OtelSdks `json:"otelSdks,omitempty"`
 
 	// Set the otel distros to use instead of the defaults.
 	OtelDistros *instrumentationrules.OtelDistros `json:"otelDistros,omitempty"`
@@ -75,6 +77,40 @@ type InstrumentationRuleSpec struct {
 
 	// Configure the tracing configuration for the library.
 	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+
+	// Add custom instrumentation probes
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+
+	// Configure general fraction of traces to record if none of the rules evaluate to true.
+	// this can help in reducing very noisy and heavy traffic services.
+	// note that traces will be dropped regardless of thier attributes/errors/importance.
+	// @deprecated: use odigos config to set this value instead.
+	HeadSamplingFallbackFraction *instrumentationrules.HeadSamplingFallbackFraction `json:"headSamplingFallbackFraction,omitempty"`
+
+	// Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+	// will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+	// register instrumented processes for eBPF log capture.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+
+	// Configure network flow and TCP stats metrics for scoped workloads.
+	NetworkMetrics *instrumentationrules.NetworkMetricsConfig `json:"networkMetrics,omitempty"`
+
+	// Configure the verbosity of the traces for the library.
+	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+
+	// Configure the agent own logging configuration.
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
+}
+
+// Verify validates the InstrumentationRuleSpec.
+// for future usage, you can add more validation logic here for other fields.
+func (irs *InstrumentationRuleSpec) Verify() error {
+	if irs.CustomInstrumentations != nil {
+		if err := irs.CustomInstrumentations.Verify(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type InstrumentationRuleStatus struct {

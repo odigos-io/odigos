@@ -1,0 +1,129 @@
+package collectorconfig
+
+import (
+	"fmt"
+
+	"github.com/go-logr/logr"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
+)
+
+const (
+	filelogReceiverName                  = "filelog"
+	logsPipelineName                     = "logs"
+	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
+)
+
+func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string, tier common.OdigosTier) (config.GenericMap, []string) {
+
+	if tier.IsEnterprise() && isEbpfLogCaptureEnabled(sources) {
+		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
+		return config.GenericMap{}, []string{odigosEbpfReceiverName}
+	}
+
+	includes := make([]string, 0)
+	for _, element := range sources.Items {
+		// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
+		// Pod specifiers
+		// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
+		// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
+		// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
+		// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
+		// We expect there to exactly one OwnerReference
+		if len(element.OwnerReferences) != 1 {
+			logger.Error(
+				fmt.Errorf("unexpected number of OwnerReferences for instrumentation config %s/%s during logs configmap compilation: %d", element.Namespace, element.Name, len(element.OwnerReferences)),
+				"failed to compile logs include list for configmap for instrumentation config",
+			)
+			continue
+		}
+		owner := element.OwnerReferences[0]
+		name := owner.Name
+		includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
+	}
+
+	return config.GenericMap{
+		filelogReceiverName: config.GenericMap{
+			"include": includes,
+			"exclude": []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
+			// 5s (vs upstream 200ms default) avoids a readdir storm from stanza's per-include glob loop on busy nodes.
+			"poll_interval":     "5s",
+			"start_at":          "end",
+			"include_file_path": true,
+			"include_file_name": false,
+			"operators": []config.GenericMap{
+				{
+					"id":   "container-parser",
+					"type": "container",
+				},
+			},
+			"retry_on_failure": config.GenericMap{
+				// From documentation:
+				// When true, the receiver will pause reading a file and attempt to resend the current batch of logs
+				//  if it encounters an error from downstream components.
+				//
+				// filelog might get overwhelmed when it just starts and there are already a lot of logs to process in the node.
+				// when downstream components (cluster collector and receiving destination) are under too much pressure,
+				// they will reject the data, slowing down the filelog receiver and allowing it to retry the data and adjust to
+				// downstream pressure.
+				"enabled": true,
+			},
+		},
+	}, []string{filelogReceiverName}
+}
+
+func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
+	if sources == nil {
+		return false
+	}
+	for _, ic := range sources.Items {
+		// check container config (new path)
+		for _, container := range ic.Spec.Containers {
+			if container.Logs != nil &&
+				container.Logs.EbpfLogCapture != nil &&
+				container.Logs.EbpfLogCapture.Enabled != nil &&
+				*container.Logs.EbpfLogCapture.Enabled {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+type LogsConfigOptions struct {
+	CommonSignalConfig
+	Sources *odigosv1.InstrumentationConfigList
+}
+
+func LogsConfig(nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config.Config {
+
+	pipelineProcessors := []string{
+		memoryLimiterProcessorName,
+		nodeNameProcessorName,
+	}
+	if opts.ResourceDetectionEnabled {
+		pipelineProcessors = append(pipelineProcessors, resourceDetectionProcessorName)
+	}
+	pipelineProcessors = append(pipelineProcessors,
+		odigosLogsResourceAttrsProcessorName,
+	)
+	pipelineProcessors = append(pipelineProcessors, opts.ManifestProcessorNames...)
+	// append odigos traffic metrics processor last (after manifest processors)
+	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
+
+	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace, opts.Tier)
+
+	return config.Config{
+		Receivers: receivers,
+		Service: config.Service{
+			Pipelines: map[string]config.Pipeline{
+				logsPipelineName: {
+					Receivers:  pipelineReceivers,
+					Processors: pipelineProcessors,
+					Exporters:  []string{clusterCollectorLogsExporterName},
+				},
+			},
+		},
+	}
+}

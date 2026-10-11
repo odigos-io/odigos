@@ -134,12 +134,15 @@ func parseBool(value string) bool {
 	return result
 }
 
-func parseInt(value string) int {
+// the value comes from Destination.spec.data, which has no validating webhook, so a non numeric
+// value must fail this destination and let the caller skip it rather than abort the whole config
+// computation for every destination.
+func parseInt(key string, value string) (int, error) {
 	num, err := strconv.Atoi(value)
 	if err != nil {
-		panic(err.Error())
+		return 0, fmt.Errorf("destination parameter %q must be a whole number, got %q", key, value)
 	}
-	return num
+	return num, nil
 }
 
 func errorMissingKey(key string) error {
@@ -151,68 +154,11 @@ type SpanMetricNames struct {
 	TracesPipeline       string
 }
 
-// This function configures a connector that converts trace-spans to metrics.
-// This is meant for destination that accept metrics but not traces!
-func applySpanMetricsConnector(currentConfig *Config, uniqueUri string) SpanMetricNames {
-	spanMetricsConnectorName := "spanmetrics/" + uniqueUri
-	tracesPipelineName := "traces/spanmetrics-" + uniqueUri
-
-	// Send SpanMetrics to prometheus
-	// configure a connector which will convert spans to metrics, this should ideally be configurable,
-	// and available for all metrics destinations
-	// TODO: this should be an action ("SpanMetrics connector")?
-	currentConfig.Connectors[spanMetricsConnectorName] = GenericMap{
-		"histogram": GenericMap{
-			"explicit": GenericMap{
-				"buckets": []string{"100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"},
-			},
-		},
-		// Taking into account changes in the semantic conventions, to support a range of instrumentation libraries
-		"dimensions": []GenericMap{
-			{
-				"name": "http.method",
-			},
-			{
-				"name": "http.request.method",
-			},
-			{
-				"name": "http.status_code",
-			},
-			{
-				"name": "http.response.status_code",
-			},
-			{
-				"name": "http.route",
-			},
-		},
-		"exemplars": GenericMap{
-			"enabled": true,
-		},
-		"exclude_dimensions":              []string{"status.code"},
-		"dimensions_cache_size":           1000,
-		"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
-		"metrics_flush_interval":          "15s",
-		"metrics_expiration":              "5m",
-		"resource_metrics_key_attributes": []string{"service.name", "telemetry.sdk.language", "telemetry.sdk.name"},
-		"events": GenericMap{
-			"enabled": true,
-			"dimensions": []GenericMap{
-				{
-					"name": "exception.type",
-				},
-				{
-					"name": "exception.message",
-				},
-			},
-		},
+func addHeader(exporterConfig GenericMap, headerName string, headerValue string) {
+	headers, ok := exporterConfig["headers"].(map[string]string)
+	if !ok {
+		headers = map[string]string{}
 	}
-
-	currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
-		Exporters: []string{spanMetricsConnectorName},
-	}
-
-	return SpanMetricNames{
-		SpanMetricsConnector: spanMetricsConnectorName,
-		TracesPipeline:       tracesPipelineName,
-	}
+	headers[headerName] = headerValue
+	exporterConfig["headers"] = headers
 }

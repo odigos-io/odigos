@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: GREPTIME_ENDPOINT
       displayName: OTLP HTTP Endpoint

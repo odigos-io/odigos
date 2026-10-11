@@ -5,8 +5,8 @@ const (
 	InstrumentorDeploymentName              = "odigos-instrumentor"
 	InstrumentorImage                       = "odigos-instrumentor"
 	InstrumentorEnterpriseImage             = "odigos-enterprise-instrumentor"
-	InstrumentorImageUBI9                   = "odigos-instrumentor-ubi9"
-	InstrumentorEnterpriseImageUBI9         = "odigos-enterprise-instrumentor-ubi9"
+	InstrumentorImageCertified              = "odigos-instrumentor-rhel-certified"
+	InstrumentorEnterpriseImageCertified    = "odigos-enterprise-instrumentor-rhel-certified"
 	InstrumentorAppLabelValue               = InstrumentorDeploymentName
 	InstrumentorServiceName                 = InstrumentorDeploymentName
 	InstrumentorServiceAccountName          = InstrumentorDeploymentName
@@ -16,15 +16,11 @@ const (
 	InstrumentorClusterRoleBindingName      = InstrumentorDeploymentName
 	InstrumentorCAName                      = InstrumentorDeploymentName
 	InstrumentorWebhookFieldOwner           = InstrumentorDeploymentName
-	InstrumentorMutatingWebhookName         = "mutating-webhook-configuration"
-	InstrumentorSourceMutatingWebhookName   = "source-mutating-webhook-configuration"
-	InstrumentorSourceValidatingWebhookName = "source-validating-webhook-configuration"
+	InstrumentorMutatingWebhookName         = "odigos-pod-mutating-webhook-configuration"
+	InstrumentorSourceMutatingWebhookName   = "odigos-source-mutating-webhook-configuration"
+	InstrumentorSourceValidatingWebhookName = "odigos-source-validating-webhook-configuration"
 	InstrumentorContainerName               = "manager"
 
 	InstrumentorWebhookSecretName = "instrumentor-webhooks-cert"
 	InstrumentorWebhookVolumeName = "instrumentor-webhooks-cert"
-
-	// Deprecated: only use for migration purposes.
-	DeprecatedInstrumentorWebhookSecretName = "webhook-cert"
-	DeprecatedInstrumentorWebhookVolumeName = "webhook-cert"
 )

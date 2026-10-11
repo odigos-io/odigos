@@ -1,0 +1,140 @@
+{{- if (include "odigos.secretExists" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: keycloak
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app: keycloak
+        {{- end }}
+        {{- end }}
+      {{- if .Values.auth.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.auth.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.auth.tolerations }}
+      tolerations:
+        {{- toYaml .Values.auth.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.auth.affinity }}
+      affinity:
+        {{- toYaml .Values.auth.affinity | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.auth.persistence.enabled .Values.auth.podSecurityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.auth.podSecurityContext.fsGroup }}
+      {{- end }}
+      containers:
+        - name: keycloak
+          image: {{ .Values.auth.image | quote }}
+          args: ["start", "--optimized", "--http-enabled=true"]
+          {{- if and .Values.auth.persistence.enabled .Values.auth.securityContext.enabled }}
+          securityContext:
+            runAsNonRoot: {{ .Values.auth.securityContext.runAsNonRoot }}
+            allowPrivilegeEscalation: {{ .Values.auth.securityContext.allowPrivilegeEscalation }}
+          {{- end }}
+          env:
+            - name: JAVA_OPTS
+              value: "{{ .Values.auth.javaOpts }}"
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-credentials
+                  key: admin-username
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-credentials
+                  key: admin-password
+            {{- $externalUrl := .Values.auth.externalUrl | default "http://localhost:8081" }}
+            {{- $parsedUrl := urlParse $externalUrl }}
+            {{- $hostWithPort := $parsedUrl.host | default "localhost:8081" }}
+            {{- $kcHostname := regexReplaceAll ":.*$" $hostWithPort "" }}
+            - name: KC_HOSTNAME
+              value: {{ $kcHostname | quote }}
+            {{- if contains ":" $hostWithPort }}
+            - name: KC_HOSTNAME_PORT
+              value: {{ regexReplaceAll "^[^:]*:" $hostWithPort "" | quote }}
+            {{- end }}
+            - name: KC_HOSTNAME_STRICT_HTTPS
+              {{- if .Values.auth.externalUrl }}
+              value: {{ ternary "true" "false" (hasPrefix "https" .Values.auth.externalUrl) | quote }}
+              {{- else }}
+              value: "true"
+              {{- end }}
+            - name: KC_HOSTNAME_STRICT_BACKCHANNEL
+              value: "true"
+            - name: KC_PROXY
+              value: "edge"
+          {{- if .Values.auth.persistence.enabled }}
+          volumeMounts:
+            - name: keycloak-data
+              mountPath: /opt/keycloak/data
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.auth.port }}
+              name: {{ .Values.auth.portName }}
+          {{- if .Values.auth.startupProbe.enabled }}
+          # Gates the liveness and readiness probes until Keycloak finishes booting,
+          # so both can use short delays without restarting a slow-starting pod.
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.auth.startupProbe.port }}
+            initialDelaySeconds: {{ .Values.auth.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.auth.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.auth.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.auth.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.auth.startupProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.auth.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.auth.livenessProbe.port }}
+            initialDelaySeconds: {{ .Values.auth.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.auth.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.auth.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.auth.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.auth.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.auth.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: {{ .Values.auth.readinessProbe.port }}
+            initialDelaySeconds: {{ .Values.auth.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.auth.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.auth.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.auth.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.auth.readinessProbe.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.auth.resources | nindent 12 }}
+      {{- if .Values.auth.persistence.enabled }}
+      volumes:
+        - name: keycloak-data
+          persistentVolumeClaim:
+            claimName: {{ default "keycloak-data" .Values.auth.persistence.existingClaim }}
+      {{- end }}
+{{- end }}

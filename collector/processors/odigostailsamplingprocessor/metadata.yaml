@@ -1,0 +1,76 @@
+type: odigostailsampling
+
+status:
+  class: processor
+  stability:
+    beta: [traces]
+  codeowners:
+    active: [blumamir]
+
+telemetry:
+  metrics:
+    odigos.sampling.span.check_count:
+      enabled: true # collected by default by the processor.
+      description: "Number of spans checked for sampling decisions per rule."
+      unit: "{spans}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+    odigos.sampling.span.drop_count:
+      enabled: true
+      description: "Number of spans that are evaluated to be dropped"
+      unit: "{spans}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+    odigos.sampling.span.keep_count:
+      enabled: true
+      description: "Number of spans that are evaluated to be kept"
+      unit: "{spans}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+    odigos.sampling.span.match_count:
+      enabled: true # collected by default by the processor.
+      description: "Number of spans that matched this rule."
+      unit: "{spans}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+
+    odigos.sampling.trace.check_count:
+      enabled: true # collected by default by the processor.
+      description: "Number of traces checked for sampling decisions per rule."
+      unit: "{traces}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+    odigos.sampling.trace.drop_count:
+      enabled: true
+      description: "Number of traces that are evaluated to be dropped"
+      unit: "{traces}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+    odigos.sampling.trace.keep_count:
+      enabled: true
+      description: "Number of traces that are evaluated to be kept"
+      unit: "{traces}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+    odigos.sampling.trace.match_count:
+      enabled: true # collected by default by the processor.
+      description: "Number of traces where this rule was matched at least once."
+      unit: "{traces}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development

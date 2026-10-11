@@ -12,5 +12,8 @@ service:
   extensions: []
   pipelines: {}
   telemetry:
-    metrics: {}
-    resource: {}
+    metrics:
+      level: ""
+      readers: []
+    logs:
+      level: ""

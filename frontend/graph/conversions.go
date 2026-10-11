@@ -2,14 +2,18 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
-	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/sampling"
+	"github.com/odigos-io/odigos/common/config/testconnection"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 func kindToGql(kind string) model.K8sResourceKind {
@@ -22,17 +26,16 @@ func kindToGql(kind string) model.K8sResourceKind {
 		return model.K8sResourceKindDaemonSet
 	case "cronjob":
 		return model.K8sResourceKindCronJob
+	case "job":
+		return model.K8sResourceKindJob
+	case "deploymentconfig":
+		return model.K8sResourceKindDeploymentConfig
+	case "rollout":
+		return model.K8sResourceKindRollout
+	case "staticpod":
+		return model.K8sResourceKindStaticPod
 	}
 	return ""
-}
-
-// Convert LastTransitionTime to a string pointer if it's not nil
-func k8sLastTransitionTimeToGql(t v1.Time) *string {
-	if t.IsZero() {
-		return nil
-	}
-	str := t.UTC().Format(time.RFC3339)
-	return &str
 }
 
 func getContainerAgentInfo(ic *v1alpha1.InstrumentationConfig, containerName string) (bool, string, string) {
@@ -50,7 +53,7 @@ func getContainerAgentInfo(ic *v1alpha1.InstrumentationConfig, containerName str
 	return false, "", ""
 }
 
-func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, dataStreamNames []*string) (*model.K8sActualSource, error) {
+func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, dataStreamNames []*string, manifestYAML string, instrumentationConfigYAML string) (*model.K8sActualSource, error) {
 	selected := true
 	var containers []*model.SourceContainer
 
@@ -108,38 +111,1145 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		}
 	}
 
-	// Return the converted K8sActualSource object
+	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name, instruConfig.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.K8sActualSource{
-		Namespace:         instruConfig.Namespace,
-		Kind:              kindToGql(instruConfig.OwnerReferences[0].Kind),
-		Name:              instruConfig.OwnerReferences[0].Name,
-		Selected:          &selected,
-		DataStreamNames:   dataStreamNames,
-		OtelServiceName:   &instruConfig.Spec.ServiceName,
-		NumberOfInstances: nil,
-		Containers:        containers,
-		Conditions:        convertConditions(instruConfig.Status.Conditions),
+		Namespace:                 pw.Namespace,
+		Kind:                      kindToGql(string(pw.Kind)),
+		Name:                      pw.Name,
+		Selected:                  &selected,
+		DataStreamNames:           dataStreamNames,
+		OtelServiceName:           &instruConfig.Spec.ServiceName,
+		NumberOfInstances:         nil,
+		Containers:                containers,
+		Conditions:                services.ConvertConditions(instruConfig.Status.Conditions),
+		ManifestYaml:              &manifestYAML,
+		InstrumentationConfigYaml: &instrumentationConfigYAML,
 	}, nil
 }
 
-func convertConditions(conditions []v1.Condition) []*model.Condition {
-	var result []*model.Condition
-	for _, c := range conditions {
-		if c.Type != "AppliedInstrumentationDevice" {
-			reason := c.Reason
-			message := c.Message
-			if message == "" {
-				message = string(c.Reason)
-			}
+func RemoteConfigToModel(config *common.OdigosConfiguration) *model.RemoteConfig {
+	if config == nil {
+		return nil
+	}
 
-			result = append(result, &model.Condition{
-				Status:             services.TransformConditionStatus(c.Status, c.Type, reason),
-				Type:               c.Type,
-				Reason:             &reason,
-				Message:            &message,
-				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
-			})
+	result := &model.RemoteConfig{}
+	if config.Rollout != nil {
+		result.Rollout = &model.RemoteConfigRollout{
+			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
+		}
+	}
+
+	return result
+}
+
+const defaultProvenanceSource = "odigos-configuration"
+
+func provenanceFor(prov map[string]string, path string) string {
+	if prov != nil {
+		if s, ok := prov[path]; ok {
+			return s
+		}
+	}
+	return defaultProvenanceSource
+}
+
+type provenanceCollector struct {
+	prov    map[string]string
+	entries []*model.ProvenanceEntry
+}
+
+func newProvenanceCollector(prov map[string]string) *provenanceCollector {
+	return &provenanceCollector{prov: prov}
+}
+
+func (pc *provenanceCollector) record(path string) {
+	pc.entries = append(pc.entries, &model.ProvenanceEntry{
+		HelmPath:       path,
+		ReconciledFrom: provenanceFor(pc.prov, path),
+	})
+}
+
+// recordAs looks up provenance using the YAML config key but records the helm value path.
+func (pc *provenanceCollector) recordAs(yamlKey, helmPath string) {
+	pc.entries = append(pc.entries, &model.ProvenanceEntry{
+		HelmPath:       helmPath,
+		ReconciledFrom: provenanceFor(pc.prov, yamlKey),
+	})
+}
+
+func ptrBool(v bool) *bool    { return &v }
+func ptrStr(v string) *string { return &v }
+func ptrInt(v int) *int       { return &v }
+
+func toStringPtr[T ~string](v T) *string {
+	s := string(v)
+	return &s
+}
+
+func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]string) (*model.EffectiveConfig, error) {
+	if config == nil {
+		return nil, nil
+	}
+
+	pc := newProvenanceCollector(prov)
+
+	result := &model.EffectiveConfig{
+		ConfigVersion: config.ConfigVersion,
+	}
+
+	// Non-pointer booleans (always present)
+	result.TelemetryEnabled = ptrBool(config.TelemetryEnabled)
+	pc.record("telemetryEnabled")
+	result.OpenshiftEnabled = ptrBool(config.OpenshiftEnabled)
+	pc.record("openshiftEnabled")
+	result.Psp = ptrBool(config.Psp)
+	pc.record("psp")
+	result.SkipWebhookIssuerCreation = ptrBool(config.SkipWebhookIssuerCreation)
+	pc.record("skipWebhookIssuerCreation")
+
+	// Pointer booleans (nil when unset)
+	if config.IgnoreOdigosNamespace != nil {
+		result.IgnoreOdigosNamespace = config.IgnoreOdigosNamespace
+		pc.record("ignoreOdigosNamespace")
+	}
+	if config.ClickhouseJsonTypeEnabledProperty != nil {
+		result.ClickhouseJSONTypeEnabled = config.ClickhouseJsonTypeEnabledProperty
+		pc.record("clickhouseJsonTypeEnabled")
+	}
+
+	// Nested wrapper types that match LocalUiConfigInput structure / helm value paths
+	result.AllowConcurrentAgents = &model.AllowConcurrentAgentsConfig{}
+	if config.AllowConcurrentAgents != nil {
+		result.AllowConcurrentAgents.Enabled = config.AllowConcurrentAgents
+		pc.recordAs("allowConcurrentAgents", "allowConcurrentAgents.enabled")
+	}
+
+	result.Karpenter = &model.KarpenterConfig{}
+	if config.KarpenterEnabled != nil {
+		result.Karpenter.Enabled = config.KarpenterEnabled
+		pc.recordAs("karpenterEnabled", "karpenter.enabled")
+	}
+
+	result.Instrumentor = &model.InstrumentorConfig{}
+	if config.CheckDeviceHealthBeforeInjection != nil {
+		result.Instrumentor.CheckDeviceHealthBeforeInjection = config.CheckDeviceHealthBeforeInjection
+		pc.recordAs("checkDeviceHealthBeforeInjection", "instrumentor.checkDeviceHealthBeforeInjection")
+	}
+
+	// Strings (nil when empty)
+	if config.ImagePrefix != "" {
+		result.ImagePrefix = ptrStr(config.ImagePrefix)
+		pc.record("imagePrefix")
+	}
+	if config.UiRemoteUrl != "" {
+		result.UIRemoteURL = ptrStr(config.UiRemoteUrl)
+		pc.record("uiRemoteUrl")
+	}
+	if config.CentralBackendURL != "" {
+		result.CentralBackendURL = ptrStr(config.CentralBackendURL)
+		pc.record("centralBackendURL")
+	}
+	if config.ClusterName != "" {
+		result.ClusterName = ptrStr(config.ClusterName)
+		pc.record("clusterName")
+	}
+	if config.CustomContainerRuntimeSocketPath != "" {
+		result.CustomContainerRuntimeSocketPath = ptrStr(config.CustomContainerRuntimeSocketPath)
+		pc.record("customContainerRuntimeSocketPath")
+	}
+	if config.GoAutoOffsetsCron != "" {
+		result.GoAutoOffsetsCron = ptrStr(config.GoAutoOffsetsCron)
+		pc.record("goAutoOffsetsCron")
+	}
+	if config.GoAutoOffsetsMode != "" {
+		result.GoAutoOffsetsMode = ptrStr(config.GoAutoOffsetsMode)
+		pc.record("goAutoOffsetsMode")
+	}
+	if config.ResourceSizePreset != "" {
+		result.ResourceSizePreset = ptrStr(config.ResourceSizePreset)
+		pc.record("resourceSizePreset")
+	}
+	if config.TraceIdSuffix != "" {
+		result.TraceIDSuffix = ptrStr(config.TraceIdSuffix)
+		pc.record("traceIdSuffix")
+	}
+
+	// Ints (nil when zero)
+	if config.UiPaginationLimit != 0 {
+		result.UIPaginationLimit = ptrInt(config.UiPaginationLimit)
+		pc.record("uiPaginationLimit")
+	}
+	if config.OdigletHealthProbeBindPort != 0 {
+		result.OdigletHealthProbeBindPort = ptrInt(config.OdigletHealthProbeBindPort)
+		pc.record("odigletHealthProbeBindPort")
+	}
+
+	// Arrays
+	result.IgnoredNamespaces = config.IgnoredNamespaces
+	pc.record("ignoredNamespaces")
+	result.IgnoredContainers = config.IgnoredContainers
+	pc.record("ignoredContainers")
+	result.AllowedTestConnectionHosts = config.AllowedTestConnectionHosts
+	pc.record("allowedTestConnectionHosts")
+	result.ImagePullSecrets = config.ImagePullSecrets
+	pc.record("imagePullSecrets")
+
+	if len(config.Profiles) > 0 {
+		profiles := make([]string, len(config.Profiles))
+		for i, p := range config.Profiles {
+			profiles[i] = string(p)
+		}
+		result.Profiles = profiles
+	}
+	pc.record("profiles")
+
+	// Enums
+	if config.UiMode != "" {
+		uiMode := convertUiModeToModel(config.UiMode)
+		result.UIMode = &uiMode
+		pc.record("uiMode")
+	}
+	if config.MountMethod != nil && *config.MountMethod != "" {
+		result.Instrumentor.MountMethod = toStringPtr(*config.MountMethod)
+		pc.recordAs("mountMethod", "instrumentor.mountMethod")
+	}
+	if config.AgentEnvVarsInjectionMethod != nil && *config.AgentEnvVarsInjectionMethod != "" {
+		result.Instrumentor.AgentEnvVarsInjectionMethod = toStringPtr(*config.AgentEnvVarsInjectionMethod)
+		pc.recordAs("agentEnvVarsInjectionMethod", "instrumentor.agentEnvVarsInjectionMethod")
+	}
+
+	// Component log levels
+	setEffectiveConfigComponentLogLevels(result, config, pc)
+
+	// Nested structs
+	if err := setEffectiveConfigNestedStructs(result, config, pc); err != nil {
+		return nil, err
+	}
+
+	result.Provenance = pc.entries
+
+	return result, nil
+}
+
+func setEffectiveConfigComponentLogLevels(result *model.EffectiveConfig, config *common.OdigosConfiguration, pc *provenanceCollector) {
+	out := &model.ComponentLogLevelsConfig{}
+	resolve := func(component string) model.OdigosLogLevel {
+		if config.ComponentLogLevels == nil {
+			return model.OdigosLogLevel(common.LogLevelInfo)
+		}
+		return model.OdigosLogLevel(config.ComponentLogLevels.Resolve(component))
+	}
+	setLogLevel := func(component, path string) *model.OdigosLogLevel {
+		lvl := resolve(component)
+		pc.record(path)
+		return &lvl
+	}
+	out.Default = setLogLevel("default", "componentLogLevels.default")
+	out.Autoscaler = setLogLevel("autoscaler", "componentLogLevels.autoscaler")
+	out.Scheduler = setLogLevel("scheduler", "componentLogLevels.scheduler")
+	out.Instrumentor = setLogLevel("instrumentor", "componentLogLevels.instrumentor")
+	out.Odiglet = setLogLevel("odiglet", "componentLogLevels.odiglet")
+	out.Deviceplugin = setLogLevel("deviceplugin", "componentLogLevels.deviceplugin")
+	out.UI = setLogLevel("ui", "componentLogLevels.ui")
+	out.Collector = setLogLevel("collector", "componentLogLevels.collector")
+	result.ComponentLogLevels = out
+}
+
+func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *common.OdigosConfiguration, pc *provenanceCollector) error {
+	if len(config.NodeSelector) > 0 {
+		nodeSelectorJSON, err := json.Marshal(config.NodeSelector)
+		if err != nil {
+			return fmt.Errorf("failed to marshal nodeSelector: %w", err)
+		}
+		nodeSelectorStr := string(nodeSelectorJSON)
+		result.NodeSelector = &nodeSelectorStr
+		pc.record("nodeSelector")
+	}
+
+	if config.CollectorGateway != nil {
+		collectorGateway, err := convertCollectorGatewayToModel(config.CollectorGateway, pc)
+		if err != nil {
+			return err
+		}
+		result.CollectorGateway = collectorGateway
+	}
+
+	if config.CollectorNode != nil {
+		result.CollectorNode = convertCollectorNodeToModel(config.CollectorNode, pc)
+	}
+
+	if config.Rollout != nil {
+		result.Rollout = &model.RolloutConfig{
+			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
+		}
+		pc.record("rollout.automaticRolloutDisabled")
+		if config.Rollout.MaxConcurrentRollouts != 0 {
+			result.Rollout.MaxConcurrentRollouts = ptrInt(config.Rollout.MaxConcurrentRollouts)
+			pc.record("rollout.maxConcurrentRollouts")
+		}
+	}
+
+	result.AutoRollback = &model.AutoRollbackConfig{}
+	if config.RollbackDisabled != nil {
+		result.AutoRollback.Disabled = config.RollbackDisabled
+		pc.recordAs("rollbackDisabled", "autoRollback.disabled")
+	}
+	if config.RollbackGraceTime != "" {
+		result.AutoRollback.GraceTime = ptrStr(config.RollbackGraceTime)
+		pc.recordAs("rollbackGraceTime", "autoRollback.graceTime")
+	}
+	if config.RollbackStabilityWindow != "" {
+		result.AutoRollback.StabilityWindowTime = ptrStr(config.RollbackStabilityWindow)
+		pc.recordAs("rollbackStabilityWindow", "autoRollback.stabilityWindowTime")
+	}
+
+	if config.Oidc != nil {
+		result.Oidc = convertOidcToModel(config.Oidc, pc)
+	}
+
+	if config.UserInstrumentationEnvs != nil {
+		userInstrumentationEnvs, err := convertUserInstrumentationEnvsToModel(config.UserInstrumentationEnvs, pc)
+		if err != nil {
+			return err
+		}
+		result.UserInstrumentationEnvs = userInstrumentationEnvs
+	}
+
+	if config.MetricsSources != nil {
+		result.MetricsSources = convertMetricsSourcesToModel(config.MetricsSources, pc)
+	}
+
+	if config.AgentsInitContainerResources != nil {
+		result.AgentsInitContainerResources = convertAgentsInitContainerResourcesToModel(config.AgentsInitContainerResources, pc)
+	}
+
+	if config.OdigosOwnTelemetryStore != nil {
+		result.OdigosOwnTelemetryStore = &model.OdigosOwnTelemetryConfig{
+			MetricsStoreDisabled: config.OdigosOwnTelemetryStore.MetricsStoreDisabled,
+		}
+		pc.record("odigosOwnTelemetryStore.metricsStoreDisabled")
+	}
+
+	if config.Sampling != nil {
+		result.Sampling = convertOdigosConfigToSamplingConfig(config)
+		recordSamplingProvenance(config.Sampling, pc)
+	}
+
+	if config.Profiling != nil {
+		result.Profiling = &model.ProfilingConfig{
+			Enabled: config.Profiling.Enabled,
+		}
+		if config.Profiling.Enabled != nil {
+			pc.record("profiling.enabled")
+		}
+	}
+
+	if config.CardinalityControl != nil {
+		result.CardinalityControl = &model.CardinalityControlConfig{}
+		if config.CardinalityControl.UrlTemplatization != nil {
+			result.CardinalityControl.URLTemplatization = &model.URLTemplatizationCardinalityControlConfig{}
+			if config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
+				ltl := config.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+				ltlModel := &model.LiveTrafficLearningConfig{
+					Enabled:                    ltl.Enabled,
+					MaxExamplePathsPerWorkload: ltl.MaxExamplePathsPerWorkload,
+				}
+				if ltl.Enabled != nil {
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.enabled")
+				}
+				if ltl.MaxExamplePathsPerWorkload != nil {
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.maxExamplePathsPerWorkload")
+				}
+				if ltl.PathExampleIdleTTL != "" {
+					ttl := ltl.PathExampleIdleTTL
+					ltlModel.PathExampleIdleTTL = &ttl
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL")
+				}
+				if ltl.LearningInterval != "" {
+					interval := ltl.LearningInterval
+					ltlModel.LearningInterval = &interval
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval")
+				}
+				if ltl.RuleComputation != nil {
+					ltlModel.RuleComputation = &model.LiveTrafficLearningRuleComputationConfig{
+						MinObservationsForRule:      ltl.RuleComputation.MinObservationsForRule,
+						MinCardinalityForTemplating: ltl.RuleComputation.MinCardinalityForTemplating,
+					}
+					if ltl.RuleComputation.MinObservationsForRule != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minObservationsForRule")
+					}
+					if ltl.RuleComputation.MinCardinalityForTemplating != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minCardinalityForTemplating")
+					}
+				}
+				if ltl.AutomaticRules != nil {
+					ltlModel.AutomaticRules = &model.LiveTrafficLearningAutomaticRulesConfig{
+						Enabled: ltl.AutomaticRules.Enabled,
+					}
+					if ltl.AutomaticRules.Enabled != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled")
+					}
+				}
+				result.CardinalityControl.URLTemplatization.LiveTrafficLearning = ltlModel
+			}
+		}
+	}
+
+	if config.TraceCorrelations != nil {
+		result.TraceCorrelations = &model.TraceCorrelationsConfig{
+			ServiceIo: &model.TraceCorrelationsServiceIOConfig{},
+		}
+		if config.TraceCorrelations.ServiceIO != nil {
+			serviceIO := config.TraceCorrelations.ServiceIO
+			result.TraceCorrelations.ServiceIo.Enabled = serviceIO.Enabled
+			if serviceIO.Enabled != nil {
+				pc.record("traceCorrelations.serviceIO.enabled")
+			}
+			if len(serviceIO.InputSpanAttributes) > 0 {
+				result.TraceCorrelations.ServiceIo.InputSpanAttributes = serviceIO.InputSpanAttributes
+				pc.record("traceCorrelations.serviceIO.inputSpanAttributes")
+			}
+			if len(serviceIO.OutputSpanAttributes) > 0 {
+				result.TraceCorrelations.ServiceIo.OutputSpanAttributes = serviceIO.OutputSpanAttributes
+				pc.record("traceCorrelations.serviceIO.outputSpanAttributes")
+			}
+			if serviceIO.MetricsFlushInterval != "" {
+				result.TraceCorrelations.ServiceIo.MetricsFlushInterval = ptrStr(serviceIO.MetricsFlushInterval)
+				pc.record("traceCorrelations.serviceIO.metricsFlushInterval")
+			}
+		}
+	}
+
+	return nil
+}
+
+// recordSamplingProvenance records provenance entries for every sampling field that
+// is present in the effective config, so the UI knows the field has an applied value.
+// Overlay sources (remote/local) are recorded by services.recordOverlayProvenance and
+// will overwrite these entries; the keys remain identical so there is no double-bookkeeping.
+func recordSamplingProvenance(s *common.SamplingConfiguration, pc *provenanceCollector) {
+	if s == nil {
+		return
+	}
+	if s.DryRun != nil {
+		pc.record("sampling.dryRun")
+	}
+	if s.SpanSamplingAttributes != nil {
+		if s.SpanSamplingAttributes.Disabled != nil {
+			pc.record("sampling.spanSamplingAttributes.disabled")
+		}
+		if s.SpanSamplingAttributes.SamplingCategoryDisabled != nil {
+			pc.record("sampling.spanSamplingAttributes.samplingCategoryDisabled")
+		}
+		if s.SpanSamplingAttributes.TraceDecidingRuleDisabled != nil {
+			pc.record("sampling.spanSamplingAttributes.traceDecidingRuleDisabled")
+		}
+		if s.SpanSamplingAttributes.SpanDecisionAttributesDisabled != nil {
+			pc.record("sampling.spanSamplingAttributes.spanDecisionAttributesDisabled")
+		}
+	}
+	if s.TailSampling != nil {
+		if s.TailSampling.Disabled != nil {
+			pc.record("sampling.tailSampling.disabled")
+		}
+		if s.TailSampling.TraceAggregationWaitDuration != nil {
+			pc.record("sampling.tailSampling.traceAggregationWaitDuration")
+		}
+		if s.TailSampling.NoisyOperationsEnforcement != nil {
+			pc.record("sampling.tailSampling.noisyOperationsEnforcement")
+		}
+	}
+	if s.K8sHealthProbesSampling != nil {
+		if s.K8sHealthProbesSampling.Enabled != nil {
+			pc.record("sampling.k8sHealthProbesSampling.enabled")
+		}
+		if s.K8sHealthProbesSampling.KeepPercentage != nil {
+			pc.record("sampling.k8sHealthProbesSampling.keepPercentage")
+		}
+	}
+}
+
+func convertOidcToModel(oidc *common.OidcConfiguration, pc *provenanceCollector) *model.OidcConfig {
+	result := &model.OidcConfig{}
+	if oidc.TenantUrl != "" {
+		result.TenantURL = ptrStr(oidc.TenantUrl)
+		pc.record("oidc.tenantUrl")
+	}
+	if oidc.ClientId != "" {
+		result.ClientID = ptrStr(oidc.ClientId)
+		pc.record("oidc.clientId")
+	}
+	if oidc.ClientSecret != "" {
+		result.ClientSecret = ptrStr(oidc.ClientSecret)
+		pc.record("oidc.clientSecret")
+	}
+	return result
+}
+
+func convertAgentsInitContainerResourcesToModel(resources *common.AgentsInitContainerResources, pc *provenanceCollector) *model.AgentsInitContainerResourcesConfig {
+	result := &model.AgentsInitContainerResourcesConfig{}
+	if resources.RequestCPUm != 0 {
+		result.RequestCPUm = ptrInt(resources.RequestCPUm)
+		pc.record("agentsInitContainerResources.requestCPUm")
+	}
+	if resources.LimitCPUm != 0 {
+		result.LimitCPUm = ptrInt(resources.LimitCPUm)
+		pc.record("agentsInitContainerResources.limitCPUm")
+	}
+	if resources.RequestMemoryMiB != 0 {
+		result.RequestMemoryMiB = ptrInt(resources.RequestMemoryMiB)
+		pc.record("agentsInitContainerResources.requestMemoryMiB")
+	}
+	if resources.LimitMemoryMiB != 0 {
+		result.LimitMemoryMiB = ptrInt(resources.LimitMemoryMiB)
+		pc.record("agentsInitContainerResources.limitMemoryMiB")
+	}
+	return result
+}
+
+func convertUiModeToModel(uiMode common.UiMode) model.UIMode {
+	switch uiMode {
+	case common.UiModeReadonly:
+		return model.UIModeReadonly
+	default:
+		return model.UIModeDefault
+	}
+}
+
+func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration, pc *provenanceCollector) (*model.CollectorGatewayConfig, error) {
+	if gw == nil {
+		return nil, nil
+	}
+
+	p := func(field string) string { return "collectorGateway." + field }
+	result := &model.CollectorGatewayConfig{}
+
+	setInt := func(val int, field string) *int {
+		if val == 0 {
+			return nil
+		}
+		pc.record(p(field))
+		return ptrInt(val)
+	}
+
+	result.MinReplicas = setInt(gw.MinReplicas, "minReplicas")
+	result.MaxReplicas = setInt(gw.MaxReplicas, "maxReplicas")
+	result.RequestMemoryMiB = setInt(gw.RequestMemoryMiB, "requestMemoryMiB")
+	result.LimitMemoryMiB = setInt(gw.LimitMemoryMiB, "limitMemoryMiB")
+	result.RequestCPUm = setInt(gw.RequestCPUm, "requestCPUm")
+	result.LimitCPUm = setInt(gw.LimitCPUm, "limitCPUm")
+	result.MemoryLimiterLimitMiB = setInt(gw.MemoryLimiterLimitMiB, "memoryLimiterLimitMiB")
+	result.MemoryLimiterSpikeLimitMiB = setInt(gw.MemoryLimiterSpikeLimitMiB, "memoryLimiterSpikeLimitMiB")
+	result.GoMemLimitMiB = setInt(gw.GoMemLimitMib, "goMemLimitMiB")
+
+	if gw.ClusterMetricsEnabled != nil {
+		result.ClusterMetricsEnabled = gw.ClusterMetricsEnabled
+		pc.record(p("clusterMetricsEnabled"))
+	}
+	if gw.HttpsProxyAddress != nil {
+		result.HTTPSProxyAddress = gw.HttpsProxyAddress
+		pc.record(p("httpsProxyAddress"))
+	}
+
+	if gw.ServiceGraph != nil && gw.ServiceGraph.Disabled != nil {
+		result.ServiceGraphDisabled = gw.ServiceGraph.Disabled
+		pc.record(p("serviceGraphDisabled"))
+	}
+
+	if gw.NodeSelector != nil && len(*gw.NodeSelector) > 0 {
+		nodeSelectorJSON, err := json.Marshal(*gw.NodeSelector)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal collectorGateway.nodeSelector: %w", err)
+		}
+		nodeSelectorStr := string(nodeSelectorJSON)
+		result.NodeSelector = &nodeSelectorStr
+		pc.record(p("nodeSelector"))
+	}
+
+	return result, nil
+}
+
+func convertCollectorNodeToModel(node *common.CollectorNodeConfiguration, pc *provenanceCollector) *model.CollectorNodeConfig {
+	if node == nil {
+		return nil
+	}
+
+	p := func(field string) string { return "collectorNode." + field }
+	result := &model.CollectorNodeConfig{}
+
+	setInt := func(val int, field string) *int {
+		if val == 0 {
+			return nil
+		}
+		pc.record(p(field))
+		return ptrInt(val)
+	}
+
+	result.CollectorOwnMetricsPort = setInt(int(node.CollectorOwnMetricsPort), "collectorOwnMetricsPort")
+	result.RequestMemoryMiB = setInt(node.RequestMemoryMiB, "requestMemoryMiB")
+	result.LimitMemoryMiB = setInt(node.LimitMemoryMiB, "limitMemoryMiB")
+	result.RequestCPUm = setInt(node.RequestCPUm, "requestCPUm")
+	result.LimitCPUm = setInt(node.LimitCPUm, "limitCPUm")
+	result.MemoryLimiterLimitMiB = setInt(node.MemoryLimiterLimitMiB, "memoryLimiterLimitMiB")
+	result.MemoryLimiterSpikeLimitMiB = setInt(node.MemoryLimiterSpikeLimitMiB, "memoryLimiterSpikeLimitMiB")
+	result.GoMemLimitMiB = setInt(node.GoMemLimitMib, "goMemLimitMiB")
+
+	if node.EnableDataCompression != nil {
+		result.EnableDataCompression = node.EnableDataCompression
+		pc.record(p("enableDataCompression"))
+	}
+
+	if node.OtlpExporterConfiguration != nil {
+		result.OtlpExporterConfiguration = convertOtlpExporterToModel(node.OtlpExporterConfiguration, pc)
+	}
+
+	return result
+}
+
+func convertOtlpExporterToModel(otlp *common.OtlpExporterConfiguration, pc *provenanceCollector) *model.OtlpExporterConfig {
+	if otlp == nil {
+		return nil
+	}
+
+	p := func(field string) string { return "collectorNode.otlpExporterConfiguration." + field }
+	result := &model.OtlpExporterConfig{}
+
+	if otlp.EnableDataCompression != nil {
+		result.EnableDataCompression = otlp.EnableDataCompression
+		pc.record(p("enableDataCompression"))
+	}
+	if otlp.Timeout != "" {
+		result.Timeout = ptrStr(otlp.Timeout)
+		pc.record(p("timeout"))
+	}
+
+	if otlp.RetryOnFailure != nil {
+		rp := func(field string) string { return p("retryOnFailure." + field) }
+		rf := &model.RetryOnFailureConfig{}
+		if otlp.RetryOnFailure.Enabled != nil {
+			rf.Enabled = otlp.RetryOnFailure.Enabled
+			pc.record(rp("enabled"))
+		}
+		if otlp.RetryOnFailure.InitialInterval != "" {
+			rf.InitialInterval = ptrStr(otlp.RetryOnFailure.InitialInterval)
+			pc.record(rp("initialInterval"))
+		}
+		if otlp.RetryOnFailure.MaxInterval != "" {
+			rf.MaxInterval = ptrStr(otlp.RetryOnFailure.MaxInterval)
+			pc.record(rp("maxInterval"))
+		}
+		if otlp.RetryOnFailure.MaxElapsedTime != "" {
+			rf.MaxElapsedTime = ptrStr(otlp.RetryOnFailure.MaxElapsedTime)
+			pc.record(rp("maxElapsedTime"))
+		}
+		result.RetryOnFailure = rf
+	}
+
+	return result
+}
+
+func convertUserInstrumentationEnvsToModel(envs *common.UserInstrumentationEnvs, pc *provenanceCollector) (*model.UserInstrumentationEnvsConfig, error) {
+	if envs == nil {
+		return nil, nil
+	}
+
+	result := &model.UserInstrumentationEnvsConfig{}
+
+	if len(envs.Languages) > 0 {
+		languagesJSON, err := json.Marshal(envs.Languages)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal userInstrumentationEnvs.languages: %w", err)
+		}
+		languagesStr := string(languagesJSON)
+		result.Languages = &languagesStr
+		pc.record("userInstrumentationEnvs.languages")
+	}
+
+	return result, nil
+}
+
+// convertOdigosConfigToSamplingConfig converts common.OdigosConfiguration (or its Sampling slice) to the GraphQL model.SamplingConfig.
+// Placed here so all common → graph model conversions live in one place.
+func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *model.SamplingConfig {
+	if config == nil || config.Sampling == nil {
+		return nil
+	}
+	s := config.Sampling
+	out := &model.SamplingConfig{
+		DryRun: s.DryRun,
+	}
+	if s.SpanSamplingAttributes != nil {
+		out.SpanSamplingAttributes = &model.SpanSamplingAttributesConfig{
+			Disabled:                       s.SpanSamplingAttributes.Disabled,
+			SamplingCategoryDisabled:       s.SpanSamplingAttributes.SamplingCategoryDisabled,
+			TraceDecidingRuleDisabled:      s.SpanSamplingAttributes.TraceDecidingRuleDisabled,
+			SpanDecisionAttributesDisabled: s.SpanSamplingAttributes.SpanDecisionAttributesDisabled,
+		}
+	}
+	if s.TailSampling != nil {
+		out.TailSampling = &model.TailSamplingConfig{
+			Disabled:                     s.TailSampling.Disabled,
+			TraceAggregationWaitDuration: s.TailSampling.TraceAggregationWaitDuration,
+		}
+		if s.TailSampling.NoisyOperationsEnforcement != nil {
+			enforcement := noisyOperationsEnforcementToModel(*s.TailSampling.NoisyOperationsEnforcement)
+			out.TailSampling.NoisyOperationsEnforcement = &enforcement
+		}
+	}
+	if s.K8sHealthProbesSampling != nil {
+		out.K8sHealthProbesSampling = &model.K8sHealthProbesSamplingConfig{
+			Enabled:        s.K8sHealthProbesSampling.Enabled,
+			KeepPercentage: s.K8sHealthProbesSampling.KeepPercentage,
+		}
+	}
+	return out
+}
+
+func noisyOperationsEnforcementToModel(enforcement sampling.NoisyOperationsEnforcement) model.NoisyOperationsEnforcement {
+	switch enforcement {
+	case sampling.NoisyOperationsEnforcementAlways:
+		return model.NoisyOperationsEnforcementAlways
+	default:
+		return model.NoisyOperationsEnforcementAuto
+	}
+}
+
+func noisyOperationsEnforcementFromModel(enforcement *model.NoisyOperationsEnforcement) *sampling.NoisyOperationsEnforcement {
+	if enforcement == nil {
+		return nil
+	}
+	var result sampling.NoisyOperationsEnforcement
+	switch *enforcement {
+	case model.NoisyOperationsEnforcementAlways:
+		result = sampling.NoisyOperationsEnforcementAlways
+	default:
+		result = sampling.NoisyOperationsEnforcementAuto
+	}
+	return &result
+}
+
+func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput) *common.SamplingConfiguration {
+	if config == nil {
+		return nil
+	}
+	result := &common.SamplingConfiguration{}
+	if config.TailSampling != nil {
+		result.TailSampling = &sampling.TailSamplingConfiguration{
+			Disabled:                     config.TailSampling.Disabled,
+			TraceAggregationWaitDuration: config.TailSampling.TraceAggregationWaitDuration,
+			NoisyOperationsEnforcement:   noisyOperationsEnforcementFromModel(config.TailSampling.NoisyOperationsEnforcement),
+		}
+	}
+	if config.K8sHealthProbesSampling != nil {
+		result.K8sHealthProbesSampling = &common.K8sHealthProbesSamplingConfiguration{
+			Enabled:        config.K8sHealthProbesSampling.Enabled,
+			KeepPercentage: config.K8sHealthProbesSampling.KeepPercentage,
 		}
 	}
 	return result
+}
+
+// containerAgentConfigToAgentConfigModel converts InstrumentationConfig container agent config (traces/head sampling) to the GraphQL K8sWorkloadContainerAgentConfig model.
+func containerAgentConfigToAgentConfigModel(c *v1alpha1.ContainerAgentConfig) *model.K8sWorkloadContainerAgentConfig {
+	if c == nil || c.Traces == nil {
+		return nil
+	}
+	headSampling := headSamplingConfigToModel(c.Traces.HeadSampling)
+	if headSampling == nil {
+		return &model.K8sWorkloadContainerAgentConfig{
+			Traces: &model.K8sWorkloadContainerAgentConfigTraces{},
+		}
+	}
+	return &model.K8sWorkloadContainerAgentConfig{
+		Traces: &model.K8sWorkloadContainerAgentConfigTraces{
+			HeadSampling: headSampling,
+		},
+	}
+}
+
+func headSamplingConfigToModel(cfg *sampling.HeadSamplingConfig) *model.K8sWorkloadContainerAgentConfigTracesHeadSampling {
+	if cfg == nil {
+		return nil
+	}
+	result := &model.K8sWorkloadContainerAgentConfigTracesHeadSampling{}
+	if cfg.DryRun {
+		result.DryRun = ptrBool(true)
+	}
+	if cfg.SpanMetricsMode != "" {
+		mode := headSamplingSpanMetricsModeToModel(cfg.SpanMetricsMode)
+		result.SpanMetricsMode = &mode
+	}
+	if len(cfg.NoisyOperations) > 0 {
+		result.NoisyOperations = make([]*model.K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation, 0, len(cfg.NoisyOperations))
+		for i := range cfg.NoisyOperations {
+			if op := headSamplingNoisyOperationToModel(&cfg.NoisyOperations[i]); op != nil {
+				result.NoisyOperations = append(result.NoisyOperations, op)
+			}
+		}
+	}
+	return result
+}
+
+func headSamplingSpanMetricsModeToModel(mode sampling.SpanMetricsMode) model.K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode {
+	switch mode {
+	case sampling.SpanMetricsModeAllSpans:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans
+	default:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly
+	}
+}
+
+func headSamplingNoisyOperationToModel(op *sampling.NoisyOperation) *model.K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation {
+	if op == nil {
+		return nil
+	}
+	ruleID := op.Id
+	if ruleID == "" {
+		ruleID = v1alpha1.ComputeNoisyOperationHash(&v1alpha1.NoisyOperation{
+			Name:             op.Name,
+			Disabled:         op.Disabled,
+			Operation:        op.Operation,
+			PercentageAtMost: op.PercentageAtMost,
+		})
+	}
+	return &model.K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation{
+		RuleID:           ruleID,
+		Name:             services.StringPtrIfNotEmpty(op.Name),
+		Disabled:         op.Disabled,
+		Operation:        headSamplingOperationMatcherToModel(op.Operation),
+		PercentageAtMost: op.PercentageAtMost,
+	}
+}
+
+func headSamplingOperationMatcherToModel(matcher *sampling.HeadSamplingOperationMatcher) *model.HeadSamplingOperationMatcher {
+	if matcher == nil {
+		return nil
+	}
+	result := &model.HeadSamplingOperationMatcher{}
+	if matcher.HttpServer != nil {
+		result.HTTPServer = &model.HeadSamplingHTTPServerMatcher{
+			Route:       services.StringPtrIfNotEmpty(matcher.HttpServer.Route),
+			RoutePrefix: services.StringPtrIfNotEmpty(matcher.HttpServer.RoutePrefix),
+			Method:      services.StringPtrIfNotEmpty(matcher.HttpServer.Method),
+			QueryParams: headSamplingQueryParamsToModel(matcher.HttpServer.QueryParams),
+		}
+	}
+	if matcher.HttpClient != nil {
+		result.HTTPClient = &model.HeadSamplingHTTPClientMatcher{
+			ServerAddress:       services.StringPtrIfNotEmpty(matcher.HttpClient.ServerAddress),
+			TemplatedPath:       services.StringPtrIfNotEmpty(matcher.HttpClient.TemplatedPath),
+			TemplatedPathPrefix: services.StringPtrIfNotEmpty(matcher.HttpClient.TemplatedPathPrefix),
+			Method:              services.StringPtrIfNotEmpty(matcher.HttpClient.Method),
+		}
+	}
+	return result
+}
+
+func headSamplingQueryParamsToModel(in []sampling.QueryParamMatcher) []*model.HeadSamplingQueryParamMatcher {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]*model.HeadSamplingQueryParamMatcher, 0, len(in))
+	for i := range in {
+		out = append(out, &model.HeadSamplingQueryParamMatcher{
+			Name:       in[i].Name,
+			ValueExact: in[i].ValueExact,
+		})
+	}
+	return out
+}
+
+// containerCollectorConfigToModel converts InstrumentationConfig workload collector config (tail sampling) to the GraphQL model.
+func containerCollectorConfigToModel(c *commonapi.ContainerCollectorConfig) *model.K8sWorkloadContainerCollectorConfig {
+	if c == nil {
+		return nil
+	}
+	tailSampling := tailSamplingSourceConfigToModel(c.TailSampling)
+	if tailSampling == nil {
+		return &model.K8sWorkloadContainerCollectorConfig{}
+	}
+	return &model.K8sWorkloadContainerCollectorConfig{
+		TailSampling: tailSampling,
+	}
+}
+
+func tailSamplingSourceConfigToModel(cfg *sampling.TailSamplingSourceConfig) *model.K8sWorkloadContainerCollectorConfigTailSampling {
+	if cfg == nil {
+		return nil
+	}
+	result := &model.K8sWorkloadContainerCollectorConfigTailSampling{}
+	if len(cfg.NoisyOperations) > 0 {
+		result.NoisyOperations = make([]*model.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation, 0, len(cfg.NoisyOperations))
+		for i := range cfg.NoisyOperations {
+			if op := tailSamplingNoisyOperationToModel(&cfg.NoisyOperations[i]); op != nil {
+				result.NoisyOperations = append(result.NoisyOperations, op)
+			}
+		}
+	}
+	if len(cfg.HighlyRelevantOperations) > 0 {
+		result.HighlyRelevantOperations = make([]*model.K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation, 0, len(cfg.HighlyRelevantOperations))
+		for i := range cfg.HighlyRelevantOperations {
+			if op := tailSamplingHighlyRelevantOperationToModel(&cfg.HighlyRelevantOperations[i]); op != nil {
+				result.HighlyRelevantOperations = append(result.HighlyRelevantOperations, op)
+			}
+		}
+	}
+	if len(cfg.CostReductionRules) > 0 {
+		result.CostReductionRules = make([]*model.K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule, 0, len(cfg.CostReductionRules))
+		for i := range cfg.CostReductionRules {
+			if rule := tailSamplingCostReductionRuleToModel(&cfg.CostReductionRules[i]); rule != nil {
+				result.CostReductionRules = append(result.CostReductionRules, rule)
+			}
+		}
+	}
+	return result
+}
+
+func tailSamplingNoisyOperationToModel(op *sampling.NoisyOperation) *model.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation {
+	if op == nil {
+		return nil
+	}
+	ruleID := op.Id
+	if ruleID == "" {
+		ruleID = v1alpha1.ComputeNoisyOperationHash(&v1alpha1.NoisyOperation{
+			Name:             op.Name,
+			Disabled:         op.Disabled,
+			Operation:        op.Operation,
+			PercentageAtMost: op.PercentageAtMost,
+		})
+	}
+	return &model.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation{
+		RuleID:           ruleID,
+		Name:             services.StringPtrIfNotEmpty(op.Name),
+		Disabled:         op.Disabled,
+		Operation:        headSamplingOperationMatcherToModel(op.Operation),
+		PercentageAtMost: op.PercentageAtMost,
+	}
+}
+
+func tailSamplingHighlyRelevantOperationToModel(op *sampling.HighlyRelevantOperation) *model.K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation {
+	if op == nil {
+		return nil
+	}
+	ruleID := op.Id
+	if ruleID == "" {
+		ruleID = v1alpha1.ComputeHighlyRelevantOperationHash(&v1alpha1.HighlyRelevantOperation{
+			Name:              op.Name,
+			Disabled:          op.Disabled,
+			Error:             op.Error,
+			DurationAtLeastMs: op.DurationAtLeastMs,
+			Operation:         op.Operation,
+			PercentageAtLeast: op.PercentageAtLeast,
+		})
+	}
+	return &model.K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation{
+		RuleID:            ruleID,
+		Name:              services.StringPtrIfNotEmpty(op.Name),
+		Disabled:          op.Disabled,
+		Error:             op.Error,
+		DurationAtLeastMs: op.DurationAtLeastMs,
+		Operation:         tailSamplingOperationMatcherToModel(op.Operation),
+		PercentageAtLeast: op.PercentageAtLeast,
+	}
+}
+
+func tailSamplingCostReductionRuleToModel(rule *sampling.CostReductionRule) *model.K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule {
+	if rule == nil {
+		return nil
+	}
+	ruleID := rule.Id
+	if ruleID == "" {
+		ruleID = v1alpha1.ComputeCostReductionRuleHash(&v1alpha1.CostReductionRule{
+			Name:             rule.Name,
+			Disabled:         rule.Disabled,
+			Operation:        rule.Operation,
+			PercentageAtMost: rule.PercentageAtMost,
+		})
+	}
+	return &model.K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule{
+		RuleID:           ruleID,
+		Name:             services.StringPtrIfNotEmpty(rule.Name),
+		Disabled:         rule.Disabled,
+		Operation:        tailSamplingOperationMatcherToModel(rule.Operation),
+		PercentageAtMost: rule.PercentageAtMost,
+	}
+}
+
+func tailSamplingOperationMatcherToModel(matcher *sampling.TailSamplingOperationMatcher) *model.TailSamplingOperationMatcher {
+	if matcher == nil {
+		return nil
+	}
+	result := &model.TailSamplingOperationMatcher{}
+	if matcher.HttpServer != nil {
+		result.HTTPServer = &model.TailSamplingHTTPServerMatcher{
+			Route:       services.StringPtrIfNotEmpty(matcher.HttpServer.Route),
+			RoutePrefix: services.StringPtrIfNotEmpty(matcher.HttpServer.RoutePrefix),
+			Method:      services.StringPtrIfNotEmpty(matcher.HttpServer.Method),
+		}
+	}
+	if matcher.KafkaConsumer != nil {
+		result.KafkaConsumer = &model.TailSamplingKafkaMatcher{
+			KafkaTopic: services.StringPtrIfNotEmpty(matcher.KafkaConsumer.KafkaTopic),
+		}
+	}
+	if matcher.KafkaProducer != nil {
+		result.KafkaProducer = &model.TailSamplingKafkaMatcher{
+			KafkaTopic: services.StringPtrIfNotEmpty(matcher.KafkaProducer.KafkaTopic),
+		}
+	}
+	return result
+}
+
+func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, pc *provenanceCollector) *model.MetricsSourceConfig {
+	if ms == nil {
+		return nil
+	}
+
+	result := &model.MetricsSourceConfig{}
+
+	if ms.SpanMetrics != nil {
+		sm := ms.SpanMetrics
+		p := func(f string) string { return "metricsSources.spanMetrics." + f }
+		spanMetrics := &model.MetricsSourceSpanMetricsConfig{}
+
+		if sm.Disabled != nil {
+			spanMetrics.Disabled = sm.Disabled
+			pc.record(p("disabled"))
+		}
+		if sm.Interval != "" {
+			spanMetrics.Interval = ptrStr(sm.Interval)
+			pc.record(p("interval"))
+		}
+		if sm.MetricsExpiration != "" {
+			spanMetrics.MetricsExpiration = ptrStr(sm.MetricsExpiration)
+			pc.record(p("metricsExpiration"))
+		}
+		spanMetrics.AdditionalDimensions = sm.AdditionalDimensions
+		pc.record(p("additionalDimensions"))
+		spanMetrics.HistogramBuckets = sm.ExplicitHistogramBuckets
+		pc.record(p("histogramBuckets"))
+		if sm.IncludedProcessInDimensions != nil {
+			spanMetrics.IncludedProcessInDimensions = sm.IncludedProcessInDimensions
+			pc.record(p("includedProcessInDimensions"))
+		}
+		spanMetrics.ExcludedResourceAttributes = sm.ExcludedResourceAttributes
+		pc.record(p("excludedResourceAttributes"))
+		spanMetrics.ResourceMetricsKeyAttributes = sm.ResourceMetricsKeyAttributes
+		pc.record(p("resourceMetricsKeyAttributes"))
+		if sm.HistogramDisabled {
+			spanMetrics.HistogramDisabled = ptrBool(sm.HistogramDisabled)
+			pc.record(p("histogramDisabled"))
+		}
+
+		result.SpanMetrics = spanMetrics
+	}
+
+	if ms.HostMetrics != nil {
+		p := func(f string) string { return "metricsSources.hostMetrics." + f }
+		hm := &model.MetricsSourceHostMetricsConfig{}
+		if ms.HostMetrics.Disabled != nil {
+			hm.Disabled = ms.HostMetrics.Disabled
+			pc.record(p("disabled"))
+		}
+		if ms.HostMetrics.Interval != "" {
+			hm.Interval = ptrStr(ms.HostMetrics.Interval)
+			pc.record(p("interval"))
+		}
+		result.HostMetrics = hm
+	}
+
+	if ms.KubeletStats != nil {
+		p := func(f string) string { return "metricsSources.kubeletStats." + f }
+		ks := &model.MetricsSourceKubeletStatsConfig{}
+		if ms.KubeletStats.Disabled != nil {
+			ks.Disabled = ms.KubeletStats.Disabled
+			pc.record(p("disabled"))
+		}
+		if ms.KubeletStats.Interval != "" {
+			ks.Interval = ptrStr(ms.KubeletStats.Interval)
+			pc.record(p("interval"))
+		}
+		result.KubeletStats = ks
+	}
+
+	if ms.OdigosOwnMetrics != nil {
+		oom := &model.MetricsSourceOdigosOwnMetricsConfig{}
+		if ms.OdigosOwnMetrics.Interval != "" {
+			oom.Interval = ptrStr(ms.OdigosOwnMetrics.Interval)
+			pc.record("metricsSources.odigosOwnMetrics.interval")
+		}
+		result.OdigosOwnMetrics = oom
+	}
+
+	if ms.AgentMetrics != nil {
+		result.AgentMetrics = &model.MetricsSourceAgentMetricsConfig{}
+
+		if ms.AgentMetrics.SpanMetrics != nil {
+			result.AgentMetrics.SpanMetrics = &model.MetricsSourceAgentSpanMetricsConfig{
+				Enabled: ptrBool(ms.AgentMetrics.SpanMetrics.Enabled),
+			}
+			pc.record("metricsSources.agentMetrics.spanMetrics.enabled")
+		}
+
+		if ms.AgentMetrics.RuntimeMetrics != nil && ms.AgentMetrics.RuntimeMetrics.Java != nil {
+			javaConfig := &model.MetricsSourceAgentJavaRuntimeMetricsConfig{}
+			if ms.AgentMetrics.RuntimeMetrics.Java.Disabled != nil {
+				javaConfig.Disabled = ms.AgentMetrics.RuntimeMetrics.Java.Disabled
+				pc.record("metricsSources.agentMetrics.runtimeMetrics.java.disabled")
+			}
+
+			if len(ms.AgentMetrics.RuntimeMetrics.Java.Metrics) > 0 {
+				metrics := make([]*model.MetricsSourceAgentRuntimeMetricConfig, len(ms.AgentMetrics.RuntimeMetrics.Java.Metrics))
+				for i, m := range ms.AgentMetrics.RuntimeMetrics.Java.Metrics {
+					basePath := fmt.Sprintf("metricsSources.agentMetrics.runtimeMetrics.java.metrics.%d", i)
+					metrics[i] = &model.MetricsSourceAgentRuntimeMetricConfig{
+						Name: ptrStr(m.Name),
+					}
+					pc.record(basePath + ".name")
+					if m.Disabled != nil {
+						metrics[i].Disabled = m.Disabled
+						pc.record(basePath + ".disabled")
+					}
+				}
+				javaConfig.Metrics = metrics
+			}
+
+			result.AgentMetrics.RuntimeMetrics = &model.MetricsSourceAgentRuntimeMetricsConfig{
+				Java: javaConfig,
+			}
+		}
+	}
+
+	return result
+}
+
+func destinationInputToConfigurer(destination model.DestinationInput) *testconnection.TestConnectionConfig {
+	fields := make(map[string]string, len(destination.Fields))
+	for _, field := range destination.Fields {
+		fields[field.Key] = field.Value
+	}
+
+	var signals []common.ObservabilitySignal
+	if destination.ExportedSignals != nil {
+		if destination.ExportedSignals.Traces {
+			signals = append(signals, common.TracesObservabilitySignal)
+		}
+		if destination.ExportedSignals.Metrics {
+			signals = append(signals, common.MetricsObservabilitySignal)
+		}
+		if destination.ExportedSignals.Logs {
+			signals = append(signals, common.LogsObservabilitySignal)
+		}
+	}
+
+	return &testconnection.TestConnectionConfig{
+		DestinationType: destination.Type,
+		ID:              destination.Name,
+		Config:          fields,
+		Signals:         signals,
+	}
 }

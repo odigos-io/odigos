@@ -1,12 +1,11 @@
 package inspectors
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/cplusplus"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/golang"
@@ -41,7 +40,7 @@ type Inspector interface {
 }
 
 type VersionInspector interface {
-	GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version
+	GetRuntimeVersion(pcx *process.ProcessContext) string
 }
 
 var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{
@@ -60,10 +59,7 @@ var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{
 	common.PostgresProgrammingLanguage:   &postgres.PostgresInspector{},
 }
 
-func runInspectionStage(
-	procContext *process.ProcessContext,
-	containerURL string,
-	selectInspectionMethod func(Inspector) InspectFunc,
+func runInspectionStage(procContext *process.ProcessContext, selectInspectionMethod func(Inspector) InspectFunc,
 ) (common.ProgramLanguageDetails, error) {
 	detectedLanguageDetails := common.ProgramLanguageDetails{
 		Language: common.UnknownProgrammingLanguage,
@@ -77,7 +73,7 @@ func runInspectionStage(
 			if detectedLanguageDetails.Language == common.UnknownProgrammingLanguage {
 				detectedLanguageDetails.Language = languageDetected
 				if versionInspector, ok := inspector.(VersionInspector); ok {
-					detectedLanguageDetails.RuntimeVersion = versionInspector.GetRuntimeVersion(procContext, containerURL)
+					detectedLanguageDetails.RuntimeVersion = versionInspector.GetRuntimeVersion(procContext)
 				}
 			} else if detectedLanguageDetails.Language != languageDetected {
 				// Return error on language detection conflict
@@ -94,28 +90,82 @@ func runInspectionStage(
 }
 
 // DetectLanguage attempts to detect the programming language using QuickScan first, then DeepScan if needed.
-func DetectLanguage(proc process.Details, containerURL string, logger logr.Logger) (common.ProgramLanguageDetails, error) {
+func DetectLanguage(proc process.Details) (common.ProgramLanguageDetails, error) {
+	logger := commonlogger.LoggerCompat().With("subsystem", "langdetect")
 	procContext := process.NewProcessContext(proc)
 	defer func() {
 		if err := procContext.CloseFiles(); err != nil {
-			logger.Error(err, "Error closing files")
+			logger.Error("Error closing files", "err", err)
 		}
 	}()
+	return detectLanguageInContext(procContext, logger)
+}
 
+// detectLanguageInContext runs language detection against an already-built
+// ProcessContext, so callers can share one context for language and other-agent detection.
+func detectLanguageInContext(procContext *process.ProcessContext, logger *commonlogger.OdigosLogger) (common.ProgramLanguageDetails, error) {
 	// Try Quick Scan first
-	if detectedLanguage, err := runInspectionStage(procContext, containerURL, func(inspector Inspector) InspectFunc {
+	if detectedLanguage, err := runInspectionStage(procContext, func(inspector Inspector) InspectFunc {
 		return inspector.QuickScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
+		if err != nil {
+			var conflict ErrLanguageDetectionConflict
+			if errors.As(err, &conflict) {
+				// If one of the languages is C++, prefer the other language and log a warning
+				if l, ok := resolveNonCpp(conflict.languages); ok {
+					logger.Warn("language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
+					resolved := common.ProgramLanguageDetails{Language: l}
+					if inspector, ok := inspectorsByLanguage[l]; ok {
+						if vi, ok := inspector.(VersionInspector); ok {
+							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext)
+						}
+					}
+					return resolved, nil
+				}
+			}
+		}
 		return detectedLanguage, err
 	}
 
 	// Try Deep Scan if Quick Scan failed
-	return runInspectionStage(procContext, containerURL, func(inspector Inspector) InspectFunc {
+	if detectedLanguage, err := runInspectionStage(procContext, func(inspector Inspector) InspectFunc {
 		return inspector.DeepScan
-	})
+	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
+		if err != nil {
+			var conflict ErrLanguageDetectionConflict
+			if errors.As(err, &conflict) {
+				if l, ok := resolveNonCpp(conflict.languages); ok {
+					logger.Warn("language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
+					resolved := common.ProgramLanguageDetails{Language: l}
+					if inspector, ok := inspectorsByLanguage[l]; ok {
+						if vi, ok := inspector.(VersionInspector); ok {
+							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext)
+						}
+					}
+					return resolved, nil
+				}
+			}
+		}
+		return detectedLanguage, err
+	}
+	return common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}, nil
 }
 
-func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage, logger logr.Logger) bool {
+// resolveNonCpp returns the non-C++ language from a conflict pair, if any.
+// If neither or both are C++, returns false.
+func resolveNonCpp(langs [2]common.ProgrammingLanguage) (common.ProgrammingLanguage, bool) {
+	if langs[0] == common.CPlusPlusProgrammingLanguage && langs[1] != common.CPlusPlusProgrammingLanguage {
+		return langs[1], true
+	}
+	if langs[1] == common.CPlusPlusProgrammingLanguage && langs[0] != common.CPlusPlusProgrammingLanguage {
+		return langs[0], true
+	}
+	var none common.ProgrammingLanguage
+	return none, false
+}
+
+func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage) bool {
+	logger := commonlogger.LoggerCompat().With("subsystem", "langdetect")
 	inspector, ok := inspectorsByLanguage[lang]
 	if !ok {
 		return false
@@ -124,7 +174,7 @@ func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage, logge
 	procContext := process.NewProcessContext(proc)
 	defer func() {
 		if err := procContext.CloseFiles(); err != nil {
-			logger.Error(err, "Error closing files")
+			logger.Error("Error closing files", "err", err)
 		}
 	}()
 

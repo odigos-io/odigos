@@ -1,0 +1,44 @@
+---
+title: 'Upgrade'
+description: 'Upgrade Odigos Central to a newer version using the CLI or Helm.'
+sidebarTitle: 'Upgrade'
+---
+
+To upgrade Odigos Central to a newer version:
+
+## Using CLI
+
+```bash
+odigos pro central upgrade --version <version>
+```
+
+**Options:**
+
+| Flag                         | Default          | Description                            |
+| ---------------------------- | ---------------- | -------------------------------------- |
+| `--version`                  | (required)       | Version to upgrade to (e.g., `v1.2.0`) |
+| `--namespace`, `-n`          | `odigos-central` | Target namespace                       |
+| `--yes`                      | `false`          | Skip confirmation prompt               |
+| `--image-pull-secrets`       | (existing)       | Update image pull secrets              |
+| `--central-max-message-size` | (existing)       | Update max gRPC message size           |
+
+**Example:**
+
+```bash
+odigos pro central upgrade --version v1.2.0 --yes
+```
+
+## Using Helm
+
+```bash
+helm repo update
+helm upgrade odigos-central odigos/odigos-central \
+  --namespace odigos-central \
+  --reuse-values \
+  --version <chart-version>
+```
+
+<Note>
+  When upgrading, the Keycloak admin password is preserved from the existing
+  secret to prevent credential mismatch.
+</Note>

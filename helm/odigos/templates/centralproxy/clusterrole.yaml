@@ -1,0 +1,30 @@
+{{- if and .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: central-proxy
+  labels:
+    odigos.io/system-object: "true"
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["list", "watch"]
+{{- if .Values.openshift.enabled }}
+  - apiGroups: ["apps.openshift.io"]
+    resources: ["deploymentconfigs"]
+    verbs: ["list", "watch"]
+{{- end }}
+  - apiGroups: ["odigos.io"]
+    resources: ["instrumentationconfigs", "sources"]
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get"]
+{{- end }}
+

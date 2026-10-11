@@ -31,11 +31,11 @@ func (m *Instana) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	}
 
 	// Modify the exporter here
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"x-instana-key": "${INSTANA_AGENT_KEY}",
+			"x-instana-key": SecretEnvPlaceholder("INSTANA_AGENT_KEY", dest),
 		},
 	}
 

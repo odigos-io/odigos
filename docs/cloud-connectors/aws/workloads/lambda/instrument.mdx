@@ -1,0 +1,245 @@
+---
+title: 'Instrument Lambda with CDK or CloudFormation'
+description: 'Self-managed AWS Lambda instrumentation for Java, Python, Node.js, and Ruby using the Odigos CDK construct or hand-written CloudFormation.'
+sidebarTitle: 'Instrument Lambda'
+---
+
+AWS Lambda functions can be instrumented two ways: **Odigos-managed**, where the connector attaches
+everything for you, or **self-managed**, where you attach it yourself through your own IaC. This page is
+about the self-managed path — see
+[Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation)
+if you haven't decided which one you want yet.
+
+<Info>
+  Terraform and a plain `aws lambda update-function-configuration` CLI command are
+  also available for every language shown here — the **Custom** access-level policy
+  preview in the Central UI surfaces all four formats for a discovered function.
+  This page covers the two most common: CDK and CloudFormation.
+</Info>
+
+## What actually gets added to your function
+
+However you apply it, self-managed Lambda instrumentation is the same four things:
+
+1. **The OpenTelemetry layer** — a prebuilt Lambda layer for your function's language and architecture.
+2. **An exec wrapper** (`AWS_LAMBDA_EXEC_WRAPPER`) — tells Lambda to run your handler through the layer's
+   instrumentation code first. The exact path is different per language.
+3. **The bundled collector's configuration** (`OPENTELEMETRY_COLLECTOR_CONFIG_URI`) — tells the small
+   OpenTelemetry collector that ships inside the layer where to send your telemetry. It runs in the same
+   Lambda sandbox and forwards data *after* your handler already returned, so a slow destination costs
+   extra billed time, not extra response latency.
+4. **The `ODIGOS_IAC` marker** — a small JSON value that tells Odigos "this function is instrumented, and
+   here's the layer version it's running." Without it, Odigos has no way to tell the difference between an
+   instrumented function and one you haven't touched yet — it will keep reporting the function as
+   **Not Instrumented / Waiting for you**, even if everything else above is already in place.
+
+The CDK construct sets all four for you. With CloudFormation, you set them by hand — one per-language tab
+below shows exactly what to add.
+
+## Using AWS CDK
+
+The easiest option if your functions are already defined in a CDK app. One package covers every supported
+language — the construct looks at each function's runtime and figures out the right layer and wrapper on
+its own.
+
+```bash
+npm install @odigos/aws-cdk@<PACKAGE_VERSION>
+```
+
+<Info>
+  TypeScript and JavaScript only, for now — a Python distribution is built but not
+  yet published. Python CDK apps should use the
+  [CloudFormation instructions](#using-cloudformation-directly) below.
+</Info>
+
+```typescript
+import { OdigosLambdaInstrumentation } from '@odigos/aws-cdk';
+
+new OdigosLambdaInstrumentation(this, 'Odigos', {
+  destination: {
+    endpoint: 'otlp.example.com:4317',   // OTLP/gRPC as bare host:port — no scheme
+    // httpEndpoint: 'https://otlp.example.com:4318',  // use this instead, for OTLP/HTTP
+  },
+  serviceName: 'my-api',   // set explicitly if your stack doesn't name the function directly
+  functions: [apiFn, workerFn],
+});
+```
+
+That's it — this one call attaches the layer, sets the wrapper, configures the bundled collector (using the
+same renderer the connector itself uses, so the values match exactly), and writes `ODIGOS_IAC` for every
+function you list.
+
+<Warning>
+  Don't also enable a CDK-instrumented function as an Odigos-managed source. Every
+  `cdk deploy` would reassert the CDK's configuration, every connector reconcile
+  would reassert its own, and you'd get a new function version on every round trip.
+</Warning>
+
+<Card title="Full CDK reference" icon="code" href="/cloud-connectors/aws/cdk/lambda">
+  Every option in depth — layer sources, instrumenting a whole stack at once, the AWS Lambda Web Adapter,
+  Java handler interfaces, and the complete API.
+</Card>
+
+## Using CloudFormation directly
+
+If you're not using CDK, merge these properties into your function's `AWS::Lambda::Function` resource by
+hand. The shape is identical across languages — a layer, a wrapper, a service name, and the collector
+configuration — but the wrapper path (and, for the Web Adapter case, the loader variable) is different for
+each one. Pick your language below:
+
+<Tabs>
+  <Tab title="Java">
+    ```yaml
+    # Merge into Resources.<YourFunction>.Properties
+    Layers:
+      - "<OTEL_LAYER_ARN>"    # keep any layers you already have, add this one
+    Environment:
+      Variables:
+        ODIGOS_IAC: '{"v":1,"layer":"<OTEL_LAYER_ARN>"}'
+        AWS_LAMBDA_EXEC_WRAPPER: "/opt/otel-handler"
+        OTEL_SERVICE_NAME: "<YOUR_FUNCTION_SERVICE_NAME>"
+        OPENTELEMETRY_COLLECTOR_CONFIG_URI: 'yaml:{receivers: {otlp: {protocols: {grpc: {endpoint: "localhost:4317"}, http: {endpoint: "localhost:4318"}}}}, processors: {memory_limiter: {check_interval: 1s, limit_percentage: 50, spike_limit_percentage: 20}, batch: {send_batch_size: 512, timeout: 200ms}, decouple: null}, exporters: {otlp: {endpoint: "<OTLP_ENDPOINT>", tls: {insecure: <OTLP_INSECURE>}}}, service: {telemetry: {metrics: {level: none}}, pipelines: {traces: {receivers: [otlp], processors: [memory_limiter, batch, decouple], exporters: [otlp]}}}}'
+    ```
+
+    <Note>
+      Java ships three more wrappers for handler interfaces other than the default
+      `RequestHandler`: `/opt/otel-proxy-handler` (API Gateway proxy events),
+      `/opt/otel-sqs-handler` (SQS), and `/opt/otel-stream-handler`
+      (`RequestStreamHandler`). Using the default wrapper on a `RequestStreamHandler`
+      function breaks the invocation — it's the wrong interface, not just a
+      less-detailed trace.
+    </Note>
+
+    **Running behind the AWS Lambda Web Adapter?** Remove `AWS_LAMBDA_EXEC_WRAPPER` — the adapter already
+    owns it — and instead append the agent to `JAVA_TOOL_OPTIONS`. CloudFormation can't read an existing
+    environment variable back, so add your current value in by hand:
+
+    ```yaml
+    JAVA_TOOL_OPTIONS: "<YOUR_EXISTING_VALUE> -javaagent:/opt/opentelemetry-javaagent.jar"
+    ```
+  </Tab>
+
+  <Tab title="Python">
+    ```yaml
+    # Merge into Resources.<YourFunction>.Properties
+    Layers:
+      - "<OTEL_LAYER_ARN>"
+    Environment:
+      Variables:
+        ODIGOS_IAC: '{"v":1,"layer":"<OTEL_LAYER_ARN>"}'
+        AWS_LAMBDA_EXEC_WRAPPER: "/opt/otel-instrument"
+        OTEL_SERVICE_NAME: "<YOUR_FUNCTION_SERVICE_NAME>"
+        OPENTELEMETRY_COLLECTOR_CONFIG_URI: 'yaml:{receivers: {otlp: {protocols: {grpc: {endpoint: "localhost:4317"}, http: {endpoint: "localhost:4318"}}}}, processors: {memory_limiter: {check_interval: 1s, limit_percentage: 50, spike_limit_percentage: 20}, batch: {send_batch_size: 512, timeout: 200ms}, decouple: null}, exporters: {otlp: {endpoint: "<OTLP_ENDPOINT>", tls: {insecure: <OTLP_INSECURE>}}}, service: {telemetry: {metrics: {level: none}}, pipelines: {traces: {receivers: [otlp], processors: [memory_limiter, batch, decouple], exporters: [otlp]}}}}'
+    ```
+
+    **Running behind the AWS Lambda Web Adapter?** Remove `AWS_LAMBDA_EXEC_WRAPPER` and load the agent
+    through `PYTHONPATH` instead. Unlike Java or Node.js, this value goes at the **front**, not the back —
+    the layer's OpenTelemetry packages need to resolve before your application's own code does:
+
+    ```yaml
+    PYTHONPATH: "/opt/python:/opt/python/opentelemetry/instrumentation/auto_instrumentation:/var/task:/var/task/site-packages:<YOUR_EXISTING_VALUE>"
+    OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+    ```
+  </Tab>
+
+  <Tab title="Node.js">
+    ```yaml
+    # Merge into Resources.<YourFunction>.Properties
+    Layers:
+      - "<OTEL_LAYER_ARN>"
+    Environment:
+      Variables:
+        ODIGOS_IAC: '{"v":1,"layer":"<OTEL_LAYER_ARN>"}'
+        AWS_LAMBDA_EXEC_WRAPPER: "/opt/otel-handler"
+        OTEL_SERVICE_NAME: "<YOUR_FUNCTION_SERVICE_NAME>"
+        OPENTELEMETRY_COLLECTOR_CONFIG_URI: 'yaml:{receivers: {otlp: {protocols: {grpc: {endpoint: "localhost:4317"}, http: {endpoint: "localhost:4318"}}}}, processors: {memory_limiter: {check_interval: 1s, limit_percentage: 50, spike_limit_percentage: 20}, batch: {send_batch_size: 512, timeout: 200ms}, decouple: null}, exporters: {otlp: {endpoint: "<OTLP_ENDPOINT>", tls: {insecure: <OTLP_INSECURE>}}}, service: {telemetry: {metrics: {level: none}}, pipelines: {traces: {receivers: [otlp], processors: [memory_limiter, batch, decouple], exporters: [otlp]}}}}'
+    ```
+
+    **Running behind the AWS Lambda Web Adapter?** Remove `AWS_LAMBDA_EXEC_WRAPPER` and append the agent to
+    `NODE_OPTIONS` instead:
+
+    ```yaml
+    NODE_OPTIONS: "<YOUR_EXISTING_VALUE> --import /opt/init.mjs"
+    ```
+  </Tab>
+
+  <Tab title="Ruby">
+    ```yaml
+    # Merge into Resources.<YourFunction>.Properties
+    Layers:
+      - "<OTEL_LAYER_ARN>"
+    Environment:
+      Variables:
+        ODIGOS_IAC: '{"v":1,"layer":"<OTEL_LAYER_ARN>"}'
+        AWS_LAMBDA_EXEC_WRAPPER: "/opt/otel-handler"
+        OTEL_SERVICE_NAME: "<YOUR_FUNCTION_SERVICE_NAME>"
+        OPENTELEMETRY_COLLECTOR_CONFIG_URI: 'yaml:{receivers: {otlp: {protocols: {grpc: {endpoint: "localhost:4317"}, http: {endpoint: "localhost:4318"}}}}, processors: {memory_limiter: {check_interval: 1s, limit_percentage: 50, spike_limit_percentage: 20}, batch: {send_batch_size: 512, timeout: 200ms}, decouple: null}, exporters: {otlp: {endpoint: "<OTLP_ENDPOINT>", tls: {insecure: <OTLP_INSECURE>}}}, service: {telemetry: {metrics: {level: none}}, pipelines: {traces: {receivers: [otlp], processors: [memory_limiter, batch, decouple], exporters: [otlp]}}}}'
+    ```
+
+    <Info>
+      Ruby doesn't have a web-server (AWS Lambda Web Adapter) activation path — the
+      exec wrapper above is the only way to instrument it. If you apply this to a
+      Ruby function that actually runs behind the adapter, it won't work, and it
+      will show up as instrumentation drift rather than a clear error.
+    </Info>
+  </Tab>
+</Tabs>
+
+<Tip>
+  Substitute only the placeholders in `<ANGLE_BRACKETS>`. Change nothing else in
+  `OPENTELEMETRY_COLLECTOR_CONFIG_URI` — Odigos compares the whole value as one
+  string, and even a missing space after a colon breaks it (see below).
+</Tip>
+
+## Things to watch out for
+
+<AccordionGroup>
+  <Accordion title="Every space in the collector config matters">
+    `OPENTELEMETRY_COLLECTOR_CONFIG_URI` is written in a compact YAML style where a colon must always be
+    followed by a space. Miss one and the collector doesn't fail with a helpful parse error — it accepts
+    the variable, logs the URI it read, and then fails to start with an unrelated-looking
+    `otelcol state is Closed`.
+  </Accordion>
+
+  <Accordion title="A few variables must never be set">
+    `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, `ODIGOS_OTLP_ENDPOINT`, and
+    `ODIGOS_OTLP_INSECURE` are all compared against **unset** — adding any of them is reported as drift,
+    even if the value looks harmless. `OTEL_LOG_LEVEL` is the one exception: leave it unset unless debug
+    telemetry is turned on for this connector, in which case it must be exactly `debug`.
+  </Accordion>
+
+  <Accordion title="ODIGOS_IAC is not optional">
+    It's the only signal Odigos has that this function is instrumented at all, and the layer ARN recorded
+    inside it is what future checks compare against — so a version you deliberately pinned is respected
+    instead of being flagged as an available upgrade.
+  </Accordion>
+
+  <Accordion title="Never set ODIGOS_MANAGED by hand">
+    That variable belongs to the connector alone — it's how the connector remembers what to roll back to
+    after it makes a change itself. Setting it yourself claims a rollback that was never actually recorded.
+  </Accordion>
+
+  <Accordion title="Turning off a signal">
+    If your destination doesn't accept metrics or logs, set `OTEL_METRICS_EXPORTER` / `OTEL_LOGS_EXPORTER`
+    to `"none"` and remove that signal's pipeline from the collector configuration. Leave both untouched
+    (unset) for a signal your destination does accept.
+  </Accordion>
+</AccordionGroup>
+
+<Check>
+  Once `ODIGOS_IAC` is set and the layer, wrapper, and collector configuration all
+  match, Odigos flips the function to **Instrumented** on its own — usually within
+  a few minutes, at the next discovery cycle. No action needed on the Odigos side.
+</Check>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Full CDK reference" icon="code" href="/cloud-connectors/aws/cdk/lambda">
+    Every construct option, in depth.
+  </Card>
+
+  <Card title="Preload the layer" icon="download" href="/cloud-connectors/aws/workloads/lambda/preload">
+    Get the layer into your own account first, if your policy requires it.
+  </Card>
+</CardGroup>

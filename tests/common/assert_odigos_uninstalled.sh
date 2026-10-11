@@ -122,7 +122,27 @@ if [ ! -z "$SECRETS_IN_NAMESPACE" ]; then
     exit 1
 fi
 
-# 4. Verify RBAC resources are deleted
+# 4. Verify that no nodes have Odigos labels
+echo "Checking for nodes with Odigos labels..."
+
+NODES_WITH_ODIGOS_LABELS=$(kubectl get nodes -o json | jq -r '
+    .items[] |
+    select(.metadata.labels != null) |
+    select(
+        (.metadata.labels | has("odigos.io/odiglet-oss-installed")) or
+        (.metadata.labels | has("odigos.io/odiglet-enterprise-installed"))
+    ) |
+    .metadata.name' 2>/dev/null || true)
+
+if [ ! -z "$NODES_WITH_ODIGOS_LABELS" ]; then
+    print_error "Found nodes with Odigos labels:"
+    echo "$NODES_WITH_ODIGOS_LABELS"
+    exit 1
+else
+    print_success "No nodes with Odigos labels found"
+fi
+
+# 5. Verify RBAC resources are deleted
 echo "Checking for RBAC resources..."
 
 CLUSTER_ROLES=$(kubectl get clusterroles -o name | grep odigos || true)
@@ -159,6 +179,15 @@ if [ ! -z "$ROLES" ]; then
     exit 1
 else
     print_success "No Roles related to Odigos found in $NAMESPACE"
+fi
+
+API_SERVICE=$(kubectl get apiservice v1beta1.custom.metrics.k8s.io --ignore-not-found -o name 2>/dev/null || true)
+if [ ! -z "$API_SERVICE" ]; then
+    SVC_NAME=$(kubectl get apiservice v1beta1.custom.metrics.k8s.io -o jsonpath='{.spec.service.name}' 2>/dev/null || true)
+    if [ "$SVC_NAME" = "odigos-autoscaler" ] || [ "$SVC_NAME" = "odigos-instrumentor" ]; then
+        print_error "Found leftover Odigos custom-metrics APIService: $API_SERVICE"
+        exit 1
+    fi
 fi
 
 print_success "Odigos has been successfully uninstalled!"

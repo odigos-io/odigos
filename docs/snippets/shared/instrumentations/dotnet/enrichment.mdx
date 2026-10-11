@@ -1,0 +1,38 @@
+import EnrichmentIntro from '/snippets/shared/enrichment-intro.mdx'
+
+<EnrichmentIntro language='.NET' />
+
+## Required Dependencies
+
+Add the following dependencies to your project by running:
+
+```bash
+dotnet add package OpenTelemetry
+```
+
+## Creating Activity
+
+To create a new `Activity`, use the `ActivitySource` class.
+
+```csharp
+using System.Diagnostics;
+
+public static class Telemetry
+{
+    // Name it after the service name for your app.
+    // It can come from a config file, constants file, etc.
+    public static readonly ActivitySource MyActivitySource = new(TelemetryConstants.ServiceName);
+
+    public static void MyMethod()
+    {
+        using (var activity = MyActivitySource.StartActivity("MyMethod"))
+        {
+            // Your code here
+        }
+    }
+}
+```
+
+## Additional Information
+
+For more use cases, see the [OpenTelemetry .NET API documentation](https://opentelemetry.io/docs/languages/net/instrumentation/#creating-activities).

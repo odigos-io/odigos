@@ -33,11 +33,11 @@ func (j *Traceloop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		return nil, err
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authorization": "Bearer ${TRACELOOP_API_KEY}",
+			"Authorization": "Bearer " + SecretEnvPlaceholder("TRACELOOP_API_KEY", dest),
 		},
 	}
 

@@ -25,6 +25,9 @@ import (
 
 // DeleteAttributeApplyConfiguration represents a declarative configuration of the DeleteAttribute type for use
 // with apply.
+//
+// DeleteAttribute is the Schema for the DeleteAttribute odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type DeleteAttributeApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +45,8 @@ func DeleteAttribute(name, namespace string) *DeleteAttributeApplyConfiguration 
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
+func (b DeleteAttributeApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
@@ -217,8 +222,24 @@ func (b *DeleteAttributeApplyConfiguration) WithStatus(value *DeleteAttributeSta
 	return b
 }
 
+// GetKind retrieves the value of the Kind field in the declarative configuration.
+func (b *DeleteAttributeApplyConfiguration) GetKind() *string {
+	return b.TypeMetaApplyConfiguration.Kind
+}
+
+// GetAPIVersion retrieves the value of the APIVersion field in the declarative configuration.
+func (b *DeleteAttributeApplyConfiguration) GetAPIVersion() *string {
+	return b.TypeMetaApplyConfiguration.APIVersion
+}
+
 // GetName retrieves the value of the Name field in the declarative configuration.
 func (b *DeleteAttributeApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
+}
+
+// GetNamespace retrieves the value of the Namespace field in the declarative configuration.
+func (b *DeleteAttributeApplyConfiguration) GetNamespace() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.ObjectMetaApplyConfiguration.Namespace
 }

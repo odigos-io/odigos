@@ -18,10 +18,44 @@ spec:
       labels:
         app: central-ui
     spec:
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: central-ui
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-central-ui" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-ui" "Tag" $imageTag) }}
+          ports:
+            - containerPort: 3000
+              name: ui
+          # /healthz is served as soon as the process binds the port (before central-backend is ready).
+          # /readyz returns 200 only after central-backend is reachable and the UI has initialized.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 3000
+            periodSeconds: 5
+            failureThreshold: 60
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+          env:
+            - name: CURRENT_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CENTRAL_BACKEND_URL
+              value: {{ .Values.centralUI.centralBackendURL | default (printf "http://central-backend.%s:8081" .Release.Namespace) | quote }}
           resources:
             requests:
               cpu: {{ .Values.centralUI.resources.requests.cpu }}

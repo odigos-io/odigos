@@ -1,0 +1,41 @@
+# Trace correlations expose service I/O connection metrics produced by the serviceio connector.
+# Data is read from the dedicated odigos-correlations-metrics VictoriaMetrics store.
+
+type TraceCorrelations {
+  workloads: [TraceCorrelationsWorkload!]!
+}
+
+type TraceCorrelationsWorkload {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+  containerName: String!
+  telemetrySdkLanguage: String
+  processRuntimeName: String
+  processRuntimeVersion: String
+  inputs: [TraceCorrelationsInputGroup!]!
+}
+
+# One distinct combination of inbound (input.*) span attributes for a workload.
+type TraceCorrelationsInputGroup {
+  attributes: [NonIdentifyingAttribute!]!
+  outputs: [TraceCorrelationsOutputSeries!]!
+}
+
+# One distinct combination of outbound (output.*) span attributes paired with an input group.
+type TraceCorrelationsOutputSeries {
+  attributes: [NonIdentifyingAttribute!]!
+  connectionCount: Int!
+  # RFC3339 timestamp of when this series was first reported in the metrics store.
+  firstDetectedAt: String!
+}
+
+# Limits trace correlation metrics to samples within [start, end] (RFC3339, inclusive).
+input TraceCorrelationsTimeRangeInput {
+  start: String!
+  end: String!
+}
+
+extend type Query {
+  traceCorrelations(filter: WorkloadFilter, timeRange: TraceCorrelationsTimeRangeInput): TraceCorrelations!
+}

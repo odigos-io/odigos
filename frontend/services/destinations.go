@@ -88,6 +88,9 @@ func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) mo
 			Logs: &model.ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Logs.Supported,
 			},
+			Profiles: &model.ObservabilitySignalSupport{
+				Supported: destConfig.Spec.Signals.Profiles.Supported,
+			},
 		},
 		Fields: fields,
 	}
@@ -192,7 +195,8 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 	destType := k8sDest.Spec.Type
 	destName := k8sDest.Spec.DestinationName
 	mergedFields := mergeDataAndSecrets(k8sDest.Spec.Data, secretFields)
-	destTypeConfig := DestinationTypeConfigToCategoryItem(destinations.GetDestinationByType(string(destType)))
+	dest, _ := destinations.GetDestinationByType(string(destType))
+	destTypeConfig := DestinationTypeConfigToCategoryItem(dest)
 
 	fieldsJSON, err := json.Marshal(mergedFields)
 	if err != nil {
@@ -220,23 +224,29 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		}
 
 		conditions = append(conditions, &model.Condition{
-			Status:             status,
-			Type:               condition.Type,
-			Reason:             &condition.Reason,
-			Message:            &condition.Message,
-			LastTransitionTime: func(s string) *string { return &s }(condition.LastTransitionTime.String()),
+			Status:  status,
+			Type:    condition.Type,
+			Reason:  &condition.Reason,
+			Message: &condition.Message,
 		})
+	}
+
+	disabled := false
+	if k8sDest.Spec.Disabled != nil {
+		disabled = *k8sDest.Spec.Disabled
 	}
 
 	return model.Destination{
 		ID:              k8sDest.Name,
-		Name:            destName,
 		Type:            string(destType),
+		Name:            destName,
+		Disabled:        disabled,
 		DataStreamNames: ExtractDataStreamsFromDestination(k8sDest),
 		ExportedSignals: &model.ExportedSignals{
-			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
-			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
-			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
+			Traces:   isSignalExported(k8sDest, common.TracesObservabilitySignal),
+			Metrics:  isSignalExported(k8sDest, common.MetricsObservabilitySignal),
+			Logs:     isSignalExported(k8sDest, common.LogsObservabilitySignal),
+			Profiles: isSignalExported(k8sDest, common.ProfilesObservabilitySignal),
 		},
 		Fields:          string(fieldsJSON),
 		DestinationType: &destTypeConfig,
@@ -277,6 +287,9 @@ func ExportedSignalsObjectToSlice(signals *model.ExportedSignalsInput) []common.
 	}
 	if signals.Logs {
 		resp = append(resp, common.LogsObservabilitySignal)
+	}
+	if signals.Profiles {
+		resp = append(resp, common.ProfilesObservabilitySignal)
 	}
 
 	return resp
