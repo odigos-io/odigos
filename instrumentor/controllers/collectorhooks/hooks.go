@@ -12,12 +12,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// CollectorHooks is the enterprise extension point for collector ConfigMaps
-// and the cluster-collector Deployment. Nil, or nil fields, means community.
+// CollectorHooks lets a distribution extend the generated collector ConfigMaps
+// and the cluster-collector Deployment after the base config is built. A nil
+// CollectorHooks, or a nil field, leaves the base config untouched.
 //
-// Inputs carry what OSS already resolved for the community config (sources,
-// processors, gateway settings, the effective odigos configuration). Which
-// features to turn on is the hook's own business.
+// Inputs carry what was already resolved while building the base config
+// (sources, processors, gateway settings, the effective odigos configuration);
+// deciding what to add based on them is up to the hook.
 type CollectorHooks struct {
 	NodeCollectorConfig    NodeCollectorConfig
 	ClusterCollectorConfig ClusterCollectorConfig

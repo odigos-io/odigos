@@ -45,8 +45,8 @@ type GatewayConfigOptions struct {
 	// the extension and it's name are platform specific.
 	OdigosConfigExtensionName *string
 
-	// groupbytrace wait duration when tail sampling or service I/O trace
-	// correlations are active.
+	// groupbytrace wait duration, used by any feature that needs fully
+	// assembled traces on traces/in (see traceAggregationNeeded).
 	TraceAggregationWaitDuration *string
 
 	// Tail sampling v2 processors when tail sampling is active.
