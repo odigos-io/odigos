@@ -2,7 +2,14 @@
 {{- $shouldRender := true -}}
 {{- if $existing -}}
   {{- $managedBy := dig "metadata" "labels" "app.kubernetes.io/managed-by" "" $existing -}}
-  {{- if ne $managedBy "Helm" -}}
+  {{- $existingService := dig "spec" "service" "name" "" $existing -}}
+  {{/* v1beta1.custom.metrics.k8s.io is a cluster-scoped singleton that another adapter
+       (Prometheus Adapter, KEDA, ...) may already own. Mirror IsOwnedByOdigos in
+       instrumentor/controllers/metricshandler/helpers.go and only claim the name when the
+       existing object already points at an Odigos service. A leftover Odigos APIService that
+       Helm does not own yet is skipped so the instrumentor can delete it first. */}}
+  {{- $odigosOwned := or (eq $existingService "odigos-autoscaler") (eq $existingService "odigos-instrumentor") -}}
+  {{- if or (not $odigosOwned) (ne $managedBy "Helm") -}}
     {{- $shouldRender = false -}}
   {{- end -}}
 {{- end -}}
