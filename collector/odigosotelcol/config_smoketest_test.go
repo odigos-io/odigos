@@ -9,9 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/odigos-io/odigos/common"
-	destinationconfig "github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/common/config/testconnection"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
@@ -19,6 +16,10 @@ import (
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
 	fileprovider "go.opentelemetry.io/collector/confmap/provider/fileprovider"
 	"go.opentelemetry.io/collector/otelcol"
+
+	"github.com/odigos-io/odigos/common"
+	destinationconfig "github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/config/testconnection"
 )
 
 // TestFullSignalConfigStartsSuccessfully builds a real Collector — using the actual
