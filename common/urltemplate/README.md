@@ -1,8 +1,8 @@
 # urltemplate
 
-Shared helpers for parsing and matching URL **path rules**.
+Shared helpers for URL **path rules** and default segment classification.
 
-Shared segment-based path rule parsing and matching, used by URL templatization and HTTP route matching for sampling. It lives under `common` so it has no Kubernetes or collector-specific dependencies.
+Shared segment-based path rule parsing/matching and built-in heuristics for classifying path segments as templates (`{id}`, `{date}`, `{email}`). It lives under `common` so it has no Kubernetes or collector-specific dependencies.
 
 ## Path rule syntax
 
@@ -35,10 +35,11 @@ rule.IsPathSegmentsMatching(segments) // exact, or prefix when PathRule.Prefix i
 - `ParseUserInputRuleString` — turn a user-facing rule string into a `PathRule`
 - `SplitPath` — split a concrete path into segments and whether it had a leading `/`
 - `PathRule.IsPathSegmentsMatching` — exact match, or prefix match when `Prefix` is true
+- `SegmentTemplateName` — classify a path segment with built-in heuristics; returns `"id"`, `"date"`, `"email"`, or `""` if static
 
 Each `RulePathSegment` is one of: static (`StaticString`), wildcard (`Wildcard`), or template (`TemplateName`).
 
 ## Current consumers
 
-- `collector/processors/odigosurltemplateprocessor` — parse custom templatization rules and apply them to paths
+- `collector/processors/odigosurltemplateprocessor` — parse custom templatization rules and apply default heuristics to paths
 - `collector/processors/odigostailsamplingprocessor` — match sampling rules against `http.route` / path / templated path
