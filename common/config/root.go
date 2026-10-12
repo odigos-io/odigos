@@ -57,6 +57,7 @@ var availableConfigers = []Configer{
 	&Observe{},
 	&OneUptime{},
 	&OpenObserve{},
+	&OpenStackSwift{},
 	&Oracle{},
 	&OTLPHttp{},
 	&Prometheus{},

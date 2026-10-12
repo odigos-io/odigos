@@ -1,0 +1,91 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: openstackswift
+  displayName: OpenStack Swift S3 Gateway
+  category: self hosted
+spec:
+  image: openstackswift.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: S3_ENDPOINT
+      displayName: S3 Gateway Endpoint
+      componentType: input
+      componentProps:
+        type: "text"
+        required: true
+        placeholder: "https://swift.example.com"
+        tooltip: "S3 API base URL. Requires deployed s3api middleware; do not use the native Swift /v1/AUTH endpoint."
+    - name: S3_BUCKET
+      displayName: Bucket Name
+      componentType: input
+      componentProps:
+        type: "text"
+        required: true
+        tooltip: "Existing Swift container accessible through the S3 API."
+    - name: S3_REGION
+      displayName: Signing Region
+      componentType: input
+      initialValue: "us-east-1"
+      componentProps:
+        type: "text"
+        required: true
+        tooltip: "Must match the location configured in Swift s3api."
+    - name: S3_ACCESS_KEY_ID
+      displayName: Keystone EC2 Access Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: "password"
+        required: true
+        tooltip: "Keystone EC2 credential access key, not a Swift token."
+    - name: S3_SECRET_ACCESS_KEY
+      displayName: Keystone EC2 Secret Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: "password"
+        required: true
+    - name: S3_FORCE_PATH_STYLE
+      displayName: Use Path Style Addressing
+      componentType: dropdown
+      initialValue: "true"
+      componentProps:
+        required: false
+        values: ["true", "false"]
+        tooltip: "Use path style unless the deployment supports bucket hostnames."
+    - name: S3_CA_PEM
+      displayName: Trusted CA Certificate
+      componentType: textarea
+      componentProps:
+        required: false
+        tooltip: "PEM CA certificate for an HTTPS endpoint signed by a private CA. TLS verification remains enabled."
+    - name: S3_PARTITION_FORMAT
+      displayName: Partition Format
+      componentType: input
+      componentProps:
+        type: "text"
+        required: false
+        placeholder: "%Y/%m/%d/%H/%M"
+    - name: S3_MARSHALER
+      displayName: Data Format
+      componentType: dropdown
+      initialValue: "otlp_json"
+      componentProps:
+        required: true
+        values: ["otlp_json", "otlp_proto"]
+    - name: S3_COMPRESSION
+      displayName: Object Compression
+      componentType: dropdown
+      initialValue: "none"
+      componentProps:
+        required: false
+        values: ["none", "gzip", "zstd"]

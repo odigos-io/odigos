@@ -6,6 +6,7 @@ const (
 	AlibabaCloudDestinationType           DestinationType = "alibabacloud"
 	AppDynamicsDestinationType            DestinationType = "appdynamics"
 	AWSCloudWatchDestinationType          DestinationType = "cloudwatch"
+	OpenStackSwiftDestinationType         DestinationType = "openstackswift"
 	AWSS3DestinationType                  DestinationType = "s3"
 	AWSXRayDestinationType                DestinationType = "xray"
 	AxiomDestinationType                  DestinationType = "axiom"
