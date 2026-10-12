@@ -499,31 +499,6 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		}
 	}
 
-	if config.TraceCorrelations != nil {
-		result.TraceCorrelations = &model.TraceCorrelationsConfig{
-			ServiceIo: &model.TraceCorrelationsServiceIOConfig{},
-		}
-		if config.TraceCorrelations.ServiceIO != nil {
-			serviceIO := config.TraceCorrelations.ServiceIO
-			result.TraceCorrelations.ServiceIo.Enabled = serviceIO.Enabled
-			if serviceIO.Enabled != nil {
-				pc.record("traceCorrelations.serviceIO.enabled")
-			}
-			if len(serviceIO.InputSpanAttributes) > 0 {
-				result.TraceCorrelations.ServiceIo.InputSpanAttributes = serviceIO.InputSpanAttributes
-				pc.record("traceCorrelations.serviceIO.inputSpanAttributes")
-			}
-			if len(serviceIO.OutputSpanAttributes) > 0 {
-				result.TraceCorrelations.ServiceIo.OutputSpanAttributes = serviceIO.OutputSpanAttributes
-				pc.record("traceCorrelations.serviceIO.outputSpanAttributes")
-			}
-			if serviceIO.MetricsFlushInterval != "" {
-				result.TraceCorrelations.ServiceIo.MetricsFlushInterval = ptrStr(serviceIO.MetricsFlushInterval)
-				pc.record("traceCorrelations.serviceIO.metricsFlushInterval")
-			}
-		}
-	}
-
 	return nil
 }
 
