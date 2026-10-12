@@ -66,26 +66,6 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 	}, []string{filelogReceiverName}
 }
 
-// IsEbpfLogCaptureEnabled reports whether any source asked for eBPF log capture.
-// Enterprise uses this when choosing node-collector log receivers.
-func IsEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
-	if sources == nil {
-		return false
-	}
-	for _, ic := range sources.Items {
-		// check container config (new path)
-		for _, container := range ic.Spec.Containers {
-			if container.Logs != nil &&
-				container.Logs.EbpfLogCapture != nil &&
-				container.Logs.EbpfLogCapture.Enabled != nil &&
-				*container.Logs.EbpfLogCapture.Enabled {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 type LogsConfigOptions struct {
 	CommonSignalConfig
 	Sources *odigosv1.InstrumentationConfigList
