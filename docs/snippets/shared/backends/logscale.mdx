@@ -1,0 +1,116 @@
+---
+title: 'CrowdStrike Falcon LogScale'
+description: 'Configuring the CrowdStrike Falcon LogScale backend (Managed)'
+sidebarTitle: 'CrowdStrike Falcon LogScale'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/logscale.svg" alt="logscale" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **LOGSCALE_ENDPOINT** `string` : LogScale Instance URL. Your LogScale Cloud regional URL or self-hosted instance URL. Use HTTPS for Cloud. Odigos adds /api/v1/ingest/otlp/v1/logs; do not include /v1/logs. Falcon NG-SIEM is not supported.
+  - This field is required
+  - Example: `https://cloud.humio.com`
+- **LOGSCALE_INGEST_TOKEN** `string` : Ingest Token. Create an ingest token in the target LogScale repository under Settings > Ingest tokens. This is a repository ingest token, not a user API token. Associate a parser appropriate for the OTLP JSON conversion.
+  - This field is required
+
+<Note>
+  Supports LogScale Cloud and self-hosted LogScale with the OTLP ingestion API enabled.
+  Falcon NG-SIEM does not expose these APIs and is not supported.
+  Only logs are supported by this Odigos destination; metrics, traces, and profiles are disabled.
+  Logs are sent as uncompressed binary Protobuf over OTLP/HTTP and converted to JSON by LogScale.
+  Create an ingest token in the target repository and associate a parser for the converted JSON if you need parsed fields.
+  The exporter splits queued batches at 5000 log records. Keep uncompressed requests below the recommended 5 MB; large log records can still exceed that recommendation.
+  HTTP 401, 403, and 500 are permanent failures in the reused OTLP exporter; 429, 502, 503, and 504 are retried.
+  Resource attributes are preserved in OTLP; Odigos does not flatten or discard them.
+  See [LogScale OTLP ingestion](https://library.humio.com/logscale-api/log-shippers-opentelemetry.html) and [ingest token and parser requirements](https://library.humio.com/logscale-api/api-ingest.html).
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `CrowdStrike Falcon LogScale` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `logscale.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: logscale-example
+      namespace: odigos-system
+    spec:
+      data:
+        LOGSCALE_ENDPOINT: <LogScale Instance URL>
+      destinationName: logscale
+      secretRef:
+        name: logscale-secret
+      signals:
+      - LOGS
+      type: logscale
+
+    ---
+
+    apiVersion: v1
+    data:
+      LOGSCALE_INGEST_TOKEN: <Base64 Ingest Token>
+    kind: Secret
+    metadata:
+      name: logscale-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f logscale.yaml
+    ```
+  </Step>
+</Steps>
