@@ -1,0 +1,22 @@
+
+ timestamp                       | severitytext | body                                                 | service
+---------------------------------+--------------+------------------------------------------------------+---------------------
+ 2026-10-12 06:47:33.053000+0000 |         INFO |                                "completed request 0" | "inventory-service"
+ 2026-10-12 06:47:33.046000+0000 |         INFO |                                "completed request 1" |  "checkout-service"
+ 2026-10-12 06:47:33.053000+0000 |         INFO |                                "completed request 1" | "inventory-service"
+ 2026-10-12 06:47:33.053000+0000 |         INFO |                                "completed request 2" | "inventory-service"
+ 2026-10-12 06:47:33.046000+0000 |         INFO |                                "completed request 2" |  "checkout-service"
+ 2026-10-12 06:47:33.053000+0000 |              | {"message":"background job finished","success":true} | "inventory-service"
+ 2026-10-12 06:47:33.046000+0000 |         INFO |                                "completed request 0" |  "checkout-service"
+ 2026-10-12 06:47:33.046000+0000 |              | {"message":"background job finished","success":true} |  "checkout-service"
+
+(8 rows)
+
+ count
+-------
+     8
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
