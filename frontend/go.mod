@@ -355,7 +355,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/client v1.67.0 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.161.0 // indirect
-	go.opentelemetry.io/collector/consumer/consumererror v0.161.0 // indirect
+	go.opentelemetry.io/collector/consumer/consumererror v0.161.0
 	go.opentelemetry.io/collector/consumer/consumererror/xconsumererror v0.161.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumertest v0.161.0
 	go.opentelemetry.io/collector/consumer/xconsumer v0.161.0
