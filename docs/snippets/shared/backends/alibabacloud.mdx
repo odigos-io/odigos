@@ -1,7 +1,7 @@
 ---
-title: 'Alibaba Cloud'
-description: 'Configuring the Alibaba Cloud backend (Managed)'
-sidebarTitle: 'Alibaba Cloud'
+title: 'Alibaba Cloud Managed Service for OpenTelemetry'
+description: 'Configuring the Alibaba Cloud Managed Service for OpenTelemetry backend (Managed)'
+sidebarTitle: 'Alibaba Cloud Managed Service for OpenTelemetry'
 icon: 'signal-stream'
 ---
 
@@ -24,6 +24,24 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
+Use Alibaba Cloud **Managed Service for OpenTelemetry** for traces and metrics.
+In the console's Integration Center, select your region and OpenTelemetry, then copy
+the **gRPC endpoint** and **authentication token**. Use the public endpoint when
+Odigos runs outside Alibaba Cloud and the internal endpoint for the same region.
+
+This destination uses OTLP/gRPC only. Keep the existing `ALIBABA_ENDPOINT` and
+secret-backed `ALIBABA_TOKEN` fields. Set `OTLP_GRPC_TLS_ENABLED` to `true` only
+for an endpoint that supports TLS; an optional `OTLP_GRPC_CA_PEM` verifies a
+private certificate authority. TLS verifies the server using system roots by default.
+Existing manifests keep plaintext gRPC, matching Alibaba's documented port 8090
+examples. **gRPC alone does not provide encryption.**
+
+Logs require a separate Alibaba Cloud Simple Log Service (SLS) exporter, project,
+and Logstore; the trace/metric endpoint does not support OTLP logs. Profiles are
+not supported by this destination.
+
+See the [Alibaba Cloud integration guide](https://www.alibabacloud.com/help/en/opentelemetry/user-guide/use-opentelemetry-sdks).
+
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! END CUSTOM EDIT !!
@@ -33,15 +51,20 @@ icon: 'signal-stream'
 
 <Accordion title="Supported Signals:">
   ✅ Traces
-  ❌ Metrics
+  ✅ Metrics
   ❌ Logs
   ❌ Profiles
 </Accordion>
 
-- **ALIBABA_ENDPOINT** `string` : OTLP gRPC Endpoint. The format is `host:port`, host is required, port is required. Do not add the prefix `http://`.
+- **ALIBABA_ENDPOINT** `string` : OTLP gRPC Endpoint. Copy the gRPC endpoint from the Integration Center, including its port. Use the public endpoint outside Alibaba Cloud. Enable TLS only if that endpoint supports it; gRPC can also use plaintext. This destination does not use OTLP/HTTP.
   - This field is required
 - **ALIBABA_TOKEN** `string` : Token.
   - This field is required
+- **OTLP_GRPC_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
+  - This field is optional and defaults to `False`
+- **OTLP_GRPC_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
 
 ### Adding Destination to Odigos
 
@@ -57,7 +80,7 @@ There are two primary methods for configuring destinations in Odigos:
     ```
   </Step>
   <Step>
-    Click on `Add Destination`, select `Alibaba Cloud` and follow the on-screen instructions
+    Click on `Add Destination`, select `Alibaba Cloud Managed Service for OpenTelemetry` and follow the on-screen instructions
   </Step>
 </Steps>
 
@@ -75,11 +98,15 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data:
         ALIBABA_ENDPOINT: <OTLP gRPC Endpoint>
+        # Note: The commented fields below are optional.
+        # OTLP_GRPC_TLS_ENABLED: <Enable TLS>
+        # OTLP_GRPC_CA_PEM: <Certificate Authority>
       destinationName: alibabacloud
       secretRef:
         name: alibabacloud-secret
       signals:
       - TRACES
+      - METRICS
       type: alibabacloud
 
     ---
