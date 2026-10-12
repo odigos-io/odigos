@@ -67,11 +67,6 @@ const (
 	// metrics/servicegraph pipeline when insights is active.
 	ServiceGraphInsightsExporterName = "otlp_grpc/servicegraph-insights"
 
-	ServiceIOConnectorName                       = "serviceio"
-	TraceCorrelationsMetricsPipelineName         = "metrics/tracecorrelations"
-	TraceCorrelationsMetricsServiceName          = "odigos-correlations-metrics"
-	TraceCorrelationsVictoriaMetricsExporterName = "otlp_http/odigos-correlations-metrics"
-
 	// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
 	// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.
 	// Since DeploymentConfig uses k8s.deployment.name as the semconv key, we need to add this attribute to the list of attributes to be collected.

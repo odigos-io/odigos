@@ -101,7 +101,6 @@ import (
 	otelconftelemetry "go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
-	serviceioconnector "github.com/odigos-io/odigos/collector/connectors/serviceioconnector"
 	odigoscapabilitiesextension "github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension"
 	odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
 	odigosextractattributeprocessor "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor"
@@ -357,7 +356,6 @@ func components() (otelcol.Factories, error) {
 		servicegraphconnector.NewFactory(),
 		spanmetricsconnector.NewFactory(),
 		odigosrouterconnector.NewFactory(),
-		serviceioconnector.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -371,7 +369,6 @@ func components() (otelcol.Factories, error) {
 		servicegraphconnector.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.159.0",
 		spanmetricsconnector.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.159.0",
 		odigosrouterconnector.NewFactory().Type(): "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.159.0",
-		serviceioconnector.NewFactory().Type():    "github.com/odigos-io/odigos/collector/connectors/serviceioconnector v0.159.0",
 	})
 
 	return factories, nil

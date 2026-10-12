@@ -207,14 +207,6 @@ export const GET_EFFECTIVE_CONFIG = gql`
           }
         }
       }
-      traceCorrelations {
-        serviceIO {
-          enabled
-          inputSpanAttributes
-          outputSpanAttributes
-          metricsFlushInterval
-        }
-      }
       provenance {
         helmPath
         reconciledFrom
