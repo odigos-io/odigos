@@ -30,6 +30,10 @@ For Go and Java, custom instrumentation is applied dynamically via eBPF. For PHP
                         **receiverMethodName** `string` - The name of the method receiver if the function is a method.
                         - This field is *optional*
                     </Accordion>
+                    <Accordion title="signature">
+                        **signature** `string` - Go func type without the receiver, for example `func(orderID int64, retry bool) uint64`; when set the enterprise Go agent records scalar arguments and results as span attributes.
+                        - This field is *optional*
+                    </Accordion>
         </AccordionGroup>
     </Accordion>
     <Accordion title="Java">
@@ -94,6 +98,22 @@ The following example shows how to create a "Custom Instrumentation" rule that i
                   - packageName: "github.com/example/ecommerce"
                     receiverName: "OrderProcessor"
                     receiverMethodName: "ProcessOrder"
+        ```
+        </Accordion>
+        <Accordion title="Function with a signature (Golang)">
+        ```yaml
+        apiVersion: odigos.io/v1alpha1
+        kind: InstrumentationRule
+        metadata:
+            name: custom-instrumentation-rule
+            namespace: odigos-system
+        spec:
+            ruleName: "Custom Instrumentation for ProcessOrder with arguments"
+            customInstrumentations:
+                golang:
+                  - packageName: "github.com/example/ecommerce"
+                    functionName: "ProcessOrder"
+                    signature: "func(orderID int64, retry bool) uint64"
         ```
         </Accordion>
         <Accordion title="Class and method (Java)">

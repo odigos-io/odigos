@@ -667,6 +667,7 @@ type GolangCustomProbe struct {
 	FunctionName       *string `json:"functionName,omitempty"`
 	ReceiverName       *string `json:"receiverName,omitempty"`
 	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+	Signature          *string `json:"signature,omitempty"`
 }
 
 type GolangCustomProbeInput struct {
@@ -674,6 +675,7 @@ type GolangCustomProbeInput struct {
 	FunctionName       *string `json:"functionName,omitempty"`
 	ReceiverName       *string `json:"receiverName,omitempty"`
 	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+	Signature          *string `json:"signature,omitempty"`
 }
 
 type HeadSamplingHTTPClientMatcher struct {

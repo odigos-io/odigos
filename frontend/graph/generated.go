@@ -596,6 +596,7 @@ type ComplexityRoot struct {
 		PackageName        func(childComplexity int) int
 		ReceiverMethodName func(childComplexity int) int
 		ReceiverName       func(childComplexity int) int
+		Signature          func(childComplexity int) int
 	}
 
 	HeadSamplingHttpClientMatcher struct {
@@ -5053,6 +5054,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GolangCustomProbe.ReceiverName(childComplexity), true
+
+	case "GolangCustomProbe.signature":
+		if e.complexity.GolangCustomProbe.Signature == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.Signature(childComplexity), true
 
 	case "HeadSamplingHttpClientMatcher.method":
 		if e.complexity.HeadSamplingHttpClientMatcher.Method == nil {
@@ -26910,6 +26918,8 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_golang(_ context
 				return ec.fieldContext_GolangCustomProbe_receiverName(ctx, field)
 			case "receiverMethodName":
 				return ec.fieldContext_GolangCustomProbe_receiverMethodName(ctx, field)
+			case "signature":
+				return ec.fieldContext_GolangCustomProbe_signature(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GolangCustomProbe", field.Name)
 		},
@@ -34285,6 +34295,47 @@ func (ec *executionContext) _GolangCustomProbe_receiverMethodName(ctx context.Co
 }
 
 func (ec *executionContext) fieldContext_GolangCustomProbe_receiverMethodName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GolangCustomProbe_signature(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_signature(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signature, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_signature(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "GolangCustomProbe",
 		Field:      field,
@@ -89938,7 +89989,7 @@ func (ec *executionContext) unmarshalInputGolangCustomProbeInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"packageName", "functionName", "receiverName", "receiverMethodName"}
+	fieldsInOrder := [...]string{"packageName", "functionName", "receiverName", "receiverMethodName", "signature"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -89973,6 +90024,13 @@ func (ec *executionContext) unmarshalInputGolangCustomProbeInput(ctx context.Con
 				return it, err
 			}
 			it.ReceiverMethodName = data
+		case "signature":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signature"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Signature = data
 		}
 	}
 
@@ -96835,6 +96893,8 @@ func (ec *executionContext) _GolangCustomProbe(ctx context.Context, sel ast.Sele
 			out.Values[i] = ec._GolangCustomProbe_receiverName(ctx, field, obj)
 		case "receiverMethodName":
 			out.Values[i] = ec._GolangCustomProbe_receiverMethodName(ctx, field, obj)
+		case "signature":
+			out.Values[i] = ec._GolangCustomProbe_signature(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

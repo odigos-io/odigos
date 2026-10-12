@@ -81,6 +81,7 @@ export const GET_INSTRUMENTATION_RULES = gql`
             functionName
             receiverName
             receiverMethodName
+            signature
           }
           java {
             methodName

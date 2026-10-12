@@ -117,6 +117,7 @@ type GolangCustomProbe {
   functionName: String
   receiverName: String
   receiverMethodName: String
+  signature: String
 }
 
 type JavaCustomProbe {
@@ -140,6 +141,7 @@ input GolangCustomProbeInput {
   functionName: String
   receiverName: String
   receiverMethodName: String
+  signature: String
 }
 
 input JavaCustomProbeInput {
