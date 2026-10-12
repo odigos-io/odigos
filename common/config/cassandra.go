@@ -40,7 +40,11 @@ func (c *Cassandra) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string
 			}
 		}
 	}
-	for key, field := range map[string]string{"CASSANDRA_KEYSPACE": "keyspace", "CASSANDRA_TRACE_TABLE": "trace_table", "CASSANDRA_LOGS_TABLE": "logs_table"} {
+	for key, field := range map[string]string{
+		"CASSANDRA_KEYSPACE":    "keyspace",
+		"CASSANDRA_TRACE_TABLE": "trace_table",
+		"CASSANDRA_LOGS_TABLE":  "logs_table",
+	} {
 		if value := values[key]; value != "" {
 			if !regexp.MustCompile(`^[a-z][a-z0-9_]*$`).MatchString(value) {
 				return nil, fmt.Errorf("%s must be an unquoted lowercase CQL identifier", key)
