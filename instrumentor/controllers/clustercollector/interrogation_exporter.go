@@ -14,7 +14,8 @@ const gatewayProfilesPipeline = "profiles"
 // is on. Profiles exporter is appended only when the gateway profiles pipeline
 // exists. Traces exporter is appended to the root traces pipeline (traces/in),
 // which is post-groupbytrace — the same attachment point as insights and
-// service I/O correlations. Profile/trace correlation happens in ClickHouse.
+// service I/O correlations. Profiles land in Redis; the traces exporter expands
+// matching stacks into tx_call_trie in ClickHouse.
 // transactionIdentity supplies optional dimensions for the traces exporter config
 // (from OdigosConfiguration.transactionIdentity).
 // groupByTraceWaitDuration is the gateway groupbytrace wait_duration (e.g. "30s");
@@ -37,9 +38,7 @@ func addInterrogationExporters(c *config.Config, odigosNs string, interrogation 
 
 	if hasProfiles {
 		profilesExp := config.GenericMap{
-			"clickhouse_endpoint": k8sconsts.InsightsClickHouseEndpoint(odigosNs),
-			"clickhouse_password": "${" + k8sconsts.OdigosInsightsClickHousePasswordEnv + "}",
-			"redis_endpoint":      k8sconsts.OdigosCacheEndpoint(odigosNs),
+			"redis_endpoint": k8sconsts.OdigosCacheEndpoint(odigosNs),
 		}
 		if groupByTraceWaitDuration != "" {
 			profilesExp["group_by_trace_wait_duration"] = groupByTraceWaitDuration
