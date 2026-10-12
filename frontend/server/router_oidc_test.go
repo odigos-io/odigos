@@ -20,9 +20,11 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -179,6 +181,61 @@ func TestOidcRouter_Authentication(t *testing.T) {
 				t.Fatalf("wrong login redirect: %s", w.Header().Get("Location"))
 			}
 		})
+	}
+}
+
+// OidcMiddleware runs on every application route and reads the effective-config
+// ConfigMap to decide whether authentication is on. A cluster that never configured
+// OIDC must therefore keep serving when that read fails transiently: GraphQL and SSE
+// answer from the informer cache and do not need the API server at all, so rejecting
+// them turns an API server blip into a cluster-wide UI outage.
+func TestOidcRouter_TransientApiErrorKeepsServingUnconfiguredCluster(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ns := env.GetCurrentNamespace()
+	clientset := k8sfake.NewSimpleClientset(&corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: consts.OdigosEffectiveConfigName, Namespace: ns},
+		Data:       map[string]string{consts.OdigosConfigurationFileName: "clusterName: prod\n"},
+	})
+	previous := kube.DefaultClient
+	kube.SetDefaultClient(&kube.Client{Interface: clientset})
+	t.Cleanup(func() { kube.SetDefaultClient(previous) })
+
+	build := func() *gin.Engine {
+		r, err := BuildRouter(context.Background(), &Deps{}, RouterOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		serveClientFiles(r, fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("SPA_MARKER")}})
+		return r
+	}
+	call := func(r *gin.Engine, method, path string) int {
+		var body io.Reader
+		if path == "/graphql" {
+			body = strings.NewReader(`{"query":"{__typename}"}`)
+		}
+		req := httptest.NewRequest(method, path, body)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w.Code
+	}
+
+	// one healthy request, so the settings have been read at least once.
+	if code := call(build(), "GET", "/"); code != http.StatusOK {
+		t.Fatalf("expected the SPA to be served while the API server is healthy, got %d", code)
+	}
+
+	clientset.PrependReactor("get", "configmaps", func(k8stesting.Action) (bool, runtime.Object, error) {
+		return true, nil, apierrors.NewServiceUnavailable("etcd leader changed")
+	})
+
+	r := build()
+	for _, route := range []struct{ method, path string }{
+		{"GET", "/"}, {"POST", "/graphql"}, {"GET", "/api/events"},
+	} {
+		if code := call(r, route.method, route.path); code == http.StatusServiceUnavailable {
+			t.Errorf("%s %s rejected with 503 while OIDC is not configured", route.method, route.path)
+		}
 	}
 }
 
