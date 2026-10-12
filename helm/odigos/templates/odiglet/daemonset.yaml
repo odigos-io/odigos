@@ -433,6 +433,11 @@ spec:
               mountPath: /sys/kernel
               readOnly: true
             {{- end }}
+            {{- if and .Values.profiling.enabled (not .Values.odiglet.noHostPathMounts) }}
+            # profiling receiver pins traces_ctx_v1 on the host bpffs for span-linked samples
+            - name: host-bpffs
+              mountPath: /sys/fs/bpf
+            {{- end }}
             - name: exchange-dir
               mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"

@@ -52,7 +52,7 @@
     },
     "cacheDb": {
       "additionalProperties": false,
-      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (Redis, published as odigos-cache with the\nOdigos release tag); values stay backend-agnostic so the chart can switch to\nanother cache (e.g. Memcached) without renaming this section. Override the\nimage via images.cache or imagePrefix like other Odigos components.",
+      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation, or\ninterrogation). Deployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled or\ninterrogation.enabled; both are enterprise-only and require an on-prem token).\nBackend is an implementation detail (Redis, published as odigos-cache with the\nOdigos release tag); values stay backend-agnostic so the chart can switch to\nanother cache (e.g. Memcached) without renaming this section. Override the\nimage via images.cache or imagePrefix like other Odigos components.\nWhen resources are unset, feature-derived defaults apply (Burstable QoS).\nInterrogation: 25m/128Mi requests, 100m/500Mi limits. Live-traffic learning:\n50m/64Mi requests, 200m/256Mi limits. Both: sum of each feature's defaults.",
       "properties": {
         "maxmemory": {
           "default": "220mb",
@@ -1162,7 +1162,7 @@
     },
     "interrogation": {
       "additionalProperties": false,
-      "description": "Interrogation loop (off by default): correlates traces and profiles in ClickHouse\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.\nWhen enabled, also deploys bundled ClickHouse (odigos-insights-clickhouse; shared with\ninsights) in the Odigos namespace if not already present, deploys the\nodigos-interrogation control-loop service (enterprise; requires on-prem token),\nand deploys bundled LiteLLM (odigos-litellm). Configure a cloud provider under\ninterrogation.model, or enable interrogation.vllm for odigos-enterprise-vllm\n(weights baked into the image; no Hugging Face at runtime). Optionally set\nmodel.apiBase to point LiteLLM at a BYO inference endpoint.",
+      "description": "Interrogation loop (off by default): correlates traces and profiles in ClickHouse\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.\nWhen enabled, also deploys bundled ClickHouse (odigos-insights-clickhouse; shared with\ninsights) in the Odigos namespace if not already present, deploys the\nodigos-interrogation control-loop service (enterprise; requires on-prem token),\ndeploys bundled LiteLLM (odigos-litellm), and deploys the shared cache under\ncacheDb (Redis / odigos-cache; default Burstable 25m/128Mi requests,\n100m/500Mi limits when cacheDb.resources is unset). Configure a cloud provider under\ninterrogation.model, or enable interrogation.vllm for odigos-enterprise-vllm\n(weights baked into the image; no Hugging Face at runtime). Optionally set\nmodel.apiBase to point LiteLLM at a BYO inference endpoint.",
       "properties": {
         "affinity": {
           "additionalProperties": true,
@@ -1171,7 +1171,7 @@
         },
         "enabled": {
           "default": "false",
-          "description": "When true, enables the interrogation loop (trace–profile correlation) on the collector, deploys bundled ClickHouse when needed, deploys the interrogation service and odigos-litellm.",
+          "description": "When true, enables the interrogation loop (trace–profile correlation) on the collector, deploys bundled ClickHouse when needed, deploys the interrogation service, odigos-litellm, and the shared cacheDb (Redis).",
           "required": [],
           "title": "enabled"
         },

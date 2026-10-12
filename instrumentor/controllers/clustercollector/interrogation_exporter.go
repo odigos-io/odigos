@@ -17,7 +17,9 @@ const gatewayProfilesPipeline = "profiles"
 // service I/O correlations. Profile/trace correlation happens in ClickHouse.
 // transactionIdentity supplies optional dimensions for the traces exporter config
 // (from OdigosConfiguration.transactionIdentity).
-func addInterrogationExporters(c *config.Config, odigosNs string, interrogation *common.InterrogationConfiguration, transactionIdentity *common.TransactionIdentityConfiguration) error {
+// groupByTraceWaitDuration is the gateway groupbytrace wait_duration (e.g. "30s");
+// the profiles exporter uses 2× that as the Redis whole-trace key TTL.
+func addInterrogationExporters(c *config.Config, odigosNs string, interrogation *common.InterrogationConfiguration, transactionIdentity *common.TransactionIdentityConfiguration, groupByTraceWaitDuration string) error {
 	if !common.InterrogationActive(interrogation) {
 		return nil
 	}
@@ -34,10 +36,15 @@ func addInterrogationExporters(c *config.Config, odigosNs string, interrogation 
 	}
 
 	if hasProfiles {
-		c.Exporters[pipeline.InterrogationProfilesExporter] = config.GenericMap{
+		profilesExp := config.GenericMap{
 			"clickhouse_endpoint": k8sconsts.InsightsClickHouseEndpoint(odigosNs),
 			"clickhouse_password": "${" + k8sconsts.OdigosInsightsClickHousePasswordEnv + "}",
+			"redis_endpoint":      k8sconsts.OdigosCacheEndpoint(odigosNs),
 		}
+		if groupByTraceWaitDuration != "" {
+			profilesExp["group_by_trace_wait_duration"] = groupByTraceWaitDuration
+		}
+		c.Exporters[pipeline.InterrogationProfilesExporter] = profilesExp
 		profilesPipeline.Exporters = append(profilesPipeline.Exporters, pipeline.InterrogationProfilesExporter)
 		c.Service.Pipelines[gatewayProfilesPipeline] = profilesPipeline
 	}
@@ -46,6 +53,7 @@ func addInterrogationExporters(c *config.Config, odigosNs string, interrogation 
 		tracesExp := config.GenericMap{
 			"clickhouse_endpoint": k8sconsts.InsightsClickHouseEndpoint(odigosNs),
 			"clickhouse_password": "${" + k8sconsts.OdigosInsightsClickHousePasswordEnv + "}",
+			"redis_endpoint":      k8sconsts.OdigosCacheEndpoint(odigosNs),
 		}
 		if dims := transactionIdentityDimensions(transactionIdentity); len(dims) > 0 {
 			tracesExp["transaction_identity_dimensions"] = dims

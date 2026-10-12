@@ -5,7 +5,7 @@ import "fmt"
 const (
 	// OdigosCacheServiceName is the ClusterIP Service for the shared cacheDb
 	// (Redis). Deployed when a consuming feature such as URL templatization
-	// live traffic learning is enabled.
+	// live traffic learning or interrogation is enabled.
 	OdigosCacheServiceName = "odigos-cache"
 
 	// OdigosCachePort is the cache listen port (Redis default).

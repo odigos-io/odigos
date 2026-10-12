@@ -333,17 +333,38 @@ imagePullSecrets:
 
 {{/* Returns true when the shared cache DB should be deployed (any consuming feature enabled). */}}
 {{- define "cacheDb.enabled" -}}
-{{- include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . -}}
+{{- $ltl := eq (include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" .) "true" -}}
+{{- $interrogation := and .Values.interrogation.enabled (include "odigos.secretExists" .) -}}
+{{- if or $ltl $interrogation -}}
+true
+{{- end -}}
 {{- end }}
 
 {{/*
   Feature-derived default resources for the shared cache when cacheDb.resources is unset.
   Used only by cacheDb.resolvedResources; user-configured resources always win.
-  Requests are below limits (Burstable QoS): the cache is usually idle and only
-  needs headroom under load / during learning flushes.
+  When multiple consuming features are enabled, sum each feature's defaults.
+  Both features use Burstable QoS (requests below limits). Interrogation limits
+  are 100m CPU / 500Mi memory.
 */}}
 {{- define "cacheDb.featureDefaultResources" -}}
-{{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" -}}
+{{- $ltl := eq (include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" .) "true" -}}
+{{- $interrogation := and .Values.interrogation.enabled (include "odigos.secretExists" .) -}}
+{{- if and $ltl $interrogation -}}
+requests:
+  cpu: 75m
+  memory: 192Mi
+limits:
+  cpu: 300m
+  memory: 756Mi
+{{- else if $interrogation -}}
+requests:
+  cpu: 25m
+  memory: 128Mi
+limits:
+  cpu: 100m
+  memory: 500Mi
+{{- else if $ltl -}}
 requests:
   cpu: 50m
   memory: 64Mi

@@ -252,7 +252,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
 					return err
 				}
-				if err := addInterrogationExporters(c, env.GetCurrentNamespace(), interrogationCfg, transactionIdentityCfg); err != nil {
+				groupByWait := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
+				if gatewayOptions.TraceAggregationWaitDuration != nil && *gatewayOptions.TraceAggregationWaitDuration != "" {
+					groupByWait = *gatewayOptions.TraceAggregationWaitDuration
+				}
+				if err := addInterrogationExporters(c, env.GetCurrentNamespace(), interrogationCfg, transactionIdentityCfg, groupByWait); err != nil {
 					return err
 				}
 				addEnterpriseAuthExtension(c)
