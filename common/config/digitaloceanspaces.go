@@ -16,7 +16,8 @@ func (s *DigitalOceanSpaces) DestType() common.DestinationType {
 
 func (s *DigitalOceanSpaces) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	endpoint, err := url.Parse(dest.GetConfig()["S3_ENDPOINT"])
-	if err != nil || endpoint.Scheme != "https" || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" || (endpoint.Path != "" && endpoint.Path != "/") || endpoint.Port() != "" {
+	if err != nil || endpoint.Scheme != "https" || endpoint.User != nil || endpoint.RawQuery != "" ||
+		endpoint.Fragment != "" || (endpoint.Path != "" && endpoint.Path != "/") || endpoint.Port() != "" {
 		return nil, fmt.Errorf("Spaces requires an HTTPS regional origin endpoint")
 	}
 	host := strings.TrimSuffix(endpoint.Hostname(), ".digitaloceanspaces.com")
