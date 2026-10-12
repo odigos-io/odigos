@@ -85,8 +85,8 @@ github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kk
 github.com/andybalholm/cascadia v1.3.3/go.mod h1:xNd9bqTn98Ln4DwST8/nG+H0yuB8Hmgu1YHNnWw0GeA=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig+0+Ap1h4unLjW6YQJpKZVmUzxsD4E/Q=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
-github.com/argoproj/argo-rollouts v1.9.1 h1:+oZciUkeJYVb1vPMOhat4JQlk525j/aT2yizEkVkjLs=
-github.com/argoproj/argo-rollouts v1.9.1/go.mod h1:I1T5p2MknEsVyk7yD+35guW3cF0ebgjg2Taqvlzov8w=
+github.com/argoproj/argo-rollouts v1.10.0 h1:1/DTeu/eGzJzcz8FxMBFzr0jlNQia/lnctkw83AUph0=
+github.com/argoproj/argo-rollouts v1.10.0/go.mod h1:5f+P1U6DMIY1GnrInUAgjZ4jDSiwpY/PiOaZwcnyuKU=
 github.com/armon/go-metrics v0.4.1 h1:hR91U9KYmb6bLBYLQjyM+3j+rcd/UhE+G78SFnF8gJA=
 github.com/armon/go-metrics v0.4.1/go.mod h1:E6amYzXo6aW1tqzoZGT755KkbgrJsSdpwZ+3JqfkOG4=
 github.com/aws/aws-sdk-go-v2 v1.41.4 h1:10f50G7WyU02T56ox1wWXq+zTX9I1zxG46HYuG1hH/k=
