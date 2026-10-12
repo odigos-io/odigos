@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
+
 	"testing"
 	"time"
 
@@ -12,6 +16,10 @@ import (
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
 	fileprovider "go.opentelemetry.io/collector/confmap/provider/fileprovider"
 	"go.opentelemetry.io/collector/otelcol"
+
+	"github.com/odigos-io/odigos/common"
+	destinationconfig "github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/config/testconnection"
 )
 
 // TestFullSignalConfigStartsSuccessfully builds a real Collector — using the actual
@@ -64,4 +72,37 @@ func TestFullSignalConfigStartsSuccessfully(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("timed out waiting for collector shutdown")
 	}
+}
+
+func TestLegacySplunkConfigLoads(t *testing.T) {
+	dest := &testconnection.TestConnectionConfig{
+		DestinationType: string(common.SplunkDestinationType), ID: "legacy-splunk",
+		Config:  map[string]string{"SPLUNK_REALM": "us0"},
+		Signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
+	}
+	t.Setenv(destinationconfig.SecretEnvVarName("SPLUNK_ACCESS_TOKEN", dest.GetID()), "test-token")
+	cfg := destinationconfig.Config{
+		Receivers: destinationconfig.GenericMap{"otlp": destinationconfig.GenericMap{"protocols": destinationconfig.GenericMap{"grpc": destinationconfig.GenericMap{"endpoint": "127.0.0.1:0"}}}},
+		Exporters: destinationconfig.GenericMap{},
+		Service:   destinationconfig.Service{Pipelines: map[string]destinationconfig.Pipeline{}},
+	}
+	pipelines, err := (&destinationconfig.Splunk{}).ModifyConfig(dest, &cfg)
+	require.NoError(t, err)
+	require.Len(t, pipelines, 1)
+	pipeline := cfg.Service.Pipelines[pipelines[0]]
+	pipeline.Receivers = []string{"otlp"}
+	cfg.Service.Pipelines[pipelines[0]] = pipeline
+	data, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	path := filepath.Join(t.TempDir(), "splunk.yaml")
+	require.NoError(t, os.WriteFile(path, data, 0600))
+	col, err := otelcol.NewCollector(otelcol.CollectorSettings{
+		BuildInfo: component.NewDefaultBuildInfo(), Factories: components,
+		ConfigProviderSettings: otelcol.ConfigProviderSettings{ResolverSettings: confmap.ResolverSettings{
+			URIs: []string{path}, DefaultScheme: "env",
+			ProviderFactories: []confmap.ProviderFactory{fileprovider.NewFactory(), envprovider.NewFactory()},
+		}},
+	})
+	require.NoError(t, err)
+	require.NoError(t, col.DryRun(context.Background()))
 }
