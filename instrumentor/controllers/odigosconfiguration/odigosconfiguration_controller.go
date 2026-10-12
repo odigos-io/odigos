@@ -377,28 +377,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
-	if addtionalConfig.TraceCorrelations != nil && addtionalConfig.TraceCorrelations.ServiceIO != nil {
-		if baseConfig.TraceCorrelations == nil {
-			baseConfig.TraceCorrelations = &common.TraceCorrelationsConfiguration{}
-		}
-		if baseConfig.TraceCorrelations.ServiceIO == nil {
-			baseConfig.TraceCorrelations.ServiceIO = &common.TraceCorrelationsServiceIOConfiguration{}
-		}
-		overlay, dst := addtionalConfig.TraceCorrelations.ServiceIO, baseConfig.TraceCorrelations.ServiceIO
-		if overlay.Enabled != nil {
-			dst.Enabled = overlay.Enabled
-		}
-		if overlay.InputSpanAttributes != nil {
-			dst.InputSpanAttributes = overlay.InputSpanAttributes
-		}
-		if overlay.OutputSpanAttributes != nil {
-			dst.OutputSpanAttributes = overlay.OutputSpanAttributes
-		}
-		if overlay.MetricsFlushInterval != "" {
-			dst.MetricsFlushInterval = overlay.MetricsFlushInterval
-		}
-	}
-
 	// liveTrafficLearning.enabled is deliberately not merged: it is isHelmOnly in the config catalog
 	// because turning it on renders the odigos-cache workload, which only helm can do at install time.
 	// An overlay that enabled it would point the gateway exporter at a Service that was never created.
