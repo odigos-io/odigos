@@ -182,17 +182,6 @@ type CardinalityControlConfig {
   urlTemplatization: UrlTemplatizationCardinalityControlConfig
 }
 
-type TraceCorrelationsServiceIOConfig {
-  enabled: Boolean
-  inputSpanAttributes: [String!]
-  outputSpanAttributes: [String!]
-  metricsFlushInterval: String
-}
-
-type TraceCorrelationsConfig {
-  serviceIO: TraceCorrelationsServiceIOConfig
-}
-
 type KarpenterConfig {
   enabled: Boolean
 }
@@ -314,7 +303,6 @@ type EffectiveConfig {
   sampling: SamplingConfig
   profiling: ProfilingConfig
   cardinalityControl: CardinalityControlConfig
-  traceCorrelations: TraceCorrelationsConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
 }
@@ -381,17 +369,6 @@ input LocalUiConfigComponentLogLevelsInput {
   collector: OdigosLogLevel
 }
 
-input LocalUiConfigTraceCorrelationsServiceIOInput {
-  enabled: Boolean
-  inputSpanAttributes: [String!]
-  outputSpanAttributes: [String!]
-  metricsFlushInterval: String
-}
-
-input LocalUiConfigTraceCorrelationsInput {
-  serviceIO: LocalUiConfigTraceCorrelationsServiceIOInput
-}
-
 input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
   enabled: Boolean
 }
@@ -434,7 +411,6 @@ input LocalUiConfigInput {
   goAutoOffsetsMode: String
   sampling: LocalUiConfigSamplingInput
   componentLogLevels: LocalUiConfigComponentLogLevelsInput
-  traceCorrelations: LocalUiConfigTraceCorrelationsInput
   cardinalityControl: LocalUiConfigCardinalityControlInput
 }
 
