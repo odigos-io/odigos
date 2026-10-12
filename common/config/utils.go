@@ -8,7 +8,11 @@ import (
 	"strings"
 )
 
-func parseOtlpGrpcUrl(rawURL string, encrypted bool) (grpcUrl string, err error) {
+func parseOtlpGrpcUrl(rawURL string, encrypted bool) (string, error) {
+	return parseOtlpGrpcUrlWithDefaultPort(rawURL, encrypted, "4317")
+}
+
+func parseOtlpGrpcUrlWithDefaultPort(rawURL string, encrypted bool, defaultPort string) (grpcUrl string, err error) {
 	rawURL = strings.TrimSpace(rawURL)
 	urlWithScheme := rawURL
 
@@ -65,7 +69,7 @@ func parseOtlpGrpcUrl(rawURL string, encrypted bool) (grpcUrl string, err error)
 	// Add default port if missing
 	hostport := parsedUrl.Host
 	if !urlHostContainsPort(hostport) {
-		hostport += ":4317"
+		hostport += ":" + defaultPort
 	}
 
 	host, port, err := net.SplitHostPort(hostport)

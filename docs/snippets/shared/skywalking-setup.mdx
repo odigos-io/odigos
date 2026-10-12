@@ -1,0 +1,76 @@
+### OAP setup and data limits
+
+Apache SkyWalking is self-hosted. This destination uses the bundled OTLP gRPC exporter;
+it does not require a cloud account or a SkyWalking-specific collector exporter.
+Use the OAP gRPC address (normally port `11800`), rather than the UI or HTTP port.
+
+The integration targets SkyWalking OAP **10.3.0**. Older versions may not expose
+all of these handlers. Consult the versioned
+[trace](https://skywalking.apache.org/docs/main/v10.3.0/en/setup/backend/otlp-trace/),
+[metric](https://skywalking.apache.org/docs/main/v10.3.0/en/setup/backend/opentelemetry-receiver/), and
+[log](https://skywalking.apache.org/docs/main/v10.3.0/en/setup/backend/log-otlp/) documentation.
+
+Enable the handlers for every signal selected in Odigos:
+
+```yaml
+receiver-otel:
+  selector: default
+  default:
+    enabledHandlers: otlp-traces,otlp-metrics,otlp-logs
+    enabledOtelMetricsRules: odigos
+receiver-zipkin:
+  selector: default
+query-zipkin:
+  selector: default
+```
+
+- **Traces:** OAP converts OTLP spans to Zipkin. Query them through the Zipkin query
+  API and the bundled Lens UI at `/zipkin` on the SkyWalking webapp. Set `service.name`;
+  check the stored service/span names when searching because conversion normalizes
+  names. SkyWalking trace sampling and tag-search configuration still apply.
+- **Metrics:** OAP is not a general OTLP metric store. Install matching MAL rules
+  in `config/otel-rules/` and enable them in `enabledOtelMetricsRules`. Only metrics
+  matched by those rules become queryable. Resource label dots become underscores;
+  in 10.3.0, `service.name` maps to `job_name` and `host.name` maps to
+  `node_identifier_host_name`. Explicit histograms, exponential histograms and
+  summaries are converted to samples, so their original OTLP representation is not
+  preserved. Sum temporality must be specified; verify the aggregation you need.
+- **Logs:** Set the resource attribute `service.name`. OAP 10.3.0 consumes string
+  bodies; structured/bytes bodies require conversion to text before export. Optional
+  `service.layer` and `service.instance` control native log classification. The
+  default layer is `GENERAL`; `service.instance.id` is not the same attribute as
+  SkyWalking's `service.instance`.
+- **Profiles:** This destination does not accept OTLP profiles. SkyWalking's native
+  profiling protocols are separate from this integration.
+
+For example, this `config/otel-rules/odigos.yaml` makes Odigos span-metric calls
+queryable as `meter_odigos_calls` per service. Adapt the rule and dashboard to the
+metrics and resource attributes collected in your deployment:
+
+```yaml
+filter: "{ tags -> tags.job_name != null && tags.job_name != '' }"
+metricPrefix: meter_odigos
+expSuffix: service(['job_name'], Layer.GENERAL)
+metricsRules:
+  - name: calls
+    exp: traces_span_metrics_calls.sum(['job_name'])
+```
+
+Enable TLS on OAP or its gRPC proxy, then enable TLS in Odigos. Supply a PEM CA
+for private certificates. When OAP authentication is configured with
+`SW_AUTHENTICATION`, enable authentication and provide the matching token in the
+Destination Secret; Odigos sends it in the `authentication` gRPC metadata field.
+Use `none` or `gzip` compression, matching the receiving endpoint.
+
+For one-way TLS on OAP 10.3.0, configure a separate `receiver-sharing-server`
+gRPC port with its `gRPCSslEnabled`, `gRPCSslKeyPath` and
+`gRPCSslCertChainPath` settings, then use that port as the destination endpoint.
+Enabling TLS on the core/internal gRPC server with trusted CAs requires mutual
+TLS; client certificates are not exposed by this named destination. A TLS proxy
+is another option.
+
+The upstream exporter supplies its normal queue and retry behavior. A successful
+export response is not proof that every record was stored: OAP 10.3.0 can silently
+discard logs without `service.name`, unmatched metrics and data rejected during
+analysis, without reporting OTLP partial success. Verify each selected signal
+through the destination's query APIs and UI after configuring it.

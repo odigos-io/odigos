@@ -61,6 +61,7 @@ const (
 	SentryDestinationType                 DestinationType = "sentry"
 	SeqDestinationType                    DestinationType = "seq"
 	SignalFxDestinationType               DestinationType = "signalfx"
+	SkyWalkingDestinationType             DestinationType = "skywalking"
 	SignozDestinationType                 DestinationType = "signoz"
 	SplunkDestinationType                 DestinationType = "splunk"
 	SplunkOTLPDestinationType             DestinationType = "splunkotlp"

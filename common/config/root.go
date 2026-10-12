@@ -67,6 +67,7 @@ var availableConfigers = []Configer{
 	&Seq{},
 	&SignalFx{},
 	&Signoz{},
+	&SkyWalking{},
 	&Splunk{},
 	&SplunkOTLP{},
 	&SumoLogic{},

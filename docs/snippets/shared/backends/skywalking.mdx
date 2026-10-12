@@ -1,0 +1,122 @@
+---
+title: 'Apache SkyWalking'
+description: 'Configuring the Apache SkyWalking backend (Self-Hosted)'
+sidebarTitle: 'Apache SkyWalking'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/skywalking.svg" alt="skywalking" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **SKYWALKING_ENDPOINT** `string` : OAP OTLP gRPC Endpoint. OAP host:port. Port defaults to 11800. Enable the OTLP handlers for each selected signal. Traces require Zipkin query; metrics require matching MAL rules; logs require service.name.
+  - This field is required
+  - Example: `skywalking-oap:11800`
+- **SKYWALKING_TLS_ENABLED** `boolean` : Enable TLS. Enable TLS when OAP or its proxy uses an encrypted gRPC endpoint.
+  - This field is optional and defaults to `False`
+- **SKYWALKING_CA_PEM** `string` : Certificate Authority. CA certificate in PEM format. If empty, use system root CAs.
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **SKYWALKING_AUTH_ENABLED** `boolean` : Enable Authentication. Send the OAP authentication token as gRPC metadata. Use TLS to protect the token.
+  - This field is optional and defaults to `False`
+- **SKYWALKING_TOKEN** `string` : Authentication Token. Token matching OAP SW_AUTHENTICATION when authentication is enabled.
+  - This field is optional
+- **SKYWALKING_COMPRESSION** `string` : Compression. Compression supported by the OAP gRPC receiver.
+  - This field is optional and defaults to `none`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Apache SkyWalking` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `skywalking.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: skywalking-example
+      namespace: odigos-system
+    spec:
+      data:
+        SKYWALKING_ENDPOINT: <OAP OTLP gRPC Endpoint>
+        # Note: The commented fields below are optional.
+        # SKYWALKING_TLS_ENABLED: <Enable TLS>
+        # SKYWALKING_CA_PEM: <Certificate Authority>
+        # SKYWALKING_AUTH_ENABLED: <Enable Authentication>
+        # SKYWALKING_COMPRESSION: <Compression (default: none) (options: [none, gzip])>
+      destinationName: skywalking
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: skywalking-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: skywalking
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   SKYWALKING_TOKEN: <Base64 Authentication Token>
+    # kind: Secret
+    # metadata:
+    #   name: skywalking-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f skywalking.yaml
+    ```
+  </Step>
+</Steps>
