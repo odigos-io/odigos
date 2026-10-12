@@ -11,6 +11,14 @@ status:
 
 tests:
   config:
+    s3uploader:
+      endpoint: http://127.0.0.1:1
+      region: us-east-1
+      s3_bucket: test-bucket
+      access_key_id: test-key
+      secret_access_key: test-secret
+      disable_ssl: true
+      retry_mode: nop
     retry_on_failure:
       enabled: false
   expect_consumer_error: true
