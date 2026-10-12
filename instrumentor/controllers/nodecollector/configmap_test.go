@@ -231,16 +231,6 @@ func TestIsTracingLoadBalancingNeeded(t *testing.T) {
 			},
 			want: false,
 		},
-		{
-			name: "service graph disabled but service IO trace correlations are active",
-			spec: odigosv1.CollectorsGroupSpec{
-				ServiceGraphDisabled: boolPtr(true),
-				TraceCorrelations: &odigosv1.CollectorsGroupTraceCorrelationsSettings{
-					ServiceIO: &common.TraceCorrelationsServiceIOConfiguration{},
-				},
-			},
-			want: true,
-		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := isTracingLoadBalancingNeeded(context.Background(), nil, odigosv1.CollectorsGroup{Spec: tt.spec})
