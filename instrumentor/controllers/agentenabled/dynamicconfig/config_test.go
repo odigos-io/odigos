@@ -46,3 +46,29 @@ func TestTraceSurgeSpanMetricsInterval(t *testing.T) {
 		"without a surge rule nothing is recorded")
 	assert.Equal(t, 0, intervalMs(&common.OdigosConfiguration{}, surgeRules), "without insights nothing is recorded")
 }
+
+func TestReportHeadSamplingOnlyForContainersASurgeCovers(t *testing.T) {
+	enabled := true
+	pw := k8sconsts.PodWorkload{Namespace: "shop", Kind: k8sconsts.WorkloadKindDeployment, Name: "payments"}
+	runtimeDetails := &odigosv1.RuntimeDetailsByContainer{ContainerName: "app", Language: common.JavaProgrammingLanguage}
+	d := &distro.OtelDistro{Traces: &distro.Traces{HeadSampling: &distro.HeadSampling{Supported: true}}}
+	insights := &common.OdigosConfiguration{Insights: &common.InsightsConfiguration{Enabled: &enabled}}
+	rule := func(surge bool) *[]odigosv1.Sampling {
+		op := odigosv1.NoisyOperation{Name: "shop", PercentageAtMost: new(float64)}
+		if surge {
+			op.Surge = &odigosv1.TraceSurgeSettings{Metric: odigosv1.TraceSurgeMetricErrorRate, Threshold: 5, BoostPercent: 50}
+		}
+		return &[]odigosv1.Sampling{{Spec: odigosv1.SamplingSpec{NoisyOperations: []odigosv1.NoisyOperation{op}}}}
+	}
+	report := func(c *common.OdigosConfiguration, rules *[]odigosv1.Sampling) bool {
+		t.Helper()
+		configs, disabled := CalculateDynamicContainerConfig("app", &[]odigosv1.InstrumentationRule{}, c, runtimeDetails,
+			&[]odigosv1.Action{}, rules, nil, pw, d, signals.EnabledSignals{TracesEnabled: true}, nil, nil)
+		require.Nil(t, disabled)
+		return configs.AgentTracesConfig.ReportHeadSampling
+	}
+
+	assert.True(t, report(insights, rule(true)))
+	assert.False(t, report(insights, rule(false)), "a rule without a surge")
+	assert.False(t, report(&common.OdigosConfiguration{}, rule(true)), "without insights no surge runs")
+}

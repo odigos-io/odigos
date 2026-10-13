@@ -83,6 +83,13 @@ type Reporter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails
 	OnExit(ctx context.Context, pid int, pg processDetails) error
 }
 
+// ConfigReporter is an optional extension of a Reporter, told of every configuration applied to a
+// loaded instrumentation: its initial configuration once it loaded, and each update after.
+// The error parameter will be nil if the instrumentation applied the configuration.
+type ConfigReporter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] interface {
+	OnConfig(ctx context.Context, pid int, err error, pg processDetails, config Config) error
+}
+
 // SettingsGetter is used to fetch the initial settings of an instrumentation.
 type SettingsGetter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] interface {
 	// GetSettings will fetch the initial settings of an instrumentation.

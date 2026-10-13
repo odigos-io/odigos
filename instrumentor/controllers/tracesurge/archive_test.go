@@ -52,10 +52,10 @@ func TestInsightsArchivePut(t *testing.T) {
 	record, _ := body["record"].(map[string]any)
 	assert.Equal(t, "abc-payments-1", record["name"], "the record is the surge as the status holds it")
 
-	later := metav1.NewTime(restored.Add(time.Minute))
-	surge.Status.Timeline = append(surge.Status.Timeline, odigosv1.TraceSurgeEvent{At: later, Title: "Rule updated"})
+	confirmed := metav1.NewTime(restored.Add(time.Minute))
+	surge.Status.Timeline = append(surge.Status.Timeline, odigosv1.TraceSurgeEvent{At: confirmed, Title: "All 2 processes back at 1%"})
 	require.NoError(t, archive.put(context.Background(), surge))
-	assert.Equal(t, "2026-10-06T10:06:00Z", body["ended_at"], "an event after the restore is the last change")
+	assert.Equal(t, "2026-10-06T10:06:00Z", body["ended_at"], "its targets confirmed back after the restore: the last change")
 
 	status = http.StatusInternalServerError
 	assert.Error(t, archive.put(context.Background(), surge))

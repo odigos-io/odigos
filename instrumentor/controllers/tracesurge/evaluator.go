@@ -7,8 +7,8 @@
 // scope and every service those call is evaluated on its own. A service whose metric stays above
 // the rule's threshold starts a surge: an entry in the status of the Sampling object that holds
 // the rule, which raises the rule's percentage for the workloads in the rule's scope that lead to
-// the service (agentenabled applies it), and records what happened. Once a surge is over, it moves
-// to odigos insights.
+// the service (agentenabled applies it), and records what happened, down to the processes that
+// confirm applying it. Once a surge is over, it moves to odigos insights.
 package tracesurge
 
 import (
@@ -39,6 +39,8 @@ const (
 	// an active surge whose service has had no metrics for this long is ended.
 	// missing metrics never count as recovery, but they do not hold the surge forever either.
 	staleAfter = 10 * time.Minute
+	// after a surge ends, its targets are watched this long for returning to the normal percentage.
+	confirmRestoreFor = 10 * time.Minute
 	// ended surges wait in the Sampling status at most this many per Sampling, when odigos insights
 	// can't take them: beyond it the oldest are dropped, so the status stays small.
 	maxEndedInStatus = 20
@@ -50,8 +52,9 @@ const (
 
 // Evaluator runs on the leader instrumentor.
 type Evaluator struct {
-	Client client.Client
-	Logger logr.Logger
+	Client    client.Client
+	APIReader client.Reader
+	Logger    logr.Logger
 	// the evaluator's own metrics are created with it; nil records none.
 	Meter metric.Meter
 
@@ -246,6 +249,14 @@ func (e *Evaluator) evaluateSurges(ctx context.Context, now time.Time) (string, 
 		clear(e.breaches)
 	}
 
+	for _, surge := range ended {
+		// an ended surge is watched until its targets are confirmed back, then its record is final.
+		if surge.Status.BoostedAt != nil && surge.Status.RestoredAt != nil && now.Sub(surge.Status.RestoredAt.Time) < confirmRestoreFor && !confirmed(surge) {
+			if e.confirm(ctx, surge, now) {
+				e.updateStatus(ctx, surge)
+			}
+		}
+	}
 	e.archiveEnded(ctx, now)
 	e.flush(ctx)
 	e.telemetry.snapshot(rules, e.samplings, e.servicesRead, e.limits)
@@ -404,6 +415,10 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 		last := surge.Status.LastObservation
 		if last != nil && now.Sub(last.At.Time) > staleAfter {
 			e.restore(ctx, surge, now, causeStaleMetrics, fmt.Sprintf("No metrics from %s for %s. Missing metrics never count as recovery, so the surge ended without it.", workloadLabel(key.service), staleAfter))
+			return
+		}
+		if e.confirm(ctx, surge, now) {
+			e.updateStatus(ctx, surge)
 		}
 		return
 	}
@@ -458,6 +473,9 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 			return
 		}
 	}
+	if surge.Active() {
+		e.confirm(ctx, surge, now)
+	}
 	e.updateStatus(ctx, surge)
 }
 
@@ -511,6 +529,7 @@ func (e *Evaluator) start(ctx context.Context, now time.Time, key surgeKey, rule
 		fmt.Sprintf("%s stayed above %s for %ds (%s now). New traces starting at %s are sampled at %s instead of %s.",
 			metricTitle(metric), formatValue(metric, settings.Threshold), settings.SustainedSeconds, formatValue(metric, trigger.Value),
 			targetNames(targets), formatPercent(settings.BoostPercent), formatPercent(rule.normalPercent())))
+	e.confirm(ctx, surge, now)
 	e.updateStatus(ctx, surge)
 	e.telemetry.transition(ctx, surge, eventStarted, "")
 	e.Logger.Info("trace surge started", "surge", surge.Name, "rule", rule.id, "service", key.service, "value", trigger.Value, "targets", len(targets))
@@ -519,7 +538,7 @@ func (e *Evaluator) start(ctx context.Context, now time.Time, key surgeKey, rule
 func (e *Evaluator) restore(ctx context.Context, surge *odigosv1.TraceSurge, now time.Time, cause restoreCause, reason string) {
 	e.telemetry.transition(ctx, surge, eventRestored, cause)
 	if surge.Status.BoostedAt == nil {
-		// a limited surge never raised sampling: there is nothing to restore.
+		// a limited surge never raised sampling: there is nothing to restore or confirm.
 		at := metav1.NewTime(now)
 		surge.Status.Phase = odigosv1.TraceSurgePhaseRestored
 		surge.Status.RestoredAt = &at
@@ -533,7 +552,11 @@ func (e *Evaluator) restore(ctx context.Context, surge *odigosv1.TraceSurge, now
 	surge.Status.RestoredAt = &at
 	surge.Status.RecoveryStartedAt = nil
 	surge.Status.RestoreReason = reason
+	for i := range surge.Status.Targets {
+		surge.Status.Targets[i].ConfirmedAt = nil
+	}
 	addEvent(surge, now, fmt.Sprintf("Sampling restored to %s", formatPercent(surge.Spec.NormalPercent)), reason)
+	e.confirm(ctx, surge, now)
 	e.updateStatus(ctx, surge)
 	e.Logger.Info("trace surge ended", "surge", surge.Name, "reason", reason)
 }
@@ -551,6 +574,9 @@ func (e *Evaluator) syncRule(ctx context.Context, surge *odigosv1.TraceSurge, ru
 	description := "The rule's surge settings changed; the surge continues with them."
 	if before != surge.Spec.Settings.BoostPercent {
 		description = fmt.Sprintf("The rule's boost changed from %s to %s.", formatPercent(before), formatPercent(surge.Spec.Settings.BoostPercent))
+		for i := range surge.Status.Targets {
+			surge.Status.Targets[i].ConfirmedAt = nil
+		}
 	}
 	addEvent(surge, now, "Rule updated", description)
 	return true
@@ -578,9 +604,9 @@ func (e *Evaluator) updateStatus(_ context.Context, surge *odigosv1.TraceSurge) 
 	}
 }
 
-// archiveEnded moves the surges that are over from the Sampling status to odigos insights. A surge
-// that ended at the maximum duration stays until its service recovers, since it holds the service
-// back.
+// archiveEnded moves the surges that are over from the Sampling status to odigos insights: those
+// whose targets are confirmed back, or that were watched long enough for it. A surge that ended
+// at the maximum duration stays until its service recovers, since it holds the service back.
 func (e *Evaluator) archiveEnded(ctx context.Context, now time.Time) {
 	archiving := !now.Before(e.archiveRetryAt)
 	for _, state := range e.samplings {
@@ -588,7 +614,8 @@ func (e *Evaluator) archiveEnded(ctx context.Context, now time.Time) {
 		var ended []*odigosv1.TraceSurge
 		for _, surge := range state.surges {
 			over := surge.Status.Phase == odigosv1.TraceSurgePhaseRestored && surge.Status.RestoredAt != nil &&
-				(surge.Status.RecoveredAt != nil || !strings.HasPrefix(surge.Status.RestoreReason, maxDurationReason))
+				(surge.Status.RecoveredAt != nil || !strings.HasPrefix(surge.Status.RestoreReason, maxDurationReason)) &&
+				(surge.Status.BoostedAt == nil || confirmed(surge) || now.Sub(surge.Status.RestoredAt.Time) >= confirmRestoreFor)
 			if over && archiving {
 				err := e.archive.put(ctx, surge)
 				if err == nil {

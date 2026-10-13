@@ -71,6 +71,39 @@ type TraceSurgeObservation struct {
 	Operation string `json:"operation,omitempty"`
 }
 
+// what an instrumented process reports it applied.
+type TraceSurgeInstanceStatus struct {
+	// the InstrumentationInstance of the process.
+	Name string `json:"name"`
+
+	Pod string `json:"pod"`
+
+	// +kubebuilder:validation:Enum=confirmed;unknown;failed
+	State string `json:"state"`
+
+	// the rule's percentage the process reports, if any.
+	AppliedPercent *float64 `json:"appliedPercent,omitempty"`
+
+	At *metav1.Time `json:"at,omitempty"`
+
+	Message string `json:"message,omitempty"`
+}
+
+type TraceSurgeTargetStatus struct {
+	Workload k8sconsts.PodWorkload `json:"workload"`
+
+	// processes that report the percentage the surge requires.
+	Confirmed int `json:"confirmed"`
+
+	// instrumented processes of the workload.
+	Total int `json:"total"`
+
+	// when every process first reported the required percentage.
+	ConfirmedAt *metav1.Time `json:"confirmedAt,omitempty"`
+
+	Instances []TraceSurgeInstanceStatus `json:"instances,omitempty"`
+}
+
 type TraceSurgeEvent struct {
 	At          metav1.Time `json:"at"`
 	Title       string      `json:"title"`
@@ -106,14 +139,17 @@ type TraceSurgeStatus struct {
 	// below the recovery threshold, after which the service can surge again.
 	RecoveredAt *metav1.Time `json:"recoveredAt,omitempty"`
 
+	// the processes that apply the surge's percentage, for each target.
+	Targets []TraceSurgeTargetStatus `json:"targets,omitempty"`
+
 	Timeline []TraceSurgeEvent `json:"timeline,omitempty"`
 }
 
 // TraceSurge records one surge of a sampling rule: a service's metric crossed the rule's threshold,
 // the rule's percentage was raised for the workloads whose traces lead to the service, and
 // restored once the metric recovered. It is kept in the status of the Sampling object that holds
-// the rule while it is open, or until its service recovers when it ended at the maximum duration;
-// odigos insights keeps it after that.
+// the rule while it is open and until its targets are confirmed back, or until its service
+// recovers when it ended at the maximum duration; odigos insights keeps it after that.
 type TraceSurge struct {
 	// identifies the surge, e.g. 44136fa3-payments-tmfoef.
 	Name string `json:"name"`

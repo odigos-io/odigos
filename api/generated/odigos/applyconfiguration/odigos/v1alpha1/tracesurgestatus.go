@@ -42,8 +42,10 @@ type TraceSurgeStatusApplyConfiguration struct {
 	LimitReason *string `json:"limitReason,omitempty"`
 	// for a surge that ended at the maximum duration: when its service's metric went back to or
 	// below the recovery threshold, after which the service can surge again.
-	RecoveredAt *v1.Time                            `json:"recoveredAt,omitempty"`
-	Timeline    []TraceSurgeEventApplyConfiguration `json:"timeline,omitempty"`
+	RecoveredAt *v1.Time `json:"recoveredAt,omitempty"`
+	// the processes that apply the surge's percentage, for each target.
+	Targets  []TraceSurgeTargetStatusApplyConfiguration `json:"targets,omitempty"`
+	Timeline []TraceSurgeEventApplyConfiguration        `json:"timeline,omitempty"`
 }
 
 // TraceSurgeStatusApplyConfiguration constructs a declarative configuration of the TraceSurgeStatus type for use with
@@ -134,6 +136,19 @@ func (b *TraceSurgeStatusApplyConfiguration) WithLimitReason(value string) *Trac
 // If called multiple times, the RecoveredAt field is set to the value of the last call.
 func (b *TraceSurgeStatusApplyConfiguration) WithRecoveredAt(value v1.Time) *TraceSurgeStatusApplyConfiguration {
 	b.RecoveredAt = &value
+	return b
+}
+
+// WithTargets adds the given value to the Targets field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Targets field.
+func (b *TraceSurgeStatusApplyConfiguration) WithTargets(values ...*TraceSurgeTargetStatusApplyConfiguration) *TraceSurgeStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithTargets")
+		}
+		b.Targets = append(b.Targets, *values[i])
+	}
 	return b
 }
 
