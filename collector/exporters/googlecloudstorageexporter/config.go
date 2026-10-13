@@ -1,7 +1,11 @@
 package googlecloudstorageexporter
 
 import (
-	"go.uber.org/zap"
+	"fmt"
+
+	"go.opentelemetry.io/collector/config/configoptional"
+	"go.opentelemetry.io/collector/config/configretry"
+	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
 type GCSUploadConfig struct {
@@ -11,10 +15,21 @@ type GCSUploadConfig struct {
 	FilePrefix   string `mapstructure:"file_prefix"`
 }
 
-// Config contains the main configuration options for the awskinesis exporter
 type Config struct {
-	GCSUploader   GCSUploadConfig `mapstructure:"gcs"`
-	MarshalerName string          `mapstructure:"marshaler_name"`
+	GCSUploader   GCSUploadConfig                                          `mapstructure:"gcs"`
+	MarshalerName string                                                   `mapstructure:"marshaler_name"`
+	TimeoutConfig exporterhelper.TimeoutConfig                             `mapstructure:",squash"`
+	QueueConfig   configoptional.Optional[exporterhelper.QueueBatchConfig] `mapstructure:"sending_queue"`
+	RetryConfig   configretry.BackOffConfig                                `mapstructure:"retry_on_failure"`
+}
 
-	logger *zap.Logger
+func (c *Config) Validate() error {
+	if c.GCSUploader.GCSBucket == "" {
+		return fmt.Errorf("gcs.bucket must not be empty")
+	}
+	if c.GCSUploader.GCSPartition != "minute" && c.GCSUploader.GCSPartition != "hour" {
+		return fmt.Errorf("gcs.partition must be minute or hour")
+	}
+	_, err := NewMarshaler(c.MarshalerName, nil)
+	return err
 }

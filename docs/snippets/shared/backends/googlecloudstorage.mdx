@@ -1,3 +1,29 @@
+---
+title: 'Google Cloud Storage'
+description: 'Configuring the Google Cloud Storage backend (Managed)'
+sidebarTitle: 'Google Cloud Storage'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/gcs.svg" alt="gcs" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
 Odigos exports data to Google Cloud Storage in [OTLP format](https://opentelemetry.io/docs/specs/otlp/).
 Data can be exported either in JSON format or in binary format (protobuf).
 
@@ -5,4 +31,101 @@ Authentication to Google Cloud Storage is done using [Google Application Default
 
 ## Configuring Google Cloud Storage Backend
 
-The only required field is the **bucket name**. The bucket must exists and the odigos gateway pod must have write access to it.
+Create the bucket before adding the destination. Set **GCS_BUCKET** to its name (without `gs://`); existing manifests that omit this field continue to use `odigos-otlp`.
+The gateway identity needs `storage.objects.create` on the bucket. Prefer [GKE Workload Identity Federation](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity) so that no service account key is needed. Outside GCP, the optional **GCP_APPLICATION_CREDENTIALS** Secret is mounted for ADC. Only one Google Cloud destination per gateway can supply explicit credentials.
+
+Each export batch becomes an OTLP JSON object by default, named `<prefix>/year=YYYY/month=MM/day=DD/hour=HH/minute=MM/<file-prefix>traces_<random>.json` (or `logs_<random>.json`). With an empty prefix, existing object names retain their leading `/`. Hour partitions omit `minute=MM`; protobuf objects use `.proto`.
+
+Open the bucket in the [Google Cloud Console](https://console.cloud.google.com/storage/browser), find `traces_` and `logs_` objects, and download them to verify the resource attributes and payload. Viewing objects requires `storage.objects.list` and `storage.objects.get`. Google Cloud Storage is archival storage; it does not expose a trace or log query interface. Metrics and profiles are not supported.
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **GCS_BUCKET** `string` : Bucket Name. Existing bucket name, without gs://. Defaults to odigos-otlp when omitted. The gateway identity needs storage.objects.create permission on this bucket.
+  - This field is optional
+  - Example: `odigos-otlp`
+- **GCS_PREFIX** `string` : Object Prefix. Optional object key prefix before the time partition. Existing destinations keep the default empty prefix.
+  - This field is optional
+- **GCS_PARTITION** `string` : Time Partition. Time partition for object keys. Defaults to minute.
+  - This field is optional and defaults to `minute`
+- **GCS_FILE_PREFIX** `string` : File Prefix. Optional prefix before traces or logs in each object filename.
+  - This field is optional
+- **GCS_MARSHALER** `string` : Data Format. OTLP JSON or protobuf objects. Defaults to otlp_json. The exporter also accepts the legacy otlp alias for protobuf.
+  - This field is optional and defaults to `otlp_json`
+- **GCP_APPLICATION_CREDENTIALS** `string` : Application Credentials. Optional Google Application Default Credentials JSON, such as a Workload Identity Federation configuration or service account key. Omit when the gateway already has ADC through GKE Workload Identity.
+  - This field is optional
+
+<Note>
+  Archives OTLP objects in an existing bucket. Uses Application Default Credentials, including GKE Workload Identity. Only one Google Cloud destination per gateway may configure explicit Application Credentials.
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Google Cloud Storage` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `gcs.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: gcs-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: gcs
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: gcs-secret
+      signals:
+      - TRACES
+      - LOGS
+      type: gcs
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   GCP_APPLICATION_CREDENTIALS: <Base64 Application Credentials>
+    # kind: Secret
+    # metadata:
+    #   name: gcs-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f gcs.yaml
+    ```
+  </Step>
+</Steps>

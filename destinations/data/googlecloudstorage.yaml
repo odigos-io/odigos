@@ -1,0 +1,71 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: gcs
+  displayName: Google Cloud Storage
+  category: managed
+spec:
+  image: gcs.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  note:
+    type: Note
+    content: Archives OTLP objects in an existing bucket. Uses Application Default Credentials, including GKE Workload Identity. Only one Google Cloud destination per gateway may configure explicit Application Credentials.
+  fields:
+    - name: GCS_BUCKET
+      displayName: Bucket Name
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: odigos-otlp
+        tooltip: Existing bucket name, without gs://. Defaults to odigos-otlp when omitted. The gateway identity needs storage.objects.create permission on this bucket.
+    - name: GCS_PREFIX
+      displayName: Object Prefix
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: Optional object key prefix before the time partition. Existing destinations keep the default empty prefix.
+    - name: GCS_PARTITION
+      displayName: Time Partition
+      componentType: dropdown
+      initialValue: minute
+      componentProps:
+        required: false
+        values:
+          - minute
+          - hour
+        tooltip: Time partition for object keys. Defaults to minute.
+    - name: GCS_FILE_PREFIX
+      displayName: File Prefix
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: Optional prefix before traces or logs in each object filename.
+    - name: GCS_MARSHALER
+      displayName: Data Format
+      componentType: dropdown
+      initialValue: otlp_json
+      componentProps:
+        required: false
+        values:
+          - otlp_json
+          - otlp_proto
+        tooltip: OTLP JSON or protobuf objects. Defaults to otlp_json. The exporter also accepts the legacy otlp alias for protobuf.
+    - name: GCP_APPLICATION_CREDENTIALS
+      displayName: Application Credentials
+      componentType: textarea
+      secret: true
+      componentProps:
+        type: text
+        required: false
+        tooltip: Optional Google Application Default Credentials JSON, such as a Workload Identity Federation configuration or service account key. Omit when the gateway already has ADC through GKE Workload Identity.
