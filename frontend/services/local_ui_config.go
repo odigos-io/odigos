@@ -177,9 +177,6 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 		}
 		applyComponentLogLevelsInput(cfg.ComponentLogLevels, input.ComponentLogLevels)
 	}
-	if input.TraceCorrelations != nil {
-		applyTraceCorrelationsInput(cfg, input.TraceCorrelations)
-	}
 	if input.CardinalityControl != nil {
 		applyCardinalityControlInput(cfg, input.CardinalityControl)
 	}
@@ -240,33 +237,6 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 
 	if ltlInput.AutomaticRules.Enabled != nil {
 		ltl.AutomaticRules.Enabled = ltlInput.AutomaticRules.Enabled
-	}
-}
-
-func applyTraceCorrelationsInput(cfg *common.OdigosConfiguration, input *model.LocalUIConfigTraceCorrelationsInput) {
-	if input == nil || input.ServiceIo == nil {
-		return
-	}
-
-	if cfg.TraceCorrelations == nil {
-		cfg.TraceCorrelations = &common.TraceCorrelationsConfiguration{}
-	}
-	if cfg.TraceCorrelations.ServiceIO == nil {
-		cfg.TraceCorrelations.ServiceIO = &common.TraceCorrelationsServiceIOConfiguration{}
-	}
-
-	serviceIO := input.ServiceIo
-	if serviceIO.Enabled != nil {
-		cfg.TraceCorrelations.ServiceIO.Enabled = serviceIO.Enabled
-	}
-	if serviceIO.InputSpanAttributes != nil {
-		cfg.TraceCorrelations.ServiceIO.InputSpanAttributes = serviceIO.InputSpanAttributes
-	}
-	if serviceIO.OutputSpanAttributes != nil {
-		cfg.TraceCorrelations.ServiceIO.OutputSpanAttributes = serviceIO.OutputSpanAttributes
-	}
-	if serviceIO.MetricsFlushInterval != nil {
-		cfg.TraceCorrelations.ServiceIO.MetricsFlushInterval = *serviceIO.MetricsFlushInterval
 	}
 }
 

@@ -78,15 +78,13 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 	// GraphQL.
 	gqlSchema := graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
-			MetricsConsumer:             deps.OdigosMetrics,
-			Logger:                      deps.Logger,
-			PromAPI:                     deps.PromAPI,
-			CorrelationsPromAPI:         deps.CorrelationsPromAPI,
-			CorrelationsMetricsStoreURL: deps.CorrelationsMetricsStoreURL,
-			K8sCacheClient:              deps.K8sCacheClient,
-			InsightsClient:              deps.InsightsClient,
-			ProfileStore:                deps.ProfileStore,
-			DistrosProvider:             deps.DistrosProvider,
+			MetricsConsumer: deps.OdigosMetrics,
+			Logger:          deps.Logger,
+			PromAPI:         deps.PromAPI,
+			K8sCacheClient:  deps.K8sCacheClient,
+			InsightsClient:  deps.InsightsClient,
+			ProfileStore:    deps.ProfileStore,
+			DistrosProvider: deps.DistrosProvider,
 		},
 	})
 	gqlExecutor := executor.New(gqlSchema)

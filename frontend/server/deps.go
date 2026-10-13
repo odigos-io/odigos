@@ -26,7 +26,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/frontend/services/otlp"
 	"github.com/odigos-io/odigos/frontend/services/profiles"
-	"github.com/odigos-io/odigos/frontend/services/tracecorrelations"
 	"github.com/odigos-io/odigos/instrumentationrules"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/recommendations"
@@ -41,10 +40,8 @@ type Deps struct {
 	K8sCacheClient client.Client
 	K8sCache       cache.Cache
 
-	OdigosMetrics               *collectormetrics.OdigosMetricsConsumer
-	PromAPI                     v1.API
-	CorrelationsPromAPI         v1.API
-	CorrelationsMetricsStoreURL string
+	OdigosMetrics *collectormetrics.OdigosMetricsConsumer
+	PromAPI       v1.API
 	// InsightsClient is the client for the Odigos Insights service.
 	InsightsClient   *insights.Client
 	ProfileStore     *profiles.ProfileStore
@@ -134,14 +131,6 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		promAPI = api
 	}
 
-	var correlationsPromAPI v1.API
-	correlationsURL := tracecorrelations.MetricsStoreURL(flags.Namespace)
-	if api, err := metrics.NewAPIFromURL(correlationsURL); err != nil {
-		log.Warn("failed to initialize trace correlations VictoriaMetrics API", "url", correlationsURL, "err", err)
-	} else {
-		correlationsPromAPI = api
-	}
-
 	insightsClient, err := insights.NewClient(k8sconsts.InsightsHTTPEndpoint(flags.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("initializing insights client: %w", err)
@@ -157,20 +146,18 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 	}
 
 	return &Deps{
-		Flags:                       flags,
-		Logger:                      logger,
-		K8sCacheClient:              k8sCacheClient,
-		K8sCache:                    k8sCache,
-		OdigosMetrics:               odigosMetrics,
-		PromAPI:                     promAPI,
-		CorrelationsPromAPI:         correlationsPromAPI,
-		CorrelationsMetricsStoreURL: correlationsURL,
-		InsightsClient:              insightsClient,
-		ProfileStore:                profileStore,
-		ProfilingGate:               profilingGate,
-		ProfilesConsumer:            profilesConsumer,
-		OtlpReceiver:                otlpReceiver,
-		DistrosProvider:             distrosProvider,
+		Flags:            flags,
+		Logger:           logger,
+		K8sCacheClient:   k8sCacheClient,
+		K8sCache:         k8sCache,
+		OdigosMetrics:    odigosMetrics,
+		PromAPI:          promAPI,
+		InsightsClient:   insightsClient,
+		ProfileStore:     profileStore,
+		ProfilingGate:    profilingGate,
+		ProfilesConsumer: profilesConsumer,
+		OtlpReceiver:     otlpReceiver,
+		DistrosProvider:  distrosProvider,
 	}, nil
 }
 

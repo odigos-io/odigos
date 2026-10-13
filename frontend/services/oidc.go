@@ -2,10 +2,12 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -62,12 +64,73 @@ func GetOidcSecret(ctx context.Context) (string, error) {
 	return string(secret.Data[consts.OidcClientSecretProperty]), nil
 }
 
+// oidcSettingsUnavailable marks a failure to *read* the OIDC settings from the
+// cluster, as opposed to settings that were read and are incomplete. Every request
+// that reaches the OIDC middleware reads the effective-config ConfigMap and the
+// client secret, so these reads fail whenever the Kubernetes API is briefly
+// unavailable. Incomplete settings stay a hard failure.
+type oidcSettingsUnavailable struct{ err error }
+
+func (e oidcSettingsUnavailable) Error() string { return e.err.Error() }
+func (e oidcSettingsUnavailable) Unwrap() error { return e.err }
+
+// oidcSettings is the OIDC configuration as last read from the cluster, including
+// the "no oidc block, authentication is off" outcome.
+type oidcSettings struct {
+	uiRemoteUrl  string
+	tenantUrl    string
+	clientId     string
+	clientSecret string
+	configured   bool
+}
+
+var (
+	lastOidcSettingsMu sync.RWMutex
+	lastOidcSettings   *oidcSettings
+)
+
+// resolveOidcSettings reads the OIDC settings, falling back to the settings last
+// read successfully when the cluster cannot be reached. Authentication still fails
+// closed until the settings have been resolved at least once, so a UI that has
+// never read them does not serve requests anonymously.
+func resolveOidcSettings(ctx context.Context) (*oidcSettings, error) {
+	uiRemoteUrl, tenantUrl, clientId, clientSecret, configured, err := getOidcValuesFromConfig(ctx)
+	if err == nil {
+		settings := &oidcSettings{
+			uiRemoteUrl:  uiRemoteUrl,
+			tenantUrl:    tenantUrl,
+			clientId:     clientId,
+			clientSecret: clientSecret,
+			configured:   configured,
+		}
+		lastOidcSettingsMu.Lock()
+		lastOidcSettings = settings
+		lastOidcSettingsMu.Unlock()
+		return settings, nil
+	}
+
+	var unavailable oidcSettingsUnavailable
+	if !errors.As(err, &unavailable) {
+		return nil, err
+	}
+
+	lastOidcSettingsMu.RLock()
+	settings := lastOidcSettings
+	lastOidcSettingsMu.RUnlock()
+	if settings == nil {
+		return nil, err
+	}
+
+	log.Printf("OIDC: reusing the settings last read from the cluster, reading them failed: %v", err)
+	return settings, nil
+}
+
 // gets the OIDC configuration values from the odigos-configuration ConfigMap.
 // this runs on every request that reaches the OIDC middleware, so failures are
 // returned to the caller and must never terminate the process.
 func getOidcValuesFromConfig(ctx context.Context) (string, string, string, string, bool, error) {
 	if kube.DefaultClient == nil {
-		return "", "", "", "", false, fmt.Errorf("Kubernetes client is not ready")
+		return "", "", "", "", false, oidcSettingsUnavailable{fmt.Errorf("Kubernetes client is not ready")}
 	}
 	var odigosConfiguration common.OdigosConfiguration
 	odigosns := env.GetCurrentNamespace()
@@ -89,7 +152,7 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 		return e == nil, e
 	})
 	if err != nil {
-		return "", "", "", "", false, fmt.Errorf("error getting effective config CM: %w", err)
+		return "", "", "", "", false, oidcSettingsUnavailable{fmt.Errorf("error getting effective config CM: %w", err)}
 	}
 	configYAML, ok := configMap.Data[consts.OdigosConfigurationFileName]
 	if !ok || strings.TrimSpace(configYAML) == "" {
@@ -119,7 +182,13 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 	// An OIDC block enables authentication; missing credentials must not disable it.
 	oidcClientSecret, err := GetOidcSecret(ctx)
 	if err != nil {
-		return "", "", "", "", false, fmt.Errorf("error getting OIDC client secret: %w", err)
+		secretErr := fmt.Errorf("error getting OIDC client secret: %w", err)
+		// An absent secret means OIDC is configured but its credentials are not,
+		// which must keep failing closed rather than reusing earlier settings.
+		if apierrors.IsNotFound(err) {
+			return "", "", "", "", false, secretErr
+		}
+		return "", "", "", "", false, oidcSettingsUnavailable{secretErr}
 	}
 	if strings.TrimSpace(oidcClientSecret) == "" {
 		return "", "", "", "", false, fmt.Errorf("OIDC client secret is empty")
@@ -134,21 +203,21 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 }
 
 func getOidcProvider(ctx context.Context) (string, string, string, string, *oidc.Provider, error) {
-	uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, shouldProcessOidc, err := getOidcValuesFromConfig(ctx)
+	settings, err := resolveOidcSettings(ctx)
 	if err != nil {
 		return "", "", "", "", nil, err
 	}
-	if !shouldProcessOidc {
+	if !settings.configured {
 		return "", "", "", "", nil, nil
 	}
 
 	// Create a Provider through discovery
-	oidcProvider, err := oidc.NewProvider(ctx, oidcTenantUrl)
+	oidcProvider, err := oidc.NewProvider(ctx, settings.tenantUrl)
 	if err != nil {
 		return "", "", "", "", nil, fmt.Errorf("error initializing OIDC provider: %w", err)
 	}
 
-	return uiRemoteUrl, oidcTenantUrl, oidcClientId, oidcClientSecret, oidcProvider, nil
+	return settings.uiRemoteUrl, settings.tenantUrl, settings.clientId, settings.clientSecret, oidcProvider, nil
 }
 
 // GetOidcAuthConfig reads one configuration snapshot for the verifier and OAuth2 flow.

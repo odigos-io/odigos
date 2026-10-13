@@ -532,7 +532,6 @@ type EffectiveConfig struct {
 	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
 	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
 	CardinalityControl               *CardinalityControlConfig           `json:"cardinalityControl,omitempty"`
-	TraceCorrelations                *TraceCorrelationsConfig            `json:"traceCorrelations,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
@@ -2354,7 +2353,6 @@ type LocalUIConfigInput struct {
 	GoAutoOffsetsMode     *string                                  `json:"goAutoOffsetsMode,omitempty"`
 	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
 	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
-	TraceCorrelations     *LocalUIConfigTraceCorrelationsInput     `json:"traceCorrelations,omitempty"`
 	CardinalityControl    *LocalUIConfigCardinalityControlInput    `json:"cardinalityControl,omitempty"`
 }
 
@@ -2397,17 +2395,6 @@ type LocalUIConfigSpanSamplingAttributesInput struct {
 	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
 	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
 	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
-}
-
-type LocalUIConfigTraceCorrelationsInput struct {
-	ServiceIo *LocalUIConfigTraceCorrelationsServiceIOInput `json:"serviceIO,omitempty"`
-}
-
-type LocalUIConfigTraceCorrelationsServiceIOInput struct {
-	Enabled              *bool    `json:"enabled,omitempty"`
-	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
-	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
-	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
 }
 
 type LocalUIConfigURLTemplatizationCardinalityControlInput struct {
@@ -2969,48 +2956,6 @@ type TestConnectionResponse struct {
 	DestinationType *string `json:"destinationType,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Reason          *string `json:"reason,omitempty"`
-}
-
-type TraceCorrelations struct {
-	Workloads []*TraceCorrelationsWorkload `json:"workloads"`
-}
-
-type TraceCorrelationsConfig struct {
-	ServiceIo *TraceCorrelationsServiceIOConfig `json:"serviceIO,omitempty"`
-}
-
-type TraceCorrelationsInputGroup struct {
-	Attributes []*NonIdentifyingAttribute       `json:"attributes"`
-	Outputs    []*TraceCorrelationsOutputSeries `json:"outputs"`
-}
-
-type TraceCorrelationsOutputSeries struct {
-	Attributes      []*NonIdentifyingAttribute `json:"attributes"`
-	ConnectionCount int                        `json:"connectionCount"`
-	FirstDetectedAt string                     `json:"firstDetectedAt"`
-}
-
-type TraceCorrelationsServiceIOConfig struct {
-	Enabled              *bool    `json:"enabled,omitempty"`
-	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
-	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
-	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
-}
-
-type TraceCorrelationsTimeRangeInput struct {
-	Start string `json:"start"`
-	End   string `json:"end"`
-}
-
-type TraceCorrelationsWorkload struct {
-	Namespace             string                         `json:"namespace"`
-	Kind                  K8sResourceKind                `json:"kind"`
-	Name                  string                         `json:"name"`
-	ContainerName         string                         `json:"containerName"`
-	TelemetrySdkLanguage  *string                        `json:"telemetrySdkLanguage,omitempty"`
-	ProcessRuntimeName    *string                        `json:"processRuntimeName,omitempty"`
-	ProcessRuntimeVersion *string                        `json:"processRuntimeVersion,omitempty"`
-	Inputs                []*TraceCorrelationsInputGroup `json:"inputs"`
 }
 
 type URLTemplatizationRule struct {
