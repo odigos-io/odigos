@@ -52,6 +52,9 @@ type Deps struct {
 	// sets the community one; out-of-tree mains replace it before BuildRouter
 	// so the UI reports the same distros their instrumentor injects.
 	DistrosProvider *distros.Provider
+	// UrlTemplatization resolves K8sWorkload.urlTemplatization. Nil in OSS;
+	// enterprise UI sets this after Bootstrap before BuildRouter.
+	UrlTemplatization services.WorkloadUrlTemplatizationFunc
 }
 
 // Bootstrap performs the synchronous startup work: load embedded destination

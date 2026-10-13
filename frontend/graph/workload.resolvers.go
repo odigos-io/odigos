@@ -792,7 +792,10 @@ func (r *k8sWorkloadResolver) URLTemplatization(ctx context.Context, obj *model.
 	if obj == nil || obj.ID == nil {
 		return nil, fmt.Errorf("workload id is required")
 	}
-	return services.GetWorkloadUrlTemplatization(ctx, obj.ID.Namespace, string(obj.ID.Kind), obj.ID.Name)
+	if r.UrlTemplatization == nil {
+		return services.EmptyWorkloadUrlTemplatization(), nil
+	}
+	return r.UrlTemplatization(ctx, obj.ID.Namespace, string(obj.ID.Kind), obj.ID.Name)
 }
 
 // Processes is the resolver for the processes field.
