@@ -133,6 +133,37 @@ func TestCalculateBadNumericDestinationDataDoesNotAbortTheGatewayConfig(t *testi
 	assert.Contains(t, cfg.Service.Pipelines, "traces/jaeger-healthy-jaeger")
 }
 
+// The signals a destination selects decide what the gateway advertises back to the agents, so a
+// destination that drops its own signal takes the whole cluster's telemetry for that signal with
+// it: no root pipeline, and the agents are told the gateway does not receive it.
+func TestCalculateSignalFxTracesDestinationEnablesTheTracesPipeline(t *testing.T) {
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace: "odigos-system",
+	}
+
+	signalfx := rawDataDestination{
+		ID:      "signalfx-traces",
+		Type:    common.SignalFxDestinationType,
+		Data:    map[string]string{"SIGNALFX_REALM": "eu0"},
+		Signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
+	}
+
+	cfg, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{signalfx},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	assert.NoError(t, statuses.Destination["signalfx-traces"])
+
+	assert.Equal(t, []common.ObservabilitySignal{common.TracesObservabilitySignal}, signals)
+	assert.Contains(t, cfg.Service.Pipelines, pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal))
+	assert.NotContains(t, cfg.Service.Pipelines, pipelinegen.GetTelemetryRootPipelineName(common.MetricsObservabilitySignal))
+	assert.Contains(t, cfg.Service.Pipelines, "traces/signalfx-signalfx-traces")
+}
+
 func openTestData(t *testing.T, path string) string {
 	want, err := os.ReadFile(path)
 	if err != nil {
