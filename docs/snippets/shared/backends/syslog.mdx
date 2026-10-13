@@ -1,0 +1,155 @@
+---
+title: 'Generic Syslog'
+description: 'Configuring the Generic Syslog backend (Self-Hosted)'
+sidebarTitle: 'Generic Syslog'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/syslog.svg" alt="syslog" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+Generic Syslog sends **logs only** to your own Syslog receiver. No cloud account or API key is required. Enable the matching RFC5424 or RFC3164 TCP input on your receiver and configure its parser and durable storage before adding the destination.
+
+TLS is enabled by default, with certificate-chain and hostname verification. Use a trusted server certificate or provide its PEM CA. For mutual TLS, configure the receiver to require a client certificate and provide a client certificate and private key in Odigos; both are stored in a destination-scoped Secret. UDP requires TLS to be disabled and is best-effort. Basic authentication, API tokens, and compression are unsupported by the bundled exporter.
+
+**Wire format and mappings**
+
+- The body becomes the Syslog message. Map and array bodies are serialized as JSON; other non-string bodies use their string representation. CR/LF characters become literal `\r`/`\n` sequences so multiline bodies remain one message.
+- `host.name` maps to hostname, falling back to `k8s.pod.name`, then `service.instance.id`, then `-`. `service.name` maps to app name and `process.pid` to process ID. Header fields are sanitized to printable ASCII without spaces and limited to RFC5424 field sizes (255/48/128 bytes).
+- The original log timestamp is used, falling back to observed timestamp, then collector time. RFC3164 drops year, timezone, and subsecond precision.
+- Priority uses the configured facility (default `local0`) and severity number: TRACE/DEBUG → debug, unspecified/INFO → info, WARN → warning, ERROR → error, FATAL → critical.
+- RFC5424 version is 1; message ID and structured data are `-`. Additional resource/log attributes, trace/span IDs, and pre-existing Syslog header/structured-data attributes are not exported. Vendor destinations can reuse the same mapping helper.
+- Auto framing uses RFC6587 octet counting for TCP/RFC5424 and newline framing for RFC3164. UDP sends one message per datagram. RFC3164 cannot use octet counting with the bundled exporter.
+
+**Size and delivery limits**
+
+The body is truncated at a valid UTF-8 boundary after escaping. RFC5424 defaults to 8,192 body bytes (configurable up to 64,000); RFC3164 permits at most 480 body bytes, keeping complete messages below 1,024 bytes with bounded headers. Configure the receiver's maximum message length to allow **the body plus headers and framing**. Empty bodies can be dropped by downstream parsers; configure them to accept empty messages if needed.
+
+The bounded in-memory queue holds 1,000 requests with one consumer. TCP connection/write failures retry for up to five minutes. The queue does not survive collector restarts. Syslog has no application-level acknowledgement: successful TCP writes, TLS handshakes, and UDP sends do not prove acceptance or durable indexing. Parser rejection and partial indexing failures cannot be reported to the exporter. Retries can duplicate messages when a connection fails after a partial write. Verify indexed logs in your receiver's query UI.
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **SYSLOG_ENDPOINT** `string` : Syslog Host. Hostname or IP address only; configure the port separately.
+  - This field is required
+  - Example: `syslog.example.com`
+- **SYSLOG_PORT** `number` : Port. Defaults to 6514 for TLS and 514 for plaintext TCP/UDP.
+  - This field is optional
+- **SYSLOG_NETWORK** `string` : Transport. UDP is unencrypted and has no delivery guarantee. Disable TLS to use UDP.
+  - This field is required and defaults to `tcp`
+- **SYSLOG_PROTOCOL** `string` : Syslog Format.
+  - This field is required and defaults to `rfc5424`
+- **SYSLOG_OCTET_COUNTING** `string` : RFC6587 Octet Counting. Auto enables octet counting for TCP/RFC5424 and newline framing otherwise. True requires TCP/RFC5424.
+  - This field is optional and defaults to `auto`
+- **SYSLOG_FACILITY** `number` : Facility. Syslog facility number from 0 to 23; default 16 (local0).
+  - This field is optional and defaults to `16`
+- **SYSLOG_MAX_MESSAGE_BYTES** `number` : Maximum Message Bytes. UTF-8 safe body truncation. RFC5424 defaults to 8192 (maximum 64000); RFC3164 defaults to and permits at most 480. Header bytes are additional.
+  - This field is optional
+- **SYSLOG_TLS_ENABLED** `boolean` : Enable TLS. Enabled by default. Requires TCP. Server certificate and hostname are verified.
+  - This field is optional and defaults to `True`
+- **SYSLOG_CA_PEM** `string` : CA Certificate. PEM CA for server verification; empty uses system roots.
+  - This field is optional
+- **SYSLOG_MTLS_ENABLED** `boolean` : Enable Mutual TLS. Authenticate with a client certificate. Requires TCP and enables TLS.
+  - This field is optional and defaults to `False`
+- **SYSLOG_CLIENT_CERT_PEM** `string` : Client Certificate. PEM client credential stored in a destination-scoped Secret.
+  - This field is required
+- **SYSLOG_CLIENT_KEY_PEM** `string` : Client Private Key. PEM client credential stored in a destination-scoped Secret.
+  - This field is required
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Generic Syslog` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `syslog.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: syslog-example
+      namespace: odigos-system
+    spec:
+      data:
+        SYSLOG_ENDPOINT: <Syslog Host>
+        SYSLOG_NETWORK: '<Transport (default: tcp) (options: [tcp, udp])>'
+        SYSLOG_PROTOCOL: '<Syslog Format (default: rfc5424) (options: [rfc5424, rfc3164])>'
+        # Note: The commented fields below are optional.
+        # SYSLOG_PORT: <Port>
+        # SYSLOG_OCTET_COUNTING: <RFC6587 Octet Counting (default: auto) (options: [auto, true, false])>
+        # SYSLOG_FACILITY: <Facility (default: 16)>
+        # SYSLOG_MAX_MESSAGE_BYTES: <Maximum Message Bytes>
+        # SYSLOG_TLS_ENABLED: <Enable TLS (default: True)>
+        # SYSLOG_CA_PEM: <CA Certificate>
+        # SYSLOG_MTLS_ENABLED: <Enable Mutual TLS>
+      destinationName: syslog
+      secretRef:
+        name: syslog-secret
+      signals:
+      - LOGS
+      type: syslog
+
+    ---
+
+    apiVersion: v1
+    data:
+      SYSLOG_CLIENT_CERT_PEM: <Base64 Client Certificate>
+      SYSLOG_CLIENT_KEY_PEM: <Base64 Client Private Key>
+    kind: Secret
+    metadata:
+      name: syslog-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f syslog.yaml
+    ```
+  </Step>
+</Steps>
