@@ -1,7 +1,7 @@
 {{- if and (include "odigos.vllmEnabled" .) (include "odigos.secretExists" .) }}
-{{- $imageTag := .Values.interrogation.vllm.image.tag | default .Values.image.tag | default .Chart.AppVersion }}
-{{- $modelPath := .Values.interrogation.vllm.modelPath | default "/models/interrogation" }}
-{{- $servedModelName := .Values.interrogation.vllm.servedModelName | default "interrogation" }}
+{{- $imageTag := .Values.insights.interrogation.vllm.image.tag | default .Values.image.tag | default .Chart.AppVersion }}
+{{- $modelPath := .Values.insights.interrogation.vllm.modelPath | default "/models/interrogation" }}
+{{- $servedModelName := .Values.insights.interrogation.vllm.servedModelName | default "interrogation" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,24 +21,24 @@ spec:
         app.kubernetes.io/name: odigos-vllm
     spec:
       {{- /* Do not inherit the global chart nodeSelector. Pin with
-           interrogation.vllm.nodeSelector when needed (prefer -f / --set-json
+           insights.interrogation.vllm.nodeSelector when needed (prefer -f / --set-json
            for dotted label keys). */}}
-      {{- with .Values.interrogation.vllm.nodeSelector }}
+      {{- with .Values.insights.interrogation.vllm.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.interrogation.vllm.priorityClassName }}
-      priorityClassName: {{ .Values.interrogation.vllm.priorityClassName }}
+      {{- if .Values.insights.interrogation.vllm.priorityClassName }}
+      priorityClassName: {{ .Values.insights.interrogation.vllm.priorityClassName }}
       {{- end }}
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: vllm
-          {{- if .Values.interrogation.vllm.image.repository }}
-          image: "{{ .Values.interrogation.vllm.image.repository }}:{{ $imageTag }}"
+          {{- if .Values.insights.interrogation.vllm.image.repository }}
+          image: "{{ .Values.insights.interrogation.vllm.image.repository }}:{{ $imageTag }}"
           {{- else }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-vllm" "Tag" $imageTag) }}
           {{- end }}
-          imagePullPolicy: {{ .Values.interrogation.vllm.image.pullPolicy | default "IfNotPresent" }}
+          imagePullPolicy: {{ .Values.insights.interrogation.vllm.image.pullPolicy | default "IfNotPresent" }}
           args:
             - --model
             - {{ $modelPath | quote }}
@@ -49,9 +49,9 @@ spec:
             - --port
             - "8000"
             - --max-model-len
-            - {{ .Values.interrogation.vllm.maxModelLen | default 8192 | quote }}
+            - {{ .Values.insights.interrogation.vllm.maxModelLen | default 8192 | quote }}
             - --gpu-memory-utilization
-            - {{ .Values.interrogation.vllm.gpuMemoryUtilization | default "0.90" | quote }}
+            - {{ .Values.insights.interrogation.vllm.gpuMemoryUtilization | default "0.90" | quote }}
             - --dtype
             - auto
           ports:
@@ -79,11 +79,11 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 5
           resources:
-            {{- toYaml .Values.interrogation.vllm.resources | nindent 12 }}
-      {{- with .Values.interrogation.vllm.tolerations }}
+            {{- toYaml .Values.insights.interrogation.vllm.resources | nindent 12 }}
+      {{- with .Values.insights.interrogation.vllm.tolerations }}
       tolerations: {{ toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.interrogation.vllm.affinity }}
+      {{- with .Values.insights.interrogation.vllm.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
       volumes:
