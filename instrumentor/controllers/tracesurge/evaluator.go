@@ -36,7 +36,7 @@ import (
 const (
 	// missing metrics never count as recovery, but end an active surge after this long.
 	staleAfter = 10 * time.Minute
-	// the most ended surges a Sampling status keeps; older ones are dropped.
+	// the most ended surges a Sampling status keeps while odigos insights is unreachable.
 	maxEndedInStatus = 20
 	// the most Limited surges a Sampling status keeps, the newest. A failing dependency can make
 	// every service that calls it surge at once; the others are kept in memory only.
@@ -48,6 +48,10 @@ const (
 	// events of a surge, and this many targets of an ended one.
 	compactTimeline = 3
 	compactTargets  = 10
+	// back-off after a failed put to odigos insights, so an outage doesn't slow every evaluation.
+	archiveRetryAfter = 30 * time.Second
+	// the most each evaluation spends moving ended surges to odigos insights.
+	archiveBudget   = 2 * time.Second
 	maxTimeline     = 30
 	maxTriggerTrail = 30
 	// the most bytes of an event's description and of an observed operation's name.
@@ -67,8 +71,10 @@ type Evaluator struct {
 	// services whose metric is above the threshold of a rule, without an active surge yet.
 	breaches map[surgeKey]*breach
 	// surges already logged as having no workload to raise.
-	noTargets    map[surgeKey]bool
-	lastQueryErr string
+	noTargets      map[surgeKey]bool
+	lastQueryErr   string
+	lastArchiveErr string
+	archiveRetryAt time.Time
 	// the open surges (limited or active) of the current evaluation.
 	active map[surgeKey]*odigosv1.TraceSurge
 	limits limits
@@ -85,6 +91,7 @@ type Evaluator struct {
 	// the bytes of the surges each Sampling status must keep in the current evaluation: the
 	// active ones, including those it restores.
 	requiredBytes map[string]int
+	archive       archiver
 }
 
 // samplingState is a Sampling and its surges during one evaluation; flush writes the dirty ones.
@@ -130,7 +137,7 @@ func (e *Evaluator) NeedLeaderElection() bool {
 }
 
 func (e *Evaluator) Start(ctx context.Context) error {
-	e.init(env.GetCurrentNamespace(), newInsightsMetrics(env.GetCurrentNamespace()))
+	e.init(env.GetCurrentNamespace(), newInsightsMetrics(env.GetCurrentNamespace()), newInsightsArchive(env.GetCurrentNamespace()))
 
 	timer := time.NewTimer(0)
 	defer timer.Stop()
@@ -159,9 +166,10 @@ func (e *Evaluator) evaluateSafely(ctx context.Context, now time.Time) {
 	}
 }
 
-func (e *Evaluator) init(namespace string, metrics metricsReader) {
+func (e *Evaluator) init(namespace string, metrics metricsReader, archive archiver) {
 	e.namespace = namespace
 	e.metrics = metrics
+	e.archive = archive
 	e.breaches = map[surgeKey]*breach{}
 	e.noTargets = map[surgeKey]bool{}
 	e.window, e.interval = common.TraceSurgeTiming(nil)
@@ -263,8 +271,11 @@ func (e *Evaluator) evaluate(ctx context.Context, now time.Time) error {
 		e.releaseHolds(ctx, now, rules, nil)
 	}
 
-	e.pruneEnded()
+	// sampling is restored before ended surges move to odigos insights, however long that takes.
 	e.flush(ctx)
+	if e.archiveEnded(ctx, now) {
+		e.flush(ctx)
+	}
 	return nil
 }
 
@@ -659,17 +670,43 @@ func (e *Evaluator) updateStatus(_ context.Context, surge *odigosv1.TraceSurge) 
 	}
 }
 
-// pruneEnded keeps the newest maxEndedInStatus surges that are over in the Sampling status, and
-// drops the older ones. A surge that ended at the maximum duration stays until its service
-// recovers, since it holds the service back.
-func (e *Evaluator) pruneEnded() {
+// archiveEnded moves the surges that are over from the Sampling status to odigos insights, for at
+// most archiveBudget, and reports whether it removed any surge. A surge that ended at the maximum
+// duration stays while it holds its service back.
+func (e *Evaluator) archiveEnded(ctx context.Context, now time.Time) bool {
+	ctx, cancel := context.WithTimeout(ctx, archiveBudget)
+	defer cancel()
+	archiving := !now.Before(e.archiveRetryAt)
+	moved, dropped := 0, false
 	for _, state := range e.samplings {
+		kept := state.surges[:0]
 		var ended []*odigosv1.TraceSurge
 		for _, surge := range state.surges {
+			over := surge.Status.Phase == odigosv1.TraceSurgePhaseRestored && surge.Status.RestoredAt != nil && !e.holdsBack(surge)
+			if over && archiving && ctx.Err() == nil {
+				err := e.archive.put(ctx, surge)
+				if err == nil {
+					moved++
+					state.dirty = true
+					continue
+				}
+				archiving = false
+				// out of time after moving some: the others move in the next evaluation.
+				if ctx.Err() == nil || moved == 0 {
+					e.archiveRetryAt = now.Add(archiveRetryAfter)
+					if err.Error() != e.lastArchiveErr {
+						e.Logger.Error(err, "failed to move ended trace surges to odigos insights; they wait in the Sampling status", "surge", surge.Name)
+						e.lastArchiveErr = err.Error()
+					}
+				}
+			}
+			kept = append(kept, surge)
 			if surge.Status.Phase == odigosv1.TraceSurgePhaseRestored {
 				ended = append(ended, surge)
 			}
 		}
+		state.surges = kept
+		// insights is down: keep the newest ended surges, and the ones that hold a service back.
 		if len(ended) > maxEndedInStatus {
 			slices.SortFunc(ended, func(a, b *odigosv1.TraceSurge) int { return b.StartedAt.Compare(a.StartedAt.Time) })
 			drop := map[*odigosv1.TraceSurge]bool{}
@@ -680,8 +717,10 @@ func (e *Evaluator) pruneEnded() {
 			}
 			state.surges = slices.DeleteFunc(state.surges, func(surge *odigosv1.TraceSurge) bool { return drop[surge] })
 			state.dirty = state.dirty || len(drop) > 0
+			dropped = dropped || len(drop) > 0
 		}
 	}
+	return moved > 0 || dropped
 }
 
 // flush writes the status of each Sampling whose surges changed, with the surges it has room for

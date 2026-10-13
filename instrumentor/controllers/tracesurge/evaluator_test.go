@@ -146,12 +146,43 @@ func setup(t *testing.T) (*Evaluator, client.Client, *fakeMetrics, string) {
 		callers: map[string][]string{"shop/payments": {"shop/frontend"}},
 	}
 	e := &Evaluator{Client: c, Logger: logr.Discard()}
-	e.init(ns, metricsAdapter{m})
+	archive := &fakeArchive{surges: map[string]odigosv1.TraceSurge{}}
+	archives[t.Name()] = archive
+	e.init(ns, metricsAdapter{m}, archive)
 	return e, c, m, ruleID
+}
+
+// fakeArchive keeps the surges the evaluator moves out of the Sampling status.
+type fakeArchive struct {
+	surges map[string]odigosv1.TraceSurge
+	err    error
+	puts   int
+	// how long each put takes.
+	delay time.Duration
+	// called on each put, before it.
+	onPut func(surge *odigosv1.TraceSurge)
+}
+
+func (a *fakeArchive) put(ctx context.Context, surge *odigosv1.TraceSurge) error {
+	a.puts++
+	if a.onPut != nil {
+		a.onPut(surge)
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(a.delay):
+	}
+	if a.err != nil {
+		return a.err
+	}
+	a.surges[surge.Name] = *surge.DeepCopy()
+	return nil
 }
 
 var (
 	// by test name: the fake client with interceptors cannot be a map key.
+	archives     = map[string]*fakeArchive{}
 	statusWrites = map[string]*int{}
 	// fails the status patches it returns an error for.
 	patchChecks = map[string]func(patch []byte) error{}
@@ -165,10 +196,15 @@ func openSurges(t *testing.T, c client.Client) []odigosv1.TraceSurge {
 	return sampling.Status.TraceSurges
 }
 
-// surges returns every surge in the Sampling status, oldest first.
+// surges returns every surge recorded, in the Sampling status or moved to the archive, oldest first.
 func surges(t *testing.T, c client.Client) []odigosv1.TraceSurge {
 	t.Helper()
 	all := openSurges(t, c)
+	for name, surge := range archives[t.Name()].surges {
+		if !slices.ContainsFunc(all, func(s odigosv1.TraceSurge) bool { return s.Name == name }) {
+			all = append(all, surge)
+		}
+	}
 	slices.SortFunc(all, func(a, b odigosv1.TraceSurge) int {
 		if c := a.StartedAt.Compare(b.StartedAt.Time); c != 0 {
 			return c
@@ -411,7 +447,7 @@ func TestMaxDurationEndsSurgeAndWaitsForRecovery(t *testing.T) {
 
 	// a restarted evaluator keeps waiting for the recovery too.
 	restarted := &Evaluator{Client: c, Logger: e.Logger}
-	restarted.init(ns, e.metrics)
+	restarted.init(ns, e.metrics, e.archive)
 	require.NoError(t, restarted.evaluate(ctx, t0.Add(410*time.Second)))
 	require.NoError(t, restarted.evaluate(ctx, t0.Add(450*time.Second)))
 	assert.Len(t, surges(t, c), 1)
@@ -424,7 +460,7 @@ func TestMaxDurationEndsSurgeAndWaitsForRecovery(t *testing.T) {
 
 	// an evaluator restarted after the recovery does not hold the service back again.
 	again := &Evaluator{Client: c, Logger: e.Logger}
-	again.init(ns, e.metrics)
+	again.init(ns, e.metrics, e.archive)
 	m.paymentsErrorRate(50)
 	require.NoError(t, again.evaluate(ctx, t0.Add(470*time.Second)))
 	require.NoError(t, again.evaluate(ctx, t0.Add(500*time.Second)))
@@ -647,6 +683,69 @@ func raised(surges []odigosv1.TraceSurge, pw k8sconsts.PodWorkload) bool {
 	return false
 }
 
+func TestEndedSurgesMoveToInsights(t *testing.T) {
+	ctx := context.Background()
+	e, c, m, _ := setup(t)
+	archive := archives[t.Name()]
+	t0 := time.Unix(1_800_000_000, 0)
+	tick := func(at time.Duration) {
+		t.Helper()
+		require.NoError(t, e.evaluate(ctx, t0.Add(at)))
+	}
+
+	m.paymentsErrorRate(50)
+	tick(0)
+	tick(30 * time.Second)
+	require.Len(t, openSurges(t, c), 1)
+	name := openSurges(t, c)[0].Name
+
+	m.paymentsErrorRate(0)
+	for at := 40 * time.Second; at <= 140*time.Second; at += 10 * time.Second {
+		tick(at)
+	}
+
+	// insights is down when the surge ends: it waits in the status.
+	archive.err = errors.New("insights unavailable")
+	tick(150 * time.Second)
+	require.Len(t, openSurges(t, c), 1)
+	assert.Equal(t, odigosv1.TraceSurgePhaseRestored, openSurges(t, c)[0].Status.Phase)
+	assert.Equal(t, 1, archive.puts)
+
+	archive.err = nil
+	tick(160 * time.Second)
+	assert.Len(t, openSurges(t, c), 1, "no put until the retry time, so insights being down doesn't slow each evaluation")
+	assert.Equal(t, 1, archive.puts)
+	tick(185 * time.Second)
+	assert.Empty(t, openSurges(t, c), "it moved to insights")
+	require.Contains(t, archive.surges, name)
+	assert.Equal(t, odigosv1.TraceSurgePhaseRestored, archive.surges[name].Status.Phase)
+	assert.Equal(t, "Sampling restored to 1%", archive.surges[name].Status.Timeline[len(archive.surges[name].Status.Timeline)-1].Title)
+}
+func TestMaxDurationSurgeStaysUntilItsServiceRecovers(t *testing.T) {
+	ctx := context.Background()
+	e, c, m, _ := setup(t)
+	withLimits(t, c, "    maxDuration: 2m\n")
+	t0 := time.Unix(1_800_000_000, 0)
+	tick := func(at time.Duration) {
+		t.Helper()
+		require.NoError(t, e.evaluate(ctx, t0.Add(at)))
+	}
+
+	m.paymentsErrorRate(50)
+	tick(0)
+	tick(30 * time.Second)
+	tick(150 * time.Second)
+	require.Equal(t, odigosv1.TraceSurgePhaseRestored, openSurges(t, c)[0].Status.Phase)
+	tick(30 * time.Minute)
+	assert.Len(t, openSurges(t, c), 1, "it holds the service back, long after it ended")
+	assert.Empty(t, archives[t.Name()].surges)
+
+	m.paymentsErrorRate(1)
+	tick(31 * time.Minute)
+	assert.Empty(t, openSurges(t, c), "the service recovered: it moved to insights")
+	assert.Len(t, archives[t.Name()].surges, 1)
+}
+
 func TestOldEndedSurgesAreDroppedFromTheStatus(t *testing.T) {
 	ctx := context.Background()
 	e, c, m, ruleID := setup(t)
@@ -678,6 +777,8 @@ func TestOldEndedSurgesAreDroppedFromTheStatus(t *testing.T) {
 	}
 	require.NoError(t, c.Status().Update(ctx, sampling))
 	m.services[frontend] = &serviceMetrics{namespace: "shop", serviceName: "frontend", redMetrics: redMetrics{calls: 2000, errors: 1000, p95Ms: 12}}
+	// insights is down: the status falls back to keeping the newest ended surges.
+	archives[t.Name()].err = errors.New("insights unavailable")
 
 	require.NoError(t, e.evaluate(ctx, t0))
 	kept := names()
@@ -748,6 +849,7 @@ func TestHoldIsReleasedWhenNothingCanRaiseTheService(t *testing.T) {
 			ended := surges(t, c)[0]
 			assert.False(t, e.holdsBack(&ended))
 			assert.Equal(t, "No longer held back", ended.Status.Timeline[len(ended.Status.Timeline)-1].Title)
+			assert.Empty(t, openSurges(t, c), "it moved to insights")
 		})
 	}
 }
@@ -1029,6 +1131,8 @@ func TestHoldReleaseSurvivesARestart(t *testing.T) {
 	sampling := &odigosv1.Sampling{}
 	require.NoError(t, c.Get(ctx, client.ObjectKey{Namespace: ns, Name: "default"}, sampling))
 	settings := sampling.Spec.NoisyOperations[0].Surge
+	// insights is down: the surge that held payments back stays in the status.
+	archives[t.Name()].err = errors.New("insights unavailable")
 
 	m.paymentsErrorRate(50)
 	require.NoError(t, e.evaluate(ctx, t0))
@@ -1041,7 +1145,7 @@ func TestHoldReleaseSurvivesARestart(t *testing.T) {
 	// the rule is back, and a restarted evaluator does not hold the still spiking service back again.
 	setSurge(settings)
 	restarted := &Evaluator{Client: c, Logger: e.Logger}
-	restarted.init(ns, e.metrics)
+	restarted.init(ns, e.metrics, e.archive)
 	require.NoError(t, restarted.evaluate(ctx, t0.Add(170*time.Second)))
 	require.NoError(t, restarted.evaluate(ctx, t0.Add(200*time.Second)))
 	all := surges(t, c)
@@ -1156,6 +1260,7 @@ func TestCompactStatusIsWrittenWhenTheFullOneIsRejected(t *testing.T) {
 		return nil
 	}
 	withLimits(t, c, "    maxActiveSurges: 0\n")
+	archives[t.Name()].err = errors.New("insights unavailable")
 	require.NoError(t, e.evaluate(ctx, t0.Add(40*time.Second)))
 	surge := openSurges(t, c)[0]
 	assert.Equal(t, odigosv1.TraceSurgePhaseRestored, surge.Status.Phase)
@@ -1169,4 +1274,50 @@ func TestTraceSurgeLimitsAreClamped(t *testing.T) {
 	l := limitsFrom(&common.SamplingConfiguration{TraceSurge: &common.TraceSurgeConfiguration{MaxActiveSurges: &huge, MaxBoostedWorkloads: &huge}})
 	assert.Equal(t, maxMaxActiveSurges, l.maxActive)
 	assert.Equal(t, maxMaxBoostedWorkloads, l.maxBoosted)
+}
+
+func TestRestorationIsWrittenBeforeArchiving(t *testing.T) {
+	ctx := context.Background()
+	e, c, m, _ := setup(t)
+	t0 := time.Unix(1_800_000_000, 0)
+	m.paymentsErrorRate(50)
+	require.NoError(t, e.evaluate(ctx, t0))
+	require.NoError(t, e.evaluate(ctx, t0.Add(30*time.Second)))
+
+	var phaseWhenArchived odigosv1.TraceSurgePhase
+	archives[t.Name()].onPut = func(*odigosv1.TraceSurge) { phaseWhenArchived = openSurges(t, c)[0].Status.Phase }
+	withLimits(t, c, "    maxActiveSurges: 0\n")
+	writes := *statusWrites[t.Name()]
+	require.NoError(t, e.evaluate(ctx, t0.Add(40*time.Second)))
+	assert.Equal(t, odigosv1.TraceSurgePhaseRestored, phaseWhenArchived, "the agents' sampling is restored first")
+	assert.Empty(t, openSurges(t, c), "then it moved to insights")
+	assert.Equal(t, writes+2, *statusWrites[t.Name()], "the restoration, then the move")
+}
+
+func TestArchivingTakesAtMostItsBudget(t *testing.T) {
+	ctx := context.Background()
+	e, c, _, ruleID := setup(t)
+	archive := archives[t.Name()]
+	t0 := time.Unix(1_800_000_000, 0)
+	sampling := &odigosv1.Sampling{}
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Namespace: ns, Name: "default"}, sampling))
+	restored := metav1.NewTime(t0)
+	for i := range 10 {
+		sampling.Status.TraceSurges = append(sampling.Status.TraceSurges, odigosv1.TraceSurge{Name: fmt.Sprintf("ended-%d", i), StartedAt: restored,
+			Spec:   odigosv1.TraceSurgeSpec{SamplingName: "default", RuleID: ruleID, Service: payments},
+			Status: odigosv1.TraceSurgeStatus{Phase: odigosv1.TraceSurgePhaseRestored, RestoredAt: &restored}})
+	}
+	require.NoError(t, c.Status().Update(ctx, sampling))
+	// the fourth put would end past the budget.
+	archive.delay = archiveBudget * 3 / 10
+
+	began := time.Now()
+	require.NoError(t, e.evaluate(ctx, t0.Add(10*time.Second)))
+	assert.Less(t, time.Since(began), archiveBudget+time.Second)
+	moved := len(archive.surges)
+	assert.Equal(t, 3, moved, "a put cut short by the budget does not count")
+	assert.Len(t, openSurges(t, c), 10-moved)
+
+	require.NoError(t, e.evaluate(ctx, t0.Add(20*time.Second)))
+	assert.Len(t, archive.surges, 2*moved, "out of time is not a failure: no back-off")
 }
