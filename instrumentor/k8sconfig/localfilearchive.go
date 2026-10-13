@@ -20,7 +20,9 @@ func (f *LocalFileArchive) DestType() common.DestinationType {
 	return common.LocalFileArchiveDestinationType
 }
 
-func (f *LocalFileArchive) ModifyGatewayCollectorDeployment(ctx context.Context, c client.Client, dest K8sExporterConfigurer, deployment *appsv1.Deployment) error {
+func (f *LocalFileArchive) ModifyGatewayCollectorDeployment(
+	ctx context.Context, c client.Client, dest K8sExporterConfigurer, deployment *appsv1.Deployment,
+) error {
 	directory, err := config.LocalFileArchiveDirectory(dest.GetConfig())
 	if err != nil {
 		return err
@@ -53,7 +55,8 @@ func (f *LocalFileArchive) ModifyGatewayCollectorDeployment(ctx context.Context,
 		for _, mount := range container.VolumeMounts {
 			if mount.MountPath == directory && !mount.ReadOnly {
 				for _, volume := range deployment.Spec.Template.Spec.Volumes {
-					if volume.Name == mount.Name && volume.PersistentVolumeClaim != nil && volume.PersistentVolumeClaim.ClaimName == claim && !volume.PersistentVolumeClaim.ReadOnly {
+					if volume.Name == mount.Name && volume.PersistentVolumeClaim != nil &&
+						volume.PersistentVolumeClaim.ClaimName == claim && !volume.PersistentVolumeClaim.ReadOnly {
 						return nil
 					}
 				}
