@@ -15,7 +15,8 @@ type LiveTrafficLearningRecommendedSegment {
   templateName: String!
   # True for concrete path literals; false for dynamic * / {name} segments.
   static: Boolean!
-  certainty: String!
+  # Confidence in this segment: 0 (uncertain) to 1 (most certain).
+  certainty: Float!
   examples: [String!]!
 }
 

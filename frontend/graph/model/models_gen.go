@@ -2336,7 +2336,7 @@ type LiveTrafficLearningRecommendedRule struct {
 type LiveTrafficLearningRecommendedSegment struct {
 	TemplateName string   `json:"templateName"`
 	Static       bool     `json:"static"`
-	Certainty    string   `json:"certainty"`
+	Certainty    float64  `json:"certainty"`
 	Examples     []string `json:"examples"`
 }
 
