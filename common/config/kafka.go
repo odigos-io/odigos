@@ -44,11 +44,13 @@ func (m *Kafka) DestType() common.DestinationType {
 	return common.KafkaDestinationType
 }
 
-//nolint:funlen,gocyclo // This function is inherently complex due to Kafka config validation, refactoring is non-trivial
 func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+	return m.modifyConfig(dest, currentConfig, "kafka-"+dest.GetID())
+}
+
+//nolint:funlen,gocyclo // This function is inherently complex due to Kafka config validation, refactoring is non-trivial
+func (m *Kafka) modifyConfig(dest ExporterConfigurer, currentConfig *Config, uniqueUri string) ([]string, error) {
 	config := dest.GetConfig()
-	// To make sure that the exporter and pipeline names are unique, we'll need to define a unique ID
-	uniqueUri := "kafka-" + dest.GetID()
 
 	protocolVersion, exists := config[KAFKA_PROTOCOL_VERSION]
 	if !exists {
