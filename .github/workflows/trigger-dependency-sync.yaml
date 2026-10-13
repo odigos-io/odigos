@@ -62,10 +62,18 @@ jobs:
           event-type: process_update_dependencies_pr
           client-payload: '{"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ steps.source-pr.outputs.pr_url }}"}'
 
+      - name: Get sts token for Odigos VM Agent
+        id: sts-vm-agent
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/vm-agent
+          identity: dep-sync-trigger
+          output-git-config: "false"
+
       - name: Trigger process PR in Odigos VM Agent
         uses: peter-evans/repository-dispatch@v4
         with:
-          token: ${{ secrets.RELEASE_BOT_TOKEN }}
+          token: ${{ steps.sts-vm-agent.outputs.GH_TOKEN }}
           repository: odigos-io/vm-agent
           event-type: process_update_dependencies_pr
           client-payload: '{"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ steps.source-pr.outputs.pr_url }}"}'
