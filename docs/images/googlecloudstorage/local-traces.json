@@ -1,0 +1,65 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "core36-gcs-e2e"
+            }
+          },
+          {
+            "key": "validation.ticket",
+            "value": {
+              "stringValue": "CORE-36"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "core36-validation"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "validation.record",
+                  "value": {
+                    "intValue": "10"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1791887456348405000",
+              "kind": 1,
+              "name": "gcs-archive-validation-10",
+              "spanId": "000000000000000b",
+              "startTimeUnixNano": "1791887456347405000",
+              "status": {},
+              "traceId": "0000000000000000000000000000000b"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "validation.record",
+                  "value": {
+                    "intValue": "11"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1791887456348405000",
+              "kind": 1,
+              "name": "gcs-archive-validation-11",
+              "spanId": "000000000000000c",
+              "startTimeUnixNano": "1791887456347405000",
+              "status": {},
+              "traceId": "0000000000000000000000000000000c"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
