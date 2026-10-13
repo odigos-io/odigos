@@ -54,7 +54,8 @@ func (f *LocalFileArchive) ModifyGatewayCollectorDeployment(
 		}
 		for _, mount := range container.VolumeMounts {
 			if mount.MountPath == directory && !mount.ReadOnly {
-				for _, volume := range deployment.Spec.Template.Spec.Volumes {
+				for j := range deployment.Spec.Template.Spec.Volumes {
+					volume := &deployment.Spec.Template.Spec.Volumes[j]
 					if volume.Name == mount.Name && volume.PersistentVolumeClaim != nil &&
 						volume.PersistentVolumeClaim.ClaimName == claim && !volume.PersistentVolumeClaim.ReadOnly {
 						return nil
