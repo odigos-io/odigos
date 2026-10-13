@@ -19,6 +19,14 @@ spec:
               P="../../.."
               ./check-central-registry-pull-secret.sh "$P"
 
+    - name: Verify cloud connector CRD ownership migration
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              P="../../.."
+              ./check-cloud-connector-crd-migration.sh "$P"
+
     - name: Install - Simple Demo Apps
       try:
         - apply:
