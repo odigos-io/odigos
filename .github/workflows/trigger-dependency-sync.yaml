@@ -5,49 +5,67 @@ on:
     branches:
       - 'main'
     paths:
+      - 'actions/**'
+      - 'api/**'
+      - 'collector/**'
       - 'common/**'
-      - 'k8sutils/**'
-      - 'procdiscovery/**'
-      - 'opampserver/**'
+      - 'config/**'
+      - 'destinations/**'
+      - 'deviceplugin/**'
+      - 'distros/**'
+      - 'frontend/**'
       - 'instrumentation/**'
-      - 'odiglet/**'
-      - 'profiles/**'
+      - 'instrumentationrules/**'
       - 'instrumentor/**'
+      - 'k8sutils/**'
+      - 'odiglet/**'
+      - 'odigosauth/**'
+      - 'opampserver/**'
+      - 'procdiscovery/**'
+      - 'profiles/**'
+      - 'recommendations/**'
+      - 'status/**'
+
+permissions:
+  id-token: write # for the octo-sts OIDC exchange
 
 jobs:
   trigger-odigos-enterprise:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     steps:
+      - name: Get sts token for Odigos OSS
+        id: sts-oss
+        uses: odigos-io/ci-core/sts@main
+        with:
+          identity: read-pull-requests
+          output-git-config: "false"
+
       - name: Fetch Associated PR
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO="${{ github.repository }}"
-          REPO_OWNER=$(echo $REPO | cut -d'/' -f1)
-          REPO_NAME=$(echo $REPO | cut -d'/' -f2)
-          COMMIT_SHA="${{ github.sha }}" # Commit SHA from the push event
+        id: source-pr
+        uses: 8BitJonny/gh-get-current-pr@4.0.0
+        with:
+          github-token: ${{ steps.sts-oss.outputs.GH_TOKEN }}
 
-          # Query GitHub API for PRs linked to the commit
-          RESPONSE=$(curl -s \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.groot-preview+json" \
-            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/commits/$COMMIT_SHA/pulls")
-
-          # Extract PR URL
-          echo "PR_URL=$(echo "$RESPONSE" | jq -r '.[0].html_url')" >> "$GITHUB_ENV"
+      - name: Get sts token for Odigos Enterprise
+        id: sts-enterprise
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos-enterprise
+          identity: trigger-dependency-sync
+          output-git-config: "false"
 
       - name: Trigger process PR in Odigos Enterprise
-        run: |
-          curl -X POST \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-          https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
-          -d '{"event_type": "process_update_dependencies_pr", "client_payload": {"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ env.PR_URL }}" }}'
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
+          repository: odigos-io/odigos-enterprise
+          event-type: process_update_dependencies_pr
+          client-payload: '{"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ steps.source-pr.outputs.pr_url }}"}'
 
       - name: Trigger process PR in Odigos VM Agent
-        run: |
-          curl -X POST \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-          https://api.github.com/repos/odigos-io/vm-agent/dispatches \
-          -d '{"event_type": "process_update_dependencies_pr", "client_payload": {"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ env.PR_URL }}" }}'
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
+          repository: odigos-io/vm-agent
+          event-type: process_update_dependencies_pr
+          client-payload: '{"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ steps.source-pr.outputs.pr_url }}"}'
