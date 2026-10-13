@@ -2048,7 +2048,6 @@ type K8sWorkload struct {
 	DataStreamNames            []string                             `json:"dataStreamNames"`
 	NumberOfInstances          *int                                 `json:"numberOfInstances,omitempty"`
 	RollbackOccurred           bool                                 `json:"rollbackOccurred"`
-	URLTemplatization          *K8sWorkloadURLTemplatization        `json:"urlTemplatization"`
 }
 
 type K8sWorkloadAgentEnabled struct {
@@ -2098,13 +2097,14 @@ type K8sWorkloadConditions struct {
 }
 
 type K8sWorkloadContainer struct {
-	ContainerName    string                                           `json:"containerName"`
-	RuntimeInfo      *K8sWorkloadRuntimeInfoContainer                 `json:"runtimeInfo,omitempty"`
-	AgentEnabled     *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
-	Overrides        *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
-	AgentConfig      *K8sWorkloadContainerAgentConfig                 `json:"agentConfig,omitempty"`
-	CollectorConfig  *K8sWorkloadContainerCollectorConfig             `json:"collectorConfig,omitempty"`
-	Instrumentations []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
+	ContainerName     string                                           `json:"containerName"`
+	RuntimeInfo       *K8sWorkloadRuntimeInfoContainer                 `json:"runtimeInfo,omitempty"`
+	AgentEnabled      *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
+	Overrides         *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
+	AgentConfig       *K8sWorkloadContainerAgentConfig                 `json:"agentConfig,omitempty"`
+	CollectorConfig   *K8sWorkloadContainerCollectorConfig             `json:"collectorConfig,omitempty"`
+	Instrumentations  []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
+	URLTemplatization *K8sWorkloadContainerURLTemplatization           `json:"urlTemplatization,omitempty"`
 }
 
 type K8sWorkloadContainerAgentConfig struct {
@@ -2165,11 +2165,23 @@ type K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation struct {
 	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
 }
 
+type K8sWorkloadContainerLiveTrafficLearning struct {
+	UnmatchedServerPaths   []*UnmatchedURLPath                   `json:"unmatchedServerPaths,omitempty"`
+	UnmatchedClientPaths   []*UnmatchedURLPath                   `json:"unmatchedClientPaths,omitempty"`
+	ServerRecommendedRules []*LiveTrafficLearningRecommendedRule `json:"serverRecommendedRules,omitempty"`
+	ClientRecommendedRules []*LiveTrafficLearningRecommendedRule `json:"clientRecommendedRules,omitempty"`
+}
+
 type K8sWorkloadContainerOverrides struct {
 	ContainerName         string                           `json:"containerName"`
 	RuntimeInfo           *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
 	OtelDistroName        *string                          `json:"otelDistroName,omitempty"`
 	AllowConcurrentAgents *bool                            `json:"allowConcurrentAgents,omitempty"`
+}
+
+type K8sWorkloadContainerURLTemplatization struct {
+	Templatization      *LiveTrafficLearningTemplatization       `json:"templatization,omitempty"`
+	LiveTrafficLearning *K8sWorkloadContainerLiveTrafficLearning `json:"liveTrafficLearning,omitempty"`
 }
 
 type K8sWorkloadID struct {
@@ -2288,11 +2300,6 @@ type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
 }
 
-type K8sWorkloadURLTemplatization struct {
-	ExistingConfigs     []*URLTemplatizationExistingConfig    `json:"existingConfigs"`
-	LiveTrafficLearning *URLTemplatizationLiveTrafficLearning `json:"liveTrafficLearning"`
-}
-
 type KarpenterConfig struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
@@ -2315,9 +2322,41 @@ type LiveTrafficLearningConfig struct {
 	AutomaticRules             *LiveTrafficLearningAutomaticRulesConfig  `json:"automaticRules,omitempty"`
 }
 
+type LiveTrafficLearningPatternBasedTemplatization struct {
+	Disabled   bool                                `json:"disabled"`
+	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
+}
+
+type LiveTrafficLearningRecommendedRule struct {
+	Template string                                   `json:"template"`
+	Reason   string                                   `json:"reason"`
+	Segments []*LiveTrafficLearningRecommendedSegment `json:"segments"`
+}
+
+type LiveTrafficLearningRecommendedSegment struct {
+	TemplateName string   `json:"templateName"`
+	Static       bool     `json:"static"`
+	Certainty    string   `json:"certainty"`
+	Examples     []string `json:"examples"`
+}
+
 type LiveTrafficLearningRuleComputationConfig struct {
 	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
 	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
+}
+
+type LiveTrafficLearningTemplate struct {
+	Template   string    `json:"template"`
+	Examples   []string  `json:"examples"`
+	Notes      *string   `json:"notes,omitempty"`
+	ActionID   *string   `json:"actionId,omitempty"`
+	ActionName *string   `json:"actionName,omitempty"`
+	ManagedBy  ManagedBy `json:"managedBy"`
+}
+
+type LiveTrafficLearningTemplatization struct {
+	Templates                  []*LiveTrafficLearningTemplate                 `json:"templates"`
+	PatternBasedTemplatization *LiveTrafficLearningPatternBasedTemplatization `json:"patternBasedTemplatization,omitempty"`
 }
 
 type LocalUIConfigAllowConcurrentAgentsInput struct {
@@ -2977,9 +3016,8 @@ type URLTemplatizationRuleInput struct {
 }
 
 type UnmatchedURLPath struct {
-	Path          string  `json:"path"`
-	Count         int     `json:"count"`
-	ContainerName *string `json:"containerName,omitempty"`
+	Path  string `json:"path"`
+	Count int    `json:"count"`
 }
 
 type URLTemplatizationCardinalityControlConfig struct {
@@ -3006,46 +3044,6 @@ type URLTemplatizationDefaultSkipPolicy struct {
 type URLTemplatizationDefaultSkipPolicyInput struct {
 	SkipForNonSuccessCodes *bool `json:"skipForNonSuccessCodes,omitempty"`
 	SkipHTTPStatusCodes    []int `json:"skipHttpStatusCodes,omitempty"`
-}
-
-type URLTemplatizationExistingConfig struct {
-	ContainerName string                               `json:"containerName"`
-	Templates     []*URLTemplatizationExistingTemplate `json:"templates"`
-	Default       *URLTemplatizationExistingDefault    `json:"default,omitempty"`
-}
-
-type URLTemplatizationExistingDefault struct {
-	Disabled   bool                                `json:"disabled"`
-	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
-}
-
-type URLTemplatizationExistingTemplate struct {
-	Template   string    `json:"template"`
-	Examples   []string  `json:"examples"`
-	Notes      *string   `json:"notes,omitempty"`
-	ActionID   *string   `json:"actionId,omitempty"`
-	ActionName *string   `json:"actionName,omitempty"`
-	ManagedBy  ManagedBy `json:"managedBy"`
-}
-
-type URLTemplatizationLiveTrafficLearning struct {
-	Server                 []*UnmatchedURLPath                 `json:"server"`
-	Client                 []*UnmatchedURLPath                 `json:"client"`
-	ServerRecommendedRules []*URLTemplatizationRecommendedRule `json:"serverRecommendedRules"`
-	ClientRecommendedRules []*URLTemplatizationRecommendedRule `json:"clientRecommendedRules"`
-}
-
-type URLTemplatizationRecommendedRule struct {
-	Template string                                 `json:"template"`
-	Reason   string                                 `json:"reason"`
-	Segments []*URLTemplatizationRecommendedSegment `json:"segments"`
-}
-
-type URLTemplatizationRecommendedSegment struct {
-	TemplateName string   `json:"templateName"`
-	Static       bool     `json:"static"`
-	Certainty    string   `json:"certainty"`
-	Examples     []string `json:"examples"`
 }
 
 type URLTemplatizationRulesGroup struct {

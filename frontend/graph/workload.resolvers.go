@@ -788,14 +788,22 @@ func (r *k8sWorkloadResolver) RollbackOccurred(ctx context.Context, obj *model.K
 }
 
 // URLTemplatization is the resolver for the urlTemplatization field.
-func (r *k8sWorkloadResolver) URLTemplatization(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadURLTemplatization, error) {
-	if obj == nil || obj.ID == nil {
-		return nil, fmt.Errorf("workload id is required")
+func (r *k8sWorkloadContainerResolver) URLTemplatization(ctx context.Context, obj *model.K8sWorkloadContainer) (*model.K8sWorkloadContainerURLTemplatization, error) {
+	if obj == nil || obj.ContainerName == "" {
+		return nil, fmt.Errorf("container name is required")
 	}
-	if r.UrlTemplatization == nil {
-		return services.EmptyWorkloadUrlTemplatization(), nil
+	id, err := workloadIDFromContainerFieldContext(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return r.UrlTemplatization(ctx, obj.ID.Namespace, string(obj.ID.Kind), obj.ID.Name)
+
+	templatization, _, err := services.GetContainerUrlTemplatization(ctx, id.Namespace, string(id.Kind), id.Name, obj.ContainerName)
+	if err != nil {
+		return nil, err
+	}
+	return &model.K8sWorkloadContainerURLTemplatization{
+		Templatization: templatization,
+	}, nil
 }
 
 // Processes is the resolver for the processes field.
@@ -1019,6 +1027,11 @@ func (r *Resolver) K8sNamespace() K8sNamespaceResolver { return &k8sNamespaceRes
 // K8sWorkload returns K8sWorkloadResolver implementation.
 func (r *Resolver) K8sWorkload() K8sWorkloadResolver { return &k8sWorkloadResolver{r} }
 
+// K8sWorkloadContainer returns K8sWorkloadContainerResolver implementation.
+func (r *Resolver) K8sWorkloadContainer() K8sWorkloadContainerResolver {
+	return &k8sWorkloadContainerResolver{r}
+}
+
 // K8sWorkloadPodContainer returns K8sWorkloadPodContainerResolver implementation.
 func (r *Resolver) K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver {
 	return &k8sWorkloadPodContainerResolver{r}
@@ -1036,6 +1049,57 @@ func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsReso
 
 type k8sNamespaceResolver struct{ *Resolver }
 type k8sWorkloadResolver struct{ *Resolver }
+type k8sWorkloadContainerResolver struct{ *Resolver }
 type k8sWorkloadPodContainerResolver struct{ *Resolver }
 type k8sWorkloadRolloutResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }
+
+// workloadIDFromContainerFieldContext walks
+// current field -> *K8sWorkloadContainer -> []*K8sWorkloadContainer -> *K8sWorkload.
+func workloadIDFromContainerFieldContext(ctx context.Context) (model.K8sWorkloadID, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil || fc.Parent == nil || fc.Parent.Parent == nil || fc.Parent.Parent.Parent == nil {
+		return model.K8sWorkloadID{}, fmt.Errorf("missing parent resolver context")
+	}
+	w, ok := fc.Parent.Parent.Parent.Result.(**model.K8sWorkload)
+	if !ok || w == nil || (*w).ID == nil {
+		return model.K8sWorkloadID{}, fmt.Errorf("parent is not a workload")
+	}
+	return *(*w).ID, nil
+}
+
+// workloadContainerFromUrlTemplatizationFieldContext walks
+// current field -> *K8sWorkloadContainerURLTemplatization -> *K8sWorkloadContainer
+// -> []*K8sWorkloadContainer -> *K8sWorkload.
+func workloadContainerFromUrlTemplatizationFieldContext(ctx context.Context) (model.K8sWorkloadID, string, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil || fc.Parent == nil || fc.Parent.Parent == nil || fc.Parent.Parent.Parent == nil || fc.Parent.Parent.Parent.Parent == nil {
+		return model.K8sWorkloadID{}, "", fmt.Errorf("missing parent resolver context")
+	}
+	containerName, ok := containerNameFromFieldResult(fc.Parent.Parent.Result)
+	if !ok {
+		return model.K8sWorkloadID{}, "", fmt.Errorf("parent is not a workload container")
+	}
+	w, ok := fc.Parent.Parent.Parent.Parent.Result.(**model.K8sWorkload)
+	if !ok || w == nil || (*w).ID == nil {
+		return model.K8sWorkloadID{}, "", fmt.Errorf("parent is not a workload")
+	}
+	return *(*w).ID, containerName, nil
+}
+
+func containerNameFromFieldResult(result any) (string, bool) {
+	switch c := result.(type) {
+	case *model.K8sWorkloadContainer:
+		if c == nil || c.ContainerName == "" {
+			return "", false
+		}
+		return c.ContainerName, true
+	case **model.K8sWorkloadContainer:
+		if c == nil || *c == nil || (*c).ContainerName == "" {
+			return "", false
+		}
+		return (*c).ContainerName, true
+	default:
+		return "", false
+	}
+}

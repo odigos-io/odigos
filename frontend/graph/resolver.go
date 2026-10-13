@@ -28,7 +28,8 @@ type Resolver struct {
 	// DistrosProvider resolves the default otel distro per language for the
 	// running tier — the same provider the instrumentor uses.
 	DistrosProvider *distros.Provider
-	// UrlTemplatization resolves K8sWorkload.urlTemplatization. Nil in OSS
-	// (empty response); enterprise UI sets this after Bootstrap.
-	UrlTemplatization services.WorkloadUrlTemplatizationFunc
+	// UrlTemplatizationLiveTrafficLearning resolves
+	// K8sWorkloadContainerUrlTemplatization.liveTrafficLearning.
+	// Nil in OSS; enterprise UI sets this after Bootstrap.
+	UrlTemplatizationLiveTrafficLearning services.UrlTemplatizationLiveTrafficLearning
 }
