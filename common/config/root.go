@@ -9,6 +9,7 @@ import (
 
 var availableConfigers = []Configer{
 	&AlibabaCloud{},
+	&AlibabaCloudSLS{},
 	&AppDynamics{},
 	&AWSCloudWatch{},
 	&AWSS3{},

@@ -1,0 +1,54 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: alibabacloudsls
+  displayName: Alibaba Cloud Simple Log Service
+  category: managed
+spec:
+  image: alibabacloud.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: false
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: SLS_ENDPOINT
+      displayName: SLS Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: https://eu-central-1.log.aliyuncs.com
+        tooltip: Use the regional SLS service endpoint. HTTPS is required and is added when the scheme is omitted. A project prefix is removed automatically. Do not include a URL path.
+    - name: SLS_PROJECT
+      displayName: Project
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: SLS_LOGSTORE
+      displayName: Logstore
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: Create a standard Logstore and enable indexing to search ingested logs.
+    - name: SLS_ACCESS_KEY_ID
+      displayName: AccessKey ID
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        tooltip: Use a RAM user with log-write permissions for this project and Logstore.
+    - name: SLS_ACCESS_KEY_SECRET
+      displayName: AccessKey Secret
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
