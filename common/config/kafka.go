@@ -10,6 +10,9 @@ import (
 )
 
 const (
+	otlpProtoEncoding = "otlp_proto"
+	otlpJSONEncoding  = "otlp_json"
+
 	KAFKA_PROTOCOL_VERSION                         = "KAFKA_PROTOCOL_VERSION"
 	KAFKA_BROKERS                                  = "KAFKA_BROKERS"
 	KAFKA_RESOLVE_CANONICAL_BOOTSTRAP_SERVERS_ONLY = "KAFKA_RESOLVE_CANONICAL_BOOTSTRAP_SERVERS_ONLY"
@@ -82,7 +85,7 @@ func (m *Kafka) modifyConfig(dest ExporterConfigurer, currentConfig *Config, uni
 	}
 	encoding, exists := config[KAFKA_ENCODING]
 	if !exists {
-		encoding = "otlp_proto"
+		encoding = otlpProtoEncoding
 	}
 	partitionTracesById, exists := config[KAFKA_PARTITION_TRACES_BY_ID]
 	if !exists {

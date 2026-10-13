@@ -47,9 +47,9 @@ func (a *AzureEventHubs) ModifyConfig(dest ExporterConfigurer, currentConfig *Co
 	}
 	encoding := config[azureEventHubsEncoding]
 	if encoding == "" {
-		encoding = "otlp_proto"
+		encoding = otlpProtoEncoding
 	}
-	if encoding != "otlp_proto" && encoding != "otlp_json" {
+	if encoding != otlpProtoEncoding && encoding != otlpJSONEncoding {
 		return nil, fmt.Errorf("%s must be otlp_proto or otlp_json", azureEventHubsEncoding)
 	}
 	compression := config[azureEventHubsCompression]
