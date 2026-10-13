@@ -75,6 +75,7 @@ var availableConfigers = []Configer{
 	&Tingyun{},
 	&Traceloop{},
 	&Uptrace{},
+	&VictoriaLogs{},
 	&VictoriaMetricsCloud{},
 	&Pyroscope{},
 }

@@ -1,0 +1,169 @@
+---
+title: 'VictoriaLogs'
+description: 'Configuring the VictoriaLogs backend (Self-Hosted)'
+sidebarTitle: 'VictoriaLogs'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/victoriametrics.svg" alt="victorialogs" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+VictoriaLogs receives **logs only** over OTLP/HTTP. Traces, metrics and profiles are unsupported. This destination is separate from the metrics-only VictoriaMetrics Cloud destination.
+
+**Self-hosted setup**<br />
+Deploy [VictoriaLogs](https://docs.victoriametrics.com/victorialogs/quickstart/) and make its ingestion endpoint reachable from the Odigos gateway. For a single-node deployment, use `http://victorialogs:9428`; Odigos appends `/insert/opentelemetry/v1/logs`. For a reverse proxy or cluster, supply the complete logs ingestion URL, including its path prefix.
+
+**Cloud setup**<br />
+For a managed VictoriaLogs deployment in [VictoriaMetrics Cloud](https://console.victoriametrics.cloud), copy the complete OpenTelemetry logs ingestion URL and a write access token from the deployment. Select `bearer` authentication and store the token in the destination Secret. Do not use the VictoriaMetrics metrics ingestion endpoint.
+
+**Authentication and TLS**<br />
+Authentication defaults to `none`. Self-hosted installations commonly use [vmauth](https://docs.victoriametrics.com/victoriametrics/vmauth/) for basic or bearer authentication. Store passwords and bearer tokens in the destination Secret. HTTPS enables TLS automatically with system trust roots; use the CA field for a private CA. Keep certificate verification enabled in production. Compression defaults to `gzip`; `none` is also supported.
+
+**Ingestion fields and tenancy**<br />
+Optional Account ID and Project ID fields select a VictoriaLogs tenant (both default to `0` at the server). Resource attributes become stream fields by default; use Stream Fields to choose a smaller, stable set. Message and timestamp fields are extracted from OTLP log records automatically. Override them only when the ingested field names require it. Ignore Fields, Extra Fields, Decolorize Fields and Preserve JSON Keys map to the documented [ingestion headers](https://docs.victoriametrics.com/victorialogs/data-ingestion/#http-headers).
+
+**Validation and limitations**<br />
+Verify persisted data in VictoriaLogs Explore or the built-in `/select/vmui/` UI with a LogsQL query for your service. HTTP success alone does not prove that every record was stored: check backend ingestion errors and dropped-row counters when investigating invalid records. The existing OTLP exporter handles batching, retryable transport failures and OTLP partial-success responses; rejected records in partial-success responses are not retried. See [OpenTelemetry setup](https://docs.victoriametrics.com/victorialogs/data-ingestion/opentelemetry/).
+
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **VICTORIA_LOGS_ENDPOINT** `string` : Logs Endpoint. Base URL or complete /insert/opentelemetry/v1/logs URL. For a reverse proxy or cloud deployment, use the full ingestion URL.
+  - This field is required
+  - Example: `http://victorialogs:9428`
+- **VICTORIA_LOGS_AUTH** `string` : Authentication.
+  - This field is optional and defaults to `none`
+- **VICTORIA_LOGS_USERNAME** `string` : Basic Auth Username.
+  - This field is required
+- **VICTORIA_LOGS_PASSWORD** `string` : Basic Auth Password.
+  - This field is required
+- **VICTORIA_LOGS_TOKEN** `string` : Bearer Token.
+  - This field is required
+- **VICTORIA_LOGS_COMPRESSION** `string` : Compression.
+  - This field is optional and defaults to `gzip`
+- **VICTORIA_LOGS_CA_PEM** `string` : Certificate Authority. PEM CA certificate for HTTPS. HTTPS uses system roots when this is empty.
+  - This field is optional
+- **VICTORIA_LOGS_INSECURE_SKIP_VERIFY** `boolean` : Skip TLS Certificate Verification. For testing only. HTTPS enables TLS automatically; leave verification enabled in production.
+  - This field is optional and defaults to `False`
+- **VICTORIA_LOGS_ACCOUNT_ID** `string` : Account ID. Optional VictoriaLogs tenant account ID; defaults to 0.
+  - This field is optional
+- **VICTORIA_LOGS_PROJECT_ID** `string` : Project ID. Optional VictoriaLogs tenant project ID; defaults to 0.
+  - This field is optional
+- **VICTORIA_LOGS_MSG_FIELD** `string` : Message Fields. Comma-separated message fields. OTLP log bodies are mapped automatically; normally leave empty.
+  - This field is optional
+- **VICTORIA_LOGS_TIME_FIELD** `string` : Time Fields. Comma-separated timestamp fields. OTLP timestamps are mapped automatically; normally leave empty.
+  - This field is optional
+- **VICTORIA_LOGS_STREAM_FIELDS** `string` : Stream Fields. Comma-separated stream fields. Empty uses all OTLP resource attributes.
+  - This field is optional
+- **VICTORIA_LOGS_IGNORE_FIELDS** `string` : Ignore Fields. Comma-separated fields to omit. Field prefixes ending in * are supported.
+  - This field is optional
+- **VICTORIA_LOGS_EXTRA_FIELDS** `string` : Extra Fields. Comma-separated field=value pairs to add or overwrite.
+  - This field is optional
+- **VICTORIA_LOGS_DECOLORIZE_FIELDS** `string` : Decolorize Fields. Comma-separated fields from which to remove ANSI colors.
+  - This field is optional
+- **VICTORIA_LOGS_PRESERVE_JSON_KEYS** `string` : Preserve JSON Keys. Comma-separated JSON keys to preserve without flattening.
+  - This field is optional
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `VictoriaLogs` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `victorialogs.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: victorialogs-example
+      namespace: odigos-system
+    spec:
+      data:
+        VICTORIA_LOGS_ENDPOINT: <Logs Endpoint>
+        VICTORIA_LOGS_USERNAME: <Basic Auth Username>
+        # Note: The commented fields below are optional.
+        # VICTORIA_LOGS_AUTH: <Authentication (default: none) (options: [none, basic, bearer])>
+        # VICTORIA_LOGS_COMPRESSION: <Compression (default: gzip) (options: [gzip, none])>
+        # VICTORIA_LOGS_CA_PEM: <Certificate Authority>
+        # VICTORIA_LOGS_INSECURE_SKIP_VERIFY: <Skip TLS Certificate Verification>
+        # VICTORIA_LOGS_ACCOUNT_ID: <Account ID>
+        # VICTORIA_LOGS_PROJECT_ID: <Project ID>
+        # VICTORIA_LOGS_MSG_FIELD: <Message Fields>
+        # VICTORIA_LOGS_TIME_FIELD: <Time Fields>
+        # VICTORIA_LOGS_STREAM_FIELDS: <Stream Fields>
+        # VICTORIA_LOGS_IGNORE_FIELDS: <Ignore Fields>
+        # VICTORIA_LOGS_EXTRA_FIELDS: <Extra Fields>
+        # VICTORIA_LOGS_DECOLORIZE_FIELDS: <Decolorize Fields>
+        # VICTORIA_LOGS_PRESERVE_JSON_KEYS: <Preserve JSON Keys>
+      destinationName: victorialogs
+      secretRef:
+        name: victorialogs-secret
+      signals:
+      - LOGS
+      type: victorialogs
+
+    ---
+
+    apiVersion: v1
+    data:
+      VICTORIA_LOGS_PASSWORD: <Base64 Basic Auth Password>
+      VICTORIA_LOGS_TOKEN: <Base64 Bearer Token>
+    kind: Secret
+    metadata:
+      name: victorialogs-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f victorialogs.yaml
+    ```
+  </Step>
+</Steps>
