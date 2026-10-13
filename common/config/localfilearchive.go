@@ -26,7 +26,8 @@ func (f *LocalFileArchive) DestType() common.DestinationType {
 
 func LocalFileArchiveDirectory(data map[string]string) (string, error) {
 	directory := data[LocalFileArchivePathKey]
-	if !filepath.IsAbs(directory) || filepath.Clean(directory) != directory || directory == string(filepath.Separator) || strings.ContainsAny(directory, "$*?\\\n\r\x00") {
+	if !filepath.IsAbs(directory) || filepath.Clean(directory) != directory ||
+		directory == string(filepath.Separator) || strings.ContainsAny(directory, "$*?\\\n\r\x00") {
 		return "", fmt.Errorf("%s must be an absolute, clean, non-root directory without environment substitutions or wildcards", LocalFileArchivePathKey)
 	}
 	return directory, nil
@@ -85,7 +86,9 @@ func (f *LocalFileArchive) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		directory = filepath.Join(directory, "${env:POD_NAME}")
 	}
 	var pipelines []string
-	for _, signal := range []common.ObservabilitySignal{common.TracesObservabilitySignal, common.MetricsObservabilitySignal, common.LogsObservabilitySignal} {
+	for _, signal := range []common.ObservabilitySignal{
+		common.TracesObservabilitySignal, common.MetricsObservabilitySignal, common.LogsObservabilitySignal,
+	} {
 		if !isSignalExists(dest, signal) {
 			continue
 		}
