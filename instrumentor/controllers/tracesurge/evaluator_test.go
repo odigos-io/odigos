@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -124,7 +125,9 @@ func setup(t *testing.T) (*Evaluator, client.Client, *fakeMetrics, string) {
 		},
 		callers: map[string][]string{"shop/payments": {"shop/frontend"}},
 	}
-	e := &Evaluator{Client: c, Logger: logr.Discard()}
+	reader := sdkmetric.NewManualReader()
+	readers[t.Name()] = reader
+	e := &Evaluator{Client: c, Logger: logr.Discard(), Meter: sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)).Meter("test")}
 	archive := &fakeArchive{surges: map[string]odigosv1.TraceSurge{}}
 	archives[t.Name()] = archive
 	e.init(ns, metricsAdapter{m}, archive)
@@ -151,6 +154,7 @@ var (
 	// by test name: the fake client with interceptors cannot be a map key.
 	archives     = map[string]*fakeArchive{}
 	statusWrites = map[string]*int{}
+	readers      = map[string]*sdkmetric.ManualReader{}
 )
 
 // openSurges returns the surges in the status of the Sampling.
