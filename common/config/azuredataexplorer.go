@@ -38,7 +38,8 @@ func (a *AzureDataExplorer) ModifyConfig(dest ExporterConfigurer, currentConfig 
 		return nil, errorMissingKey(AzureDataExplorerClusterURI)
 	}
 	parsed, err := url.Parse(endpoint)
-	if err != nil || parsed.Scheme != "https" || parsed.Hostname() == "" || parsed.User != nil || (parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
+	if err != nil || parsed.Scheme != "https" || parsed.Hostname() == "" || parsed.User != nil ||
+		(parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
 		return nil, fmt.Errorf("%s must be an HTTPS cluster query URI without credentials, path, query or fragment", AzureDataExplorerClusterURI)
 	}
 	ingestionType := strings.TrimSpace(cfg[AzureDataExplorerIngestionType])
