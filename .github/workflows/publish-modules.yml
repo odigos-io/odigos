@@ -26,6 +26,31 @@ jobs:
       skip: ${{ steps.decide.outputs.skip }}
       tag:  ${{ steps.decide.outputs.tag }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is reachable from an allowed branch
+        env:
+          TAG: ${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+        run: |
+          # A v* tag push (or a manual dispatch pointing at one) is a repo-wide
+          # trigger — GitHub gives no way to scope it to a branch. This guards
+          # against a stray tag on a feature branch firing the full production
+          # release cascade (real registries, real Slack alerts, Homebrew tap
+          # updates for -rcN tags).
+          git fetch origin +refs/heads/*:refs/remotes/origin/* --quiet
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG not found"
+            exit 1
+          fi
+          if ! git branch -r --contains "$TAG" | grep -qE 'origin/(main|releases/)'; then
+            echo "::error::Tag $TAG is not reachable from main or releases/** — refusing to run the release pipeline from an arbitrary branch."
+            exit 1
+          fi
+          echo "Tag $TAG verified on an allowed branch."
+
       - id: decide
         env:
           # Prefer manual input for dispatch; otherwise use the pushed tag
