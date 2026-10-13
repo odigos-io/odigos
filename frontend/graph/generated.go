@@ -45,6 +45,8 @@ type ResolverRoot interface {
 	K8sActualSource() K8sActualSourceResolver
 	K8sNamespace() K8sNamespaceResolver
 	K8sWorkload() K8sWorkloadResolver
+	K8sWorkloadContainer() K8sWorkloadContainerResolver
+	K8sWorkloadContainerUrlTemplatization() K8sWorkloadContainerUrlTemplatizationResolver
 	K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver
 	K8sWorkloadRollout() K8sWorkloadRolloutResolver
 	K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver
@@ -1524,13 +1526,14 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadContainer struct {
-		AgentConfig      func(childComplexity int) int
-		AgentEnabled     func(childComplexity int) int
-		CollectorConfig  func(childComplexity int) int
-		ContainerName    func(childComplexity int) int
-		Instrumentations func(childComplexity int) int
-		Overrides        func(childComplexity int) int
-		RuntimeInfo      func(childComplexity int) int
+		AgentConfig       func(childComplexity int) int
+		AgentEnabled      func(childComplexity int) int
+		CollectorConfig   func(childComplexity int) int
+		ContainerName     func(childComplexity int) int
+		Instrumentations  func(childComplexity int) int
+		Overrides         func(childComplexity int) int
+		RuntimeInfo       func(childComplexity int) int
+		URLTemplatization func(childComplexity int) int
 	}
 
 	K8sWorkloadContainerAgentConfig struct {
@@ -1591,11 +1594,23 @@ type ComplexityRoot struct {
 		RuleID           func(childComplexity int) int
 	}
 
+	K8sWorkloadContainerLiveTrafficLearning struct {
+		ClientRecommendedRules func(childComplexity int) int
+		ServerRecommendedRules func(childComplexity int) int
+		UnmatchedClientPaths   func(childComplexity int) int
+		UnmatchedServerPaths   func(childComplexity int) int
+	}
+
 	K8sWorkloadContainerOverrides struct {
 		AllowConcurrentAgents func(childComplexity int) int
 		ContainerName         func(childComplexity int) int
 		OtelDistroName        func(childComplexity int) int
 		RuntimeInfo           func(childComplexity int) int
+	}
+
+	K8sWorkloadContainerUrlTemplatization struct {
+		LiveTrafficLearning func(childComplexity int) int
+		Templatization      func(childComplexity int) int
 	}
 
 	K8sWorkloadId struct {
@@ -1730,9 +1745,41 @@ type ComplexityRoot struct {
 		RuleComputation            func(childComplexity int) int
 	}
 
+	LiveTrafficLearningPatternBasedTemplatization struct {
+		Disabled   func(childComplexity int) int
+		SkipPolicy func(childComplexity int) int
+	}
+
+	LiveTrafficLearningRecommendedRule struct {
+		Reason   func(childComplexity int) int
+		Segments func(childComplexity int) int
+		Template func(childComplexity int) int
+	}
+
+	LiveTrafficLearningRecommendedSegment struct {
+		Certainty    func(childComplexity int) int
+		Examples     func(childComplexity int) int
+		Static       func(childComplexity int) int
+		TemplateName func(childComplexity int) int
+	}
+
 	LiveTrafficLearningRuleComputationConfig struct {
 		MinCardinalityForTemplating func(childComplexity int) int
 		MinObservationsForRule      func(childComplexity int) int
+	}
+
+	LiveTrafficLearningTemplate struct {
+		ActionID   func(childComplexity int) int
+		ActionName func(childComplexity int) int
+		Examples   func(childComplexity int) int
+		ManagedBy  func(childComplexity int) int
+		Notes      func(childComplexity int) int
+		Template   func(childComplexity int) int
+	}
+
+	LiveTrafficLearningTemplatization struct {
+		PatternBasedTemplatization func(childComplexity int) int
+		Templates                  func(childComplexity int) int
 	}
 
 	MessagingPayloadCollection struct {
@@ -2298,6 +2345,11 @@ type ComplexityRoot struct {
 		Template func(childComplexity int) int
 	}
 
+	UnmatchedUrlPath struct {
+		Count func(childComplexity int) int
+		Path  func(childComplexity int) int
+	}
+
 	UrlTemplatizationCardinalityControlConfig struct {
 		LiveTrafficLearning func(childComplexity int) int
 	}
@@ -2400,6 +2452,12 @@ type K8sWorkloadResolver interface {
 	DataStreamNames(ctx context.Context, obj *model.K8sWorkload) ([]string, error)
 	NumberOfInstances(ctx context.Context, obj *model.K8sWorkload) (*int, error)
 	RollbackOccurred(ctx context.Context, obj *model.K8sWorkload) (bool, error)
+}
+type K8sWorkloadContainerResolver interface {
+	URLTemplatization(ctx context.Context, obj *model.K8sWorkloadContainer) (*model.K8sWorkloadContainerURLTemplatization, error)
+}
+type K8sWorkloadContainerUrlTemplatizationResolver interface {
+	LiveTrafficLearning(ctx context.Context, obj *model.K8sWorkloadContainerURLTemplatization) (*model.K8sWorkloadContainerLiveTrafficLearning, error)
 }
 type K8sWorkloadPodContainerResolver interface {
 	Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error)
@@ -9464,6 +9522,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadContainer.RuntimeInfo(childComplexity), true
 
+	case "K8sWorkloadContainer.urlTemplatization":
+		if e.complexity.K8sWorkloadContainer.URLTemplatization == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainer.URLTemplatization(childComplexity), true
+
 	case "K8sWorkloadContainerAgentConfig.traces":
 		if e.complexity.K8sWorkloadContainerAgentConfig.Traces == nil {
 			break
@@ -9681,6 +9746,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation.RuleID(childComplexity), true
 
+	case "K8sWorkloadContainerLiveTrafficLearning.clientRecommendedRules":
+		if e.complexity.K8sWorkloadContainerLiveTrafficLearning.ClientRecommendedRules == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerLiveTrafficLearning.ClientRecommendedRules(childComplexity), true
+
+	case "K8sWorkloadContainerLiveTrafficLearning.serverRecommendedRules":
+		if e.complexity.K8sWorkloadContainerLiveTrafficLearning.ServerRecommendedRules == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerLiveTrafficLearning.ServerRecommendedRules(childComplexity), true
+
+	case "K8sWorkloadContainerLiveTrafficLearning.unmatchedClientPaths":
+		if e.complexity.K8sWorkloadContainerLiveTrafficLearning.UnmatchedClientPaths == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerLiveTrafficLearning.UnmatchedClientPaths(childComplexity), true
+
+	case "K8sWorkloadContainerLiveTrafficLearning.unmatchedServerPaths":
+		if e.complexity.K8sWorkloadContainerLiveTrafficLearning.UnmatchedServerPaths == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerLiveTrafficLearning.UnmatchedServerPaths(childComplexity), true
+
 	case "K8sWorkloadContainerOverrides.allowConcurrentAgents":
 		if e.complexity.K8sWorkloadContainerOverrides.AllowConcurrentAgents == nil {
 			break
@@ -9708,6 +9801,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadContainerOverrides.RuntimeInfo(childComplexity), true
+
+	case "K8sWorkloadContainerUrlTemplatization.liveTrafficLearning":
+		if e.complexity.K8sWorkloadContainerUrlTemplatization.LiveTrafficLearning == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerUrlTemplatization.LiveTrafficLearning(childComplexity), true
+
+	case "K8sWorkloadContainerUrlTemplatization.templatization":
+		if e.complexity.K8sWorkloadContainerUrlTemplatization.Templatization == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerUrlTemplatization.Templatization(childComplexity), true
 
 	case "K8sWorkloadId.kind":
 		if e.complexity.K8sWorkloadId.Kind == nil {
@@ -10276,6 +10383,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiveTrafficLearningConfig.RuleComputation(childComplexity), true
 
+	case "LiveTrafficLearningPatternBasedTemplatization.disabled":
+		if e.complexity.LiveTrafficLearningPatternBasedTemplatization.Disabled == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningPatternBasedTemplatization.Disabled(childComplexity), true
+
+	case "LiveTrafficLearningPatternBasedTemplatization.skipPolicy":
+		if e.complexity.LiveTrafficLearningPatternBasedTemplatization.SkipPolicy == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningPatternBasedTemplatization.SkipPolicy(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedRule.reason":
+		if e.complexity.LiveTrafficLearningRecommendedRule.Reason == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedRule.Reason(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedRule.segments":
+		if e.complexity.LiveTrafficLearningRecommendedRule.Segments == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedRule.Segments(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedRule.template":
+		if e.complexity.LiveTrafficLearningRecommendedRule.Template == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedRule.Template(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedSegment.certainty":
+		if e.complexity.LiveTrafficLearningRecommendedSegment.Certainty == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedSegment.Certainty(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedSegment.examples":
+		if e.complexity.LiveTrafficLearningRecommendedSegment.Examples == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedSegment.Examples(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedSegment.static":
+		if e.complexity.LiveTrafficLearningRecommendedSegment.Static == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedSegment.Static(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedSegment.templateName":
+		if e.complexity.LiveTrafficLearningRecommendedSegment.TemplateName == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedSegment.TemplateName(childComplexity), true
+
 	case "LiveTrafficLearningRuleComputationConfig.minCardinalityForTemplating":
 		if e.complexity.LiveTrafficLearningRuleComputationConfig.MinCardinalityForTemplating == nil {
 			break
@@ -10289,6 +10459,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LiveTrafficLearningRuleComputationConfig.MinObservationsForRule(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.actionId":
+		if e.complexity.LiveTrafficLearningTemplate.ActionID == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.ActionID(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.actionName":
+		if e.complexity.LiveTrafficLearningTemplate.ActionName == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.ActionName(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.examples":
+		if e.complexity.LiveTrafficLearningTemplate.Examples == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.Examples(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.managedBy":
+		if e.complexity.LiveTrafficLearningTemplate.ManagedBy == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.ManagedBy(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.notes":
+		if e.complexity.LiveTrafficLearningTemplate.Notes == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.Notes(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.template":
+		if e.complexity.LiveTrafficLearningTemplate.Template == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.Template(childComplexity), true
+
+	case "LiveTrafficLearningTemplatization.patternBasedTemplatization":
+		if e.complexity.LiveTrafficLearningTemplatization.PatternBasedTemplatization == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplatization.PatternBasedTemplatization(childComplexity), true
+
+	case "LiveTrafficLearningTemplatization.templates":
+		if e.complexity.LiveTrafficLearningTemplatization.Templates == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplatization.Templates(childComplexity), true
 
 	case "MessagingPayloadCollection.dropPartialPayloads":
 		if e.complexity.MessagingPayloadCollection.DropPartialPayloads == nil {
@@ -13151,6 +13377,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.URLTemplatizationRule.Template(childComplexity), true
 
+	case "UnmatchedUrlPath.count":
+		if e.complexity.UnmatchedUrlPath.Count == nil {
+			break
+		}
+
+		return e.complexity.UnmatchedUrlPath.Count(childComplexity), true
+
+	case "UnmatchedUrlPath.path":
+		if e.complexity.UnmatchedUrlPath.Path == nil {
+			break
+		}
+
+		return e.complexity.UnmatchedUrlPath.Path(childComplexity), true
+
 	case "UrlTemplatizationCardinalityControlConfig.liveTrafficLearning":
 		if e.complexity.UrlTemplatizationCardinalityControlConfig.LiveTrafficLearning == nil {
 			break
@@ -13457,7 +13697,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "actions.graphqls" "collectors.graphqls" "common.graphqls" "configs.graphqls" "datastreams.graphqls" "describe.graphqls" "desiredcondition.graphqls" "destinations.graphqls" "diagnose.graphqls" "gooffsets.graphqls" "insights.graphqls" "instrumentationagents.graphqls" "instrumentationrules.graphqls" "metrics.graphqls" "pod.graphqls" "profiling.graphqls" "recommendations.graphqls" "sampling.graphqls" "servicemap.graphqls" "sources.graphqls" "tokens.graphqls" "workload.graphqls"
+//go:embed "actions.graphqls" "collectors.graphqls" "common.graphqls" "configs.graphqls" "datastreams.graphqls" "describe.graphqls" "desiredcondition.graphqls" "destinations.graphqls" "diagnose.graphqls" "gooffsets.graphqls" "insights.graphqls" "instrumentationagents.graphqls" "instrumentationrules.graphqls" "metrics.graphqls" "pod.graphqls" "profiling.graphqls" "recommendations.graphqls" "sampling.graphqls" "servicemap.graphqls" "sources.graphqls" "tokens.graphqls" "urltemplatization.graphqls" "workload.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -13490,6 +13730,7 @@ var sources = []*ast.Source{
 	{Name: "servicemap.graphqls", Input: sourceData("servicemap.graphqls"), BuiltIn: false},
 	{Name: "sources.graphqls", Input: sourceData("sources.graphqls"), BuiltIn: false},
 	{Name: "tokens.graphqls", Input: sourceData("tokens.graphqls"), BuiltIn: false},
+	{Name: "urltemplatization.graphqls", Input: sourceData("urltemplatization.graphqls"), BuiltIn: false},
 	{Name: "workload.graphqls", Input: sourceData("workload.graphqls"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -60906,6 +61147,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_containers(_ context.Contex
 				return ec.fieldContext_K8sWorkloadContainer_collectorConfig(ctx, field)
 			case "instrumentations":
 				return ec.fieldContext_K8sWorkloadContainer_instrumentations(ctx, field)
+			case "urlTemplatization":
+				return ec.fieldContext_K8sWorkloadContainer_urlTemplatization(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainer", field.Name)
 		},
@@ -63020,6 +63263,53 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_instrumentations(_
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadContainer_urlTemplatization(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainer_urlTemplatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkloadContainer().URLTemplatization(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadContainerURLTemplatization)
+	fc.Result = res
+	return ec.marshalOK8sWorkloadContainerUrlTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerURLTemplatization(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainer_urlTemplatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainer",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "templatization":
+				return ec.fieldContext_K8sWorkloadContainerUrlTemplatization_templatization(ctx, field)
+			case "liveTrafficLearning":
+				return ec.fieldContext_K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainerUrlTemplatization", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadContainerAgentConfig_traces(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerAgentConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadContainerAgentConfig_traces(ctx, field)
 	if err != nil {
@@ -64421,6 +64711,198 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerCollectorConfigTail
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UnmatchedServerPaths, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UnmatchedURLPath)
+	fc.Result = res
+	return ec.marshalOUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+			case "count":
+				return ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPath", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UnmatchedClientPaths, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UnmatchedURLPath)
+	fc.Result = res
+	return ec.marshalOUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+			case "count":
+				return ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPath", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServerRecommendedRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.LiveTrafficLearningRecommendedRule)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_template(ctx, field)
+			case "reason":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_reason(ctx, field)
+			case "segments":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_segments(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningRecommendedRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientRecommendedRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.LiveTrafficLearningRecommendedRule)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_template(ctx, field)
+			case "reason":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_reason(ctx, field)
+			case "segments":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_segments(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningRecommendedRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadContainerOverrides_containerName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerOverrides) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadContainerOverrides_containerName(ctx, field)
 	if err != nil {
@@ -64603,6 +65085,104 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_allowConc
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerUrlTemplatization_templatization(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerURLTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerUrlTemplatization_templatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Templatization, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningTemplatization)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplatization(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerUrlTemplatization_templatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerUrlTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "templates":
+				return ec.fieldContext_LiveTrafficLearningTemplatization_templates(ctx, field)
+			case "patternBasedTemplatization":
+				return ec.fieldContext_LiveTrafficLearningTemplatization_patternBasedTemplatization(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningTemplatization", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerURLTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkloadContainerUrlTemplatization().LiveTrafficLearning(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadContainerLiveTrafficLearning)
+	fc.Result = res
+	return ec.marshalOK8sWorkloadContainerLiveTrafficLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerLiveTrafficLearning(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerUrlTemplatization",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "unmatchedServerPaths":
+				return ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(ctx, field)
+			case "unmatchedClientPaths":
+				return ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(ctx, field)
+			case "serverRecommendedRules":
+				return ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(ctx, field)
+			case "clientRecommendedRules":
+				return ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainerLiveTrafficLearning", field.Name)
 		},
 	}
 	return fc, nil
@@ -68293,6 +68873,415 @@ func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_automaticRule
 	return fc, nil
 }
 
+func (ec *executionContext) _LiveTrafficLearningPatternBasedTemplatization_disabled(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningPatternBasedTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningPatternBasedTemplatization_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningPatternBasedTemplatization_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningPatternBasedTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningPatternBasedTemplatization_skipPolicy(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningPatternBasedTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningPatternBasedTemplatization_skipPolicy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SkipPolicy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.URLTemplatizationDefaultSkipPolicy)
+	fc.Result = res
+	return ec.marshalOUrlTemplatizationDefaultSkipPolicy2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultSkipPolicy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningPatternBasedTemplatization_skipPolicy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningPatternBasedTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "skipForNonSuccessCodes":
+				return ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipForNonSuccessCodes(ctx, field)
+			case "skipHttpStatusCodes":
+				return ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipHttpStatusCodes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationDefaultSkipPolicy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedRule_template(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedRule_template(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Template, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedRule_template(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedRule_reason(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedRule_reason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedRule_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedRule_segments(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedRule_segments(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Segments, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.LiveTrafficLearningRecommendedSegment)
+	fc.Result = res
+	return ec.marshalNLiveTrafficLearningRecommendedSegment2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedSegmentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedRule_segments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "templateName":
+				return ec.fieldContext_LiveTrafficLearningRecommendedSegment_templateName(ctx, field)
+			case "static":
+				return ec.fieldContext_LiveTrafficLearningRecommendedSegment_static(ctx, field)
+			case "certainty":
+				return ec.fieldContext_LiveTrafficLearningRecommendedSegment_certainty(ctx, field)
+			case "examples":
+				return ec.fieldContext_LiveTrafficLearningRecommendedSegment_examples(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningRecommendedSegment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment_templateName(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedSegment_templateName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TemplateName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedSegment_templateName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment_static(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedSegment_static(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Static, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedSegment_static(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment_certainty(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedSegment_certainty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Certainty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedSegment_certainty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment_examples(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedSegment_examples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Examples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedSegment_examples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRuleComputationConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx, field)
 	if err != nil {
@@ -68370,6 +69359,366 @@ func (ec *executionContext) fieldContext_LiveTrafficLearningRuleComputationConfi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_template(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_template(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Template, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_template(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_examples(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_examples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Examples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_examples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_notes(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_actionId(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_actionId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActionID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_actionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_actionName(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_actionName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActionName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_actionName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_managedBy(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_managedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManagedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ManagedBy)
+	fc.Result = res
+	return ec.marshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_managedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ManagedBy does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplatization_templates(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplatization_templates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Templates, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.LiveTrafficLearningTemplate)
+	fc.Result = res
+	return ec.marshalNLiveTrafficLearningTemplate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplatization_templates(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_LiveTrafficLearningTemplate_template(ctx, field)
+			case "examples":
+				return ec.fieldContext_LiveTrafficLearningTemplate_examples(ctx, field)
+			case "notes":
+				return ec.fieldContext_LiveTrafficLearningTemplate_notes(ctx, field)
+			case "actionId":
+				return ec.fieldContext_LiveTrafficLearningTemplate_actionId(ctx, field)
+			case "actionName":
+				return ec.fieldContext_LiveTrafficLearningTemplate_actionName(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_LiveTrafficLearningTemplate_managedBy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningTemplate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplatization_patternBasedTemplatization(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplatization_patternBasedTemplatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PatternBasedTemplatization, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningPatternBasedTemplatization)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningPatternBasedTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningPatternBasedTemplatization(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplatization_patternBasedTemplatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disabled":
+				return ec.fieldContext_LiveTrafficLearningPatternBasedTemplatization_disabled(ctx, field)
+			case "skipPolicy":
+				return ec.fieldContext_LiveTrafficLearningPatternBasedTemplatization_skipPolicy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningPatternBasedTemplatization", field.Name)
 		},
 	}
 	return fc, nil
@@ -86464,6 +87813,94 @@ func (ec *executionContext) fieldContext_URLTemplatizationRule_examples(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _UnmatchedUrlPath_path(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPath) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Path, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UnmatchedUrlPath_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UnmatchedUrlPath",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UnmatchedUrlPath_count(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPath) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UnmatchedUrlPath_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UnmatchedUrlPath",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationCardinalityControlConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field)
 	if err != nil {
@@ -104314,7 +105751,7 @@ func (ec *executionContext) _K8sWorkloadContainer(ctx context.Context, sel ast.S
 		case "containerName":
 			out.Values[i] = ec._K8sWorkloadContainer_containerName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "runtimeInfo":
 			out.Values[i] = ec._K8sWorkloadContainer_runtimeInfo(ctx, field, obj)
@@ -104328,6 +105765,39 @@ func (ec *executionContext) _K8sWorkloadContainer(ctx context.Context, sel ast.S
 			out.Values[i] = ec._K8sWorkloadContainer_collectorConfig(ctx, field, obj)
 		case "instrumentations":
 			out.Values[i] = ec._K8sWorkloadContainer_instrumentations(ctx, field, obj)
+		case "urlTemplatization":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkloadContainer_urlTemplatization(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -104749,6 +106219,48 @@ func (ec *executionContext) _K8sWorkloadContainerCollectorConfigTailSamplingNois
 	return out
 }
 
+var k8sWorkloadContainerLiveTrafficLearningImplementors = []string{"K8sWorkloadContainerLiveTrafficLearning"}
+
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadContainerLiveTrafficLearning) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadContainerLiveTrafficLearningImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadContainerLiveTrafficLearning")
+		case "unmatchedServerPaths":
+			out.Values[i] = ec._K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(ctx, field, obj)
+		case "unmatchedClientPaths":
+			out.Values[i] = ec._K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(ctx, field, obj)
+		case "serverRecommendedRules":
+			out.Values[i] = ec._K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(ctx, field, obj)
+		case "clientRecommendedRules":
+			out.Values[i] = ec._K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var k8sWorkloadContainerOverridesImplementors = []string{"K8sWorkloadContainerOverrides"}
 
 func (ec *executionContext) _K8sWorkloadContainerOverrides(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadContainerOverrides) graphql.Marshaler {
@@ -104771,6 +106283,75 @@ func (ec *executionContext) _K8sWorkloadContainerOverrides(ctx context.Context, 
 			out.Values[i] = ec._K8sWorkloadContainerOverrides_otelDistroName(ctx, field, obj)
 		case "allowConcurrentAgents":
 			out.Values[i] = ec._K8sWorkloadContainerOverrides_allowConcurrentAgents(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var k8sWorkloadContainerUrlTemplatizationImplementors = []string{"K8sWorkloadContainerUrlTemplatization"}
+
+func (ec *executionContext) _K8sWorkloadContainerUrlTemplatization(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadContainerURLTemplatization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadContainerUrlTemplatizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadContainerUrlTemplatization")
+		case "templatization":
+			out.Values[i] = ec._K8sWorkloadContainerUrlTemplatization_templatization(ctx, field, obj)
+		case "liveTrafficLearning":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -105741,6 +107322,150 @@ func (ec *executionContext) _LiveTrafficLearningConfig(ctx context.Context, sel 
 	return out
 }
 
+var liveTrafficLearningPatternBasedTemplatizationImplementors = []string{"LiveTrafficLearningPatternBasedTemplatization"}
+
+func (ec *executionContext) _LiveTrafficLearningPatternBasedTemplatization(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningPatternBasedTemplatization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningPatternBasedTemplatizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningPatternBasedTemplatization")
+		case "disabled":
+			out.Values[i] = ec._LiveTrafficLearningPatternBasedTemplatization_disabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "skipPolicy":
+			out.Values[i] = ec._LiveTrafficLearningPatternBasedTemplatization_skipPolicy(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningRecommendedRuleImplementors = []string{"LiveTrafficLearningRecommendedRule"}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedRule(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningRecommendedRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningRecommendedRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningRecommendedRule")
+		case "template":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedRule_template(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedRule_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "segments":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedRule_segments(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningRecommendedSegmentImplementors = []string{"LiveTrafficLearningRecommendedSegment"}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningRecommendedSegment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningRecommendedSegmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningRecommendedSegment")
+		case "templateName":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedSegment_templateName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "static":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedSegment_static(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "certainty":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedSegment_certainty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "examples":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedSegment_examples(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var liveTrafficLearningRuleComputationConfigImplementors = []string{"LiveTrafficLearningRuleComputationConfig"}
 
 func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningRuleComputationConfig) graphql.Marshaler {
@@ -105756,6 +107481,102 @@ func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig(ctx contex
 			out.Values[i] = ec._LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx, field, obj)
 		case "minCardinalityForTemplating":
 			out.Values[i] = ec._LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningTemplateImplementors = []string{"LiveTrafficLearningTemplate"}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningTemplate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningTemplateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningTemplate")
+		case "template":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_template(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "examples":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_examples(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "notes":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_notes(ctx, field, obj)
+		case "actionId":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_actionId(ctx, field, obj)
+		case "actionName":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_actionName(ctx, field, obj)
+		case "managedBy":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_managedBy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningTemplatizationImplementors = []string{"LiveTrafficLearningTemplatization"}
+
+func (ec *executionContext) _LiveTrafficLearningTemplatization(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningTemplatization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningTemplatizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningTemplatization")
+		case "templates":
+			out.Values[i] = ec._LiveTrafficLearningTemplatization_templates(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "patternBasedTemplatization":
+			out.Values[i] = ec._LiveTrafficLearningTemplatization_patternBasedTemplatization(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -110483,6 +112304,50 @@ func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.
 			out.Values[i] = ec._URLTemplatizationRule_notes(ctx, field, obj)
 		case "examples":
 			out.Values[i] = ec._URLTemplatizationRule_examples(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var unmatchedUrlPathImplementors = []string{"UnmatchedUrlPath"}
+
+func (ec *executionContext) _UnmatchedUrlPath(ctx context.Context, sel ast.SelectionSet, obj *model.UnmatchedURLPath) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, unmatchedUrlPathImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UnmatchedUrlPath")
+		case "path":
+			out.Values[i] = ec._UnmatchedUrlPath_path(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._UnmatchedUrlPath_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -116496,6 +118361,124 @@ func (ec *executionContext) marshalNK8sWorkloadTelemetryMetricsExpectingTelemetr
 	return ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNLiveTrafficLearningRecommendedRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRule(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningRecommendedRule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningRecommendedRule(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLiveTrafficLearningRecommendedSegment2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedSegmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LiveTrafficLearningRecommendedSegment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiveTrafficLearningRecommendedSegment2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedSegment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLiveTrafficLearningRecommendedSegment2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedSegment(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningRecommendedSegment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningRecommendedSegment(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLiveTrafficLearningTemplate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LiveTrafficLearningTemplate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiveTrafficLearningTemplate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLiveTrafficLearningTemplate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplate(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningTemplate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningTemplate(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNLocalUiConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInput(ctx context.Context, v any) (model.LocalUIConfigInput, error) {
 	res, err := ec.unmarshalInputLocalUiConfigInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -117934,6 +119917,16 @@ func (ec *executionContext) unmarshalNURLTemplatizationRuleInput2ᚕᚖgithubᚗ
 func (ec *executionContext) unmarshalNURLTemplatizationRuleInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleInput(ctx context.Context, v any) (*model.URLTemplatizationRuleInput, error) {
 	res, err := ec.unmarshalInputURLTemplatizationRuleInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUnmatchedUrlPath2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPath(ctx context.Context, sel ast.SelectionSet, v *model.UnmatchedURLPath) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UnmatchedUrlPath(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUrlTemplatizationDefaultGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroup(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationDefaultGroup) graphql.Marshaler {
@@ -120807,11 +122800,25 @@ func (ec *executionContext) marshalOK8sWorkloadContainerCollectorConfigTailSampl
 	return ret
 }
 
+func (ec *executionContext) marshalOK8sWorkloadContainerLiveTrafficLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerLiveTrafficLearning(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadContainerLiveTrafficLearning) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._K8sWorkloadContainerLiveTrafficLearning(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOK8sWorkloadContainerOverrides2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerOverrides(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadContainerOverrides) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._K8sWorkloadContainerOverrides(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOK8sWorkloadContainerUrlTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerURLTemplatization(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadContainerURLTemplatization) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._K8sWorkloadContainerUrlTemplatization(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOK8sWorkloadId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadIDᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sWorkloadID) graphql.Marshaler {
@@ -121037,11 +123044,72 @@ func (ec *executionContext) marshalOLiveTrafficLearningConfig2ᚖgithubᚗcomᚋ
 	return ec._LiveTrafficLearningConfig(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOLiveTrafficLearningPatternBasedTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningPatternBasedTemplatization(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningPatternBasedTemplatization) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningPatternBasedTemplatization(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LiveTrafficLearningRecommendedRule) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiveTrafficLearningRecommendedRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRule(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalOLiveTrafficLearningRuleComputationConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRuleComputationConfig(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningRuleComputationConfig) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._LiveTrafficLearningRuleComputationConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplatization(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningTemplatization) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningTemplatization(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOLocalUiConfigAllowConcurrentAgentsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigAllowConcurrentAgentsInput(ctx context.Context, v any) (*model.LocalUIConfigAllowConcurrentAgentsInput, error) {
@@ -122074,6 +124142,53 @@ func (ec *executionContext) marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigo
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UnmatchedURLPath) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUnmatchedUrlPath2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPath(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOUrlTemplatizationCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationCardinalityControlConfig) graphql.Marshaler {

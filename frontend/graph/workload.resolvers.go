@@ -787,6 +787,25 @@ func (r *k8sWorkloadResolver) RollbackOccurred(ctx context.Context, obj *model.K
 	return ic.Status.RollbackOccurred, nil
 }
 
+// URLTemplatization is the resolver for the urlTemplatization field.
+func (r *k8sWorkloadContainerResolver) URLTemplatization(ctx context.Context, obj *model.K8sWorkloadContainer) (*model.K8sWorkloadContainerURLTemplatization, error) {
+	if obj == nil || obj.ContainerName == "" {
+		return nil, fmt.Errorf("container name is required")
+	}
+	id, err := workloadIDFromContainerFieldContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	templatization, _, err := services.GetContainerUrlTemplatization(ctx, id.Namespace, string(id.Kind), id.Name, obj.ContainerName)
+	if err != nil {
+		return nil, err
+	}
+	return &model.K8sWorkloadContainerURLTemplatization{
+		Templatization: templatization,
+	}, nil
+}
+
 // Processes is the resolver for the processes field.
 func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error) {
 	l := loaders.For(ctx)
@@ -1008,6 +1027,11 @@ func (r *Resolver) K8sNamespace() K8sNamespaceResolver { return &k8sNamespaceRes
 // K8sWorkload returns K8sWorkloadResolver implementation.
 func (r *Resolver) K8sWorkload() K8sWorkloadResolver { return &k8sWorkloadResolver{r} }
 
+// K8sWorkloadContainer returns K8sWorkloadContainerResolver implementation.
+func (r *Resolver) K8sWorkloadContainer() K8sWorkloadContainerResolver {
+	return &k8sWorkloadContainerResolver{r}
+}
+
 // K8sWorkloadPodContainer returns K8sWorkloadPodContainerResolver implementation.
 func (r *Resolver) K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver {
 	return &k8sWorkloadPodContainerResolver{r}
@@ -1025,6 +1049,7 @@ func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsReso
 
 type k8sNamespaceResolver struct{ *Resolver }
 type k8sWorkloadResolver struct{ *Resolver }
+type k8sWorkloadContainerResolver struct{ *Resolver }
 type k8sWorkloadPodContainerResolver struct{ *Resolver }
 type k8sWorkloadRolloutResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }
