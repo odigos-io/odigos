@@ -48,6 +48,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            # Identity for the notifier leader Lease.
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
