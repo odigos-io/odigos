@@ -1,0 +1,159 @@
+---
+title: 'VictoriaTraces'
+description: 'Configuring the VictoriaTraces backend (Self-Hosted)'
+sidebarTitle: 'VictoriaTraces'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/victoriametrics.svg" alt="victoriatraces" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+VictoriaTraces stores **traces only**. Metrics, logs and profiles require other destinations.
+
+For a self-hosted instance, use `http://victoria-traces:10428/insert/opentelemetry/v1/traces`.
+Odigos appends `/insert/opentelemetry/v1/traces` to root URLs; a complete ingestion URL,
+including a proxy path prefix, is preserved. See the [VictoriaTraces OTLP guide](https://docs.victoriametrics.com/victoriatraces/data-ingestion/opentelemetry/).
+
+For VictoriaMetrics Cloud, create a **Traces** deployment and copy its full OTLP/HTTP
+ingestion endpoint. Select **bearer** authentication and provide a write access token
+from that deployment's **Access tokens** tab. Cloud trace deployments may require
+organization-level beta enablement; see the [Cloud guide](https://docs.victoriametrics.com/victoriametrics-cloud/get-started/overview/).
+
+Self-hosted VictoriaTraces can run without authentication behind a trusted network.
+For a protected deployment, configure an authentication proxy such as **vmauth**, then
+select **basic** or **bearer** to match the proxy. Store the selected password or token
+in the destination Secret. HTTPS enables certificate verification using system roots
+or the optional CA certificate. Use HTTPS when sending credentials outside a trusted network.
+
+Optional `AccountID` and `ProjectID` headers select a tenant; ingestion and querying
+must use the same tenant. Keep credentials out of the endpoint URL and custom headers.
+Gzip is enabled by default, and `none` is available for proxies that do not accept it.
+
+Odigos uses the existing OTLP/HTTP exporter queue and retry behavior. Retryable transport
+failures are retried; permanent failures and OTLP partial-success rejections are logged.
+Rejected spans in a partial-success response are **not retried**, as required by OTLP.
+Verify ingestion in VictoriaTraces' trace explorer, Jaeger UI or Grafana, including
+the expected `service.name` and trace IDs; an accepted HTTP request alone does not prove storage.
+VictoriaTraces applies a [30-second query latency offset](https://docs.victoriametrics.com/victoriatraces/querying/#search-latency)
+by default, so newly ingested traces may take at least that long to appear in the explorer.
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ❌ Logs
+  ❌ Profiles
+</Accordion>
+
+- **VICTORIA_TRACES_ENDPOINT** `string` : OTLP HTTP Traces Endpoint. Full trace ingestion URL. For a root URL, /insert/opentelemetry/v1/traces is appended. For Cloud or an authenticated proxy, copy its complete ingestion URL. HTTPS enables verified TLS.
+  - This field is required
+  - Example: `http://victoria-traces:10428/insert/opentelemetry/v1/traces`
+- **VICTORIA_TRACES_AUTH** `string` : Authentication. Use bearer for VictoriaMetrics Cloud access tokens or basic for an authenticated proxy such as vmauth.
+  - This field is optional and defaults to `none`
+- **VICTORIA_TRACES_TOKEN** `string` : Access Token. Bearer token with permission to write traces. Required when bearer authentication is selected.
+  - This field is optional
+- **OTLP_HTTP_BASIC_AUTH_USERNAME** `string` : Basic Auth Username. Required when basic authentication is selected.
+  - This field is optional
+- **OTLP_HTTP_BASIC_AUTH_PASSWORD** `string` : Basic Auth Password. Password for the authenticated proxy. Required when basic authentication is selected.
+  - This field is optional
+- **OTLP_HTTP_CA_PEM** `string` : Certificate Authority. Optional CA certificate in PEM format for HTTPS. Uses system root CAs when empty.
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **OTLP_HTTP_COMPRESSION** `string` : Compression.
+  - This field is optional and defaults to `gzip`
+- **OTLP_HTTP_HEADERS** `{ key: string; value: string; }[]` : Tenant Headers. Optional AccountID and ProjectID tenant headers or other non-secret ingestion headers. Use the authentication fields for credentials.
+  - This field is optional
+
+<Note>
+  VictoriaTraces supports traces only. Self-hosted HTTP listens on port 10428 by default. Cloud deployments may require beta access; use the complete ingestion endpoint and a write access token from the Cloud console. Credentials must be stored in the destination Secret. Use HTTPS when sending credentials outside a trusted network.
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `VictoriaTraces` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `victoriatraces.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: victoriatraces-example
+      namespace: odigos-system
+    spec:
+      data:
+        VICTORIA_TRACES_ENDPOINT: <OTLP HTTP Traces Endpoint>
+        # Note: The commented fields below are optional.
+        # VICTORIA_TRACES_AUTH: <Authentication (default: none) (options: [none, bearer, basic])>
+        # OTLP_HTTP_BASIC_AUTH_USERNAME: <Basic Auth Username>
+        # OTLP_HTTP_CA_PEM: <Certificate Authority>
+        # OTLP_HTTP_COMPRESSION: <Compression (default: gzip) (options: [gzip, none])>
+        # OTLP_HTTP_HEADERS: <Tenant Headers>
+      destinationName: victoriatraces
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: victoriatraces-secret
+      signals:
+      - TRACES
+      type: victoriatraces
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   OTLP_HTTP_BASIC_AUTH_PASSWORD: <Base64 Basic Auth Password>
+    #   VICTORIA_TRACES_TOKEN: <Base64 Access Token>
+    # kind: Secret
+    # metadata:
+    #   name: victoriatraces-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f victoriatraces.yaml
+    ```
+  </Step>
+</Steps>

@@ -71,5 +71,6 @@ const (
 	TraceloopDestinationType              DestinationType = "traceloop"
 	UptraceDestinationType                DestinationType = "uptrace"
 	VictoriaMetricsCloudDestinationType   DestinationType = "victoriametricscloud"
+	VictoriaTracesDestinationType         DestinationType = "victoriatraces"
 	PyroscopeDestinationType              DestinationType = "pyroscope"
 )
