@@ -11,8 +11,9 @@ const (
 	// OdigosCachePort is the cache listen port (Redis default).
 	OdigosCachePort = 6379
 
-	// UrlTemplatizationLiveTrafficLearningEnvVar enables the enterprise instrumentor
-	// live-traffic learning.
+	// UrlTemplatizationLiveTrafficLearningEnvVar enables enterprise live-traffic
+	// learning in the instrumentor (GC job) and UI (GraphQL unmatched-path hook).
+	// Set on those pods by Helm when cardinalityControl.urlTemplatization.liveTrafficLearning.enabled.
 	UrlTemplatizationLiveTrafficLearningEnvVar = "ODIGOS_URL_TEMPLATIZATION_LIVE_TRAFFIC_LEARNING"
 )
 
