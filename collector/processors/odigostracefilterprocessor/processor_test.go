@@ -155,6 +155,83 @@ func TestEmptyResourceSpansRemoved(t *testing.T) {
 	assert.Equal(t, "svc2", svcName.Str())
 }
 
+// A batch may legitimately carry scope spans that arrived with no spans at all: the OTLP
+// receiver only rejects a request whose total span count is zero, and the batch processor
+// merges such entries from every request it accumulates.
+func TestEmptyScopeSpansOnArrival(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+	rs := td.ResourceSpans().AppendEmpty()
+	kept := rs.ScopeSpans().AppendEmpty()
+	kept.Scope().SetName("kept")
+	kept.Spans().AppendEmpty().SetFlags(1)
+	rs.ScopeSpans().AppendEmpty()
+	rs.ScopeSpans().AppendEmpty()
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	require.Equal(t, 1, result.ResourceSpans().Len())
+	require.Equal(t, 1, result.ResourceSpans().At(0).ScopeSpans().Len())
+	assert.Equal(t, "kept", result.ResourceSpans().At(0).ScopeSpans().At(0).Scope().Name())
+	assert.Equal(t, 1, countSpans(result))
+}
+
+func TestEmptyResourceSpansOnArrival(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+	rs := td.ResourceSpans().AppendEmpty()
+	rs.Resource().Attributes().PutStr("service.name", "svc")
+	rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty().SetFlags(1)
+	td.ResourceSpans().AppendEmpty()
+	td.ResourceSpans().AppendEmpty()
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	require.Equal(t, 1, result.ResourceSpans().Len())
+
+	svcName, ok := result.ResourceSpans().At(0).Resource().Attributes().Get("service.name")
+	require.True(t, ok)
+	assert.Equal(t, "svc", svcName.Str())
+	assert.Equal(t, 1, countSpans(result))
+}
+
+// Every span of several scopes/resources is dropped at once, so the pruning has to remove
+// more than one entry per slice.
+func TestAllScopesAndResourcesEmptiedByFilter(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+	for r := 0; r < 3; r++ {
+		rs := td.ResourceSpans().AppendEmpty()
+		for s := 0; s < 3; s++ {
+			rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty().SetFlags(0)
+		}
+	}
+	keptRs := td.ResourceSpans().AppendEmpty()
+	keptRs.Resource().Attributes().PutStr("service.name", "kept")
+	keptRs.ScopeSpans().AppendEmpty().Spans().AppendEmpty().SetFlags(1)
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	require.Equal(t, 1, result.ResourceSpans().Len())
+
+	svcName, ok := result.ResourceSpans().At(0).Resource().Attributes().Get("service.name")
+	require.True(t, ok)
+	assert.Equal(t, "kept", svcName.Str())
+	assert.Equal(t, 1, countSpans(result))
+}
+
 func createTestTraces(flags uint32) ptrace.Traces {
 	td := ptrace.NewTraces()
 	rs := td.ResourceSpans().AppendEmpty()
