@@ -37,7 +37,8 @@ func (s *AlibabaCloudSLS) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]
 	if err != nil {
 		return nil, fmt.Errorf("invalid SLS endpoint: %w", err)
 	}
-	if parsed.Scheme != "https" || parsed.Hostname() == "" || parsed.User != nil || (parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
+	if parsed.Scheme != "https" || parsed.Hostname() == "" || parsed.User != nil ||
+		(parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
 		return nil, fmt.Errorf("SLS endpoint must be an HTTPS service endpoint without a path, credentials, query, or fragment")
 	}
 	if !isLoggingEnabled(dest) {
