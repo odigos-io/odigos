@@ -97,6 +97,7 @@ import {
   GET_METRICS,
   GET_NAMESPACES_WITH_WORKLOADS,
   GET_PEER_SOURCES,
+  GET_UNMATCHED_URL_PATHS,
   GET_GO_OFFSETS,
   CHECK_GO_OFFSETS_UPDATES,
   UPDATE_GO_OFFSETS,
@@ -252,6 +253,10 @@ const operations: OdigosApiOperations = {
   GET_SOURCE: { document: GET_SOURCE },
   GET_SOURCE_LIBRARIES: { document: GET_SOURCE_LIBRARIES },
   GET_PEER_SOURCES: { document: GET_PEER_SOURCES },
+  GET_UNMATCHED_URL_PATHS: {
+    document: GET_UNMATCHED_URL_PATHS,
+    transformVariables: (vars) => ({ filter: vars }),
+  },
   PERSIST_SOURCES: { document: PERSIST_SOURCES },
   UPDATE_SOURCE: { document: UPDATE_K8S_ACTUAL_SOURCE },
   RESTART_WORKLOADS: { document: RESTART_WORKLOADS },

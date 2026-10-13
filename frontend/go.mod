@@ -27,6 +27,7 @@ require (
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/client_golang v1.24.1
 	github.com/prometheus/common v0.71.0
+	github.com/redis/go-redis/v9 v9.8.0
 	github.com/stretchr/testify v1.12.1
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.67.0
@@ -92,6 +93,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.6.0 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dgryski/go-groupvarint v0.0.0-20230630160417-2bfb7969fb3c // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dolthub/maphash v0.1.0 // indirect
 	github.com/dolthub/swiss v0.2.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

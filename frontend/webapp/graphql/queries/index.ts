@@ -11,6 +11,7 @@ export * from './k8s-manifest';
 export * from './metrics';
 export * from './pipeline-collectors';
 export * from './peer-sources';
+export * from './unmatched-url-paths';
 export * from './profiling';
 export * from './service-map';
 export * from './source';

@@ -109,6 +109,8 @@ models:
         resolver: true
       rollbackOccurred:
         resolver: true
+      urlTemplatization:
+        resolver: true
 
   K8sWorkloadRollout:
     fields:

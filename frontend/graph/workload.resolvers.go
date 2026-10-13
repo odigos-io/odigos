@@ -787,6 +787,14 @@ func (r *k8sWorkloadResolver) RollbackOccurred(ctx context.Context, obj *model.K
 	return ic.Status.RollbackOccurred, nil
 }
 
+// URLTemplatization is the resolver for the urlTemplatization field.
+func (r *k8sWorkloadResolver) URLTemplatization(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadURLTemplatization, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, fmt.Errorf("workload id is required")
+	}
+	return services.GetWorkloadUrlTemplatization(ctx, obj.ID.Namespace, string(obj.ID.Kind), obj.ID.Name)
+}
+
 // Processes is the resolver for the processes field.
 func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error) {
 	l := loaders.For(ctx)

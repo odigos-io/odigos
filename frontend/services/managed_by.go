@@ -17,6 +17,8 @@ func managedByFromLabels(labels map[string]string) model.ManagedBy {
 		return model.ManagedByOdigosUI
 	case k8sconsts.OdigosInterrogationLoopManagedByValue:
 		return model.ManagedByInterrogationLoop
+	case k8sconsts.OdigosLiveTrafficLearningManagedByValue:
+		return model.ManagedByLiveTrafficLearning
 	default:
 		return model.ManagedByUnknown
 	}

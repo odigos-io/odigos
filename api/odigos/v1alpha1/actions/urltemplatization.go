@@ -8,6 +8,21 @@ import (
 
 const ActionNameURLTemplatization = "URLTemplatization"
 
+// UrlTemplatizationDocumentedTemplate is a template plus optional learning context
+// (example paths and notes) from how the rule was computed.
+//
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type UrlTemplatizationDocumentedTemplate struct {
+	Template string `json:"template"`
+
+	// Examples are concrete example paths that motivated this template (up to 5).
+	// +kubebuilder:validation:MaxItems=5
+	Examples []string `json:"examples,omitempty"`
+
+	Notes string `json:"notes,omitempty"`
+}
+
 // UrlTemplatizationRule is a group of rules that share the same target spans.
 // If SourcesScope is empty, the rules apply to all sources (global).
 // If set, rules apply to selected scope.
@@ -21,6 +36,10 @@ type UrlTemplatizationRule struct {
 
 	// the rules that will be applied to the spans matching the above filters.
 	Templates []string `json:"templates,omitempty"`
+
+	// DocumentedTemplates are templates with optional example paths and notes.
+	// Their Template strings are applied like Templates when configuring a source.
+	DocumentedTemplates []UrlTemplatizationDocumentedTemplate `json:"documentedTemplates,omitempty"`
 }
 
 // URLTemplatizationDefaultTemplatizationGroup is a group of services for which default templatization will be applied.

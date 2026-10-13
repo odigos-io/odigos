@@ -2048,6 +2048,7 @@ type K8sWorkload struct {
 	DataStreamNames            []string                             `json:"dataStreamNames"`
 	NumberOfInstances          *int                                 `json:"numberOfInstances,omitempty"`
 	RollbackOccurred           bool                                 `json:"rollbackOccurred"`
+	URLTemplatization          *K8sWorkloadURLTemplatization        `json:"urlTemplatization"`
 }
 
 type K8sWorkloadAgentEnabled struct {
@@ -2285,6 +2286,11 @@ type K8sWorkloadTelemetryMetrics struct {
 type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 	IsExpectingTelemetry    *bool                   `json:"isExpectingTelemetry,omitempty"`
 	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
+}
+
+type K8sWorkloadURLTemplatization struct {
+	ExistingConfigs     []*URLTemplatizationExistingConfig    `json:"existingConfigs"`
+	LiveTrafficLearning *URLTemplatizationLiveTrafficLearning `json:"liveTrafficLearning"`
 }
 
 type KarpenterConfig struct {
@@ -2970,6 +2976,12 @@ type URLTemplatizationRuleInput struct {
 	Examples []string `json:"examples,omitempty"`
 }
 
+type UnmatchedURLPath struct {
+	Path          string  `json:"path"`
+	Count         int     `json:"count"`
+	ContainerName *string `json:"containerName,omitempty"`
+}
+
 type URLTemplatizationCardinalityControlConfig struct {
 	LiveTrafficLearning *LiveTrafficLearningConfig `json:"liveTrafficLearning,omitempty"`
 }
@@ -2994,6 +3006,46 @@ type URLTemplatizationDefaultSkipPolicy struct {
 type URLTemplatizationDefaultSkipPolicyInput struct {
 	SkipForNonSuccessCodes *bool `json:"skipForNonSuccessCodes,omitempty"`
 	SkipHTTPStatusCodes    []int `json:"skipHttpStatusCodes,omitempty"`
+}
+
+type URLTemplatizationExistingConfig struct {
+	ContainerName string                               `json:"containerName"`
+	Templates     []*URLTemplatizationExistingTemplate `json:"templates"`
+	Default       *URLTemplatizationExistingDefault    `json:"default,omitempty"`
+}
+
+type URLTemplatizationExistingDefault struct {
+	Disabled   bool                                `json:"disabled"`
+	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
+}
+
+type URLTemplatizationExistingTemplate struct {
+	Template   string    `json:"template"`
+	Examples   []string  `json:"examples"`
+	Notes      *string   `json:"notes,omitempty"`
+	ActionID   *string   `json:"actionId,omitempty"`
+	ActionName *string   `json:"actionName,omitempty"`
+	ManagedBy  ManagedBy `json:"managedBy"`
+}
+
+type URLTemplatizationLiveTrafficLearning struct {
+	Server                 []*UnmatchedURLPath                 `json:"server"`
+	Client                 []*UnmatchedURLPath                 `json:"client"`
+	ServerRecommendedRules []*URLTemplatizationRecommendedRule `json:"serverRecommendedRules"`
+	ClientRecommendedRules []*URLTemplatizationRecommendedRule `json:"clientRecommendedRules"`
+}
+
+type URLTemplatizationRecommendedRule struct {
+	Template string                                 `json:"template"`
+	Reason   string                                 `json:"reason"`
+	Segments []*URLTemplatizationRecommendedSegment `json:"segments"`
+}
+
+type URLTemplatizationRecommendedSegment struct {
+	TemplateName string   `json:"templateName"`
+	Static       bool     `json:"static"`
+	Certainty    string   `json:"certainty"`
+	Examples     []string `json:"examples"`
 }
 
 type URLTemplatizationRulesGroup struct {
@@ -4713,22 +4765,24 @@ func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) Marsha
 type ManagedBy string
 
 const (
-	ManagedByProfile           ManagedBy = "Profile"
-	ManagedByOdigosUI          ManagedBy = "OdigosUi"
-	ManagedByInterrogationLoop ManagedBy = "InterrogationLoop"
-	ManagedByUnknown           ManagedBy = "Unknown"
+	ManagedByProfile             ManagedBy = "Profile"
+	ManagedByOdigosUI            ManagedBy = "OdigosUi"
+	ManagedByInterrogationLoop   ManagedBy = "InterrogationLoop"
+	ManagedByLiveTrafficLearning ManagedBy = "LiveTrafficLearning"
+	ManagedByUnknown             ManagedBy = "Unknown"
 )
 
 var AllManagedBy = []ManagedBy{
 	ManagedByProfile,
 	ManagedByOdigosUI,
 	ManagedByInterrogationLoop,
+	ManagedByLiveTrafficLearning,
 	ManagedByUnknown,
 }
 
 func (e ManagedBy) IsValid() bool {
 	switch e {
-	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByUnknown:
+	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByLiveTrafficLearning, ManagedByUnknown:
 		return true
 	}
 	return false

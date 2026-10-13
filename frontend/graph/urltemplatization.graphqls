@@ -1,0 +1,68 @@
+# Types for K8sWorkload.urlTemplatization (see workload.graphqls).
+#
+# existingConfigs is the resolved UrlTemplatization config from InstrumentationConfig
+# (WorkloadCollectorConfig and/or agent Traces), per container.
+#
+# liveTrafficLearning holds unmatched HTTP paths from cacheDb and recommended rules
+# computed on each query from those counts (not from Action status / last learning-loop run).
+# Paths that already match an accepted templatization rule for the workload are omitted
+# from server/client and from recommended-rule computation.
+
+type UnmatchedUrlPath {
+  path: String!
+  count: Int!
+  containerName: String
+}
+
+type UrlTemplatizationRecommendedSegment {
+  templateName: String!
+  # True for concrete path literals; false for dynamic * / {name} segments.
+  static: Boolean!
+  certainty: String!
+  examples: [String!]!
+}
+
+type UrlTemplatizationRecommendedRule {
+  template: String!
+  reason: String!
+  segments: [UrlTemplatizationRecommendedSegment!]!
+}
+
+# Resolved default templatization settings for one container (from UrlTemplatizationConfig.default).
+type UrlTemplatizationExistingDefault {
+  disabled: Boolean!
+  skipPolicy: UrlTemplatizationDefaultSkipPolicy
+}
+
+# One template applied to a container, resolved from the URLTemplatization Actions
+# whose rule scopes match the workload. actionId / actionName are null for templates
+# that are present in the resolved config but no longer match any Action rule.
+type UrlTemplatizationExistingTemplate {
+  template: String!
+  examples: [String!]!
+  notes: String
+  actionId: String
+  actionName: String
+  managedBy: ManagedBy!
+}
+
+# Resolved URL templatization config applied to one container of the workload.
+type UrlTemplatizationExistingConfig {
+  containerName: String!
+  templates: [UrlTemplatizationExistingTemplate!]!
+  default: UrlTemplatizationExistingDefault
+}
+
+# Live unmatched paths and recommendations derived from current cacheDb counts.
+type UrlTemplatizationLiveTrafficLearning {
+  server: [UnmatchedUrlPath!]!
+  client: [UnmatchedUrlPath!]!
+  serverRecommendedRules: [UrlTemplatizationRecommendedRule!]!
+  clientRecommendedRules: [UrlTemplatizationRecommendedRule!]!
+}
+
+# URL templatization view for a single workload: applied config plus live-traffic learning.
+type K8sWorkloadUrlTemplatization {
+  existingConfigs: [UrlTemplatizationExistingConfig!]!
+  liveTrafficLearning: UrlTemplatizationLiveTrafficLearning!
+}
