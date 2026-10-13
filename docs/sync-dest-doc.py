@@ -538,10 +538,26 @@ def process_files(backend_mdx_dir, backend_yaml_dir):
                 mdx_path = os.path.join(
                     backend_mdx_dir, file.replace('.yaml', '.mdx')
                 )
+                previous_frontmatter = None
                 if os.path.exists(mdx_path):
+                    with open(mdx_path, 'r') as mdx_file:
+                        previous_frontmatter = mdx_file.read().split("---", 2)[1]
                     update_mdx(mdx_path, yaml_content)
                 else:
                     create_mdx(mdx_path, yaml_content)
+
+                # Product pages wrap the shared content but keep their own navigation metadata.
+                frontmatter = get_documenation(yaml_content)["content_before_custom"].split("---", 2)[1]
+                if frontmatter == previous_frontmatter:
+                    continue
+                for product in ("oss", "enterprise"):
+                    wrapper_path = os.path.join(product, "backends", file.replace('.yaml', '.mdx'))
+                    if os.path.exists(wrapper_path):
+                        with open(wrapper_path, 'r') as wrapper_file:
+                            wrapper = wrapper_file.read()
+                        wrapper = re.sub(r"\A---.*?---", lambda _: f"---{frontmatter}---", wrapper, count=1, flags=re.DOTALL)
+                        with open(wrapper_path, 'w') as wrapper_file:
+                            wrapper_file.write(wrapper)
 
 
 def process_overview(backend_yaml_dir, docs_dir):
