@@ -1,0 +1,84 @@
+{
+  "traces": {
+    "records": 1024,
+    "replayedRecords": 1024,
+    "equal": true,
+    "files": [
+      {
+        "name": "traces-2026-10-13T08-11-12.295-size.json",
+        "bytes": 1044927,
+        "sha256": "345f425598419a2daa57c3a99b54a9d1066a845e681cf8c7a8ee456ff6967bf1"
+      },
+      {
+        "name": "traces.json",
+        "bytes": 538061,
+        "sha256": "f3e2c8f9edb9aa48abb7025c2f4558565f5edb2ae7ec9ba67fb532156538596e"
+      }
+    ],
+    "batches": 121,
+    "resourceServices": [
+      "frontend",
+      "membership"
+    ]
+  },
+  "metrics": {
+    "records": 7919,
+    "replayedRecords": 7919,
+    "equal": true,
+    "files": [
+      {
+        "name": "metrics-2026-10-13T08-11-59.117-size.json",
+        "bytes": 799347,
+        "sha256": "434432a076fd7dd4fa2e4c889e6c6ecc10bd9dca75110d93b44c2df9e8ab2597"
+      },
+      {
+        "name": "metrics-2026-10-13T08-12-28.945-size.json",
+        "bytes": 790228,
+        "sha256": "5665e932613eb7d40400e48aec8f91a62f2f524e0283d2346a4ed9483609d6f9"
+      },
+      {
+        "name": "metrics-2026-10-13T08-12-59.405-size.json",
+        "bytes": 805864,
+        "sha256": "31211c40d7d578dfceeed890014d5fe8b95b6edef15d28ec5c9ac41f9b21dfe8"
+      },
+      {
+        "name": "metrics.json",
+        "bytes": 514769,
+        "sha256": "e7103d419dd5c7f04a5c36513b075b01aa897a70b2a964504e76bd7340f473e5"
+      }
+    ],
+    "batches": 17,
+    "resourceServices": [
+      "frontend",
+      "membership"
+    ]
+  },
+  "logs": {
+    "records": 2211,
+    "replayedRecords": 2211,
+    "equal": true,
+    "files": [
+      {
+        "name": "logs-2026-10-13T08-11-38.334-size.json",
+        "bytes": 1038874,
+        "sha256": "25b633a28d6e38d5900355e41e9c544276773561d8538ad009f8bdb10e59d570"
+      },
+      {
+        "name": "logs.json",
+        "bytes": 328922,
+        "sha256": "a3bebad6d54f78a68351c19ab57afec6ee7a10e133f55f8cd136c534508ad73b"
+      }
+    ],
+    "batches": 61,
+    "resourceServices": [
+      "coupon",
+      "currency",
+      "frontend",
+      "geolocation",
+      "inventory",
+      "load-generator",
+      "membership",
+      "pricing"
+    ]
+  }
+}

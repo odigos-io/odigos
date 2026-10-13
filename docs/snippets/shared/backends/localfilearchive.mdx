@@ -1,0 +1,198 @@
+---
+title: 'Local File Archive'
+description: 'Configuring the Local File Archive backend (Self-Hosted)'
+sidebarTitle: 'Local File Archive'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/localfilearchive.svg" alt="localfilearchive" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+### Persistent storage
+
+Local File Archive writes OTLP traces, metrics, and logs to disk using the bundled
+[file exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.159.0/exporter/fileexporter).
+No cloud account, API key, network authentication, or TLS settings are needed for local writes.
+Profiles are not supported by this named destination.
+
+**VMs:** set `FILE_ARCHIVE_PATH` to an absolute persistent directory writable by the
+collector service account, and leave `FILE_ARCHIVE_PVC` empty. The collector creates
+subdirectories with permissions `0750`; provision ownership and filesystem permissions
+before enabling the destination. Files are written to `<directory>/<destination-id>/<signal>.json`.
+Use a separate path for each collector process; this exporter does not coordinate concurrent writers.
+
+**Kubernetes:** create a Filesystem PVC in the Odigos namespace and set
+`FILE_ARCHIVE_PVC` to its name. The existing gateway deployment configuration mounts
+it read-write at `FILE_ARCHIVE_PATH`, using the gateway's existing UID/GID and fsGroup
+`65534`. The PVC must provide `ReadWriteMany` to support scaling and rolling updates.
+The storage driver must honor fsGroup or have appropriate permissions provisioned.
+Each pod writes to `<directory>/<destination-id>/<pod-name>/<signal>.json`.
+A container restart appends to the same files; a replacement pod creates a new directory
+while previous archives remain on the PVC. Do not run multiple processes with the same
+pod name and archive path. Mount paths must not overlap existing gateway volumes.
+
+### Formats, rotation, and delivery limits
+
+The default is newline-delimited OTLP JSON with no compression. Resource and scope
+metadata, structured log bodies, and metric types are preserved. `proto` uses OTLP
+protobuf with a 4-byte unsigned big-endian length before each batch. In the bundled
+collector's default feature-gate configuration, `zstd` compresses each batch and adds
+that same length framing, including for JSON; these are not ordinary standalone
+`.zst` streams. Decode each length-prefixed frame before replay. If you explicitly
+enable the upstream `exporter.file.nativeCompression` feature gate, its file format
+changes; follow that version's upstream documentation when decoding.
+
+Rotation defaults to 100 MiB, 10 backups, and 7 days of retention per signal and writer
+directory. Rotation is triggered by size; retention removes rotated files. A single
+batch larger than the configured file size is rejected. Set size to `0` to disable
+rotation and append across restarts, with unbounded disk use. Rotation also preserves
+the active file across collector restarts. Retention does not remove directories
+belonging to deleted pods: arrange external lifecycle cleanup and disk monitoring.
+
+The file exporter has no destination-level retry queue or transactional partial-success
+protocol. Writes can fail when storage is full or unwritable; monitor collector export
+errors. Buffered writes without rotation may discover an I/O error only during flush
+or shutdown, so an accepted batch is not a crash-durability guarantee. Recovery can
+leave a partial final record or duplicates; downstream readers must handle these.
+Filesystem access controls protect the archive. TLS/authentication and retries belong
+to the downstream replay exporter when forwarding files to a network backend.
+
+### Replay persisted JSON
+
+Stop the archive writer or copy a stable snapshot first. An OpenTelemetry contrib
+collector with the `otlpjsonfile` receiver can replay **uncompressed JSON** for all
+three supported signals; the Odigos distribution does not bundle this replay receiver.
+For example, mount the archived files read-only and use:
+
+```yaml
+receivers:
+  otlp_json_file:
+    include: [/archive/snapshot/*.json]
+    start_at: beginning
+    include_file_name: false
+    fingerprint_size: 64KiB
+    max_log_size: 128MiB
+exporters:
+  debug:
+    verbosity: detailed
+service:
+  pipelines:
+    traces:
+      receivers: [otlp_json_file]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp_json_file]
+      exporters: [debug]
+    logs:
+      receivers: [otlp_json_file]
+      exporters: [debug]
+```
+
+Include both active and rotated files when reading a snapshot. Disable filename enrichment
+to preserve original attributes. Use a fingerprint large enough to reach batch-specific
+content: files with identical fingerprints may be treated as the same file. Set
+`max_log_size` above the largest encoded batch to avoid splitting JSON records. For a network replay
+backend replace `debug` with an OTLP exporter and configure its TLS, credentials,
+compression, and retry policy. Direct replay of protobuf or framed zstd archives is
+not supported by `otlpjsonfile`; convert them to newline-delimited OTLP JSON first.
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **FILE_ARCHIVE_PATH** `string` : Persistent Archive Directory. Absolute writable persistent directory. Files are separated by destination and signal; Kubernetes also separates pods.
+  - This field is required
+  - Example: `/var/lib/odigos/archive`
+- **FILE_ARCHIVE_PVC** `string` : Kubernetes Persistent Volume Claim. Required on Kubernetes: existing Filesystem PVC in the Odigos namespace with ReadWriteMany access. Leave empty on VMs.
+  - This field is optional
+- **FILE_ARCHIVE_FORMAT** `string` : OTLP Encoding. JSON is newline-delimited OTLP and can be replayed with otlpjsonfile. Protobuf uses 4-byte big-endian length-prefixed batches.
+  - This field is required and defaults to `json`
+- **FILE_ARCHIVE_COMPRESSION** `string` : Compression. Bundled exporter supports zstd. By default compressed batches use 4-byte length framing; they are not plain .zst streams and cannot be replayed directly by otlpjsonfile.
+  - This field is required and defaults to `none`
+- **FILE_ARCHIVE_MAX_MEGABYTES** `number` : Rotation Size (MiB). Maximum size per signal file. Set 0 to disable rotation and append across restarts; disk use is then unbounded. A batch larger than the limit is rejected.
+  - This field is required and defaults to `100`
+- **FILE_ARCHIVE_MAX_BACKUPS** `number` : Maximum Rotated Files. Maximum backups per signal and writer directory; must be at least 1.
+  - This field is required and defaults to `10`
+- **FILE_ARCHIVE_MAX_DAYS** `number` : Rotated File Retention (Days). Retention for rotated files; 0 disables age-based deletion. Pod directories from removed pods need external lifecycle cleanup.
+  - This field is required and defaults to `7`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Local File Archive` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `localfilearchive.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: localfilearchive-example
+      namespace: odigos-system
+    spec:
+      data:
+        FILE_ARCHIVE_COMPRESSION: '<Compression (default: none) (options: [none, zstd])>'
+        FILE_ARCHIVE_FORMAT: '<OTLP Encoding (default: json) (options: [json, proto])>'
+        FILE_ARCHIVE_MAX_BACKUPS: '<Maximum Rotated Files (default: 10)>'
+        FILE_ARCHIVE_MAX_DAYS: '<Rotated File Retention (Days) (default: 7)>'
+        FILE_ARCHIVE_MAX_MEGABYTES: '<Rotation Size (MiB) (default: 100)>'
+        FILE_ARCHIVE_PATH: <Persistent Archive Directory>
+        # Note: The commented fields below are optional.
+        # FILE_ARCHIVE_PVC: <Kubernetes Persistent Volume Claim>
+      destinationName: localfilearchive
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: localfilearchive
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f localfilearchive.yaml
+    ```
+  </Step>
+</Steps>
