@@ -1,7 +1,7 @@
 ---
-title: 'Lightstep'
-description: 'Configuring the Lightstep backend (Managed)'
-sidebarTitle: 'Lightstep'
+title: 'Lightstep (Deprecated)'
+description: 'Lightstep (Deprecated) retirement and migration guidance'
+sidebarTitle: 'Lightstep (Deprecated)'
 icon: 'signal-stream'
 ---
 
@@ -24,15 +24,40 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-**Obtaining Lightstep Access Token**<br />
-Go to **⚙️ > Access Tokens** and click **Create New**
+### Retirement and Migration
+
+Odigos has deprecated Lightstep and removed it from new destination setup. Existing `spec.type: lightstep` manifests, `LIGHTSTEP_ACCESS_TOKEN` secrets, and trace exporter configuration remain readable and compatible.
+
+[ServiceNow's official end-of-life notice](https://docs.lightstep.com/changelog/eol-notice) states that support and access end on the customer's contract term end date or March 1, 2026, whichever is later. Confirm your account's end date with ServiceNow; this does not mean every endpoint stopped accepting data on March 1. There is no equivalent replacement or direct migration to another ServiceNow product. Do not rename a Lightstep destination to another product.
+
+To move trace collection:
+
+1. Choose a supported trace destination from the [destination catalog](/backends-overview), such as [Jaeger](/backends/jaeger), [Grafana Cloud Tempo](/backends/grafanacloudtempo), or an [OTLP endpoint](/backends/otlp) provided by your new backend.
+2. Create a separate destination with that backend's endpoint and credentials, enable traces, and select the same data streams or workloads. A Lightstep token cannot be reused as the new backend's credentials.
+3. While your Lightstep account is still active, send to both destinations and confirm recent traces can be queried in the new backend's UI. A successful configuration or connection test alone does not prove ingestion.
+4. Disable the Lightstep destination after verification. For Kubernetes manifests, set `spec.disabled: true`; remove the old Destination and its secret when they are no longer needed.
+
+Changing destinations routes new telemetry. It does not transfer historical Lightstep data, dashboards, alerts, or saved queries. Arrange any historical data export with ServiceNow before account access ends and recreate dashboards and alerts in the new backend.
+
+### Export Failures After Retirement
+
+A destination can be configured successfully while its retired account rejects exports. Check destination export errors and gateway collector logs for the `otlp_grpc/lightstep-<destination-id>` exporter. Authentication or permission failures, an unavailable endpoint, or timeouts can have several causes; confirm account retirement with ServiceNow before attributing them to end of life.
+
+Once the account is retired, retries or token rotation do not restore access. Disable or remove the Lightstep destination and route traces to your verified replacement. Queued telemetry is bounded and may be dropped after export failures; do not treat retries as durable storage.
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! END CUSTOM EDIT !!
 */}
 
-### Configuring Destination Fields
+### Existing Configuration Reference
+
+<Warning>
+  Lightstep / ServiceNow Cloud Observability is retired and unavailable for new setup in Odigos.
+  Support and access end on the contract term end date or March 1, 2026, whichever is later.
+  Existing configuration is retained for compatibility; ingestion depends on the account remaining active.
+  See the [retirement and migration guidance](/backends/lightstep).
+</Warning>
 
 <Accordion title="Supported Signals:">
   ✅ Traces
@@ -44,60 +69,31 @@ Go to **⚙️ > Access Tokens** and click **Create New**
 - **LIGHTSTEP_ACCESS_TOKEN** `string` : Access Token.
   - This field is required
 
-### Adding Destination to Odigos
+The manifest below is a reference for existing configurations, not a new setup guide.
 
-There are two primary methods for configuring destinations in Odigos:
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: lightstep-example
+  namespace: odigos-system
+spec:
+  data: {}
+  destinationName: lightstep
+  secretRef:
+    name: lightstep-secret
+  signals:
+  - TRACES
+  type: lightstep
 
-##### **Using the UI**
+---
 
-<Steps>
-  <Step>
-    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
-    ```bash
-    odigos ui
-    ```
-  </Step>
-  <Step>
-    Click on `Add Destination`, select `Lightstep` and follow the on-screen instructions
-  </Step>
-</Steps>
-
-##### **Using Kubernetes manifests**
-
-<Steps>
-  <Step>
-    Save the YAML below to a file (e.g. `lightstep.yaml`)
-    ```yaml
-    apiVersion: odigos.io/v1alpha1
-    kind: Destination
-    metadata:
-      name: lightstep-example
-      namespace: odigos-system
-    spec:
-      data: {}
-      destinationName: lightstep
-      secretRef:
-        name: lightstep-secret
-      signals:
-      - TRACES
-      type: lightstep
-
-    ---
-
-    apiVersion: v1
-    data:
-      LIGHTSTEP_ACCESS_TOKEN: <Base64 Access Token>
-    kind: Secret
-    metadata:
-      name: lightstep-secret
-      namespace: odigos-system
-    type: Opaque
-    ```
-  </Step>
-  <Step>
-    Apply the YAML using `kubectl`
-    ```bash
-    kubectl apply -f lightstep.yaml
-    ```
-  </Step>
-</Steps>
+apiVersion: v1
+data:
+  LIGHTSTEP_ACCESS_TOKEN: <Base64 Access Token>
+kind: Secret
+metadata:
+  name: lightstep-secret
+  namespace: odigos-system
+type: Opaque
+```
