@@ -961,6 +961,20 @@
           "title": "resources",
           "type": "object"
         },
+        "spanMetricsMaxSeries": {
+          "default": "50000",
+          "description": "The most span metric series each insights replica keeps per 10-second slot. The agents a\ntrace surge rule covers record them; a series past it is dropped for the rest of its slot\n(insights_engine_span_metrics_series_dropped_total). A series is written at most 5 times a\nslot and span metrics are kept about 25 minutes, so on the ClickHouse disk the span metrics\nof a replica stay under about 25 KB per series of this budget: 1.3 GB for the default.\nReplicas don't share the budget; spanMetricsMaxSizeMiB bounds them all.",
+          "minimum": 1,
+          "required": [],
+          "title": "spanMetricsMaxSeries"
+        },
+        "spanMetricsMaxSizeMiB": {
+          "default": "2048",
+          "description": "The most disk span metrics take in ClickHouse, in MiB, across all insights replicas. Past\nit, insights drops their oldest five minutes first\n(insights_engine_span_metrics_partitions_dropped_total). Keep it well under the ClickHouse\nvolume (insights.clickhouse.storage), which every insights table shares. Trace surges read\nat most the last 10 minutes of span metrics.",
+          "minimum": 1,
+          "required": [],
+          "title": "spanMetricsMaxSizeMiB"
+        },
         "tolerations": {
           "items": {
             "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",

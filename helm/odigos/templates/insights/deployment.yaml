@@ -55,6 +55,14 @@ spec:
                   key: odigos-onprem-token
             - name: GOMEMLIMIT
               value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.insights.resources) }}
+            {{- with .Values.insights.spanMetricsMaxSeries }}
+            - name: INSIGHTS_SPAN_METRICS_MAX_SERIES
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.insights.spanMetricsMaxSizeMiB }}
+            - name: INSIGHTS_SPAN_METRICS_MAX_SIZE_MIB
+              value: {{ . | quote }}
+            {{- end }}
             # ClickHouse password comes from the bundled secret; user and
             # database name are hardcoded ("odigos_insights") in the
             # ClickHouse Deployment too, so we just bake them into the DSN.
