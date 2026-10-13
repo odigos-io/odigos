@@ -27,6 +27,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"go.opentelemetry.io/otel/metric"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,6 +66,8 @@ const (
 type Evaluator struct {
 	Client client.Client
 	Logger logr.Logger
+	// nil records no metrics.
+	Meter metric.Meter
 
 	namespace string
 	metrics   metricsReader
@@ -92,6 +95,10 @@ type Evaluator struct {
 	// active ones, including those it restores.
 	requiredBytes map[string]int
 	archive       archiver
+	telemetry     *evaluatorMetrics
+	// what the current evaluation read from odigos insights.
+	servicesRead int
+	queryErr     error
 }
 
 // samplingState is a Sampling and its surges during one evaluation; flush writes the dirty ones.
@@ -173,19 +180,37 @@ func (e *Evaluator) init(namespace string, metrics metricsReader, archive archiv
 	e.breaches = map[surgeKey]*breach{}
 	e.noTargets = map[surgeKey]bool{}
 	e.window, e.interval = common.TraceSurgeTiming(nil)
+	telemetry, err := newEvaluatorMetrics(e.Meter)
+	if err != nil {
+		e.Logger.Error(err, "failed to create the trace surge evaluator's metrics")
+		telemetry, _ = newEvaluatorMetrics(nil)
+	}
+	e.telemetry = telemetry
 }
 
+// evaluate runs one evaluation and records how it went.
 func (e *Evaluator) evaluate(ctx context.Context, now time.Time) error {
+	began := time.Now()
+	result, err := e.evaluateSurges(ctx, now)
+	if err != nil {
+		result = resultError
+	}
+	e.telemetry.evaluated(ctx, result, time.Since(began), now)
+	return err
+}
+
+func (e *Evaluator) evaluateSurges(ctx context.Context, now time.Time) (string, error) {
+	e.servicesRead, e.queryErr = 0, nil
 	conf, err := k8sutils.GetCurrentOdigosConfiguration(ctx, e.Client)
 	if err != nil {
-		return err
+		return "", err
 	}
 	e.limits = limitsFrom(conf.Sampling)
 	e.window, e.interval = common.TraceSurgeTiming(conf.Sampling)
 
 	samplings := &odigosv1.SamplingList{}
 	if err := e.Client.List(ctx, samplings, client.InNamespace(e.namespace)); err != nil {
-		return err
+		return "", err
 	}
 	e.samplings = make(map[string]*samplingState, len(samplings.Items))
 	for i := range samplings.Items {
@@ -247,24 +272,33 @@ func (e *Evaluator) evaluate(ctx context.Context, now time.Time) error {
 	}
 
 	e.active = active
+	result := resultOK
 	switch {
 	case !common.TraceSurgesEnabled(conf.Sampling):
 		clear(e.breaches)
+		clear(rules)
 		for _, surge := range active {
-			e.restore(ctx, surge, now, "Trace surges were turned off.")
+			e.restore(ctx, surge, now, causeTurnedOff, "Trace surges were turned off.")
 		}
 		for key := range e.latched {
 			e.releaseHold(ctx, now, key, "Trace surges were turned off.")
 		}
 	case !common.InsightsPipelineActive(conf.Insights):
+		result = resultInsightsOff
 		clear(e.breaches)
 		for _, surge := range active {
-			e.restore(ctx, surge, now, "Odigos Insights was turned off. Trace surges evaluate the RED metrics it stores.")
+			e.restore(ctx, surge, now, causeInsightsOff, "Odigos Insights was turned off. Trace surges evaluate the RED metrics it stores.")
 		}
 		e.releaseHolds(ctx, now, rules, nil)
 	case len(rules) > 0 || len(active) > 0:
 		if err := e.evaluateRules(ctx, now, rules, active); err != nil {
-			return err
+			return "", err
+		}
+		switch {
+		case errors.Is(e.queryErr, errInsightsTraceSurgesOff):
+			result = resultInsightsSurgesOff
+		case e.queryErr != nil:
+			result = resultMetricsError
 		}
 	default:
 		clear(e.breaches)
@@ -276,7 +310,8 @@ func (e *Evaluator) evaluate(ctx context.Context, now time.Time) error {
 	if e.archiveEnded(ctx, now) {
 		e.flush(ctx)
 	}
-	return nil
+	e.telemetry.snapshot(rules, e.samplings, e.servicesRead, e.limits)
+	return result, nil
 }
 
 func (e *Evaluator) evaluateRules(ctx context.Context, now time.Time, rules map[[2]string]surgeRule, active map[surgeKey]*odigosv1.TraceSurge) error {
@@ -290,7 +325,10 @@ func (e *Evaluator) evaluateRules(ctx context.Context, now time.Time, rules map[
 	for _, surge := range active {
 		minOperationCalls = min(minOperationCalls, surge.Spec.Settings.MinimumRequests)
 	}
+	queryBegan := time.Now()
 	services, callers, err := e.metrics.read(ctx, e.window, max(minOperationCalls, 1))
+	e.telemetry.queried(ctx, time.Since(queryBegan), err)
+	e.queryErr = err
 	if err != nil {
 		// without metrics no service is evaluated; active surges hold until they are stale.
 		if err.Error() != e.lastQueryErr {
@@ -304,6 +342,7 @@ func (e *Evaluator) evaluateRules(ctx context.Context, now time.Time, rules map[
 		services, callers = nil, nil
 	} else {
 		e.lastQueryErr = ""
+		e.servicesRead = len(services)
 	}
 
 	languages, err := e.instrumentedWorkloads(ctx)
@@ -348,7 +387,7 @@ func (e *Evaluator) evaluateRules(ctx context.Context, now time.Time, rules map[
 		rule, ok := rules[[2]string{key.sampling, key.ruleID}]
 		switch {
 		case !ok:
-			e.restore(ctx, surge, now, "The rule was removed, disabled, or no longer has a surge.")
+			e.restore(ctx, surge, now, causeRuleRemoved, "The rule was removed, disabled, or no longer has a surge.")
 		case !evaluated[key]:
 			e.evaluateService(ctx, now, key, rule, nil, surge, nil, nil, nil, nil)
 		}
@@ -420,13 +459,13 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 		if surge.Status.Phase == odigosv1.TraceSurgePhaseRecovering {
 			// the metric already recovered: the surge ends without holding the service back.
 			metric := string(settings.Metric)
-			e.restore(ctx, surge, now, fmt.Sprintf("%s was at or below %s when the maximum surge duration of %s was reached.",
+			e.restore(ctx, surge, now, causeMaxDuration, fmt.Sprintf("%s was at or below %s when the maximum surge duration of %s was reached.",
 				metricTitle(metric), formatValue(metric, settings.RecoveryThreshold), e.limits.maxDuration))
 			return
 		}
 		e.latched[key] = true
 		e.ended[key] = surge
-		e.restore(ctx, surge, now, fmt.Sprintf("%s %s. %s must recover before it can surge again.",
+		e.restore(ctx, surge, now, causeMaxDuration, fmt.Sprintf("%s %s. %s must recover before it can surge again.",
 			maxDurationReason, e.limits.maxDuration, workloadLabel(key.service)))
 		return
 	}
@@ -434,7 +473,7 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 	if observation == nil {
 		last := surge.Status.LastObservation
 		if last != nil && now.Sub(last.At.Time) > staleAfter {
-			e.restore(ctx, surge, now, fmt.Sprintf("No metrics from %s for %s. Missing metrics never count as recovery, so the surge ended without it.", workloadLabel(key.service), staleAfter))
+			e.restore(ctx, surge, now, causeStaleMetrics, fmt.Sprintf("No metrics from %s for %s. Missing metrics never count as recovery, so the surge ended without it.", workloadLabel(key.service), staleAfter))
 		}
 		return
 	}
@@ -448,7 +487,7 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 	switch surge.Status.Phase {
 	case odigosv1.TraceSurgePhaseLimited:
 		if observation.Value <= settings.RecoveryThreshold {
-			e.restore(ctx, surge, now, fmt.Sprintf("%s went back to %s before the trace surge limits let sampling rise.",
+			e.restore(ctx, surge, now, causeRecovered, fmt.Sprintf("%s went back to %s before the trace surge limits let sampling rise.",
 				metricTitle(metric), formatValue(metric, observation.Value)))
 			return
 		}
@@ -468,6 +507,7 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 					metricTitle(metric), formatValue(metric, settings.Threshold), formatValue(metric, observation.Value),
 					someTargetNames(surge.Spec.Targets, namedTargets), formatPercent(settings.BoostPercent), formatPercent(surge.Spec.NormalPercent)))
 			e.requiredBytes[surge.Spec.SamplingName] += surgeSize(surge)
+			e.telemetry.transition(ctx, surge, eventPromoted, "")
 			e.Logger.Info("trace surge started", "surge", surge.Name, "rule", rule.id, "service", key.service, "value", observation.Value)
 		} else if reason != surge.Status.LimitReason {
 			surge.Status.LimitReason = reason
@@ -476,6 +516,7 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 		if observation.Value <= settings.RecoveryThreshold {
 			surge.Status.Phase = odigosv1.TraceSurgePhaseRecovering
 			surge.Status.RecoveryStartedAt = &observation.At
+			e.telemetry.transition(ctx, surge, eventRecovering, "")
 			addEvent(surge, now, fmt.Sprintf("%s back at %s", metricTitle(metric), formatValue(metric, observation.Value)),
 				fmt.Sprintf("At or below %s: the %ds recovery window started.", formatValue(metric, settings.RecoveryThreshold), settings.RecoverySeconds))
 		}
@@ -483,6 +524,7 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 		if observation.Value > settings.RecoveryThreshold {
 			surge.Status.Phase = odigosv1.TraceSurgePhaseBoosting
 			surge.Status.RecoveryStartedAt = nil
+			e.telemetry.transition(ctx, surge, eventRebounded, "")
 			addEvent(surge, now, fmt.Sprintf("%s rose to %s", metricTitle(metric), formatValue(metric, observation.Value)),
 				"Above the recovery threshold again: the recovery window restarts once it is back.")
 		} else if previous == nil || observation.At.Sub(previous.At.Time) > 2*e.interval {
@@ -493,7 +535,7 @@ func (e *Evaluator) evaluateService(ctx context.Context, now time.Time, key surg
 					workloadLabel(key.service), 2*e.interval, settings.RecoverySeconds))
 		} else if recovered, boosted := now.Sub(surge.Status.RecoveryStartedAt.Time), now.Sub(surge.Status.BoostedAt.Time); recovered >= time.Duration(settings.RecoverySeconds)*time.Second &&
 			boosted >= time.Duration(settings.MinimumBoostSeconds)*time.Second {
-			e.restore(ctx, surge, now, fmt.Sprintf("%s stayed at or below %s for %ds.", metricTitle(metric), formatValue(metric, settings.RecoveryThreshold), settings.RecoverySeconds))
+			e.restore(ctx, surge, now, causeRecovered, fmt.Sprintf("%s stayed at or below %s for %ds.", metricTitle(metric), formatValue(metric, settings.RecoveryThreshold), settings.RecoverySeconds))
 			return
 		}
 	}
@@ -549,6 +591,7 @@ func (e *Evaluator) start(ctx context.Context, now time.Time, key surgeKey, rule
 		surge.Status.BoostedAt = nil
 		surge.Status.LimitReason = limitReason
 		addEvent(surge, now, "Sampling not raised", limitReason)
+		e.telemetry.transition(ctx, surge, eventLimited, "")
 		e.Logger.Info("trace surge limited", "surge", surge.Name, "rule", rule.id, "service", key.service, "reason", limitReason)
 	} else {
 		addEvent(surge, now, fmt.Sprintf("Sampling raised to %s", formatPercent(settings.BoostPercent)),
@@ -556,6 +599,7 @@ func (e *Evaluator) start(ctx context.Context, now time.Time, key surgeKey, rule
 				metricTitle(metric), formatValue(metric, settings.Threshold), settings.SustainedSeconds, formatValue(metric, trigger.Value),
 				someTargetNames(targets, namedTargets), formatPercent(settings.BoostPercent), formatPercent(rule.normalPercent())))
 		e.requiredBytes[rule.sampling] += surgeSize(surge)
+		e.telemetry.transition(ctx, surge, eventStarted, "")
 		e.Logger.Info("trace surge started", "surge", surge.Name, "rule", rule.id, "service", key.service, "value", trigger.Value, "targets", len(targets))
 	}
 	if len(leftOut) > 0 {
@@ -564,7 +608,8 @@ func (e *Evaluator) start(ctx context.Context, now time.Time, key surgeKey, rule
 	e.updateStatus(ctx, surge)
 }
 
-func (e *Evaluator) restore(ctx context.Context, surge *odigosv1.TraceSurge, now time.Time, reason string) {
+func (e *Evaluator) restore(ctx context.Context, surge *odigosv1.TraceSurge, now time.Time, cause restoreCause, reason string) {
+	e.telemetry.transition(ctx, surge, eventRestored, cause)
 	if surge.Status.BoostedAt == nil {
 		// a limited surge never raised sampling: there is nothing to restore.
 		at := metav1.NewTime(now)
