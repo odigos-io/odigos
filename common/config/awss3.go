@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -27,6 +28,10 @@ func (s *AWSS3) DestType() common.DestinationType {
 }
 
 func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+	return configureS3(dest, currentConfig, false)
+}
+
+func configureS3(dest ExporterConfigurer, currentConfig *Config, spaces bool) ([]string, error) {
 	if !isLoggingEnabled(dest) && !isTracingEnabled(dest) && !isMetricsEnabled(dest) {
 		return nil, errors.New("no metrics, logs or traces enabled, gateway will not be configured for AWS S3")
 	}
@@ -74,7 +79,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 
 	exporterName := "awss3/" + dest.GetID()
-	currentConfig.Exporters[exporterName] = GenericMap{
+	exporterConfig := GenericMap{
 		"s3uploader": GenericMap{
 			"region":              region,
 			"s3_bucket":           bucket,
@@ -82,6 +87,28 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		},
 		"marshaler": marshaler,
 	}
+
+	uploader := exporterConfig["s3uploader"].(GenericMap)
+	for field, key := range map[string]string{"S3_ENDPOINT": "endpoint", "S3_COMPRESSION": "compression", "S3_PREFIX": "s3_prefix"} {
+		if value := dest.GetConfig()[field]; value != "" {
+			uploader[key] = value
+		}
+	}
+	if value := dest.GetConfig()["S3_FORCE_PATH_STYLE"]; value != "" {
+		pathStyle, err := strconv.ParseBool(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid S3_FORCE_PATH_STYLE: %w", err)
+		}
+		uploader["s3_force_path_style"] = pathStyle
+	}
+	if spaces {
+		uploader["access_key_id"] = SecretEnvPlaceholder("S3_ACCESS_KEY_ID", dest)
+		uploader["secret_access_key"] = SecretEnvPlaceholder("S3_SECRET_ACCESS_KEY", dest)
+		uploader["checksum_when_required"] = true
+		uploader["unique_key_func_name"] = "uuidv7"
+	}
+
+	currentConfig.Exporters[exporterName] = exporterConfig
 
 	var pipelineNames []string
 	if isLoggingEnabled(dest) {

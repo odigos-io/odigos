@@ -1,0 +1,143 @@
+---
+title: 'DigitalOcean Spaces'
+description: 'Configuring the DigitalOcean Spaces backend (Managed)'
+sidebarTitle: 'DigitalOcean Spaces'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/digitaloceanspaces.svg" alt="digitaloceanspaces" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+DigitalOcean Spaces archives traces, metrics and logs as OTLP JSON or protobuf objects. Profiles are unsupported. Spaces does not provide telemetry search, dashboards or APM views; download objects and decode them with OpenTelemetry tooling, or load them into your downstream analytics system.
+
+Create a private bucket in the [DigitalOcean control panel](https://cloud.digitalocean.com/spaces). Create a [scoped Spaces access key](https://docs.digitalocean.com/products/spaces/how-to/manage-access/) with read/write/delete access to this bucket. Enter the access key ID and secret in Odigos; credentials are stored in the destination Secret and are isolated from other destinations.
+
+Use the regional **origin** endpoint, for example `https://nyc3.digitaloceanspaces.com`. Do not use a bucket-specific, static website or CDN endpoint. The endpoint selects the storage region. The signing region defaults to `us-east-1`, following [DigitalOcean's AWS SDK examples](https://docs.digitalocean.com/products/spaces/reference/aws-sdks/). Both virtual-host (`false`) and path (`true`) addressing are available.
+
+Choose `otlp_json` or `otlp_proto`. Optional `gzip` and `zstd` compression are applied before uploading. Set an object prefix and a strftime partition format as needed; the default partitions by year/month/day/hour/minute. The exporter generates unique keys and retains all resource groups in the OTLP payload.
+
+The bundled S3 exporter uses the AWS SDK for uploads and multipart uploads, TLS, Signature V4 authentication and standard retries. For Spaces, optional AWS request checksums are calculated only when required by the S3 operation. See [Spaces S3 compatibility](https://docs.digitalocean.com/products/spaces/reference/s3-compatibility/) for the provider's supported subset. Upload failures reject the batch and are retried; S3 has no OTLP partial-success response.
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **S3_BUCKET** `string` : Bucket Name.
+  - This field is required
+- **S3_ENDPOINT** `string` : Regional Origin Endpoint. Use the regional origin, not the bucket or CDN endpoint.
+  - This field is required
+  - Example: `https://nyc3.digitaloceanspaces.com`
+- **S3_REGION** `string` : Signing Region. AWS SDK signing region. DigitalOcean SDK examples use us-east-1; the endpoint selects the Spaces region.
+  - This field is required and defaults to `us-east-1`
+- **S3_ACCESS_KEY_ID** `string` : Spaces Access Key ID.
+  - This field is required
+- **S3_SECRET_ACCESS_KEY** `string` : Spaces Secret Access Key.
+  - This field is required
+- **S3_FORCE_PATH_STYLE** `string` : Addressing Style. false uses virtual-host addressing; true uses path-style addressing.
+  - This field is required and defaults to `false`
+- **S3_MARSHALER** `string` : Data Format.
+  - This field is required and defaults to `otlp_json`
+- **S3_COMPRESSION** `string` : Compression.
+  - This field is optional
+- **S3_PREFIX** `string` : Object Prefix.
+  - This field is optional
+- **S3_PARTITION_FORMAT** `string` : Partition Format.
+  - This field is optional
+  - Example: `%Y/%m/%d/%H/%M`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `DigitalOcean Spaces` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `digitaloceanspaces.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: digitaloceanspaces-example
+      namespace: odigos-system
+    spec:
+      data:
+        S3_BUCKET: <Bucket Name>
+        S3_ENDPOINT: <Regional Origin Endpoint>
+        S3_FORCE_PATH_STYLE: '<Addressing Style (default: false) (options: [false, true])>'
+        S3_MARSHALER: '<Data Format (default: otlp_json) (options: [otlp_json, otlp_proto])>'
+        S3_REGION: '<Signing Region (default: us-east-1)>'
+        # Note: The commented fields below are optional.
+        # S3_COMPRESSION: <Compression (options: [gzip, zstd])>
+        # S3_PREFIX: <Object Prefix>
+        # S3_PARTITION_FORMAT: <Partition Format>
+      destinationName: digitaloceanspaces
+      secretRef:
+        name: digitaloceanspaces-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: digitaloceanspaces
+
+    ---
+
+    apiVersion: v1
+    data:
+      S3_ACCESS_KEY_ID: <Base64 Spaces Access Key ID>
+      S3_SECRET_ACCESS_KEY: <Base64 Spaces Secret Access Key>
+    kind: Secret
+    metadata:
+      name: digitaloceanspaces-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f digitaloceanspaces.yaml
+    ```
+  </Step>
+</Steps>

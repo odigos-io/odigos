@@ -26,6 +26,7 @@ var availableConfigers = []Configer{
 	&Dash0{},
 	&Datadog{},
 	&Debug{},
+	&DigitalOceanSpaces{},
 	&Dynamic{},
 	&Dynatrace{},
 	&ElasticAPM{},

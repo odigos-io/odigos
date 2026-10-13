@@ -991,8 +991,6 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatch
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.159.0/go.mod h1:BEO03kYZp8AzIVUtJkJ8bDJnXbUAsBxzDhAacLY6em4=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.159.0 h1:nJFiCOAQkED28Ow7lWJhbuewvaMHkaeAlUwUYXtouSE=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.159.0/go.mod h1:ymyi2ihTKzIuJBL2yBsgNeo6f7y0nQ/F4k+WpGz3lSk=
-github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.159.0 h1:6A5dHM8svjIQEaIxB2nnkHIPBuJJvmCEmjzwvoWaiz8=
-github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.159.0/go.mod h1:/bLqs7nQ2NtFdC2wdbWwO4n/K5DF0erEyFfUfq+Qt4w=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.159.0 h1:C++OY9QDfZ2pwwn/ugKvZsWBF8du5cz7ElbVE4of/iA=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.159.0/go.mod h1:pIoFTXdNTvE99HiXuCdIQOp2isrDBdmvjvHBEhsFi54=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.159.0 h1:gWys6Rt/X7o8XgtOB8t5NwFOId1EJPDol5et+HduukI=

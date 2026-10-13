@@ -1,0 +1,95 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: digitaloceanspaces
+  displayName: DigitalOcean Spaces
+  category: managed
+spec:
+  image: digitaloceanspaces.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+  - name: S3_BUCKET
+    displayName: Bucket Name
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+  - name: S3_ENDPOINT
+    displayName: Regional Origin Endpoint
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+      placeholder: https://nyc3.digitaloceanspaces.com
+      tooltip: Use the regional origin, not the bucket or CDN endpoint.
+  - name: S3_REGION
+    displayName: Signing Region
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+      tooltip: AWS SDK signing region. DigitalOcean SDK examples use us-east-1; the
+        endpoint selects the Spaces region.
+    initialValue: us-east-1
+  - name: S3_ACCESS_KEY_ID
+    displayName: Spaces Access Key ID
+    componentType: input
+    componentProps:
+      required: true
+      type: password
+    secret: true
+  - name: S3_SECRET_ACCESS_KEY
+    displayName: Spaces Secret Access Key
+    componentType: input
+    componentProps:
+      required: true
+      type: password
+    secret: true
+  - name: S3_FORCE_PATH_STYLE
+    displayName: Addressing Style
+    componentType: dropdown
+    componentProps:
+      required: true
+      values:
+      - 'false'
+      - 'true'
+      tooltip: false uses virtual-host addressing; true uses path-style addressing.
+    initialValue: 'false'
+  - name: S3_MARSHALER
+    displayName: Data Format
+    componentType: dropdown
+    componentProps:
+      required: true
+      values:
+      - otlp_json
+      - otlp_proto
+    initialValue: otlp_json
+  - name: S3_COMPRESSION
+    displayName: Compression
+    componentType: dropdown
+    componentProps:
+      required: false
+      values:
+      - gzip
+      - zstd
+  - name: S3_PREFIX
+    displayName: Object Prefix
+    componentType: input
+    componentProps:
+      required: false
+      type: text
+  - name: S3_PARTITION_FORMAT
+    displayName: Partition Format
+    componentType: input
+    componentProps:
+      required: false
+      type: text
+      placeholder: '%Y/%m/%d/%H/%M'
