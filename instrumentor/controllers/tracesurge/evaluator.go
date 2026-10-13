@@ -7,7 +7,8 @@
 // scope and every service those call is evaluated on its own. A service whose metric stays above
 // the rule's threshold starts a surge: an entry in the status of the Sampling object that holds
 // the rule, which raises the rule's percentage for the workloads in the rule's scope that lead to
-// the service (agentenabled applies it), and records what happened.
+// the service (agentenabled applies it), and records what happened. Once a surge is over, it moves
+// to odigos insights.
 package tracesurge
 
 import (
@@ -37,11 +38,13 @@ const (
 	// an active surge whose service has had no metrics for this long is ended.
 	// missing metrics never count as recovery, but they do not hold the surge forever either.
 	staleAfter = 10 * time.Minute
-	// ended surges stay in the Sampling status at most this many per Sampling: beyond it the oldest
-	// are dropped, so the status stays small.
+	// ended surges wait in the Sampling status at most this many per Sampling, when odigos insights
+	// can't take them: beyond it the oldest are dropped, so the status stays small.
 	maxEndedInStatus = 20
-	maxTimeline      = 30
-	maxTriggerTrail  = 30
+	// after a failed put to odigos insights, no surge is put for this long.
+	archiveRetryAfter = 30 * time.Second
+	maxTimeline       = 30
+	maxTriggerTrail   = 30
 )
 
 // Evaluator runs on the leader instrumentor.
@@ -54,8 +57,12 @@ type Evaluator struct {
 	// services whose metric is above the threshold of a rule, without an active surge yet.
 	breaches map[surgeKey]*breach
 	// the surges that found no workload to raise, so that it is logged once.
-	noTargets    map[surgeKey]bool
-	lastQueryErr string
+	noTargets      map[surgeKey]bool
+	lastQueryErr   string
+	lastArchiveErr string
+	// after a failed put to insights, ended surges wait in the status until this time, so that
+	// insights being down doesn't slow each evaluation.
+	archiveRetryAt time.Time
 	// the open surges (limited or active) of the current evaluation.
 	active map[surgeKey]*odigosv1.TraceSurge
 	// the limits of the current evaluation.
@@ -68,6 +75,8 @@ type Evaluator struct {
 	ended map[surgeKey]*odigosv1.TraceSurge
 	// the Sampling objects of the current evaluation, with their surges.
 	samplings map[string]*samplingState
+	// where ended surges go: odigos insights.
+	archive archiver
 }
 
 // samplingState is a Sampling object and its surges as the current evaluation changes them. Its
@@ -116,7 +125,7 @@ func (e *Evaluator) NeedLeaderElection() bool {
 }
 
 func (e *Evaluator) Start(ctx context.Context) error {
-	e.init(env.GetCurrentNamespace(), newInsightsMetrics(env.GetCurrentNamespace()))
+	e.init(env.GetCurrentNamespace(), newInsightsMetrics(env.GetCurrentNamespace()), newInsightsArchive(env.GetCurrentNamespace()))
 
 	timer := time.NewTimer(0)
 	defer timer.Stop()
@@ -134,9 +143,10 @@ func (e *Evaluator) Start(ctx context.Context) error {
 	}
 }
 
-func (e *Evaluator) init(namespace string, metrics metricsReader) {
+func (e *Evaluator) init(namespace string, metrics metricsReader, archive archiver) {
 	e.namespace = namespace
 	e.metrics = metrics
+	e.archive = archive
 	e.breaches = map[surgeKey]*breach{}
 	e.noTargets = map[surgeKey]bool{}
 	e.window, e.interval = common.TraceSurgeTiming(nil)
@@ -206,7 +216,7 @@ func (e *Evaluator) evaluate(ctx context.Context, now time.Time) error {
 		clear(e.breaches)
 	}
 
-	e.pruneEnded()
+	e.archiveEnded(ctx, now)
 	e.flush(ctx)
 	return nil
 }
@@ -527,17 +537,37 @@ func (e *Evaluator) updateStatus(_ context.Context, surge *odigosv1.TraceSurge) 
 	}
 }
 
-// pruneEnded keeps the newest maxEndedInStatus surges that are over in the Sampling status, and
-// drops the older ones. A surge that ended at the maximum duration stays until its service
-// recovers, since it holds the service back.
-func (e *Evaluator) pruneEnded() {
+// archiveEnded moves the surges that are over from the Sampling status to odigos insights. A surge
+// that ended at the maximum duration stays until its service recovers, since it holds the service
+// back.
+func (e *Evaluator) archiveEnded(ctx context.Context, now time.Time) {
+	archiving := !now.Before(e.archiveRetryAt)
 	for _, state := range e.samplings {
+		kept := state.surges[:0]
 		var ended []*odigosv1.TraceSurge
 		for _, surge := range state.surges {
+			over := surge.Status.Phase == odigosv1.TraceSurgePhaseRestored && surge.Status.RestoredAt != nil &&
+				(surge.Status.RecoveredAt != nil || !strings.HasPrefix(surge.Status.RestoreReason, maxDurationReason))
+			if over && archiving {
+				err := e.archive.put(ctx, surge)
+				if err == nil {
+					state.dirty = true
+					continue
+				}
+				archiving = false
+				e.archiveRetryAt = now.Add(archiveRetryAfter)
+				if err.Error() != e.lastArchiveErr {
+					e.Logger.Error(err, "failed to move ended trace surges to odigos insights; they wait in the Sampling status", "surge", surge.Name)
+					e.lastArchiveErr = err.Error()
+				}
+			}
+			kept = append(kept, surge)
 			if surge.Status.Phase == odigosv1.TraceSurgePhaseRestored {
 				ended = append(ended, surge)
 			}
 		}
+		state.surges = kept
+		// insights is down: keep the newest ended surges, and the ones that hold a service back.
 		if len(ended) > maxEndedInStatus {
 			slices.SortFunc(ended, func(a, b *odigosv1.TraceSurge) int { return b.StartedAt.Compare(a.StartedAt.Time) })
 			drop := map[*odigosv1.TraceSurge]bool{}

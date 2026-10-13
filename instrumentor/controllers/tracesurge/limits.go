@@ -112,7 +112,8 @@ func latchedFrom(latest map[surgeKey]*odigosv1.TraceSurge, open map[surgeKey]*od
 }
 
 // recordRecovery records on the surge that ended at the maximum duration that its service
-// recovered, so that a restarted evaluator does not hold the service back again.
+// recovered, so that a restarted evaluator does not hold the service back again, and the surge
+// can move to odigos insights.
 func (e *Evaluator) recordRecovery(ctx context.Context, key surgeKey, metric string, observation *odigosv1.TraceSurgeObservation, now time.Time) {
 	surge := e.ended[key]
 	if surge == nil || surge.Status.RecoveredAt != nil {
