@@ -26,6 +26,11 @@ import (
 const profilesSupportGate = "service.profilesSupport"
 
 func init() {
+	// Yandex Cloud Monitoring throttles remote writes with HTTP 429.
+	if err := featuregate.GlobalRegistry().Set("exporter.prometheusremotewritexporter.RetryOn429", true); err != nil {
+		fmt.Fprintf(os.Stderr, "odigos: could not enable remote-write HTTP 429 retries: %v\n", err)
+	}
+
 	if err := featuregate.GlobalRegistry().Set(profilesSupportGate, true); err != nil {
 		// Best-effort. If the gate has graduated to stable / been removed in a
 		// future collector version, profiles support is on by default and this is
