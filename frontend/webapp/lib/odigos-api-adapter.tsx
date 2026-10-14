@@ -43,6 +43,10 @@ import type {
   GatewayInfo,
   GoOffsets,
   GoOffsetsUpdateCheck,
+  InsightsIntegration,
+  InsightsIntegrationDescriptor,
+  InsightsDelivery,
+  InsightsDeliveryAttempt,
   InsightsAnomalyIssue,
   InsightsAnomalySummary,
   InsightsBaselineClass,
@@ -118,6 +122,17 @@ import {
   GET_NODE_COLLECTOR_INFO,
   GET_NODE_COLLECTOR_PODS,
   GET_COLLECTOR_POD_INFO,
+  GET_INSIGHTS_INTEGRATION_CATALOG,
+  GET_INSIGHTS_INTEGRATIONS,
+  GET_INSIGHTS_INTEGRATION,
+  GET_INSIGHTS_INTEGRATION_DELIVERIES,
+  GET_INSIGHTS_INTEGRATION_ATTEMPTS,
+  GET_INSIGHTS_FINDING_DELIVERIES,
+  CREATE_INSIGHTS_INTEGRATION,
+  UPDATE_INSIGHTS_INTEGRATION,
+  DELETE_INSIGHTS_INTEGRATION,
+  TEST_INSIGHTS_INTEGRATION,
+  RETRY_INSIGHTS_INTEGRATION_DELIVERIES,
   GET_INSIGHTS_SERVICES,
   GET_INSIGHTS_SERVICE_NAMES,
   GET_INSIGHTS_SERVICE_PROFILE,
@@ -506,6 +521,50 @@ const operations: OdigosApiOperations = {
   UPDATE_LOCAL_UI_SAMPLING_CONFIG: { document: UPDATE_LOCAL_UI_SAMPLING_CONFIG },
 
   // insights — wire nests under `insights { … }`; kit slots are bare.
+  GET_INSIGHTS_INTEGRATION_CATALOG: {
+    document: GET_INSIGHTS_INTEGRATION_CATALOG,
+    transformResult: (raw: unknown) => (raw as { insights?: { integrationCatalog?: InsightsIntegrationDescriptor[] } } | null | undefined)?.insights?.integrationCatalog ?? [],
+  },
+  GET_INSIGHTS_INTEGRATIONS: {
+    document: GET_INSIGHTS_INTEGRATIONS,
+    transformResult: (raw: unknown) => (raw as { insights?: { integrations?: InsightsIntegration[] } } | null | undefined)?.insights?.integrations ?? [],
+  },
+  GET_INSIGHTS_INTEGRATION: {
+    document: GET_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { insights?: { integration?: InsightsIntegration } } | null | undefined)?.insights?.integration,
+  },
+  GET_INSIGHTS_INTEGRATION_DELIVERIES: {
+    document: GET_INSIGHTS_INTEGRATION_DELIVERIES,
+    transformResult: (raw: unknown) => (raw as { insights?: { integrationDeliveries?: InsightsDelivery[] } } | null | undefined)?.insights?.integrationDeliveries ?? [],
+  },
+  GET_INSIGHTS_INTEGRATION_ATTEMPTS: {
+    document: GET_INSIGHTS_INTEGRATION_ATTEMPTS,
+    transformResult: (raw: unknown) => (raw as { insights?: { integrationAttempts?: InsightsDeliveryAttempt[] } } | null | undefined)?.insights?.integrationAttempts ?? [],
+  },
+  GET_INSIGHTS_FINDING_DELIVERIES: {
+    document: GET_INSIGHTS_FINDING_DELIVERIES,
+    transformResult: (raw: unknown) => (raw as { insights?: { findingDeliveries?: InsightsDelivery[] } } | null | undefined)?.insights?.findingDeliveries ?? [],
+  },
+  CREATE_INSIGHTS_INTEGRATION: {
+    document: CREATE_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { createInsightsIntegration?: InsightsIntegration } | null | undefined)?.createInsightsIntegration,
+  },
+  UPDATE_INSIGHTS_INTEGRATION: {
+    document: UPDATE_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { updateInsightsIntegration?: InsightsIntegration } | null | undefined)?.updateInsightsIntegration,
+  },
+  DELETE_INSIGHTS_INTEGRATION: {
+    document: DELETE_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { deleteInsightsIntegration?: boolean } | null | undefined)?.deleteInsightsIntegration ?? false,
+  },
+  TEST_INSIGHTS_INTEGRATION: {
+    document: TEST_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { testInsightsIntegration?: boolean } | null | undefined)?.testInsightsIntegration ?? false,
+  },
+  RETRY_INSIGHTS_INTEGRATION_DELIVERIES: {
+    document: RETRY_INSIGHTS_INTEGRATION_DELIVERIES,
+    transformResult: (raw: unknown) => (raw as { retryInsightsIntegrationDeliveries?: boolean } | null | undefined)?.retryInsightsIntegrationDeliveries ?? false,
+  },
   GET_INSIGHTS_SERVICES: {
     document: GET_INSIGHTS_SERVICES,
     transformResult: (raw: unknown) => (raw as { insights?: { services?: InsightsServiceStat[] } } | null | undefined)?.insights?.services ?? [],
