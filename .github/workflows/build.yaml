@@ -113,8 +113,7 @@ jobs:
           push: false
           tags: instrumentor:pr-${{ github.event.number || github.run_number }}
           provenance: false
-          build-args: SERVICE_NAME=instrumentor
-          file: Dockerfile
+          file: instrumentor/Dockerfile
           outputs: type=docker,dest=/tmp/instrumentor.tar
       - name: Load Docker image for scanning
         run: docker load -i /tmp/instrumentor.tar

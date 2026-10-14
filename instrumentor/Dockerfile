@@ -1,5 +1,4 @@
 FROM --platform=$BUILDPLATFORM golang:1.26.9 AS builder
-ARG SERVICE_NAME
 
 # Copy only go.mod/go.sum for local modules to cache dependency downloads
 WORKDIR /workspace
@@ -14,10 +13,10 @@ COPY status/go.mod status/go.sum status/
 COPY actions/go.mod actions/go.sum actions/
 COPY recommendations/go.mod recommendations/go.sum recommendations/
 COPY odigosauth/go.mod odigosauth/go.sum odigosauth/
-COPY $SERVICE_NAME/go.mod $SERVICE_NAME/go.sum $SERVICE_NAME/
+COPY instrumentor/go.mod instrumentor/go.sum instrumentor/
 
 # go mod download must run from the service module so it resolves that go.mod
-WORKDIR /workspace/$SERVICE_NAME
+WORKDIR /workspace/instrumentor
 RUN mkdir -p /workspace/build
 RUN --mount=type=cache,target=/go/pkg \
     go mod download && go mod verify
@@ -35,8 +34,8 @@ COPY status/ status/
 COPY actions/ actions/
 COPY recommendations/ recommendations/
 COPY odigosauth/ odigosauth/
-COPY $SERVICE_NAME/ $SERVICE_NAME/
-WORKDIR /workspace/$SERVICE_NAME
+COPY instrumentor/ instrumentor/
+WORKDIR /workspace/instrumentor
 # Build for target architecture
 ARG TARGETARCH
 ARG LD_FLAGS
@@ -44,19 +43,18 @@ ARG RHEL=false
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 GOARCH=$TARGETARCH \
-    go build -ldflags="${LD_FLAGS}" -a -o /workspace/build/$SERVICE_NAME cmd/main.go
+    go build -ldflags="${LD_FLAGS}" -a -o /workspace/build/instrumentor cmd/main.go
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
 
 ######## RHEL Image ########
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS rhel
-ARG SERVICE_NAME
 ARG VERSION
 ARG RELEASE
 ARG SUMMARY
 ARG DESCRIPTION
-LABEL "name"=$SERVICE_NAME
+LABEL "name"="instrumentor"
 LABEL "vendor"="Odigos"
 LABEL "maintainer"="Odigos"
 LABEL "version"=$VERSION
@@ -65,11 +63,11 @@ LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
 
 WORKDIR /
-COPY --from=builder /workspace/build/$SERVICE_NAME ./app
-COPY --from=builder /workspace/$SERVICE_NAME/licenses ./licenses
-COPY --from=builder /workspace/$SERVICE_NAME/LICENSE ./licenses/.
+COPY --from=builder /workspace/build/instrumentor ./app
+COPY --from=builder /workspace/instrumentor/licenses ./licenses
+COPY --from=builder /workspace/instrumentor/LICENSE ./licenses/.
 USER 65532:65532
-# TODO: calling the binary by SERVICE_NAME should be better for us in debugging
+# TODO: calling the binary by name should be better for us in debugging
 # but it does not work in distroless image
 ENTRYPOINT ["/app"]
 
@@ -77,10 +75,9 @@ ENTRYPOINT ["/app"]
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
-ARG SERVICE_NAME
 WORKDIR /
-COPY --from=builder /workspace/build/$SERVICE_NAME ./app
+COPY --from=builder /workspace/build/instrumentor ./app
 USER 65532:65532
-# TODO: calling the binary by SERVICE_NAME should be better for us in debugging
+# TODO: calling the binary by name should be better for us in debugging
 # but it does not work in distroless image
 ENTRYPOINT ["/app"]
