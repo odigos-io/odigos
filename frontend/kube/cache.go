@@ -10,6 +10,7 @@ import (
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	cacheutils "github.com/odigos-io/odigos/k8sutils/pkg/cache"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -17,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -28,18 +30,9 @@ var K8sCache cache.Cache
 // SetupK8sCache initializes and starts the controller runtime cache for Source resources.
 // Returns the cache client for direct usage and the underlying cache for registering event handlers.
 func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, odigosNs string) (client.Client, cache.Cache, error) {
-	// Get the Kubernetes config
-	cfg, err := config.GetConfigWithContext(kubeContext)
+	cfg, err := cacheRestConfig(kubeConfig, kubeContext)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get kubernetes config: %w", err)
-	}
-
-	// Override config if kubeConfig path is provided
-	if kubeConfig != "" {
-		cfg, err = config.GetConfigWithContext(kubeContext)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get kubernetes config with custom path: %w", err)
-		}
 	}
 
 	// Create a new scheme and register all required types
@@ -175,4 +168,25 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	K8sCache = k8sCache
 
 	return k8sCacheClient, k8sCache, nil
+}
+
+// cacheRestConfig returns the REST config for the cache. A kubeconfig path is
+// loaded the same way CreateClient loads it, so the cache and DefaultClient
+// talk to the same cluster; controller-runtime's loader ignores the path
+// because main replaces the FlagSet its own --kubeconfig flag lives on.
+// Without a path, controller-runtime's loader is used as before.
+func cacheRestConfig(kubeConfig string, kubeContext string) (*rest.Config, error) {
+	if kubeConfig == "" {
+		return config.GetConfigWithContext(kubeContext)
+	}
+	cfg, err := k8sutils.GetClientConfigWithContext(kubeConfig, kubeContext)
+	if err != nil {
+		return nil, err
+	}
+	// Keep config.GetConfigWithContext's default: no client-side rate
+	// limiting, API priority and fairness throttles the informers instead.
+	if cfg.QPS == 0 {
+		cfg.QPS = -1
+	}
+	return cfg, nil
 }
