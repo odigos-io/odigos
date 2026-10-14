@@ -108,10 +108,20 @@ true
 {{- end -}}
 
 {{/*
-  Bundled ClickHouse is shared by insights and interrogation.
+  Bundled ClickHouse backs insights (including interrogation).
 */}}
 {{- define "odigos.clickhouseEnabled" -}}
-{{- if or .Values.insights.enabled .Values.interrogation.enabled -}}
+{{- if .Values.insights.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+  Interrogation is a feature of insights: it runs inside the insights service,
+  so it is only active when insights itself is enabled.
+*/}}
+{{- define "odigos.interrogationEnabled" -}}
+{{- if and .Values.insights.enabled .Values.insights.interrogation.enabled -}}
 true
 {{- end -}}
 {{- end -}}
@@ -120,16 +130,14 @@ true
   Bundled LiteLLM ships with interrogation (in-cluster only; worker URL is fixed).
 */}}
 {{- define "odigos.litellmEnabled" -}}
-{{- if .Values.interrogation.enabled -}}
-true
-{{- end -}}
+{{- include "odigos.interrogationEnabled" . -}}
 {{- end -}}
 
 {{/*
-  Bundled vLLM (odigos-vllm) for in-cluster inference. Requires interrogation.enabled.
+  Bundled vLLM (odigos-vllm) for in-cluster inference. Requires interrogation.
 */}}
 {{- define "odigos.vllmEnabled" -}}
-{{- if and .Values.interrogation.enabled .Values.interrogation.vllm.enabled -}}
+{{- if and (include "odigos.interrogationEnabled" .) .Values.insights.interrogation.vllm.enabled -}}
 true
 {{- end -}}
 {{- end -}}
@@ -141,10 +149,10 @@ true
 */}}
 {{- define "odigos.interrogationUpstreamModel" -}}
 {{- if (include "odigos.vllmEnabled" .) -}}
-{{- printf "hosted_vllm/%s" (.Values.interrogation.vllm.servedModelName | default "interrogation") -}}
+{{- printf "hosted_vllm/%s" (.Values.insights.interrogation.vllm.servedModelName | default "interrogation") -}}
 {{- else -}}
-{{- $provider := .Values.interrogation.model.provider | default "openai" -}}
-{{- $name := .Values.interrogation.model.name | default "gpt-4o-mini" -}}
+{{- $provider := .Values.insights.interrogation.model.provider | default "openai" -}}
+{{- $name := .Values.insights.interrogation.model.name | default "gpt-4o-mini" -}}
 {{- printf "%s/%s" $provider $name -}}
 {{- end -}}
 {{- end -}}
@@ -155,8 +163,8 @@ true
 {{- define "odigos.interrogationApiBase" -}}
 {{- if (include "odigos.vllmEnabled" .) -}}
 http://odigos-vllm:8000/v1
-{{- else if .Values.interrogation.model.apiBase -}}
-{{- .Values.interrogation.model.apiBase | trimSuffix "/" -}}
+{{- else if .Values.insights.interrogation.model.apiBase -}}
+{{- .Values.insights.interrogation.model.apiBase | trimSuffix "/" -}}
 {{- end -}}
 {{- end -}}
 
@@ -334,7 +342,7 @@ imagePullSecrets:
 {{/* Returns true when the shared cache DB should be deployed (any consuming feature enabled). */}}
 {{- define "cacheDb.enabled" -}}
 {{- $ltl := eq (include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" .) "true" -}}
-{{- $interrogation := and .Values.interrogation.enabled (include "odigos.secretExists" .) -}}
+{{- $interrogation := and (include "odigos.interrogationEnabled" .) (include "odigos.secretExists" .) -}}
 {{- if or $ltl $interrogation -}}
 true
 {{- end -}}
@@ -349,7 +357,7 @@ true
 */}}
 {{- define "cacheDb.featureDefaultResources" -}}
 {{- $ltl := eq (include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" .) "true" -}}
-{{- $interrogation := and .Values.interrogation.enabled (include "odigos.secretExists" .) -}}
+{{- $interrogation := and (include "odigos.interrogationEnabled" .) (include "odigos.secretExists" .) -}}
 {{- if and $ltl $interrogation -}}
 requests:
   cpu: 75m

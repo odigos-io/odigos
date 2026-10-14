@@ -99,6 +99,8 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups="discovery.k8s.io",resources=endpointslices,verbs=get;list;watch
 // +kubebuilder:rbac:groups=odigos.io,resources=sampling,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=odigos.io,resources=recommendations,verbs=get;list;watch;create;update;patch;delete
+// Insights writes InstrumentationRules when interrogation is enabled.
+// +kubebuilder:rbac:groups=odigos.io,resources=instrumentationrules,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

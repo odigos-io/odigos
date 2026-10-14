@@ -74,9 +74,9 @@ data:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     {{- end }}
-    {{- if .Values.interrogation.enabled }}
+    {{- if include "odigos.interrogationEnabled" . }}
     interrogation:
-      enabled: {{ .Values.interrogation.enabled }}
+      enabled: true
     {{- end }}
     {{- /*
     Enterprise-only. Gated on odigos.secretExists like insights: without a token the

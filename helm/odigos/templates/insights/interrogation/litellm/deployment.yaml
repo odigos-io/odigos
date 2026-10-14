@@ -17,23 +17,23 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-litellm
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/interrogation/litellm/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/insights/interrogation/litellm/configmap.yaml") . | sha256sum }}
     spec:
-      {{- if .Values.interrogation.litellm.nodeSelector }}
+      {{- if .Values.insights.interrogation.litellm.nodeSelector }}
       nodeSelector:
-        {{- toYaml .Values.interrogation.litellm.nodeSelector | nindent 8 }}
+        {{- toYaml .Values.insights.interrogation.litellm.nodeSelector | nindent 8 }}
       {{- else if .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if .Values.interrogation.litellm.priorityClassName }}
-      priorityClassName: {{ .Values.interrogation.litellm.priorityClassName }}
+      {{- if .Values.insights.interrogation.litellm.priorityClassName }}
+      priorityClassName: {{ .Values.insights.interrogation.litellm.priorityClassName }}
       {{- end }}
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: litellm
-          image: "{{ .Values.interrogation.litellm.image.repository }}:{{ .Values.interrogation.litellm.image.tag }}"
-          imagePullPolicy: {{ .Values.interrogation.litellm.image.pullPolicy }}
+          image: "{{ .Values.insights.interrogation.litellm.image.repository }}:{{ .Values.insights.interrogation.litellm.image.tag }}"
+          imagePullPolicy: {{ .Values.insights.interrogation.litellm.image.pullPolicy }}
           args:
             - --config
             - /app/config.yaml
@@ -75,15 +75,15 @@ spec:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: {{ .Values.interrogation.litellm.resources.requests.cpu }}
-              memory: {{ .Values.interrogation.litellm.resources.requests.memory }}
+              cpu: {{ .Values.insights.interrogation.litellm.resources.requests.cpu }}
+              memory: {{ .Values.insights.interrogation.litellm.resources.requests.memory }}
             limits:
-              cpu: {{ .Values.interrogation.litellm.resources.limits.cpu }}
-              memory: {{ .Values.interrogation.litellm.resources.limits.memory }}
-      {{- with .Values.interrogation.litellm.tolerations }}
+              cpu: {{ .Values.insights.interrogation.litellm.resources.limits.cpu }}
+              memory: {{ .Values.insights.interrogation.litellm.resources.limits.memory }}
+      {{- with .Values.insights.interrogation.litellm.tolerations }}
       tolerations: {{ toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.interrogation.litellm.affinity }}
+      {{- with .Values.insights.interrogation.litellm.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
       volumes:

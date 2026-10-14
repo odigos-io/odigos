@@ -7,9 +7,20 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
+  {{- if include "odigos.interrogationEnabled" . }}
+  # Interrogation caches namespace ConfigMaps and InstrumentationRules, and
+  # applies its suggested probes as InstrumentationRules.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["odigos.io"]
+    resources: ["instrumentationrules"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  {{- else }}
   # The skeleton only needs to read its own configmap; future PRs that surface
   # cluster context to the scoring engine will extend this list explicitly.
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get"]
+  {{- end }}
 {{- end }}

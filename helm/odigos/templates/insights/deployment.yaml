@@ -48,6 +48,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -69,6 +73,22 @@ spec:
                   key: password
             - name: CLICKHOUSE_DSN
               value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/odigos_insights"
+            {{- if include "odigos.interrogationEnabled" . }}
+            # Interrogation shares the ClickHouse server and credentials but
+            # keeps its own database (written by the gateway's interrogation
+            # exporters).
+            - name: INTERROGATION_ENABLED
+              value: "true"
+            - name: INTERROGATION_CLICKHOUSE_DSN
+              value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/interrogation"
+            - name: INTERROGATION_LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-litellm
+                  key: master-key
+            - name: INTERROGATION_AUTO_APPLY
+              value: {{ .Values.insights.interrogation.model.autoApply | default false | quote }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
