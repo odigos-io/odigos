@@ -678,6 +678,26 @@ func convertUrlTemplatizationFromInput(actionType model.ActionType, details *mod
 			}
 
 			for _, rule := range g.TemplatizationRules {
+				if rule == nil || rule.Template == "" {
+					continue
+				}
+				if rule.Notes != nil || rule.Examples != nil {
+					documented := apiactions.UrlTemplatizationDocumentedTemplate{
+						Template: rule.Template,
+					}
+					if rule.Notes != nil {
+						documented.Notes = *rule.Notes
+					}
+					if len(rule.Examples) > 0 {
+						examples := rule.Examples
+						if len(examples) > 5 {
+							examples = examples[:5]
+						}
+						documented.Examples = append([]string(nil), examples...)
+					}
+					group.DocumentedTemplates = append(group.DocumentedTemplates, documented)
+					continue
+				}
 				group.Templates = append(group.Templates, rule.Template)
 			}
 			rules = append(rules, group)
@@ -744,6 +764,18 @@ func convertUrlTemplatizationToModel(cfg *apiactions.URLTemplatizationConfig) []
 		for _, rule := range g.Templates {
 			group.TemplatizationRules = append(group.TemplatizationRules, &model.URLTemplatizationRule{
 				Template: rule,
+			})
+		}
+		for _, documented := range g.DocumentedTemplates {
+			notes := documented.Notes
+			examples := documented.Examples
+			if examples == nil {
+				examples = []string{}
+			}
+			group.TemplatizationRules = append(group.TemplatizationRules, &model.URLTemplatizationRule{
+				Template: documented.Template,
+				Notes:    &notes,
+				Examples: examples,
 			})
 		}
 		result = append(result, group)

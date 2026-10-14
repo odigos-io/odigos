@@ -300,6 +300,9 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			if addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				baseConfig.Sampling.TailSampling.TraceAggregationWaitDuration = addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration
 			}
+			if addtionalConfig.Sampling.TailSampling.NoisyOperationsEnforcement != nil {
+				baseConfig.Sampling.TailSampling.NoisyOperationsEnforcement = addtionalConfig.Sampling.TailSampling.NoisyOperationsEnforcement
+			}
 		}
 		if addtionalConfig.Sampling.K8sHealthProbesSampling != nil {
 			if baseConfig.Sampling.K8sHealthProbesSampling == nil {
@@ -371,28 +374,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			if overlay.Ui.SlotTTLSeconds != 0 {
 				dst.Ui.SlotTTLSeconds = overlay.Ui.SlotTTLSeconds
 			}
-		}
-	}
-
-	if addtionalConfig.TraceCorrelations != nil && addtionalConfig.TraceCorrelations.ServiceIO != nil {
-		if baseConfig.TraceCorrelations == nil {
-			baseConfig.TraceCorrelations = &common.TraceCorrelationsConfiguration{}
-		}
-		if baseConfig.TraceCorrelations.ServiceIO == nil {
-			baseConfig.TraceCorrelations.ServiceIO = &common.TraceCorrelationsServiceIOConfiguration{}
-		}
-		overlay, dst := addtionalConfig.TraceCorrelations.ServiceIO, baseConfig.TraceCorrelations.ServiceIO
-		if overlay.Enabled != nil {
-			dst.Enabled = overlay.Enabled
-		}
-		if overlay.InputSpanAttributes != nil {
-			dst.InputSpanAttributes = overlay.InputSpanAttributes
-		}
-		if overlay.OutputSpanAttributes != nil {
-			dst.OutputSpanAttributes = overlay.OutputSpanAttributes
-		}
-		if overlay.MetricsFlushInterval != "" {
-			dst.MetricsFlushInterval = overlay.MetricsFlushInterval
 		}
 	}
 

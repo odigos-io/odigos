@@ -62,27 +62,11 @@ func getOwnMetricsConfig(odigosConfiguration *common.OdigosConfiguration, allDes
 	}
 }
 
-func getTraceCorrelationsSettings(odigosConfiguration *common.OdigosConfiguration) *odigosv1.CollectorsGroupTraceCorrelationsSettings {
-	if !common.TraceCorrelationsServiceIOPipelineActive(odigosConfiguration.TraceCorrelations) {
-		return nil
-	}
-
-	serviceIOCopy := *odigosConfiguration.TraceCorrelations.ServiceIO
-	if serviceIOCopy.MetricsFlushInterval == "" {
-		serviceIOCopy.MetricsFlushInterval = "60s"
-	}
-
-	return &odigosv1.CollectorsGroupTraceCorrelationsSettings{
-		ServiceIO: &serviceIOCopy,
-	}
-}
-
 func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings,
 	serviceGraph common.ServiceGraphOptions, clusterMetricsEnabled *bool,
 	httpsProxyAddress *string, nodeSelector *map[string]string, deploymentName string,
 	metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, tailSampling *sampling.TailSamplingConfiguration,
-	dryRun *bool, spanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration,
-	traceCorrelations *odigosv1.CollectorsGroupTraceCorrelationsSettings) *odigosv1.CollectorsGroup {
+	dryRun *bool, spanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -107,7 +91,6 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 			TailSampling:                          tailSampling,
 			SamplingDryRun:                        dryRun,
 			SpanSamplingAttributes:                spanSamplingAttributes,
-			TraceCorrelations:                     traceCorrelations,
 		},
 	}
 }
@@ -164,8 +147,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
 	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings,
 		*serviceGraph, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress,
-		nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes,
-		getTraceCorrelationsSettings(&odigosConfiguration))
+		nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes)
 	err = utils.SetOwnerControllerToInstrumentorDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
 		return err
@@ -180,7 +162,8 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 }
 
 // isTailSamplingEnabled returns true if tail sampling is not globally disabled
-// and at least one Sampling CR exists.
+// and either at least one Sampling CR exists or k8s health-probes sampling is enabled
+// (health-probe noisy ops may be applied via collector tail sampling).
 func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *common.OdigosConfiguration) bool {
 	logger := commonlogger.FromContext(ctx)
 
@@ -189,6 +172,13 @@ func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *c
 		odigosConfig.Sampling.TailSampling.Disabled != nil &&
 		*odigosConfig.Sampling.TailSampling.Disabled {
 		return false
+	}
+
+	if odigosConfig.Sampling != nil &&
+		odigosConfig.Sampling.K8sHealthProbesSampling != nil &&
+		odigosConfig.Sampling.K8sHealthProbesSampling.Enabled != nil &&
+		*odigosConfig.Sampling.K8sHealthProbesSampling.Enabled {
+		return true
 	}
 
 	samplingList := &odigosv1.SamplingList{}

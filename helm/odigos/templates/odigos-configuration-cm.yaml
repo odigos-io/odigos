@@ -15,9 +15,6 @@ data:
     configVersion: 1
     componentLogLevels:
       default: {{ .Values.logLevel | default "info" }}
-      {{- if .Values.autoscaler.logLevel }}
-      autoscaler: {{ .Values.autoscaler.logLevel }}
-      {{- end }}
       {{- if .Values.instrumentor.logLevel }}
       instrumentor: {{ .Values.instrumentor.logLevel }}
       {{- end }}
@@ -337,10 +334,6 @@ data:
     metricsSources:
       {{- toYaml .Values.metricsSources | nindent 6 }}
     {{- end }}
-    {{- if .Values.traceCorrelations }}
-    traceCorrelations:
-      {{- toYaml .Values.traceCorrelations | nindent 6 }}
-    {{- end }}
     {{- if .Values.odiglet.traceIdSuffix }}
     traceIdSuffix: {{ .Values.odiglet.traceIdSuffix }}
     {{- end }}
@@ -382,6 +375,9 @@ data:
         {{- end }}
         {{- if .Values.sampling.tailSampling.traceAggregationWaitDuration }}
         traceAggregationWaitDuration: {{ .Values.sampling.tailSampling.traceAggregationWaitDuration | quote }}
+        {{- end }}
+        {{- if .Values.sampling.tailSampling.noisyOperationsEnforcement }}
+        noisyOperationsEnforcement: {{ .Values.sampling.tailSampling.noisyOperationsEnforcement }}
         {{- end }}
       {{- end }}
       {{- if .Values.sampling.k8sHealthProbesSampling }}

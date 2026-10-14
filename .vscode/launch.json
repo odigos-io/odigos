@@ -44,25 +44,6 @@
       "cwd": "${workspaceFolder}/frontend"
     },
     {
-      "name": "autoscaler local",
-      "type": "go",
-      "request": "launch",
-      "mode": "debug",
-      "program": "${workspaceFolder}/autoscaler/cmd",
-      "cwd": "${workspaceFolder}/autoscaler",
-      "env": {
-        "ODIGOS_VERSION": "v1.3.0"
-      }
-    },
-    {
-      "name": "scheduler local",
-      "type": "go",
-      "request": "launch",
-      "mode": "debug",
-      "program": "${workspaceFolder}/scheduler/cmd",
-      "cwd": "${workspaceFolder}/scheduler"
-    },
-    {
       "name": "cli uninstall",
       "type": "go",
       "request": "launch",

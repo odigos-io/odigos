@@ -15,9 +15,9 @@ const (
 	splunkOtlpCompression        = "SPLUNK_OTLP_COMPRESSION"
 )
 
-// Splunk configures the SAPM collector exporter.
+// Splunk preserves the legacy destination type using OTLP/HTTP after SAPM was removed upstream.
 //
-// Deprecated: This exporter is deprecated upstream in favor of the OTLPHTTP exporter.
+// Deprecated: Use SplunkOTLP for new destinations.
 type Splunk struct{}
 
 func (s *Splunk) DestType() common.DestinationType {
@@ -25,26 +25,7 @@ func (s *Splunk) DestType() common.DestinationType {
 }
 
 func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	realm, exists := dest.GetConfig()[splunkRealm]
-	if !exists {
-		return nil, errors.New("Splunk realm not specified, gateway will not be configured for Splunk")
-	}
-	var pipelineNames []string
-	if isTracingEnabled(dest) {
-		exporterName := "sapm/" + dest.GetID()
-		currentConfig.Exporters[exporterName] = GenericMap{
-			"access_token": SecretEnvPlaceholder("SPLUNK_ACCESS_TOKEN", dest),
-			"endpoint":     fmt.Sprintf("https://ingest.%s.signalfx.com/v2/trace", realm),
-		}
-
-		tracesPipelineName := "traces/splunk-" + dest.GetID()
-		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-		pipelineNames = append(pipelineNames, tracesPipelineName)
-	}
-
-	return pipelineNames, nil
+	return (&SplunkOTLP{}).modifyConfig(dest, currentConfig, "splunk")
 }
 
 // SplunkOTLP configures an OTLPHTTP exporter configured for Splunk ingestion.
@@ -55,6 +36,10 @@ func (s *SplunkOTLP) DestType() common.DestinationType {
 }
 
 func (s *SplunkOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+	return s.modifyConfig(dest, currentConfig, "splunkotlp")
+}
+
+func (s *SplunkOTLP) modifyConfig(dest ExporterConfigurer, currentConfig *Config, pipelinePrefix string) ([]string, error) {
 	config := dest.GetConfig()
 
 	realm, exists := config[splunkRealm]
@@ -94,7 +79,7 @@ func (s *SplunkOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 		currentConfig.Exporters[exporterName] = exporterConf
 
-		tracesPipelineName := "traces/splunkotlp-" + dest.GetID()
+		tracesPipelineName := "traces/" + pipelinePrefix + "-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}

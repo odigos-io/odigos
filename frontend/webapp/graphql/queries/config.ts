@@ -180,6 +180,7 @@ export const GET_EFFECTIVE_CONFIG = gql`
         tailSampling {
           disabled
           traceAggregationWaitDuration
+          noisyOperationsEnforcement
         }
         k8sHealthProbesSampling {
           enabled
@@ -204,14 +205,6 @@ export const GET_EFFECTIVE_CONFIG = gql`
               enabled
             }
           }
-        }
-      }
-      traceCorrelations {
-        serviceIO {
-          enabled
-          inputSpanAttributes
-          outputSpanAttributes
-          metricsFlushInterval
         }
       }
       provenance {
