@@ -29,6 +29,7 @@ const (
 	GenericOTLPDestinationType            DestinationType = "otlp"
 	GoogleCloudDestinationType            DestinationType = "googlecloud"
 	GoogleCloudOTLPDestinationType        DestinationType = "googlecloudotlp"
+	GoogleCloudPubSubDestinationType      DestinationType = "googlecloudpubsub"
 	GrafanaCloudLokiDestinationType       DestinationType = "grafanacloudloki"
 	GrafanaCloudPrometheusDestinationType DestinationType = "grafanacloudprometheus"
 	GrafanaCloudTempoDestinationType      DestinationType = "grafanacloudtempo"
