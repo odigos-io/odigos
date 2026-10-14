@@ -325,15 +325,7 @@ rules:
 - apiGroups:
   - odigos.io
   resources:
-  - instrumentationrules/status
-  - recommendations/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - odigos.io
-  resources:
+  - instrumentationrules
   - recommendations
   - sampling
   verbs:
@@ -344,6 +336,15 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - odigos.io
+  resources:
+  - instrumentationrules/status
+  - recommendations/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - operator.odigos.io
   resources:
