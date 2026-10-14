@@ -174,10 +174,6 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		OdigosConfigExtensionName: &odigosConfigExtensionName,
 		SamplingSpanAttributes:    gateway.Spec.SpanSamplingAttributes,
 	}
-	traceCorrelationsEnabled := gateway.Spec.TraceCorrelations != nil
-	if traceCorrelationsEnabled {
-		gatewayOptions.TraceCorrelationsServiceIO = gateway.Spec.TraceCorrelations.ServiceIO
-	}
 
 	tailSamplingEnabled := false
 	waitDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
@@ -195,7 +191,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		}
 	}
 
-	if tailSamplingEnabled || traceCorrelationsEnabled {
+	if tailSamplingEnabled {
 		gatewayOptions.TraceAggregationWaitDuration = &waitDuration
 	}
 	gatewayOptions.TailSamplingEnabled = &tailSamplingEnabled

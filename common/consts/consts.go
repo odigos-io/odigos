@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	UIIDTokenEnvVarName                 = "ODIGOS_UI_ID_TOKEN"
 	CurrentNamespaceEnvVar              = "CURRENT_NS"
 	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
 	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
@@ -65,11 +66,6 @@ const (
 	// build the blast-radius topology. Added as a second exporter on the existing
 	// metrics/servicegraph pipeline when insights is active.
 	ServiceGraphInsightsExporterName = "otlp_grpc/servicegraph-insights"
-
-	ServiceIOConnectorName                       = "serviceio"
-	TraceCorrelationsMetricsPipelineName         = "metrics/tracecorrelations"
-	TraceCorrelationsMetricsServiceName          = "odigos-correlations-metrics"
-	TraceCorrelationsVictoriaMetricsExporterName = "otlp_http/odigos-correlations-metrics"
 
 	// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
 	// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.

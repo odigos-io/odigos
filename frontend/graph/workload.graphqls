@@ -381,6 +381,11 @@ type K8sWorkloadContainer {
   # this part is a summary of all the instrumentations that were found in any process of this container.
   instrumentations: [K8sWorkloadPodContainerProcessInstrumentation!]
 
+  # URL templatization for this container: resolved existing rules (from
+  # InstrumentationConfig) plus optional live-traffic learning (unmatched paths
+  # and recommended rules). Null when unavailable (OSS / unset hook).
+  urlTemplatization: K8sWorkloadContainerUrlTemplatization
+
   """
   Trace interrogation: transactions and detected stack functions for this
   container, read from interrogation ClickHouse (tx_call_trie). Empty when

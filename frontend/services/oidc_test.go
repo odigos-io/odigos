@@ -55,6 +55,11 @@ type failedGet struct {
 
 func setOidcTestClient(t *testing.T, objs []runtime.Object, failures ...failedGet) {
 	t.Helper()
+	// the settings read from the cluster are cached process-wide, so every case
+	// has to start from a UI that has never resolved them.
+	lastOidcSettingsMu.Lock()
+	lastOidcSettings = nil
+	lastOidcSettingsMu.Unlock()
 	clientset := k8sfake.NewSimpleClientset(objs...)
 	for _, f := range failures {
 		err := f.err
@@ -109,17 +114,108 @@ func TestGetOidcOauthConfig_SecretReadErrorIsReturned(t *testing.T) {
 	}
 }
 
-// An absent secret is a supported configuration, not a failure, and must stay
-// "OIDC is not configured" rather than becoming an error.
-func TestGetOidcOauthConfig_MissingSecretMeansNotConfigured(t *testing.T) {
+// A configured identity provider must not become anonymous when its secret is absent.
+func TestGetOidcOauthConfig_MissingSecretIsReturned(t *testing.T) {
 	setOidcTestClient(t, []runtime.Object{effectiveConfigCM(oidcConfigWithoutSecret)})
 
 	cfg, err := GetOidcOauthConfig(context.Background())
-	if err != nil {
-		t.Fatalf("expected no error when the oidc secret does not exist, got %v", err)
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("expected missing-secret error, got %v", err)
 	}
 	if cfg != nil {
 		t.Fatalf("expected no oauth2 config when oidc is not fully configured, got %#v", cfg)
+	}
+}
+
+// A cluster that never configured OIDC must keep serving while the Kubernetes API
+// is briefly unavailable. The OIDC middleware runs on every route, so reporting the
+// read failure as "authentication unavailable" turns an API server blip into a
+// cluster-wide UI outage, including for the GraphQL and SSE endpoints that read
+// from the informer cache and do not need the API server at all.
+func TestGetOidcOauthConfig_TransientErrorReusesLastReadSettings(t *testing.T) {
+	clientset := k8sfake.NewSimpleClientset(effectiveConfigCM("clusterName: prod\n"))
+	kube.SetDefaultClient(&kube.Client{Interface: clientset})
+	t.Cleanup(func() { kube.SetDefaultClient(nil) })
+	lastOidcSettingsMu.Lock()
+	lastOidcSettings = nil
+	lastOidcSettingsMu.Unlock()
+
+	if _, err := GetOidcOauthConfig(context.Background()); err != nil {
+		t.Fatalf("expected the first read to succeed, got %v", err)
+	}
+
+	clientset.PrependReactor("get", "configmaps", func(k8stesting.Action) (bool, runtime.Object, error) {
+		return true, nil, apierrors.NewServiceUnavailable("etcd leader changed")
+	})
+
+	cfg, err := GetOidcOauthConfig(context.Background())
+	if err != nil {
+		t.Fatalf("expected the last read settings to be reused, got %v", err)
+	}
+	if cfg != nil {
+		t.Fatalf("expected oidc to stay unconfigured, got %#v", cfg)
+	}
+}
+
+// The same fallback for a configured identity provider: the client secret and the
+// tenant are already known, so a failed read must not reject every request.
+func TestGetOidcTokenVerifier_TransientErrorReusesConfiguredSettings(t *testing.T) {
+	clientset := k8sfake.NewSimpleClientset(effectiveConfigCM(fullOidcConfig), oidcSecret("s3cret"))
+	kube.SetDefaultClient(&kube.Client{Interface: clientset})
+	t.Cleanup(func() { kube.SetDefaultClient(nil) })
+	lastOidcSettingsMu.Lock()
+	lastOidcSettings = nil
+	lastOidcSettingsMu.Unlock()
+
+	// the IdP is unreachable in tests, so discovery is the only thing that may fail.
+	if _, err := resolveOidcSettings(context.Background()); err != nil {
+		t.Fatalf("expected the first read to succeed, got %v", err)
+	}
+
+	clientset.PrependReactor("get", "secrets", func(k8stesting.Action) (bool, runtime.Object, error) {
+		return true, nil, apierrors.NewServiceUnavailable("etcd leader changed")
+	})
+
+	settings, err := resolveOidcSettings(context.Background())
+	if err != nil {
+		t.Fatalf("expected the last read settings to be reused, got %v", err)
+	}
+	if !settings.configured || settings.clientSecret != "s3cret" {
+		t.Fatalf("expected the configured settings to be reused, got %#v", settings)
+	}
+}
+
+// Failing closed is still the behaviour before anything has been read: a UI whose
+// very first request cannot reach the API server must not serve it anonymously.
+func TestGetOidcOauthConfig_TransientErrorFailsClosedBeforeFirstRead(t *testing.T) {
+	setOidcTestClient(t, nil, failedGet{"configmaps", apierrors.NewServiceUnavailable("etcd leader changed")})
+
+	if _, err := GetOidcOauthConfig(context.Background()); err == nil {
+		t.Fatal("expected an error when the settings have never been read, got nil")
+	}
+}
+
+// A deleted client secret is a configuration error, not an availability one, so it
+// must keep failing closed even after the settings have been read successfully.
+func TestGetOidcOauthConfig_DeletedSecretIsNotMaskedByTheLastReadSettings(t *testing.T) {
+	clientset := k8sfake.NewSimpleClientset(effectiveConfigCM(fullOidcConfig), oidcSecret("s3cret"))
+	kube.SetDefaultClient(&kube.Client{Interface: clientset})
+	t.Cleanup(func() { kube.SetDefaultClient(nil) })
+	lastOidcSettingsMu.Lock()
+	lastOidcSettings = nil
+	lastOidcSettingsMu.Unlock()
+
+	if _, err := resolveOidcSettings(context.Background()); err != nil {
+		t.Fatalf("expected the first read to succeed, got %v", err)
+	}
+
+	err := clientset.CoreV1().Secrets(env.GetCurrentNamespace()).Delete(context.Background(), consts.OidcSecretName, metav1.DeleteOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := GetOidcOauthConfig(context.Background()); !apierrors.IsNotFound(err) {
+		t.Fatalf("expected the missing secret to keep failing closed, got %v", err)
 	}
 }
 
