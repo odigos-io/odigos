@@ -147,6 +147,12 @@ spec:
                   key: password
             - name: CLICKHOUSE_DSN
               value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/odigos_insights"
+            {{- if include "odigos.interrogationEnabled" . }}
+            # tx_runs lives in the interrogation database, so the same Job
+            # applies that migration set after the insights schema.
+            - name: INTERROGATION_CLICKHOUSE_DSN
+              value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/interrogation"
+            {{- end }}
           resources:
             requests:
               cpu: 50m

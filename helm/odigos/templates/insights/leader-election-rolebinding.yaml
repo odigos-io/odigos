@@ -1,4 +1,5 @@
 {{- if and (include "odigos.interrogationEnabled" .) (include "odigos.secretExists" .) }}
+{{- /* Interrogation campaigns for the odigos-insights-leader Lease. */}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
