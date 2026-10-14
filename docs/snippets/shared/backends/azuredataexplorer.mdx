@@ -1,0 +1,219 @@
+---
+title: 'Azure Data Explorer'
+description: 'Configuring the Azure Data Explorer backend (Managed)'
+sidebarTitle: 'Azure Data Explorer'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/azuremonitor.svg" alt="azuredataexplorer" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+Odigos uses the bundled OpenTelemetry `azuredataexplorer` exporter (v0.159.0) to send traces, metrics and logs over HTTPS using the Kusto ingestion SDK. This destination is separate from Azure Monitor/Application Insights. Profiles are unsupported.
+
+### Prepare the database and tables
+
+Create an Azure Data Explorer cluster and a database named `oteldb` (or set your own Database). The exporter does not create databases or tables. Run these commands separately in the [Azure Data Explorer web UI](https://dataexplorer.azure.com):
+
+```kql
+.create-merge table OTELLogs (Timestamp:datetime, ObservedTimestamp:datetime, TraceID:string, SpanID:string, SeverityText:string, SeverityNumber:int, Body:string, ResourceAttributes:dynamic, LogsAttributes:dynamic)
+
+.create-merge table OTELMetrics (Timestamp:datetime, MetricName:string, MetricType:string, MetricUnit:string, MetricDescription:string, MetricValue:real, Host:string, ResourceAttributes:dynamic, MetricAttributes:dynamic)
+
+.create-merge table OTELTraces (TraceID:string, SpanID:string, ParentID:string, SpanName:string, SpanStatus:string, SpanStatusMessage:string, SpanKind:string, StartTime:datetime, EndTime:datetime, ResourceAttributes:dynamic, TraceAttributes:dynamic, Events:dynamic, Links:dynamic)
+```
+
+Use the cluster **query URI**, for example `https://mycluster.region.kusto.windows.net`, rather than an `ingest-` URI or an OTLP endpoint. The collector needs outbound HTTPS access to Entra authentication, the cluster's query/ingestion endpoints and the storage/queue endpoints used by queued ingestion.
+
+### Authentication
+
+Choose one authentication mode:
+
+- `service_principal` (default): register an application in Microsoft Entra ID, enter its application/client ID and tenant ID, and supply the **client secret value**. Odigos stores the client secret in a Kubernetes Secret and uses a destination-scoped environment reference. Grant the principal **Database Ingestor** on the target database. A browser login alone does not provide collector credentials.
+- `managed_identity`: set `system` for a system-assigned identity or the client ID UUID of a user-assigned identity. The identity must be available to the collector's Azure runtime and have ingestion permissions.
+- `default`: use the Azure SDK default credential chain inside the collector. Configure its environment or workload identity externally; Odigos does not mount workload identity tokens or propagate browser/CLI credentials automatically. Grant that identity ingestion permissions.
+
+Only the chosen mode is emitted to the collector. Missing/invalid credentials fail collector validation or authentication. Creating tables and assigning permissions requires additional administrative privileges beyond ingestion.
+
+### Queued and managed ingestion
+
+`queued` is the default and works without a streaming policy. Azure queues and batches ingestion asynchronously; exporter success only confirms acceptance into the ingestion path. Wait for the batch policy, query the destination tables, and inspect `.show ingestion failures` when rows do not appear.
+
+`managed` uses managed streaming ingestion with queued fallback. Enable streaming ingestion on the cluster and each selected table first:
+
+```kql
+.alter table OTELLogs policy streamingingestion enable
+.alter table OTELMetrics policy streamingingestion enable
+.alter table OTELTraces policy streamingingestion enable
+```
+
+Odigos enables a bounded exporter sending queue and retries for up to five minutes. These cannot detect every asynchronous queued-ingestion failure. Check destination-side failures for missing tables, invalid mappings and insufficient permissions.
+
+### JSON mappings and signal conversions
+
+The exporter sends newline-delimited, gzip-compressed JSON rows in the schemas above, rather than raw OTLP envelopes. Attribute maps use Kusto `dynamic` columns; log bodies are converted to strings. Traces retain identifiers, status/message, attributes, events and links. Metrics support gauges, sums, explicit histograms and summaries. Histograms become count, sum and bucket rows; summaries become count, sum and quantile rows. **Exponential histogram metrics are dropped by v0.159.0**; convert them to explicit histograms before export if needed. Profiles are unsupported.
+
+Mapping fields take the **name** of an existing JSON ingestion mapping, not JSON itself. With the default schemas, leave them empty for identity mapping. For a custom schema, create a [JSON mapping](https://learn.microsoft.com/en-us/kusto/management/json-mapping) on each table, then enter its name. For example:
+
+```kql
+.create table OTELLogs ingestion json mapping 'otel_logs_mapping' '[{"column":"Timestamp","Properties":{"Path":"$.Timestamp"}},{"column":"Body","Properties":{"Path":"$.Body"}}]'
+```
+
+This example maps only timestamp and body; define every column you need in your custom mapping.
+
+### Microsoft Fabric
+
+The same exporter supports Microsoft Fabric Real-Time Intelligence. Create an Eventhouse/KQL database and these tables, use its **query URI** and database name, and grant the selected Entra principal ingestion access. Streaming and mapping requirements still apply. Fabric compatibility is documented upstream; use the Azure Data Explorer destination for it.
+
+### Verify ingestion
+
+Send multiple batches for each enabled signal and query the corresponding table, for example:
+
+```kql
+OTELTraces | where ResourceAttributes["service.name"] == "my-service" | take 10
+OTELMetrics | where ResourceAttributes["service.name"] == "my-service" | take 10
+OTELLogs | where ResourceAttributes["service.name"] == "my-service" | take 10
+```
+
+Run each query separately. Verify trace IDs, metric values and log bodies. Test an invalid credential or mapping separately and confirm rejection/failure reporting before restoring valid settings.
+
+See [Microsoft's OpenTelemetry connector setup](https://learn.microsoft.com/en-us/azure/data-explorer/open-telemetry-connector) and the [pinned exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.159.0/exporter/azuredataexplorerexporter) for deployment and schema requirements.
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **AZURE_DATA_EXPLORER_CLUSTER_URI** `string` : Cluster Query URI. HTTPS query URI of the Azure Data Explorer cluster or Fabric Eventhouse. Do not use the ingest- URI.
+  - This field is required
+- **AZURE_DATA_EXPLORER_DATABASE** `string` : Database. An existing database containing the telemetry tables.
+  - This field is required and defaults to `oteldb`
+- **AZURE_DATA_EXPLORER_AUTH_MODE** `string` : Authentication. Default credentials must be available inside the collector. Browser login credentials are not passed to Odigos.
+  - This field is required and defaults to `service_principal`
+- **AZURE_DATA_EXPLORER_APPLICATION_ID** `string` : Application (Client) ID.
+  - This field is required
+- **AZURE_DATA_EXPLORER_TENANT_ID** `string` : Tenant ID.
+  - This field is required
+- **AZURE_DATA_EXPLORER_APPLICATION_KEY** `string` : Client Secret.
+  - This field is required
+- **AZURE_DATA_EXPLORER_MANAGED_IDENTITY_ID** `string` : Managed Identity Client ID. Use system for system-assigned identity or the client ID UUID of a user-assigned identity available to the collector.
+  - This field is required
+- **AZURE_DATA_EXPLORER_INGESTION_TYPE** `string` : Ingestion Mode. Queued ingestion is asynchronous. Managed ingestion requires streaming enabled on the cluster and selected tables.
+  - This field is required and defaults to `queued`
+- **AZURE_DATA_EXPLORER_TRACES_TABLE** `string` : Traces Table.
+  - This field is required and defaults to `OTELTraces`
+- **AZURE_DATA_EXPLORER_TRACES_MAPPING** `string` : Traces JSON Mapping Name. Optional name of a pre-created JSON ingestion mapping, not mapping JSON.
+  - This field is optional
+- **AZURE_DATA_EXPLORER_METRICS_TABLE** `string` : Metrics Table.
+  - This field is required and defaults to `OTELMetrics`
+- **AZURE_DATA_EXPLORER_METRICS_MAPPING** `string` : Metrics JSON Mapping Name. Optional name of a pre-created JSON ingestion mapping, not mapping JSON.
+  - This field is optional
+- **AZURE_DATA_EXPLORER_LOGS_TABLE** `string` : Logs Table.
+  - This field is required and defaults to `OTELLogs`
+- **AZURE_DATA_EXPLORER_LOGS_MAPPING** `string` : Logs JSON Mapping Name. Optional name of a pre-created JSON ingestion mapping, not mapping JSON.
+  - This field is optional
+
+<Warning>
+  Create the database and telemetry tables before exporting. Exponential histogram metrics and profiles are unsupported by the bundled exporter. Queued acceptance does not guarantee successful ingestion; check KQL results and ingestion failures.
+</Warning>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Azure Data Explorer` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `azuredataexplorer.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: azuredataexplorer-example
+      namespace: odigos-system
+    spec:
+      data:
+        AZURE_DATA_EXPLORER_APPLICATION_ID: <Application (Client) ID>
+        AZURE_DATA_EXPLORER_AUTH_MODE: '<Authentication (default: service_principal) (options:
+          [service_principal, managed_identity, default])>'
+        AZURE_DATA_EXPLORER_CLUSTER_URI: <Cluster Query URI>
+        AZURE_DATA_EXPLORER_DATABASE: '<Database (default: oteldb)>'
+        AZURE_DATA_EXPLORER_INGESTION_TYPE: '<Ingestion Mode (default: queued) (options:
+          [queued, managed])>'
+        AZURE_DATA_EXPLORER_LOGS_TABLE: '<Logs Table (default: OTELLogs)>'
+        AZURE_DATA_EXPLORER_MANAGED_IDENTITY_ID: <Managed Identity Client ID>
+        AZURE_DATA_EXPLORER_METRICS_TABLE: '<Metrics Table (default: OTELMetrics)>'
+        AZURE_DATA_EXPLORER_TENANT_ID: <Tenant ID>
+        AZURE_DATA_EXPLORER_TRACES_TABLE: '<Traces Table (default: OTELTraces)>'
+        # Note: The commented fields below are optional.
+        # AZURE_DATA_EXPLORER_TRACES_MAPPING: <Traces JSON Mapping Name>
+        # AZURE_DATA_EXPLORER_METRICS_MAPPING: <Metrics JSON Mapping Name>
+        # AZURE_DATA_EXPLORER_LOGS_MAPPING: <Logs JSON Mapping Name>
+      destinationName: azuredataexplorer
+      secretRef:
+        name: azuredataexplorer-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: azuredataexplorer
+
+    ---
+
+    apiVersion: v1
+    data:
+      AZURE_DATA_EXPLORER_APPLICATION_KEY: <Base64 Client Secret>
+    kind: Secret
+    metadata:
+      name: azuredataexplorer-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f azuredataexplorer.yaml
+    ```
+  </Step>
+</Steps>

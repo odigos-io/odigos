@@ -1,0 +1,169 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: azuredataexplorer
+  displayName: Azure Data Explorer
+  category: managed
+spec:
+  image: azuremonitor.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+  - name: AZURE_DATA_EXPLORER_CLUSTER_URI
+    displayName: Cluster Query URI
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+      tooltip: HTTPS query URI of the Azure Data Explorer cluster or Fabric Eventhouse.
+        Do not use the ingest- URI.
+  - name: AZURE_DATA_EXPLORER_DATABASE
+    displayName: Database
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+      tooltip: An existing database containing the telemetry tables.
+    initialValue: oteldb
+  - name: AZURE_DATA_EXPLORER_AUTH_MODE
+    displayName: Authentication
+    componentType: dropdown
+    componentProps:
+      required: true
+      values:
+      - service_principal
+      - managed_identity
+      - default
+      tooltip: Default credentials must be available inside the collector. Browser
+        login credentials are not passed to Odigos.
+    initialValue: service_principal
+  - name: AZURE_DATA_EXPLORER_APPLICATION_ID
+    displayName: Application (Client) ID
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+    renderCondition: &id001
+    - AZURE_DATA_EXPLORER_AUTH_MODE
+    - ==
+    - service_principal
+  - name: AZURE_DATA_EXPLORER_TENANT_ID
+    displayName: Tenant ID
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+    renderCondition: *id001
+  - name: AZURE_DATA_EXPLORER_APPLICATION_KEY
+    displayName: Client Secret
+    componentType: input
+    componentProps:
+      required: true
+      type: password
+    renderCondition: *id001
+    secret: true
+  - name: AZURE_DATA_EXPLORER_MANAGED_IDENTITY_ID
+    displayName: Managed Identity Client ID
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+      tooltip: Use system for system-assigned identity or the client ID UUID of a
+        user-assigned identity available to the collector.
+    renderCondition:
+    - AZURE_DATA_EXPLORER_AUTH_MODE
+    - ==
+    - managed_identity
+  - name: AZURE_DATA_EXPLORER_INGESTION_TYPE
+    displayName: Ingestion Mode
+    componentType: dropdown
+    componentProps:
+      required: true
+      values:
+      - queued
+      - managed
+      tooltip: Queued ingestion is asynchronous. Managed ingestion requires streaming
+        enabled on the cluster and selected tables.
+    initialValue: queued
+  - name: AZURE_DATA_EXPLORER_TRACES_TABLE
+    displayName: Traces Table
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+    initialValue: OTELTraces
+    renderCondition:
+    - SIGNALS
+    - INCLUDES
+    - traces
+  - name: AZURE_DATA_EXPLORER_TRACES_MAPPING
+    displayName: Traces JSON Mapping Name
+    componentType: input
+    componentProps:
+      required: false
+      type: text
+      tooltip: Optional name of a pre-created JSON ingestion mapping, not mapping
+        JSON.
+    renderCondition:
+    - SIGNALS
+    - INCLUDES
+    - traces
+  - name: AZURE_DATA_EXPLORER_METRICS_TABLE
+    displayName: Metrics Table
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+    initialValue: OTELMetrics
+    renderCondition:
+    - SIGNALS
+    - INCLUDES
+    - metrics
+  - name: AZURE_DATA_EXPLORER_METRICS_MAPPING
+    displayName: Metrics JSON Mapping Name
+    componentType: input
+    componentProps:
+      required: false
+      type: text
+      tooltip: Optional name of a pre-created JSON ingestion mapping, not mapping
+        JSON.
+    renderCondition:
+    - SIGNALS
+    - INCLUDES
+    - metrics
+  - name: AZURE_DATA_EXPLORER_LOGS_TABLE
+    displayName: Logs Table
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+    initialValue: OTELLogs
+    renderCondition:
+    - SIGNALS
+    - INCLUDES
+    - logs
+  - name: AZURE_DATA_EXPLORER_LOGS_MAPPING
+    displayName: Logs JSON Mapping Name
+    componentType: input
+    componentProps:
+      required: false
+      type: text
+      tooltip: Optional name of a pre-created JSON ingestion mapping, not mapping
+        JSON.
+    renderCondition:
+    - SIGNALS
+    - INCLUDES
+    - logs
+  note:
+    type: Warning
+    content: Create the database and telemetry tables before exporting. Exponential
+      histogram metrics and profiles are unsupported by the bundled exporter. Queued
+      acceptance does not guarantee successful ingestion; check KQL results and ingestion
+      failures.
