@@ -146,6 +146,7 @@ jobs:
                     matrix.service == 'agents' && 'odiglet/Dockerfile' ||
                     matrix.service == 'scheduler' && 'scheduler/Dockerfile' ||
                     matrix.service == 'autoscaler' && 'autoscaler/Dockerfile' ||
+                    matrix.service == 'instrumentor' && 'instrumentor/Dockerfile' ||
                     'Dockerfile' }}
               target: >-
                 ${{ matrix.service == 'agents' && 'agents-rhel' || 'rhel' }}
