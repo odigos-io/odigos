@@ -21,7 +21,7 @@ import (
 )
 
 func TestInsightsIntegrationGraphQLContract(t *testing.T) {
-	integration := `{"id":"slack-1","name":"Security Slack","type":"slack","enabled":true,"config":{"webhook_url":"••••••••"},"filters":{},"health":{},"created_at":"2026-10-14T10:00:00Z","updated_at":"2026-10-14T11:00:00Z"}`
+	integration := `{"id":"slack-1","name":"Security Slack","type":"slack","enabled":true,"config":{"webhook_url":"••••••••"},"filters":{"min_severity":"high","kinds":["anomaly"],"notify_on_resolve":true},"health":{},"created_at":"2026-10-14T10:00:00Z","updated_at":"2026-10-14T11:00:00Z"}`
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
@@ -29,11 +29,22 @@ func TestInsightsIntegrationGraphQLContract(t *testing.T) {
 			_, _ = w.Write([]byte(`{"items":[{"type":"slack","name":"Slack","fields":[{"key":"webhook_url","label":"Incoming webhook URL","type":"secret","required":true}],"capabilities":{"max_batch":1}}]}`))
 		case r.Method == http.MethodGet:
 			_, _ = w.Write([]byte(`{"items":[` + integration + `]}`))
-		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/integrations":
+		case (r.Method == http.MethodPost && r.URL.Path == "/api/v1/integrations") || (r.Method == http.MethodPut && r.URL.Path == "/api/v1/integrations/slack-1"):
 			var input insights.IntegrationWrite
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&input))
 			assert.False(t, input.Enabled)
 			assert.JSONEq(t, `{"webhook_url":"example-only"}`, string(input.Config))
+			assert.Equal(t, "slack", input.Type)
+			require.NotNil(t, input.Filters.MinSeverity)
+			if r.Method == http.MethodPost {
+				assert.Equal(t, insights.Severity("high"), *input.Filters.MinSeverity)
+				assert.Equal(t, []insights.FindingKind{"anomaly"}, input.Filters.Kinds)
+				assert.True(t, input.Filters.NotifyOnResolve)
+			} else {
+				assert.Equal(t, insights.Severity("medium"), *input.Filters.MinSeverity)
+				assert.Equal(t, []insights.FindingKind{"violation"}, input.Filters.Kinds)
+				assert.False(t, input.Filters.NotifyOnResolve)
+			}
 			_, _ = w.Write([]byte(integration))
 		default:
 			w.WriteHeader(http.StatusNoContent)
@@ -49,7 +60,8 @@ func TestInsightsIntegrationGraphQLContract(t *testing.T) {
 	server := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: resolver}))
 	tests := []string{
 		`{ insights { integrationCatalog { type fields { key type required options default } capabilities { maxBatch supportsResolve } } integrations { id config filters { minSeverity kinds notifyOnResolve } health { pending failed dead lastError } } } }`,
-		`mutation { createInsightsIntegration(integration: {name: "Slack", type: "slack", enabled: false, config: "{\"webhook_url\":\"example-only\"}", filters: {kinds: [], notifyOnResolve: false}}) { id config } }`,
+		`mutation { createInsightsIntegration(integration: {name: "Slack", type: "slack", enabled: false, config: "{\"webhook_url\":\"example-only\"}", filters: {minSeverity: high, kinds: [anomaly], notifyOnResolve: true}}) { id config } }`,
+		`mutation { updateInsightsIntegration(id: "slack-1", integration: {name: "Slack", type: "slack", enabled: false, config: "{\"webhook_url\":\"example-only\"}", filters: {minSeverity: medium, kinds: [violation], notifyOnResolve: false}}) { id config } }`,
 		`mutation { testInsightsIntegration(id: "slack-1") deleteInsightsIntegration(id: "slack-1") retryInsightsIntegrationDeliveries(id: "slack-1", findingKeys: []) }`,
 	}
 	for _, query := range tests {
@@ -64,5 +76,24 @@ func TestInsightsIntegrationGraphQLContract(t *testing.T) {
 		require.NoError(t, json.Unmarshal(response.Body.Bytes(), &result))
 		assert.NotContains(t, result, "errors", response.Body.String())
 		assert.Contains(t, result, "data")
+		if query == tests[0] {
+			var data struct {
+				Insights struct {
+					Integrations []struct {
+						Filters struct {
+							MinSeverity     string   `json:"minSeverity"`
+							Kinds           []string `json:"kinds"`
+							NotifyOnResolve bool     `json:"notifyOnResolve"`
+						} `json:"filters"`
+					} `json:"integrations"`
+				} `json:"insights"`
+			}
+			require.NoError(t, json.Unmarshal(result["data"], &data))
+			require.Len(t, data.Insights.Integrations, 1)
+			filters := data.Insights.Integrations[0].Filters
+			assert.Equal(t, "high", filters.MinSeverity)
+			assert.Equal(t, []string{"anomaly"}, filters.Kinds)
+			assert.True(t, filters.NotifyOnResolve)
+		}
 	}
 }
