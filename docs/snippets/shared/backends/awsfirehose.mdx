@@ -1,0 +1,129 @@
+---
+title: 'Amazon Data Firehose (via CloudWatch Logs)'
+description: 'Configuring the Amazon Data Firehose (via CloudWatch Logs) backend (Managed)'
+sidebarTitle: 'Amazon Data Firehose (via CloudWatch Logs)'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/awsfirehose.svg" alt="firehose" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+Odigos sends **logs only** through the existing OpenTelemetry CloudWatch Logs exporter:
+
+`Odigos gateway → CloudWatch log group → subscription filter → Amazon Data Firehose → downstream storage`.
+
+This destination requires an AWS account and a preconfigured subscription. It does not send OTLP to Firehose or call Firehose producer APIs directly. Metrics, traces, and profiles are not supported. A log's trace and span IDs remain log fields; they are not exported spans.
+
+**AWS setup**
+
+1. Create a fixed CloudWatch log group in the same region as your Firehose stream.
+2. Create an active Firehose delivery stream with **Direct PUT** as its source and configure a downstream destination, such as Amazon S3. Enable **CloudWatch Logs decompression** and **message extraction** to obtain the structured JSON log messages as newline-delimited JSON. Do not enable additional Firehose compression on the already gzip-compressed CloudWatch subscription records unless your downstream reader explicitly supports it.
+3. Grant the CloudWatch subscription role `firehose:PutRecord` on that delivery stream. Trust `logs.amazonaws.com` and constrain `aws:SourceArn` to your account and source log group. Grant the separate Firehose service role access to downstream storage.
+4. Create a CloudWatch subscription filter with an empty filter pattern (all logs), the Firehose delivery stream ARN, and that subscription role ARN. Confirm the subscription is active **before** enabling the Odigos destination. Odigos does not create or validate this subscription.
+5. Set the source log group, log stream, and region in Odigos. The producer uses the AWS SDK credential chain. On EKS, configure IRSA or EKS Pod Identity for the gateway service account; on VMs, use an instance role or configured AWS credentials. The producer requires `logs:PutLogEvents` and `logs:CreateLogStream` on the source group. Precreating the log group avoids the need for `logs:CreateLogGroup`. An optional producer role ARN requires `sts:AssumeRole` and an appropriate trust policy; its external ID is separate from any Firehose credential.
+
+Follow [AWS's CloudWatch-to-Firehose setup](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html#FirehoseExample) and [Firehose decompression/message extraction](https://docs.aws.amazon.com/firehose/latest/dev/writing-with-cloudwatch-logs.html).
+
+**Record format and limits**
+
+Each log is a JSON message containing `body`, `severity_number`, `severity_text`, `attributes`, `resource`, `scope`, and optional `trace_id` / `span_id`. Resource and scope attributes are preserved across multi-resource batches. This is the upstream CloudWatch structured log format, not OTLP JSON. Without Firehose message extraction, downstream data contains CloudWatch envelopes (`logEvents[].message`) and can include control messages. Configure downstream parsing for the chosen format. Message extraction also removes the CloudWatch event ID and timestamp; disable extraction and parse the envelope if you need those fields. AWS does not support this CloudWatch subscription path to an OpenSearch Service Firehose destination.
+
+The upstream exporter batches CloudWatch events, uses a bounded sending queue and retry backoff, and keeps `raw_log` disabled to preserve metadata. CloudWatch subscription records use gzip; Firehose handles decompression. Delivery is at least once, so downstream consumers must tolerate duplicates. CloudWatch rejects events older than 14 days or beyond the group's retention window, or more than two hours in the future; the exporter warns about rejected events and does not replay the accepted subset. Oversized JSON messages are truncated at the upstream exporter's default 256 KiB payload cap; truncated JSON may require special downstream handling. Keep ordinary log records below that cap.
+
+**Verify downstream delivery**
+
+Generate ordinary application logs with a unique marker, wait for Firehose's configured buffering interval, then search/read the marker in the final downstream destination. For S3, inspect the delivered object and query it with a matching Athena JSON schema. Firehose ingestion metrics and a successful CloudWatch write alone do not prove downstream arrival. Check CloudWatch subscription delivery errors and Firehose delivery errors if the marker is absent.
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **AWS_CLOUDWATCH_LOG_GROUP_NAME** `string` : Source CloudWatch Log Group. Create a subscription filter from this fixed log group to an active Firehose delivery stream before sending logs. Odigos does not create the subscription or delivery stream.
+  - This field is required
+- **AWS_CLOUDWATCH_LOG_STREAM_NAME** `string` : Source CloudWatch Log Stream. The CloudWatch log stream that Odigos writes to in the subscribed log group.
+  - This field is required and defaults to `odigos`
+- **AWS_CLOUDWATCH_REGION** `string` : AWS Region. AWS region containing the CloudWatch log group and Firehose delivery stream. The gateway uses the AWS SDK credential chain, such as an IAM role for its service account.
+  - This field is required
+  - Example: `us-east-1`
+- **FIREHOSE_ROLE_ARN** `string` : Producer IAM Role ARN. Optional IAM role assumed by the gateway to write to CloudWatch Logs. This is separate from the CloudWatch subscription and Firehose delivery roles.
+  - This field is optional
+- **FIREHOSE_EXTERNAL_ID** `string` : Producer Role External ID. External ID required by the producer role trust policy when assuming a cross-account role.
+  - This field is optional
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Amazon Data Firehose (via CloudWatch Logs)` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `firehose.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: firehose-example
+      namespace: odigos-system
+    spec:
+      data:
+        AWS_CLOUDWATCH_LOG_GROUP_NAME: <Source CloudWatch Log Group>
+        AWS_CLOUDWATCH_LOG_STREAM_NAME: '<Source CloudWatch Log Stream (default: odigos)>'
+        AWS_CLOUDWATCH_REGION: <AWS Region>
+        # Note: The commented fields below are optional.
+        # FIREHOSE_ROLE_ARN: <Producer IAM Role ARN>
+        # FIREHOSE_EXTERNAL_ID: <Producer Role External ID>
+      destinationName: firehose
+      signals:
+      - LOGS
+      type: firehose
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f firehose.yaml
+    ```
+  </Step>
+</Steps>
