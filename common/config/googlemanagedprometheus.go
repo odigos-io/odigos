@@ -69,15 +69,20 @@ func (g *GoogleManagedPrometheus) ModifyConfig(dest ExporterConfigurer, currentC
 	// GMP drops most resource attributes when identifying a time series. Retain host/process
 	// identity for VM metrics and normalize reserved datapoint labels before translation.
 	resourceStatements := []string{
-		`set(attributes["service.instance.id"], attributes["container.id"]) where attributes["service.instance.id"] == nil and attributes["k8s.pod.name"] == nil and attributes["container.id"] != nil`,
-		`set(attributes["service.instance.id"], Concat([attributes["host.id"], String(attributes["process.pid"])], "/")) where attributes["service.instance.id"] == nil and attributes["k8s.pod.name"] == nil and attributes["host.id"] != nil and attributes["process.pid"] != nil`,
-		`set(attributes["service.instance.id"], Concat([attributes["host.name"], String(attributes["process.pid"])], "/")) where attributes["service.instance.id"] == nil and attributes["k8s.pod.name"] == nil and attributes["host.name"] != nil and attributes["process.pid"] != nil`,
+		`set(attributes["service.instance.id"], attributes["container.id"]) ` +
+			`where attributes["service.instance.id"] == nil and attributes["k8s.pod.name"] == nil and attributes["container.id"] != nil`,
+		`set(attributes["service.instance.id"], Concat([attributes["host.id"], String(attributes["process.pid"])], "/")) ` +
+			`where attributes["service.instance.id"] == nil and attributes["k8s.pod.name"] == nil ` +
+			`and attributes["host.id"] != nil and attributes["process.pid"] != nil`,
+		`set(attributes["service.instance.id"], Concat([attributes["host.name"], String(attributes["process.pid"])], "/")) ` +
+			`where attributes["service.instance.id"] == nil and attributes["k8s.pod.name"] == nil ` +
+			`and attributes["host.name"] != nil and attributes["process.pid"] != nil`,
 	}
 	datapointStatements := []string{}
 	for _, key := range []string{"location", "cluster", "namespace", "job", "instance", "project_id"} {
 		datapointStatements = append(datapointStatements,
-			fmt.Sprintf(`set(attributes["exported_%s"], attributes["%s"]) where attributes["%s"] != nil`, key, key, key),
-			fmt.Sprintf(`delete_key(attributes, "%s")`, key))
+			fmt.Sprintf(`set(attributes[%q], attributes[%q]) where attributes[%q] != nil`, "exported_"+key, key, key),
+			fmt.Sprintf(`delete_key(attributes, %q)`, key))
 	}
 	transformName := "transform/" + suffix
 	currentConfig.Processors[transformName] = GenericMap{
