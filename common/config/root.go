@@ -33,6 +33,7 @@ var availableConfigers = []Configer{
 	&GenericOTLP{},
 	&GoogleCloud{},
 	&GoogleCloudOTLP{},
+	&GoogleManagedPrometheus{},
 	&GoogleCloudStorage{},
 	&GrafanaCloudLoki{},
 	&GrafanaCloudPrometheus{},

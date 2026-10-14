@@ -73,3 +73,5 @@ const (
 	VictoriaMetricsCloudDestinationType   DestinationType = "victoriametricscloud"
 	PyroscopeDestinationType              DestinationType = "pyroscope"
 )
+
+const GoogleManagedPrometheusDestinationType DestinationType = "googlemanagedprometheus"

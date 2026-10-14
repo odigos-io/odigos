@@ -1,0 +1,142 @@
+---
+title: 'Google Cloud Managed Service for Prometheus'
+description: 'Configuring the Google Cloud Managed Service for Prometheus backend (Managed)'
+sidebarTitle: 'Google Cloud Managed Service for Prometheus'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/gcp.svg" alt="googlemanagedprometheus" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+### Project and authentication
+
+Enable the [Cloud Monitoring API](https://console.cloud.google.com/apis/library/monitoring.googleapis.com) in the destination project. Grant the collector identity `roles/monitoring.metricWriter`. Use [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials), preferably Workload Identity Federation for GKE or external workloads. Outside GCP, set the project ID explicitly if ADC does not include one.
+
+The optional Application Credentials JSON is stored in a Kubernetes Secret under `GCP_APPLICATION_CREDENTIALS` and mounted by the existing Google Cloud credential helper. For manifest setup, use `secretRef` and put the credentials only in the Secret. The gateway supports only one explicit Google Cloud credentials file across all Google Cloud destinations. VM collectors must provision ADC themselves.
+
+This metrics-only integration uses the bundled `googlemanagedprometheus` exporter and is distinct from Google Cloud Monitoring (traces/logs). Google now [recommends the Telemetry API OTLP path](https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-otel) for new OpenTelemetry metrics deployments; this destination provides the Managed Prometheus exporter requested by existing deployments.
+
+### Source identity and labels
+
+The exporter maps each resource to `prometheus_target`: location comes from `location`, `cloud.availability_zone`, or `cloud.region`; cluster from `cluster`, `k8s.cluster.name`, or `k8s.cluster.uid`; namespace from `namespace` or `k8s.namespace.name`; job from the service/workload name with the service namespace; instance from `instance`, `service.instance.id`, or upstream pod/container/host fallbacks. Optional location and cluster fields fill missing resource attributes. Outside a detected cloud region or zone, you must set Location to a Google Cloud region or zone such as `us-central1`. Google rejects `global` for `prometheus_target`; Odigos rejects that configuration value.
+
+Set a unique cluster name outside GCP. Keep a stable, unique `service.instance.id` for each producer. For non-Kubernetes metrics without this attribute, Odigos uses container ID or host ID/name plus process PID when present. Cloud, Kubernetes, FaaS, container, process, and host resource identifiers are retained as metric labels so separate resources do not collapse into one series. Resources with none of these identifiers require source enrichment before export.
+
+Datapoint labels `location`, `cluster`, `namespace`, `job`, `instance`, and `project_id` are renamed to `exported_` labels to avoid rejection. These replace an existing `exported_` label of the same name; avoid supplying both spellings. Resource attributes with these names identify the target and are not renamed.
+
+### Metric conversion and limits
+
+The upstream exporter normalizes names and adds type/unit suffixes under `prometheus.googleapis.com`. Gauges, sums, explicit and exponential histograms, and summaries use upstream conversion. Histograms become Google distributions with trace exemplars; summaries become sum/count/quantile series. Trace exemplars do not make traces a supported signal for this destination. Prefer cumulative temporality for counters and histograms and consistent INT/DOUBLE types for each metric name; changing numeric type can conflict with an existing descriptor.
+
+[Cloud Monitoring limits](https://cloud.google.com/monitoring/quotas) apply, including at least five seconds between points in a time series and at most 200 time series per write request (split by the exporter). Avoid multiple writers for the same target/label set and oversized label sets. The destination uses TLS with ADC, gzip compression, and a bounded upstream sending queue with one consumer. The bundled exporter does not automatically retry transient write failures and does not accept `retry_on_failure`; the TLS integration test verifies that `Unavailable` is surfaced after one attempt. Invalid/authentication/permission errors and partial-success summaries are surfaced by the upstream exporter and must be monitored in collector logs. Failed points can be lost; the queue is not a guarantee of persistence.
+
+### Querying metrics
+
+Open **Monitoring → Metrics explorer** in the destination project, choose **PromQL**, and query the normalized metric name (for example, `http_server_request_duration_seconds_count`). Filter by `cluster`, `namespace`, `job`, or `instance` to check individual sources. Confirm both replicas are queryable before relying on multi-resource ingestion.
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ✅ Metrics
+  ❌ Logs
+  ❌ Profiles
+</Accordion>
+
+- **GCP_PROJECT_ID** `string` : Project ID. Google Cloud project with the Cloud Monitoring API enabled. Defaults to the project detected from Application Default Credentials.
+  - This field is optional
+  - Example: `project-id`
+- **GCP_APPLICATION_CREDENTIALS** `string` : Application Credentials. Workload Identity Federation configuration or service account key JSON. Leave empty to use Application Default Credentials. Requires Monitoring Metric Writer permissions.
+  - This field is optional
+  - Example: `Credentials JSON (optional)`
+- **GMP_LOCATION** `string` : Location. Google Cloud region or zone for prometheus_target. Required outside GCP when resource location, cloud availability zone, and cloud region are absent. The value global is not supported. Existing resource location takes precedence.
+  - This field is optional
+  - Example: `us-central1`
+- **GMP_CLUSTER** `string` : Cluster. Fallback prometheus_target cluster name. Set a unique value for each cluster outside GCP. Existing resource cluster takes precedence.
+  - This field is optional
+  - Example: `my-cluster`
+- **GCP_TIMEOUT** `string` : Timeout. Positive duration for Cloud Monitoring API requests. Defaults to 12s.
+  - This field is optional
+  - Example: `12s`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Google Cloud Managed Service for Prometheus` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `googlemanagedprometheus.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: googlemanagedprometheus-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: googlemanagedprometheus
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: googlemanagedprometheus-secret
+      signals:
+      - METRICS
+      type: googlemanagedprometheus
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   GCP_APPLICATION_CREDENTIALS: <Base64 Application Credentials>
+    # kind: Secret
+    # metadata:
+    #   name: googlemanagedprometheus-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f googlemanagedprometheus.yaml
+    ```
+  </Step>
+</Steps>
