@@ -44,6 +44,7 @@ func calculateTracesConfig(
 	samplingRules *[]odigosv1.Sampling,
 	irls *[]odigosv1.InstrumentationRule,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
+	agentRecordsSpanMetrics bool,
 ) (*agentsignalconfig.AgentTracesConfig, *commonapi.ContainerCollectorConfig, *odigosv1.AgentDisabledInfo) {
 	agentConfig := &agentsignalconfig.AgentTracesConfig{}
 	var collectorConfig *commonapi.ContainerCollectorConfig
@@ -58,8 +59,8 @@ func calculateTracesConfig(
 	// Url Templatization
 	urlTemplatizationConfig := traces.CalculateUrlTemplatizationConfig(agentLevelActions, containerName, runtimeDetails.Language, pw)
 	if urlTemplatizationConfig != nil {
-		agentSpanMetricsEnabled := metrics.AgentSpanMetricsEnabled(effectiveConfig)
-		if traces.DistroSupportsTracesUrlTemplatization(d) && agentSpanMetricsEnabled {
+		// an agent that records span metrics templatizes urls itself, so that its metrics see them templatized.
+		if traces.DistroSupportsTracesUrlTemplatization(d) && agentRecordsSpanMetrics {
 			agentConfig.UrlTemplatization = urlTemplatizationConfig
 		} else {
 			collectorConfig = &commonapi.ContainerCollectorConfig{
@@ -216,9 +217,15 @@ func CalculateDynamicContainerConfig(
 
 	var collectorConfig *commonapi.ContainerCollectorConfig
 
+	// trace surges need span metrics from the agents they cover, even with the metrics signal disabled.
+	recordsForSurges := common.TraceSurgesEnabled(effectiveConfig.Sampling) && common.InsightsPipelineActive(effectiveConfig.Insights) &&
+		metrics.DistroSupportsAgentSpanMetrics(d) &&
+		runtimeDetails != nil && traces.TraceSurgeCoversContainer(samplingRules, runtimeDetails.Language, pw)
+
 	var tracesConfig *agentsignalconfig.AgentTracesConfig
 	if enabledSignals.TracesEnabled {
-		agentTracesConfig, collectorTracesConfig, err := calculateTracesConfig(agentLevelActions, containerName, runtimeDetails, pw, d, workloadObj, effectiveConfig, samplingRules, irls, nodeCollectorsGroup)
+		agentTracesConfig, collectorTracesConfig, err := calculateTracesConfig(agentLevelActions, containerName, runtimeDetails, pw, d, workloadObj, effectiveConfig, samplingRules, irls, nodeCollectorsGroup,
+			metrics.AgentSpanMetricsEnabled(effectiveConfig) || recordsForSurges)
 		if err != nil {
 			return nil, err
 		}
@@ -233,6 +240,28 @@ func CalculateDynamicContainerConfig(
 			return nil, err
 		}
 		metricsConfig = agentMetricsConfig
+	}
+
+	if recordsForSurges {
+		if metricsConfig == nil || metricsConfig.SpanMetrics == nil {
+			spanMetricsConfig, err := metrics.CalculateAgentSpanMetricsConfig(effectiveConfig, d)
+			if err != nil {
+				return nil, err
+			}
+			if metricsConfig == nil {
+				// the metrics signal is disabled: record span metrics only, without runtime metrics.
+				disabled := true
+				metricsConfig = &agentsignalconfig.AgentMetricsConfig{
+					RuntimeMetrics: &common.MetricsSourceAgentRuntimeMetricsConfiguration{
+						Java: &common.MetricsSourceAgentJavaRuntimeMetricsConfiguration{Disabled: &disabled},
+					},
+				}
+			}
+			metricsConfig.SpanMetrics = spanMetricsConfig
+		}
+		// report at least once per evaluation, so a spike is seen within one evaluation.
+		_, interval := common.TraceSurgeTiming(effectiveConfig.Sampling)
+		metricsConfig.SpanMetrics.IntervalMs = min(metricsConfig.SpanMetrics.IntervalMs, int(interval.Milliseconds()))
 	}
 
 	// To determine if logs are enabled, we check the gateway collector group receiver signals
