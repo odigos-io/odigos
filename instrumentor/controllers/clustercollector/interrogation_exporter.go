@@ -11,7 +11,7 @@ const gatewayProfilesPipeline = "profiles"
 
 // addInterrogationExporters enables the interrogation profiles exporter when
 // interrogation is on and the gateway profiles pipeline exists. Profile stacks
-// land in Redis; insights expands matching stacks into tx_call_trie in ClickHouse.
+// land in Redis; insights correlates them into call-trie structure in ClickHouse.
 // groupByTraceWaitDuration is the gateway groupbytrace wait_duration (e.g. "30s");
 // the profiles exporter uses 2× that as the Redis whole-trace key TTL.
 func addInterrogationExporters(c *config.Config, odigosNs string, interrogation *common.InterrogationConfiguration, groupByTraceWaitDuration string) error {

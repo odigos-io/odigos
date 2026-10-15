@@ -94,13 +94,10 @@ func TestAddInterrogationExporters_EnabledAppendsToProfilesPipeline(t *testing.T
 	assert.Equal(t, []string{pipeline.ProfilingGatewayToUIExporter, pipeline.InterrogationProfilesExporter}, pl.Exporters)
 }
 
-func TestAddInterrogationExporters_TracesPipelineDoesNotAddTracesExporter(t *testing.T) {
+func TestAddInterrogationExporters_TracesPipelineDoesNotAddProfilesExporter(t *testing.T) {
 	on := true
 	c := configWithTracesRootPipeline()
 	require.NoError(t, addInterrogationExporters(c, "odigos-system", &common.InterrogationConfiguration{Enabled: &on}, "30s"))
-
-	_, hasTraces := c.Exporters[pipeline.InterrogationTracesExporter]
-	assert.False(t, hasTraces, "call-trie writes moved to insights; traces exporter not wired")
 
 	rootName := pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
 	pl := c.Service.Pipelines[rootName]
@@ -122,9 +119,7 @@ func TestAddInterrogationExporters_BothPipelinesProfilesOnly(t *testing.T) {
 	require.NoError(t, addInterrogationExporters(c, "odigos-system", &common.InterrogationConfiguration{Enabled: &on}, "45s"))
 
 	_, hasProfiles := c.Exporters[pipeline.InterrogationProfilesExporter]
-	_, hasTraces := c.Exporters[pipeline.InterrogationTracesExporter]
 	assert.True(t, hasProfiles)
-	assert.False(t, hasTraces)
 	profilesExp := c.Exporters[pipeline.InterrogationProfilesExporter].(config.GenericMap)
 	assert.Equal(t, "45s", profilesExp["group_by_trace_wait_duration"])
 
