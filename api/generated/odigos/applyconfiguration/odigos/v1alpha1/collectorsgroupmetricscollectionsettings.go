@@ -53,6 +53,10 @@ type CollectorsGroupMetricsCollectionSettingsApplyConfiguration struct {
 	// it is generally enabled when we want to record metrics, and listed here for completeness.
 	// any "otlp receiver" specific settings can go here
 	AgentsTelemetry *odigosv1alpha1.AgentsTelemetrySettings `json:"agentsTelemetry,omitempty"`
+	// if not nil for node collector, some agents record span metrics themselves: because span
+	// metrics in the agents are enabled, or a trace surge rule covers them. the node collector
+	// routes them, and its span metrics connector does not count the spans they counted.
+	AgentSpanMetrics *AgentSpanMetricsSettingsApplyConfiguration `json:"agentSpanMetrics,omitempty"`
 }
 
 // CollectorsGroupMetricsCollectionSettingsApplyConfiguration constructs a declarative configuration of the CollectorsGroupMetricsCollectionSettings type for use with
@@ -106,5 +110,13 @@ func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithOdigosO
 // If called multiple times, the AgentsTelemetry field is set to the value of the last call.
 func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithAgentsTelemetry(value odigosv1alpha1.AgentsTelemetrySettings) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
 	b.AgentsTelemetry = &value
+	return b
+}
+
+// WithAgentSpanMetrics sets the AgentSpanMetrics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentSpanMetrics field is set to the value of the last call.
+func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithAgentSpanMetrics(value *AgentSpanMetricsSettingsApplyConfiguration) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
+	b.AgentSpanMetrics = value
 	return b
 }
