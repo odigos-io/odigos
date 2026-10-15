@@ -274,6 +274,7 @@ type ComplexityRoot struct {
 		PlatformType          func(childComplexity int) int
 		Readonly              func(childComplexity int) int
 		Tier                  func(childComplexity int) int
+		TraceSurgesEnabled    func(childComplexity int) int
 	}
 
 	ConfigYaml struct {
@@ -622,6 +623,20 @@ type ComplexityRoot struct {
 	HeadSamplingQueryParamMatcher struct {
 		Name       func(childComplexity int) int
 		ValueExact func(childComplexity int) int
+	}
+
+	HeadSamplingSurge struct {
+		BoostPercent        func(childComplexity int) int
+		Evaluation          func(childComplexity int) int
+		IncludeDownstream   func(childComplexity int) int
+		Metric              func(childComplexity int) int
+		MinimumBoostSeconds func(childComplexity int) int
+		MinimumRequests     func(childComplexity int) int
+		RecoverySeconds     func(childComplexity int) int
+		RecoveryThreshold   func(childComplexity int) int
+		SustainedSeconds    func(childComplexity int) int
+		Threshold           func(childComplexity int) int
+		Version             func(childComplexity int) int
 	}
 
 	HeadersCollection struct {
@@ -1895,6 +1910,7 @@ type ComplexityRoot struct {
 		RestartWorkloads                    func(childComplexity int, sourceIds []*model.K8sSourceID) int
 		RestoreInsightsRecommendations      func(childComplexity int, ids []string) int
 		RevertInsightsRecommendations       func(childComplexity int, ids []string) int
+		SaveHeadSamplingRule                func(childComplexity int, samplingID string, ruleID *string, rule model.NoisyOperationRuleInput, surge *model.HeadSamplingSurgeInput, surgeVersion string) int
 		SeedInsightsGuardrail               func(childComplexity int, seed model.InsightsGuardrailSeedInput) int
 		SetComponentLogLevel                func(childComplexity int, component *model.OdigosComponent, level model.OdigosLogLevel) int
 		SetRecommendationDismissed          func(childComplexity int, name string, dismissed bool) int
@@ -1945,6 +1961,7 @@ type ComplexityRoot struct {
 		PercentageAtMost func(childComplexity int) int
 		RuleID           func(childComplexity int) int
 		SourceScopes     func(childComplexity int) int
+		Surge            func(childComplexity int) int
 	}
 
 	NonIdentifyingAttribute struct {
@@ -2109,6 +2126,8 @@ type ComplexityRoot struct {
 		RemoteConfig                      func(childComplexity int) int
 		Sampling                          func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
+		TelemetryActivity                 func(childComplexity int, filters model.TelemetryActivityFiltersInput, cursor *string) int
+		TelemetryChange                   func(childComplexity int, id string) int
 		Workloads                         func(childComplexity int, filter *model.WorkloadFilter) int
 		WorkloadsByIds                    func(childComplexity int, ids []*model.K8sWorkloadIDInput) int
 	}
@@ -2326,6 +2345,98 @@ type ComplexityRoot struct {
 		KafkaProducer func(childComplexity int) int
 	}
 
+	TelemetryActivityDetail struct {
+		After         func(childComplexity int) int
+		Before        func(childComplexity int) int
+		Evidence      func(childComplexity int) int
+		ID            func(childComplexity int) int
+		LimitReason   func(childComplexity int) int
+		Reason        func(childComplexity int) int
+		ScopeSummary  func(childComplexity int) int
+		Source        func(childComplexity int) int
+		Status        func(childComplexity int) int
+		TargetSummary func(childComplexity int) int
+		Targets       func(childComplexity int) int
+		Timeline      func(childComplexity int) int
+		Title         func(childComplexity int) int
+		Trigger       func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+	}
+
+	TelemetryActivityPage struct {
+		AsOf         func(childComplexity int) int
+		HistoryLimit func(childComplexity int) int
+		Items        func(childComplexity int) int
+		NextCursor   func(childComplexity int) int
+	}
+
+	TelemetryActivitySummary struct {
+		After         func(childComplexity int) int
+		Before        func(childComplexity int) int
+		ID            func(childComplexity int) int
+		LimitReason   func(childComplexity int) int
+		Reason        func(childComplexity int) int
+		ScopeSummary  func(childComplexity int) int
+		Source        func(childComplexity int) int
+		Status        func(childComplexity int) int
+		TargetSummary func(childComplexity int) int
+		Title         func(childComplexity int) int
+		Trigger       func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+	}
+
+	TelemetryEvidence struct {
+		Label func(childComplexity int) int
+		Value func(childComplexity int) int
+	}
+
+	TelemetryMetricTrigger struct {
+		Measurement      func(childComplexity int) int
+		Metric           func(childComplexity int) int
+		ObservedAt       func(childComplexity int) int
+		ObservedValue    func(childComplexity int) int
+		PreviousValue    func(childComplexity int) int
+		RequestCount     func(childComplexity int) int
+		Samples          func(childComplexity int) int
+		Scope            func(childComplexity int) int
+		SustainedSeconds func(childComplexity int) int
+		Threshold        func(childComplexity int) int
+	}
+
+	TelemetrySample struct {
+		At    func(childComplexity int) int
+		Value func(childComplexity int) int
+	}
+
+	TelemetryScope struct {
+		Namespace func(childComplexity int) int
+		Operation func(childComplexity int) int
+		Service   func(childComplexity int) int
+		ServiceID func(childComplexity int) int
+	}
+
+	TelemetrySourceRef struct {
+		ID      func(childComplexity int) int
+		Kind    func(childComplexity int) int
+		Name    func(childComplexity int) int
+		Version func(childComplexity int) int
+	}
+
+	TelemetryTargetChange struct {
+		After            func(childComplexity int) int
+		Before           func(childComplexity int) int
+		BroadScopeReason func(childComplexity int) int
+		ID               func(childComplexity int) int
+		Scope            func(childComplexity int) int
+	}
+
+	TelemetryTimelineEvent struct {
+		At          func(childComplexity int) int
+		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Title       func(childComplexity int) int
+	}
+
 	TemplatizationWorkloadFilter struct {
 		Kind func(childComplexity int) int
 		Name func(childComplexity int) int
@@ -2529,6 +2640,7 @@ type MutationResolver interface {
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
 	UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
 	DeleteNoisyOperationRule(ctx context.Context, samplingID string, ruleID string) (bool, error)
+	SaveHeadSamplingRule(ctx context.Context, samplingID string, ruleID *string, rule model.NoisyOperationRuleInput, surge *model.HeadSamplingSurgeInput, surgeVersion string) (*model.NoisyOperationRule, error)
 	CreateHighlyRelevantOperationRule(ctx context.Context, samplingID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error)
 	UpdateHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error)
 	DeleteHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string) (bool, error)
@@ -2572,6 +2684,8 @@ type QueryResolver interface {
 	K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error)
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
 	InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error)
+	TelemetryActivity(ctx context.Context, filters model.TelemetryActivityFiltersInput, cursor *string) (*model.TelemetryActivityPage, error)
+	TelemetryChange(ctx context.Context, id string) (*model.TelemetryActivityDetail, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error)
 	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
@@ -3683,6 +3797,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Config.Tier(childComplexity), true
+
+	case "Config.traceSurgesEnabled":
+		if e.complexity.Config.TraceSurgesEnabled == nil {
+			break
+		}
+
+		return e.complexity.Config.TraceSurgesEnabled(childComplexity), true
 
 	case "ConfigYaml.displayName":
 		if e.complexity.ConfigYaml.DisplayName == nil {
@@ -5195,6 +5316,83 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HeadSamplingQueryParamMatcher.ValueExact(childComplexity), true
+
+	case "HeadSamplingSurge.boostPercent":
+		if e.complexity.HeadSamplingSurge.BoostPercent == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.BoostPercent(childComplexity), true
+
+	case "HeadSamplingSurge.evaluation":
+		if e.complexity.HeadSamplingSurge.Evaluation == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.Evaluation(childComplexity), true
+
+	case "HeadSamplingSurge.includeDownstream":
+		if e.complexity.HeadSamplingSurge.IncludeDownstream == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.IncludeDownstream(childComplexity), true
+
+	case "HeadSamplingSurge.metric":
+		if e.complexity.HeadSamplingSurge.Metric == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.Metric(childComplexity), true
+
+	case "HeadSamplingSurge.minimumBoostSeconds":
+		if e.complexity.HeadSamplingSurge.MinimumBoostSeconds == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.MinimumBoostSeconds(childComplexity), true
+
+	case "HeadSamplingSurge.minimumRequests":
+		if e.complexity.HeadSamplingSurge.MinimumRequests == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.MinimumRequests(childComplexity), true
+
+	case "HeadSamplingSurge.recoverySeconds":
+		if e.complexity.HeadSamplingSurge.RecoverySeconds == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.RecoverySeconds(childComplexity), true
+
+	case "HeadSamplingSurge.recoveryThreshold":
+		if e.complexity.HeadSamplingSurge.RecoveryThreshold == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.RecoveryThreshold(childComplexity), true
+
+	case "HeadSamplingSurge.sustainedSeconds":
+		if e.complexity.HeadSamplingSurge.SustainedSeconds == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.SustainedSeconds(childComplexity), true
+
+	case "HeadSamplingSurge.threshold":
+		if e.complexity.HeadSamplingSurge.Threshold == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.Threshold(childComplexity), true
+
+	case "HeadSamplingSurge.version":
+		if e.complexity.HeadSamplingSurge.Version == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingSurge.Version(childComplexity), true
 
 	case "HeadersCollection.headerKeys":
 		if e.complexity.HeadersCollection.HeaderKeys == nil {
@@ -11309,6 +11507,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RevertInsightsRecommendations(childComplexity, args["ids"].([]string)), true
 
+	case "Mutation.saveHeadSamplingRule":
+		if e.complexity.Mutation.SaveHeadSamplingRule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveHeadSamplingRule_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SaveHeadSamplingRule(childComplexity, args["samplingId"].(string), args["ruleId"].(*string), args["rule"].(model.NoisyOperationRuleInput), args["surge"].(*model.HeadSamplingSurgeInput), args["surgeVersion"].(string)), true
+
 	case "Mutation.seedInsightsGuardrail":
 		if e.complexity.Mutation.SeedInsightsGuardrail == nil {
 			break
@@ -11700,6 +11910,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NoisyOperationRule.SourceScopes(childComplexity), true
+
+	case "NoisyOperationRule.surge":
+		if e.complexity.NoisyOperationRule.Surge == nil {
+			break
+		}
+
+		return e.complexity.NoisyOperationRule.Surge(childComplexity), true
 
 	case "NonIdentifyingAttribute.key":
 		if e.complexity.NonIdentifyingAttribute.Key == nil {
@@ -12463,6 +12680,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.SourceConditions(childComplexity), true
+
+	case "Query.telemetryActivity":
+		if e.complexity.Query.TelemetryActivity == nil {
+			break
+		}
+
+		args, err := ec.field_Query_telemetryActivity_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TelemetryActivity(childComplexity, args["filters"].(model.TelemetryActivityFiltersInput), args["cursor"].(*string)), true
+
+	case "Query.telemetryChange":
+		if e.complexity.Query.TelemetryChange == nil {
+			break
+		}
+
+		args, err := ec.field_Query_telemetryChange_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TelemetryChange(childComplexity, args["id"].(string)), true
 
 	case "Query.workloads":
 		if e.complexity.Query.Workloads == nil {
@@ -13307,6 +13548,440 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TailSamplingOperationMatcher.KafkaProducer(childComplexity), true
 
+	case "TelemetryActivityDetail.after":
+		if e.complexity.TelemetryActivityDetail.After == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.After(childComplexity), true
+
+	case "TelemetryActivityDetail.before":
+		if e.complexity.TelemetryActivityDetail.Before == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Before(childComplexity), true
+
+	case "TelemetryActivityDetail.evidence":
+		if e.complexity.TelemetryActivityDetail.Evidence == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Evidence(childComplexity), true
+
+	case "TelemetryActivityDetail.id":
+		if e.complexity.TelemetryActivityDetail.ID == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.ID(childComplexity), true
+
+	case "TelemetryActivityDetail.limitReason":
+		if e.complexity.TelemetryActivityDetail.LimitReason == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.LimitReason(childComplexity), true
+
+	case "TelemetryActivityDetail.reason":
+		if e.complexity.TelemetryActivityDetail.Reason == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Reason(childComplexity), true
+
+	case "TelemetryActivityDetail.scopeSummary":
+		if e.complexity.TelemetryActivityDetail.ScopeSummary == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.ScopeSummary(childComplexity), true
+
+	case "TelemetryActivityDetail.source":
+		if e.complexity.TelemetryActivityDetail.Source == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Source(childComplexity), true
+
+	case "TelemetryActivityDetail.status":
+		if e.complexity.TelemetryActivityDetail.Status == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Status(childComplexity), true
+
+	case "TelemetryActivityDetail.targetSummary":
+		if e.complexity.TelemetryActivityDetail.TargetSummary == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.TargetSummary(childComplexity), true
+
+	case "TelemetryActivityDetail.targets":
+		if e.complexity.TelemetryActivityDetail.Targets == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Targets(childComplexity), true
+
+	case "TelemetryActivityDetail.timeline":
+		if e.complexity.TelemetryActivityDetail.Timeline == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Timeline(childComplexity), true
+
+	case "TelemetryActivityDetail.title":
+		if e.complexity.TelemetryActivityDetail.Title == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Title(childComplexity), true
+
+	case "TelemetryActivityDetail.trigger":
+		if e.complexity.TelemetryActivityDetail.Trigger == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.Trigger(childComplexity), true
+
+	case "TelemetryActivityDetail.updatedAt":
+		if e.complexity.TelemetryActivityDetail.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityDetail.UpdatedAt(childComplexity), true
+
+	case "TelemetryActivityPage.asOf":
+		if e.complexity.TelemetryActivityPage.AsOf == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityPage.AsOf(childComplexity), true
+
+	case "TelemetryActivityPage.historyLimit":
+		if e.complexity.TelemetryActivityPage.HistoryLimit == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityPage.HistoryLimit(childComplexity), true
+
+	case "TelemetryActivityPage.items":
+		if e.complexity.TelemetryActivityPage.Items == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityPage.Items(childComplexity), true
+
+	case "TelemetryActivityPage.nextCursor":
+		if e.complexity.TelemetryActivityPage.NextCursor == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivityPage.NextCursor(childComplexity), true
+
+	case "TelemetryActivitySummary.after":
+		if e.complexity.TelemetryActivitySummary.After == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.After(childComplexity), true
+
+	case "TelemetryActivitySummary.before":
+		if e.complexity.TelemetryActivitySummary.Before == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.Before(childComplexity), true
+
+	case "TelemetryActivitySummary.id":
+		if e.complexity.TelemetryActivitySummary.ID == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.ID(childComplexity), true
+
+	case "TelemetryActivitySummary.limitReason":
+		if e.complexity.TelemetryActivitySummary.LimitReason == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.LimitReason(childComplexity), true
+
+	case "TelemetryActivitySummary.reason":
+		if e.complexity.TelemetryActivitySummary.Reason == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.Reason(childComplexity), true
+
+	case "TelemetryActivitySummary.scopeSummary":
+		if e.complexity.TelemetryActivitySummary.ScopeSummary == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.ScopeSummary(childComplexity), true
+
+	case "TelemetryActivitySummary.source":
+		if e.complexity.TelemetryActivitySummary.Source == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.Source(childComplexity), true
+
+	case "TelemetryActivitySummary.status":
+		if e.complexity.TelemetryActivitySummary.Status == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.Status(childComplexity), true
+
+	case "TelemetryActivitySummary.targetSummary":
+		if e.complexity.TelemetryActivitySummary.TargetSummary == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.TargetSummary(childComplexity), true
+
+	case "TelemetryActivitySummary.title":
+		if e.complexity.TelemetryActivitySummary.Title == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.Title(childComplexity), true
+
+	case "TelemetryActivitySummary.trigger":
+		if e.complexity.TelemetryActivitySummary.Trigger == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.Trigger(childComplexity), true
+
+	case "TelemetryActivitySummary.updatedAt":
+		if e.complexity.TelemetryActivitySummary.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.TelemetryActivitySummary.UpdatedAt(childComplexity), true
+
+	case "TelemetryEvidence.label":
+		if e.complexity.TelemetryEvidence.Label == nil {
+			break
+		}
+
+		return e.complexity.TelemetryEvidence.Label(childComplexity), true
+
+	case "TelemetryEvidence.value":
+		if e.complexity.TelemetryEvidence.Value == nil {
+			break
+		}
+
+		return e.complexity.TelemetryEvidence.Value(childComplexity), true
+
+	case "TelemetryMetricTrigger.measurement":
+		if e.complexity.TelemetryMetricTrigger.Measurement == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.Measurement(childComplexity), true
+
+	case "TelemetryMetricTrigger.metric":
+		if e.complexity.TelemetryMetricTrigger.Metric == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.Metric(childComplexity), true
+
+	case "TelemetryMetricTrigger.observedAt":
+		if e.complexity.TelemetryMetricTrigger.ObservedAt == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.ObservedAt(childComplexity), true
+
+	case "TelemetryMetricTrigger.observedValue":
+		if e.complexity.TelemetryMetricTrigger.ObservedValue == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.ObservedValue(childComplexity), true
+
+	case "TelemetryMetricTrigger.previousValue":
+		if e.complexity.TelemetryMetricTrigger.PreviousValue == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.PreviousValue(childComplexity), true
+
+	case "TelemetryMetricTrigger.requestCount":
+		if e.complexity.TelemetryMetricTrigger.RequestCount == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.RequestCount(childComplexity), true
+
+	case "TelemetryMetricTrigger.samples":
+		if e.complexity.TelemetryMetricTrigger.Samples == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.Samples(childComplexity), true
+
+	case "TelemetryMetricTrigger.scope":
+		if e.complexity.TelemetryMetricTrigger.Scope == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.Scope(childComplexity), true
+
+	case "TelemetryMetricTrigger.sustainedSeconds":
+		if e.complexity.TelemetryMetricTrigger.SustainedSeconds == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.SustainedSeconds(childComplexity), true
+
+	case "TelemetryMetricTrigger.threshold":
+		if e.complexity.TelemetryMetricTrigger.Threshold == nil {
+			break
+		}
+
+		return e.complexity.TelemetryMetricTrigger.Threshold(childComplexity), true
+
+	case "TelemetrySample.at":
+		if e.complexity.TelemetrySample.At == nil {
+			break
+		}
+
+		return e.complexity.TelemetrySample.At(childComplexity), true
+
+	case "TelemetrySample.value":
+		if e.complexity.TelemetrySample.Value == nil {
+			break
+		}
+
+		return e.complexity.TelemetrySample.Value(childComplexity), true
+
+	case "TelemetryScope.namespace":
+		if e.complexity.TelemetryScope.Namespace == nil {
+			break
+		}
+
+		return e.complexity.TelemetryScope.Namespace(childComplexity), true
+
+	case "TelemetryScope.operation":
+		if e.complexity.TelemetryScope.Operation == nil {
+			break
+		}
+
+		return e.complexity.TelemetryScope.Operation(childComplexity), true
+
+	case "TelemetryScope.service":
+		if e.complexity.TelemetryScope.Service == nil {
+			break
+		}
+
+		return e.complexity.TelemetryScope.Service(childComplexity), true
+
+	case "TelemetryScope.serviceId":
+		if e.complexity.TelemetryScope.ServiceID == nil {
+			break
+		}
+
+		return e.complexity.TelemetryScope.ServiceID(childComplexity), true
+
+	case "TelemetrySourceRef.id":
+		if e.complexity.TelemetrySourceRef.ID == nil {
+			break
+		}
+
+		return e.complexity.TelemetrySourceRef.ID(childComplexity), true
+
+	case "TelemetrySourceRef.kind":
+		if e.complexity.TelemetrySourceRef.Kind == nil {
+			break
+		}
+
+		return e.complexity.TelemetrySourceRef.Kind(childComplexity), true
+
+	case "TelemetrySourceRef.name":
+		if e.complexity.TelemetrySourceRef.Name == nil {
+			break
+		}
+
+		return e.complexity.TelemetrySourceRef.Name(childComplexity), true
+
+	case "TelemetrySourceRef.version":
+		if e.complexity.TelemetrySourceRef.Version == nil {
+			break
+		}
+
+		return e.complexity.TelemetrySourceRef.Version(childComplexity), true
+
+	case "TelemetryTargetChange.after":
+		if e.complexity.TelemetryTargetChange.After == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTargetChange.After(childComplexity), true
+
+	case "TelemetryTargetChange.before":
+		if e.complexity.TelemetryTargetChange.Before == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTargetChange.Before(childComplexity), true
+
+	case "TelemetryTargetChange.broadScopeReason":
+		if e.complexity.TelemetryTargetChange.BroadScopeReason == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTargetChange.BroadScopeReason(childComplexity), true
+
+	case "TelemetryTargetChange.id":
+		if e.complexity.TelemetryTargetChange.ID == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTargetChange.ID(childComplexity), true
+
+	case "TelemetryTargetChange.scope":
+		if e.complexity.TelemetryTargetChange.Scope == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTargetChange.Scope(childComplexity), true
+
+	case "TelemetryTimelineEvent.at":
+		if e.complexity.TelemetryTimelineEvent.At == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTimelineEvent.At(childComplexity), true
+
+	case "TelemetryTimelineEvent.description":
+		if e.complexity.TelemetryTimelineEvent.Description == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTimelineEvent.Description(childComplexity), true
+
+	case "TelemetryTimelineEvent.id":
+		if e.complexity.TelemetryTimelineEvent.ID == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTimelineEvent.ID(childComplexity), true
+
+	case "TelemetryTimelineEvent.title":
+		if e.complexity.TelemetryTimelineEvent.Title == nil {
+			break
+		}
+
+		return e.complexity.TelemetryTimelineEvent.Title(childComplexity), true
+
 	case "TemplatizationWorkloadFilter.kind":
 		if e.complexity.TemplatizationWorkloadFilter.Kind == nil {
 			break
@@ -13532,6 +14207,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHeadSamplingHttpServerMatcherInput,
 		ec.unmarshalInputHeadSamplingOperationMatcherInput,
 		ec.unmarshalInputHeadSamplingQueryParamMatcherInput,
+		ec.unmarshalInputHeadSamplingSurgeInput,
 		ec.unmarshalInputHeadersCollectionInput,
 		ec.unmarshalInputHighlyRelevantOperationRuleInput,
 		ec.unmarshalInputHttpPayloadCollectionInput,
@@ -13595,6 +14271,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTailSamplingHttpServerMatcherInput,
 		ec.unmarshalInputTailSamplingKafkaMatcherInput,
 		ec.unmarshalInputTailSamplingOperationMatcherInput,
+		ec.unmarshalInputTelemetryActivityFiltersInput,
 		ec.unmarshalInputTemplatizationWorkloadFilterInput,
 		ec.unmarshalInputURLTemplatizationRuleInput,
 		ec.unmarshalInputUrlTemplatizationDefaultGroupInput,
@@ -13697,7 +14374,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "actions.graphqls" "collectors.graphqls" "common.graphqls" "configs.graphqls" "datastreams.graphqls" "describe.graphqls" "desiredcondition.graphqls" "destinations.graphqls" "diagnose.graphqls" "gooffsets.graphqls" "insights.graphqls" "instrumentationagents.graphqls" "instrumentationrules.graphqls" "metrics.graphqls" "pod.graphqls" "profiling.graphqls" "recommendations.graphqls" "sampling.graphqls" "servicemap.graphqls" "sources.graphqls" "tokens.graphqls" "urltemplatization.graphqls" "workload.graphqls"
+//go:embed "actions.graphqls" "collectors.graphqls" "common.graphqls" "configs.graphqls" "datastreams.graphqls" "describe.graphqls" "desiredcondition.graphqls" "destinations.graphqls" "diagnose.graphqls" "gooffsets.graphqls" "insights.graphqls" "instrumentationagents.graphqls" "instrumentationrules.graphqls" "metrics.graphqls" "pod.graphqls" "profiling.graphqls" "recommendations.graphqls" "sampling.graphqls" "servicemap.graphqls" "sources.graphqls" "telemetry.graphqls" "tokens.graphqls" "urltemplatization.graphqls" "workload.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -13729,6 +14406,7 @@ var sources = []*ast.Source{
 	{Name: "sampling.graphqls", Input: sourceData("sampling.graphqls"), BuiltIn: false},
 	{Name: "servicemap.graphqls", Input: sourceData("servicemap.graphqls"), BuiltIn: false},
 	{Name: "sources.graphqls", Input: sourceData("sources.graphqls"), BuiltIn: false},
+	{Name: "telemetry.graphqls", Input: sourceData("telemetry.graphqls"), BuiltIn: false},
 	{Name: "tokens.graphqls", Input: sourceData("tokens.graphqls"), BuiltIn: false},
 	{Name: "urltemplatization.graphqls", Input: sourceData("urltemplatization.graphqls"), BuiltIn: false},
 	{Name: "workload.graphqls", Input: sourceData("workload.graphqls"), BuiltIn: false},
@@ -16888,6 +17566,126 @@ func (ec *executionContext) field_Mutation_revertInsightsRecommendations_argsIds
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_saveHeadSamplingRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_saveHeadSamplingRule_argsSamplingID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_saveHeadSamplingRule_argsRuleID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ruleId"] = arg1
+	arg2, err := ec.field_Mutation_saveHeadSamplingRule_argsRule(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["rule"] = arg2
+	arg3, err := ec.field_Mutation_saveHeadSamplingRule_argsSurge(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["surge"] = arg3
+	arg4, err := ec.field_Mutation_saveHeadSamplingRule_argsSurgeVersion(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["surgeVersion"] = arg4
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_saveHeadSamplingRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_saveHeadSamplingRule_argsRuleID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["ruleId"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleId"))
+	if tmp, ok := rawArgs["ruleId"]; ok {
+		return ec.unmarshalOID2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_saveHeadSamplingRule_argsRule(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.NoisyOperationRuleInput, error) {
+	if _, ok := rawArgs["rule"]; !ok {
+		var zeroVal model.NoisyOperationRuleInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("rule"))
+	if tmp, ok := rawArgs["rule"]; ok {
+		return ec.unmarshalNNoisyOperationRuleInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationRuleInput(ctx, tmp)
+	}
+
+	var zeroVal model.NoisyOperationRuleInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_saveHeadSamplingRule_argsSurge(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.HeadSamplingSurgeInput, error) {
+	if _, ok := rawArgs["surge"]; !ok {
+		var zeroVal *model.HeadSamplingSurgeInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("surge"))
+	if tmp, ok := rawArgs["surge"]; ok {
+		return ec.unmarshalOHeadSamplingSurgeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingSurgeInput(ctx, tmp)
+	}
+
+	var zeroVal *model.HeadSamplingSurgeInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_saveHeadSamplingRule_argsSurgeVersion(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["surgeVersion"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("surgeVersion"))
+	if tmp, ok := rawArgs["surgeVersion"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_seedInsightsGuardrail_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -18200,6 +18998,85 @@ func (ec *executionContext) field_Query_pod_argsName(
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 	if tmp, ok := rawArgs["name"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_telemetryActivity_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_telemetryActivity_argsFilters(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filters"] = arg0
+	arg1, err := ec.field_Query_telemetryActivity_argsCursor(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["cursor"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Query_telemetryActivity_argsFilters(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.TelemetryActivityFiltersInput, error) {
+	if _, ok := rawArgs["filters"]; !ok {
+		var zeroVal model.TelemetryActivityFiltersInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filters"))
+	if tmp, ok := rawArgs["filters"]; ok {
+		return ec.unmarshalNTelemetryActivityFiltersInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivityFiltersInput(ctx, tmp)
+	}
+
+	var zeroVal model.TelemetryActivityFiltersInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_telemetryActivity_argsCursor(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["cursor"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("cursor"))
+	if tmp, ok := rawArgs["cursor"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_telemetryChange_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_telemetryChange_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_telemetryChange_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
 	}
 
 	var zeroVal string
@@ -25289,6 +26166,50 @@ func (ec *executionContext) _Config_insightsEnabled(ctx context.Context, field g
 }
 
 func (ec *executionContext) fieldContext_Config_insightsEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_traceSurgesEnabled(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_traceSurgesEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TraceSurgesEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_traceSurgesEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Config",
 		Field:      field,
@@ -35054,6 +35975,490 @@ func (ec *executionContext) fieldContext_HeadSamplingQueryParamMatcher_valueExac
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_version(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_includeDownstream(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_includeDownstream(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IncludeDownstream, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_includeDownstream(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_evaluation(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_evaluation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Evaluation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_evaluation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_metric(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_metric(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Metric, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_metric(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_threshold(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_threshold(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Threshold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_threshold(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_sustainedSeconds(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_sustainedSeconds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SustainedSeconds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_sustainedSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_minimumRequests(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_minimumRequests(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinimumRequests, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_minimumRequests(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_boostPercent(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_boostPercent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BoostPercent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_boostPercent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_recoveryThreshold(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_recoveryThreshold(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecoveryThreshold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_recoveryThreshold(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_recoverySeconds(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_recoverySeconds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecoverySeconds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_recoverySeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingSurge_minimumBoostSeconds(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingSurge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingSurge_minimumBoostSeconds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinimumBoostSeconds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingSurge_minimumBoostSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingSurge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -74514,6 +75919,8 @@ func (ec *executionContext) fieldContext_Mutation_createNoisyOperationRule(ctx c
 				return ec.fieldContext_NoisyOperationRule_percentageAtMost(ctx, field)
 			case "notes":
 				return ec.fieldContext_NoisyOperationRule_notes(ctx, field)
+			case "surge":
+				return ec.fieldContext_NoisyOperationRule_surge(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NoisyOperationRule", field.Name)
 		},
@@ -74585,6 +75992,8 @@ func (ec *executionContext) fieldContext_Mutation_updateNoisyOperationRule(ctx c
 				return ec.fieldContext_NoisyOperationRule_percentageAtMost(ctx, field)
 			case "notes":
 				return ec.fieldContext_NoisyOperationRule_notes(ctx, field)
+			case "surge":
+				return ec.fieldContext_NoisyOperationRule_surge(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NoisyOperationRule", field.Name)
 		},
@@ -74652,6 +76061,79 @@ func (ec *executionContext) fieldContext_Mutation_deleteNoisyOperationRule(ctx c
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteNoisyOperationRule_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_saveHeadSamplingRule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_saveHeadSamplingRule(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SaveHeadSamplingRule(rctx, fc.Args["samplingId"].(string), fc.Args["ruleId"].(*string), fc.Args["rule"].(model.NoisyOperationRuleInput), fc.Args["surge"].(*model.HeadSamplingSurgeInput), fc.Args["surgeVersion"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NoisyOperationRule)
+	fc.Result = res
+	return ec.marshalNNoisyOperationRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationRule(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_saveHeadSamplingRule(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ruleId":
+				return ec.fieldContext_NoisyOperationRule_ruleId(ctx, field)
+			case "name":
+				return ec.fieldContext_NoisyOperationRule_name(ctx, field)
+			case "disabled":
+				return ec.fieldContext_NoisyOperationRule_disabled(ctx, field)
+			case "sourceScopes":
+				return ec.fieldContext_NoisyOperationRule_sourceScopes(ctx, field)
+			case "operation":
+				return ec.fieldContext_NoisyOperationRule_operation(ctx, field)
+			case "percentageAtMost":
+				return ec.fieldContext_NoisyOperationRule_percentageAtMost(ctx, field)
+			case "notes":
+				return ec.fieldContext_NoisyOperationRule_notes(ctx, field)
+			case "surge":
+				return ec.fieldContext_NoisyOperationRule_surge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NoisyOperationRule", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveHeadSamplingRule_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -76299,6 +77781,71 @@ func (ec *executionContext) fieldContext_NoisyOperationRule_notes(_ context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NoisyOperationRule_surge(ctx context.Context, field graphql.CollectedField, obj *model.NoisyOperationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NoisyOperationRule_surge(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Surge, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.HeadSamplingSurge)
+	fc.Result = res
+	return ec.marshalOHeadSamplingSurge2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingSurge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NoisyOperationRule_surge(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NoisyOperationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "version":
+				return ec.fieldContext_HeadSamplingSurge_version(ctx, field)
+			case "includeDownstream":
+				return ec.fieldContext_HeadSamplingSurge_includeDownstream(ctx, field)
+			case "evaluation":
+				return ec.fieldContext_HeadSamplingSurge_evaluation(ctx, field)
+			case "metric":
+				return ec.fieldContext_HeadSamplingSurge_metric(ctx, field)
+			case "threshold":
+				return ec.fieldContext_HeadSamplingSurge_threshold(ctx, field)
+			case "sustainedSeconds":
+				return ec.fieldContext_HeadSamplingSurge_sustainedSeconds(ctx, field)
+			case "minimumRequests":
+				return ec.fieldContext_HeadSamplingSurge_minimumRequests(ctx, field)
+			case "boostPercent":
+				return ec.fieldContext_HeadSamplingSurge_boostPercent(ctx, field)
+			case "recoveryThreshold":
+				return ec.fieldContext_HeadSamplingSurge_recoveryThreshold(ctx, field)
+			case "recoverySeconds":
+				return ec.fieldContext_HeadSamplingSurge_recoverySeconds(ctx, field)
+			case "minimumBoostSeconds":
+				return ec.fieldContext_HeadSamplingSurge_minimumBoostSeconds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingSurge", field.Name)
 		},
 	}
 	return fc, nil
@@ -80332,6 +81879,8 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 				return ec.fieldContext_Config_isCentralProxyRunning(ctx, field)
 			case "insightsEnabled":
 				return ec.fieldContext_Config_insightsEnabled(ctx, field)
+			case "traceSurgesEnabled":
+				return ec.fieldContext_Config_traceSurgesEnabled(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Config", field.Name)
 		},
@@ -81635,6 +83184,158 @@ func (ec *executionContext) fieldContext_Query_instrumentationInstanceComponents
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_instrumentationInstanceComponents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_telemetryActivity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_telemetryActivity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TelemetryActivity(rctx, fc.Args["filters"].(model.TelemetryActivityFiltersInput), fc.Args["cursor"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TelemetryActivityPage)
+	fc.Result = res
+	return ec.marshalNTelemetryActivityPage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivityPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_telemetryActivity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "items":
+				return ec.fieldContext_TelemetryActivityPage_items(ctx, field)
+			case "nextCursor":
+				return ec.fieldContext_TelemetryActivityPage_nextCursor(ctx, field)
+			case "asOf":
+				return ec.fieldContext_TelemetryActivityPage_asOf(ctx, field)
+			case "historyLimit":
+				return ec.fieldContext_TelemetryActivityPage_historyLimit(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryActivityPage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_telemetryActivity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_telemetryChange(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_telemetryChange(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TelemetryChange(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TelemetryActivityDetail)
+	fc.Result = res
+	return ec.marshalNTelemetryActivityDetail2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivityDetail(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_telemetryChange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TelemetryActivityDetail_id(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_TelemetryActivityDetail_updatedAt(ctx, field)
+			case "title":
+				return ec.fieldContext_TelemetryActivityDetail_title(ctx, field)
+			case "before":
+				return ec.fieldContext_TelemetryActivityDetail_before(ctx, field)
+			case "after":
+				return ec.fieldContext_TelemetryActivityDetail_after(ctx, field)
+			case "targetSummary":
+				return ec.fieldContext_TelemetryActivityDetail_targetSummary(ctx, field)
+			case "scopeSummary":
+				return ec.fieldContext_TelemetryActivityDetail_scopeSummary(ctx, field)
+			case "source":
+				return ec.fieldContext_TelemetryActivityDetail_source(ctx, field)
+			case "reason":
+				return ec.fieldContext_TelemetryActivityDetail_reason(ctx, field)
+			case "trigger":
+				return ec.fieldContext_TelemetryActivityDetail_trigger(ctx, field)
+			case "status":
+				return ec.fieldContext_TelemetryActivityDetail_status(ctx, field)
+			case "limitReason":
+				return ec.fieldContext_TelemetryActivityDetail_limitReason(ctx, field)
+			case "targets":
+				return ec.fieldContext_TelemetryActivityDetail_targets(ctx, field)
+			case "timeline":
+				return ec.fieldContext_TelemetryActivityDetail_timeline(ctx, field)
+			case "evidence":
+				return ec.fieldContext_TelemetryActivityDetail_evidence(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryActivityDetail", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_telemetryChange_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -84529,6 +86230,8 @@ func (ec *executionContext) fieldContext_SamplingRules_noisyOperations(_ context
 				return ec.fieldContext_NoisyOperationRule_percentageAtMost(ctx, field)
 			case "notes":
 				return ec.fieldContext_NoisyOperationRule_notes(ctx, field)
+			case "surge":
+				return ec.fieldContext_NoisyOperationRule_surge(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NoisyOperationRule", field.Name)
 		},
@@ -87389,6 +89092,2830 @@ func (ec *executionContext) fieldContext_TailSamplingOperationMatcher_kafkaProdu
 				return ec.fieldContext_TailSamplingKafkaMatcher_kafkaTopic(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TailSamplingKafkaMatcher", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_id(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_title(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_before(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_before(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Before, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_before(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_after(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_after(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.After, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_after(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_targetSummary(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_targetSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TargetSummary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_targetSummary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_scopeSummary(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_scopeSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScopeSummary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_scopeSummary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_source(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_source(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Source, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TelemetrySourceRef)
+	fc.Result = res
+	return ec.marshalNTelemetrySourceRef2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetrySourceRef(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "kind":
+				return ec.fieldContext_TelemetrySourceRef_kind(ctx, field)
+			case "id":
+				return ec.fieldContext_TelemetrySourceRef_id(ctx, field)
+			case "name":
+				return ec.fieldContext_TelemetrySourceRef_name(ctx, field)
+			case "version":
+				return ec.fieldContext_TelemetrySourceRef_version(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetrySourceRef", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_reason(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_reason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_trigger(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_trigger(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Trigger, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.TelemetryMetricTrigger)
+	fc.Result = res
+	return ec.marshalOTelemetryMetricTrigger2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryMetricTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_trigger(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "scope":
+				return ec.fieldContext_TelemetryMetricTrigger_scope(ctx, field)
+			case "metric":
+				return ec.fieldContext_TelemetryMetricTrigger_metric(ctx, field)
+			case "previousValue":
+				return ec.fieldContext_TelemetryMetricTrigger_previousValue(ctx, field)
+			case "observedValue":
+				return ec.fieldContext_TelemetryMetricTrigger_observedValue(ctx, field)
+			case "threshold":
+				return ec.fieldContext_TelemetryMetricTrigger_threshold(ctx, field)
+			case "sustainedSeconds":
+				return ec.fieldContext_TelemetryMetricTrigger_sustainedSeconds(ctx, field)
+			case "observedAt":
+				return ec.fieldContext_TelemetryMetricTrigger_observedAt(ctx, field)
+			case "requestCount":
+				return ec.fieldContext_TelemetryMetricTrigger_requestCount(ctx, field)
+			case "measurement":
+				return ec.fieldContext_TelemetryMetricTrigger_measurement(ctx, field)
+			case "samples":
+				return ec.fieldContext_TelemetryMetricTrigger_samples(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryMetricTrigger", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_status(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_limitReason(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_limitReason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LimitReason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_limitReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_targets(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_targets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Targets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TelemetryTargetChange)
+	fc.Result = res
+	return ec.marshalNTelemetryTargetChange2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryTargetChangeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_targets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TelemetryTargetChange_id(ctx, field)
+			case "scope":
+				return ec.fieldContext_TelemetryTargetChange_scope(ctx, field)
+			case "before":
+				return ec.fieldContext_TelemetryTargetChange_before(ctx, field)
+			case "after":
+				return ec.fieldContext_TelemetryTargetChange_after(ctx, field)
+			case "broadScopeReason":
+				return ec.fieldContext_TelemetryTargetChange_broadScopeReason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryTargetChange", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_timeline(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_timeline(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timeline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TelemetryTimelineEvent)
+	fc.Result = res
+	return ec.marshalNTelemetryTimelineEvent2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryTimelineEventᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_timeline(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TelemetryTimelineEvent_id(ctx, field)
+			case "at":
+				return ec.fieldContext_TelemetryTimelineEvent_at(ctx, field)
+			case "title":
+				return ec.fieldContext_TelemetryTimelineEvent_title(ctx, field)
+			case "description":
+				return ec.fieldContext_TelemetryTimelineEvent_description(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryTimelineEvent", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityDetail_evidence(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityDetail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityDetail_evidence(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Evidence, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TelemetryEvidence)
+	fc.Result = res
+	return ec.marshalOTelemetryEvidence2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryEvidenceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityDetail_evidence(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityDetail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "label":
+				return ec.fieldContext_TelemetryEvidence_label(ctx, field)
+			case "value":
+				return ec.fieldContext_TelemetryEvidence_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryEvidence", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityPage_items(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityPage_items(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Items, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TelemetryActivitySummary)
+	fc.Result = res
+	return ec.marshalNTelemetryActivitySummary2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivitySummaryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityPage_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TelemetryActivitySummary_id(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_TelemetryActivitySummary_updatedAt(ctx, field)
+			case "title":
+				return ec.fieldContext_TelemetryActivitySummary_title(ctx, field)
+			case "before":
+				return ec.fieldContext_TelemetryActivitySummary_before(ctx, field)
+			case "after":
+				return ec.fieldContext_TelemetryActivitySummary_after(ctx, field)
+			case "targetSummary":
+				return ec.fieldContext_TelemetryActivitySummary_targetSummary(ctx, field)
+			case "scopeSummary":
+				return ec.fieldContext_TelemetryActivitySummary_scopeSummary(ctx, field)
+			case "source":
+				return ec.fieldContext_TelemetryActivitySummary_source(ctx, field)
+			case "reason":
+				return ec.fieldContext_TelemetryActivitySummary_reason(ctx, field)
+			case "trigger":
+				return ec.fieldContext_TelemetryActivitySummary_trigger(ctx, field)
+			case "status":
+				return ec.fieldContext_TelemetryActivitySummary_status(ctx, field)
+			case "limitReason":
+				return ec.fieldContext_TelemetryActivitySummary_limitReason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryActivitySummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityPage_nextCursor(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityPage_nextCursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NextCursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityPage_nextCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityPage_asOf(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityPage_asOf(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AsOf, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityPage_asOf(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivityPage_historyLimit(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivityPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivityPage_historyLimit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HistoryLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivityPage_historyLimit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivityPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_id(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_title(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_before(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_before(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Before, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_before(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_after(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_after(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.After, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_after(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_targetSummary(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_targetSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TargetSummary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_targetSummary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_scopeSummary(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_scopeSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScopeSummary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_scopeSummary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_source(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_source(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Source, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TelemetrySourceRef)
+	fc.Result = res
+	return ec.marshalNTelemetrySourceRef2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetrySourceRef(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "kind":
+				return ec.fieldContext_TelemetrySourceRef_kind(ctx, field)
+			case "id":
+				return ec.fieldContext_TelemetrySourceRef_id(ctx, field)
+			case "name":
+				return ec.fieldContext_TelemetrySourceRef_name(ctx, field)
+			case "version":
+				return ec.fieldContext_TelemetrySourceRef_version(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetrySourceRef", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_reason(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_reason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_trigger(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_trigger(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Trigger, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.TelemetryMetricTrigger)
+	fc.Result = res
+	return ec.marshalOTelemetryMetricTrigger2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryMetricTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_trigger(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "scope":
+				return ec.fieldContext_TelemetryMetricTrigger_scope(ctx, field)
+			case "metric":
+				return ec.fieldContext_TelemetryMetricTrigger_metric(ctx, field)
+			case "previousValue":
+				return ec.fieldContext_TelemetryMetricTrigger_previousValue(ctx, field)
+			case "observedValue":
+				return ec.fieldContext_TelemetryMetricTrigger_observedValue(ctx, field)
+			case "threshold":
+				return ec.fieldContext_TelemetryMetricTrigger_threshold(ctx, field)
+			case "sustainedSeconds":
+				return ec.fieldContext_TelemetryMetricTrigger_sustainedSeconds(ctx, field)
+			case "observedAt":
+				return ec.fieldContext_TelemetryMetricTrigger_observedAt(ctx, field)
+			case "requestCount":
+				return ec.fieldContext_TelemetryMetricTrigger_requestCount(ctx, field)
+			case "measurement":
+				return ec.fieldContext_TelemetryMetricTrigger_measurement(ctx, field)
+			case "samples":
+				return ec.fieldContext_TelemetryMetricTrigger_samples(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryMetricTrigger", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_status(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryActivitySummary_limitReason(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryActivitySummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryActivitySummary_limitReason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LimitReason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryActivitySummary_limitReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryActivitySummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryEvidence_label(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryEvidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryEvidence_label(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryEvidence_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryEvidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryEvidence_value(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryEvidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryEvidence_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryEvidence_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryEvidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_scope(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_scope(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scope, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TelemetryScope)
+	fc.Result = res
+	return ec.marshalNTelemetryScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryScope(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_scope(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "serviceId":
+				return ec.fieldContext_TelemetryScope_serviceId(ctx, field)
+			case "service":
+				return ec.fieldContext_TelemetryScope_service(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TelemetryScope_namespace(ctx, field)
+			case "operation":
+				return ec.fieldContext_TelemetryScope_operation(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryScope", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_metric(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_metric(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Metric, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_metric(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_previousValue(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_previousValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PreviousValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_previousValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_observedValue(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_observedValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ObservedValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_observedValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_threshold(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_threshold(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Threshold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_threshold(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_sustainedSeconds(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_sustainedSeconds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SustainedSeconds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_sustainedSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_observedAt(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_observedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ObservedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_observedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_requestCount(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_requestCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_requestCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_measurement(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_measurement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Measurement, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_measurement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryMetricTrigger_samples(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryMetricTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryMetricTrigger_samples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Samples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TelemetrySample)
+	fc.Result = res
+	return ec.marshalOTelemetrySample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetrySampleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryMetricTrigger_samples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryMetricTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "at":
+				return ec.fieldContext_TelemetrySample_at(ctx, field)
+			case "value":
+				return ec.fieldContext_TelemetrySample_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetrySample", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetrySample_at(ctx context.Context, field graphql.CollectedField, obj *model.TelemetrySample) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetrySample_at(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.At, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetrySample_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetrySample",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetrySample_value(ctx context.Context, field graphql.CollectedField, obj *model.TelemetrySample) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetrySample_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetrySample_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetrySample",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryScope_serviceId(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryScope_serviceId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServiceID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryScope_serviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryScope_service(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryScope_service(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Service, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryScope_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryScope_namespace(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryScope_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryScope_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryScope_operation(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryScope_operation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Operation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryScope_operation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetrySourceRef_kind(ctx context.Context, field graphql.CollectedField, obj *model.TelemetrySourceRef) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetrySourceRef_kind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetrySourceRef_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetrySourceRef",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetrySourceRef_id(ctx context.Context, field graphql.CollectedField, obj *model.TelemetrySourceRef) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetrySourceRef_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetrySourceRef_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetrySourceRef",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetrySourceRef_name(ctx context.Context, field graphql.CollectedField, obj *model.TelemetrySourceRef) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetrySourceRef_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetrySourceRef_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetrySourceRef",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetrySourceRef_version(ctx context.Context, field graphql.CollectedField, obj *model.TelemetrySourceRef) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetrySourceRef_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetrySourceRef_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetrySourceRef",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTargetChange_id(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTargetChange) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTargetChange_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTargetChange_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTargetChange",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTargetChange_scope(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTargetChange) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTargetChange_scope(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scope, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TelemetryScope)
+	fc.Result = res
+	return ec.marshalNTelemetryScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryScope(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTargetChange_scope(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTargetChange",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "serviceId":
+				return ec.fieldContext_TelemetryScope_serviceId(ctx, field)
+			case "service":
+				return ec.fieldContext_TelemetryScope_service(ctx, field)
+			case "namespace":
+				return ec.fieldContext_TelemetryScope_namespace(ctx, field)
+			case "operation":
+				return ec.fieldContext_TelemetryScope_operation(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TelemetryScope", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTargetChange_before(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTargetChange) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTargetChange_before(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Before, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTargetChange_before(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTargetChange",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTargetChange_after(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTargetChange) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTargetChange_after(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.After, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTargetChange_after(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTargetChange",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTargetChange_broadScopeReason(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTargetChange) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTargetChange_broadScopeReason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BroadScopeReason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTargetChange_broadScopeReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTargetChange",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTimelineEvent_id(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTimelineEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTimelineEvent_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTimelineEvent_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTimelineEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTimelineEvent_at(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTimelineEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTimelineEvent_at(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.At, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTimelineEvent_at(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTimelineEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTimelineEvent_title(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTimelineEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTimelineEvent_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTimelineEvent_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTimelineEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TelemetryTimelineEvent_description(ctx context.Context, field graphql.CollectedField, obj *model.TelemetryTimelineEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TelemetryTimelineEvent_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TelemetryTimelineEvent_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TelemetryTimelineEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -91580,6 +96107,96 @@ func (ec *executionContext) unmarshalInputHeadSamplingQueryParamMatcherInput(ctx
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputHeadSamplingSurgeInput(ctx context.Context, obj any) (model.HeadSamplingSurgeInput, error) {
+	var it model.HeadSamplingSurgeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"includeDownstream", "evaluation", "metric", "threshold", "sustainedSeconds", "minimumRequests", "boostPercent", "recoveryThreshold", "recoverySeconds", "minimumBoostSeconds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "includeDownstream":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDownstream"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncludeDownstream = data
+		case "evaluation":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("evaluation"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Evaluation = data
+		case "metric":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metric"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Metric = data
+		case "threshold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("threshold"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Threshold = data
+		case "sustainedSeconds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sustainedSeconds"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SustainedSeconds = data
+		case "minimumRequests":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minimumRequests"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinimumRequests = data
+		case "boostPercent":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("boostPercent"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BoostPercent = data
+		case "recoveryThreshold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("recoveryThreshold"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RecoveryThreshold = data
+		case "recoverySeconds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("recoverySeconds"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RecoverySeconds = data
+		case "minimumBoostSeconds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minimumBoostSeconds"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinimumBoostSeconds = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputHeadersCollectionInput(ctx context.Context, obj any) (model.HeadersCollectionInput, error) {
 	var it model.HeadersCollectionInput
 	asMap := map[string]any{}
@@ -94359,6 +98976,68 @@ func (ec *executionContext) unmarshalInputTailSamplingOperationMatcherInput(ctx 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTelemetryActivityFiltersInput(ctx context.Context, obj any) (model.TelemetryActivityFiltersInput, error) {
+	var it model.TelemetryActivityFiltersInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"view", "source", "sourceId", "query", "from", "to"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "view":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("view"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.View = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "sourceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceID = data
+		case "query":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Query = data
+		case "from":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.From = data
+		case "to":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.To = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTemplatizationWorkloadFilterInput(ctx context.Context, obj any) (model.TemplatizationWorkloadFilterInput, error) {
 	var it model.TemplatizationWorkloadFilterInput
 	asMap := map[string]any{}
@@ -96132,6 +100811,11 @@ func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Config_isCentralProxyRunning(ctx, field, obj)
 		case "insightsEnabled":
 			out.Values[i] = ec._Config_insightsEnabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "traceSurgesEnabled":
+			out.Values[i] = ec._Config_traceSurgesEnabled(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -98435,6 +103119,95 @@ func (ec *executionContext) _HeadSamplingQueryParamMatcher(ctx context.Context, 
 			}
 		case "valueExact":
 			out.Values[i] = ec._HeadSamplingQueryParamMatcher_valueExact(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var headSamplingSurgeImplementors = []string{"HeadSamplingSurge"}
+
+func (ec *executionContext) _HeadSamplingSurge(ctx context.Context, sel ast.SelectionSet, obj *model.HeadSamplingSurge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, headSamplingSurgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HeadSamplingSurge")
+		case "version":
+			out.Values[i] = ec._HeadSamplingSurge_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "includeDownstream":
+			out.Values[i] = ec._HeadSamplingSurge_includeDownstream(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "evaluation":
+			out.Values[i] = ec._HeadSamplingSurge_evaluation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "metric":
+			out.Values[i] = ec._HeadSamplingSurge_metric(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "threshold":
+			out.Values[i] = ec._HeadSamplingSurge_threshold(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sustainedSeconds":
+			out.Values[i] = ec._HeadSamplingSurge_sustainedSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minimumRequests":
+			out.Values[i] = ec._HeadSamplingSurge_minimumRequests(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "boostPercent":
+			out.Values[i] = ec._HeadSamplingSurge_boostPercent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recoveryThreshold":
+			out.Values[i] = ec._HeadSamplingSurge_recoveryThreshold(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recoverySeconds":
+			out.Values[i] = ec._HeadSamplingSurge_recoverySeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minimumBoostSeconds":
+			out.Values[i] = ec._HeadSamplingSurge_minimumBoostSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -108471,6 +113244,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "saveHeadSamplingRule":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveHeadSamplingRule(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createHighlyRelevantOperationRule":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createHighlyRelevantOperationRule(ctx, field)
@@ -108716,6 +113496,8 @@ func (ec *executionContext) _NoisyOperationRule(ctx context.Context, sel ast.Sel
 			out.Values[i] = ec._NoisyOperationRule_percentageAtMost(ctx, field, obj)
 		case "notes":
 			out.Values[i] = ec._NoisyOperationRule_notes(ctx, field, obj)
+		case "surge":
+			out.Values[i] = ec._NoisyOperationRule_surge(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -110292,6 +115074,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_instrumentationInstanceComponents(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "telemetryActivity":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_telemetryActivity(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "telemetryChange":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_telemetryChange(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -112173,6 +116999,608 @@ func (ec *executionContext) _TailSamplingOperationMatcher(ctx context.Context, s
 			out.Values[i] = ec._TailSamplingOperationMatcher_kafkaConsumer(ctx, field, obj)
 		case "kafkaProducer":
 			out.Values[i] = ec._TailSamplingOperationMatcher_kafkaProducer(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetryActivityDetailImplementors = []string{"TelemetryActivityDetail"}
+
+func (ec *executionContext) _TelemetryActivityDetail(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetryActivityDetail) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetryActivityDetailImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetryActivityDetail")
+		case "id":
+			out.Values[i] = ec._TelemetryActivityDetail_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._TelemetryActivityDetail_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._TelemetryActivityDetail_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "before":
+			out.Values[i] = ec._TelemetryActivityDetail_before(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "after":
+			out.Values[i] = ec._TelemetryActivityDetail_after(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "targetSummary":
+			out.Values[i] = ec._TelemetryActivityDetail_targetSummary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scopeSummary":
+			out.Values[i] = ec._TelemetryActivityDetail_scopeSummary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "source":
+			out.Values[i] = ec._TelemetryActivityDetail_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._TelemetryActivityDetail_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "trigger":
+			out.Values[i] = ec._TelemetryActivityDetail_trigger(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._TelemetryActivityDetail_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "limitReason":
+			out.Values[i] = ec._TelemetryActivityDetail_limitReason(ctx, field, obj)
+		case "targets":
+			out.Values[i] = ec._TelemetryActivityDetail_targets(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timeline":
+			out.Values[i] = ec._TelemetryActivityDetail_timeline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "evidence":
+			out.Values[i] = ec._TelemetryActivityDetail_evidence(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetryActivityPageImplementors = []string{"TelemetryActivityPage"}
+
+func (ec *executionContext) _TelemetryActivityPage(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetryActivityPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetryActivityPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetryActivityPage")
+		case "items":
+			out.Values[i] = ec._TelemetryActivityPage_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nextCursor":
+			out.Values[i] = ec._TelemetryActivityPage_nextCursor(ctx, field, obj)
+		case "asOf":
+			out.Values[i] = ec._TelemetryActivityPage_asOf(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "historyLimit":
+			out.Values[i] = ec._TelemetryActivityPage_historyLimit(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetryActivitySummaryImplementors = []string{"TelemetryActivitySummary"}
+
+func (ec *executionContext) _TelemetryActivitySummary(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetryActivitySummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetryActivitySummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetryActivitySummary")
+		case "id":
+			out.Values[i] = ec._TelemetryActivitySummary_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._TelemetryActivitySummary_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._TelemetryActivitySummary_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "before":
+			out.Values[i] = ec._TelemetryActivitySummary_before(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "after":
+			out.Values[i] = ec._TelemetryActivitySummary_after(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "targetSummary":
+			out.Values[i] = ec._TelemetryActivitySummary_targetSummary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scopeSummary":
+			out.Values[i] = ec._TelemetryActivitySummary_scopeSummary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "source":
+			out.Values[i] = ec._TelemetryActivitySummary_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._TelemetryActivitySummary_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "trigger":
+			out.Values[i] = ec._TelemetryActivitySummary_trigger(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._TelemetryActivitySummary_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "limitReason":
+			out.Values[i] = ec._TelemetryActivitySummary_limitReason(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetryEvidenceImplementors = []string{"TelemetryEvidence"}
+
+func (ec *executionContext) _TelemetryEvidence(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetryEvidence) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetryEvidenceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetryEvidence")
+		case "label":
+			out.Values[i] = ec._TelemetryEvidence_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._TelemetryEvidence_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetryMetricTriggerImplementors = []string{"TelemetryMetricTrigger"}
+
+func (ec *executionContext) _TelemetryMetricTrigger(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetryMetricTrigger) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetryMetricTriggerImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetryMetricTrigger")
+		case "scope":
+			out.Values[i] = ec._TelemetryMetricTrigger_scope(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "metric":
+			out.Values[i] = ec._TelemetryMetricTrigger_metric(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "previousValue":
+			out.Values[i] = ec._TelemetryMetricTrigger_previousValue(ctx, field, obj)
+		case "observedValue":
+			out.Values[i] = ec._TelemetryMetricTrigger_observedValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "threshold":
+			out.Values[i] = ec._TelemetryMetricTrigger_threshold(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sustainedSeconds":
+			out.Values[i] = ec._TelemetryMetricTrigger_sustainedSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "observedAt":
+			out.Values[i] = ec._TelemetryMetricTrigger_observedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "requestCount":
+			out.Values[i] = ec._TelemetryMetricTrigger_requestCount(ctx, field, obj)
+		case "measurement":
+			out.Values[i] = ec._TelemetryMetricTrigger_measurement(ctx, field, obj)
+		case "samples":
+			out.Values[i] = ec._TelemetryMetricTrigger_samples(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetrySampleImplementors = []string{"TelemetrySample"}
+
+func (ec *executionContext) _TelemetrySample(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetrySample) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetrySampleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetrySample")
+		case "at":
+			out.Values[i] = ec._TelemetrySample_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._TelemetrySample_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetryScopeImplementors = []string{"TelemetryScope"}
+
+func (ec *executionContext) _TelemetryScope(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetryScope) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetryScopeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetryScope")
+		case "serviceId":
+			out.Values[i] = ec._TelemetryScope_serviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "service":
+			out.Values[i] = ec._TelemetryScope_service(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._TelemetryScope_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "operation":
+			out.Values[i] = ec._TelemetryScope_operation(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetrySourceRefImplementors = []string{"TelemetrySourceRef"}
+
+func (ec *executionContext) _TelemetrySourceRef(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetrySourceRef) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetrySourceRefImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetrySourceRef")
+		case "kind":
+			out.Values[i] = ec._TelemetrySourceRef_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "id":
+			out.Values[i] = ec._TelemetrySourceRef_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._TelemetrySourceRef_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "version":
+			out.Values[i] = ec._TelemetrySourceRef_version(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetryTargetChangeImplementors = []string{"TelemetryTargetChange"}
+
+func (ec *executionContext) _TelemetryTargetChange(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetryTargetChange) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetryTargetChangeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetryTargetChange")
+		case "id":
+			out.Values[i] = ec._TelemetryTargetChange_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scope":
+			out.Values[i] = ec._TelemetryTargetChange_scope(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "before":
+			out.Values[i] = ec._TelemetryTargetChange_before(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "after":
+			out.Values[i] = ec._TelemetryTargetChange_after(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "broadScopeReason":
+			out.Values[i] = ec._TelemetryTargetChange_broadScopeReason(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var telemetryTimelineEventImplementors = []string{"TelemetryTimelineEvent"}
+
+func (ec *executionContext) _TelemetryTimelineEvent(ctx context.Context, sel ast.SelectionSet, obj *model.TelemetryTimelineEvent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, telemetryTimelineEventImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TelemetryTimelineEvent")
+		case "id":
+			out.Values[i] = ec._TelemetryTimelineEvent_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "at":
+			out.Values[i] = ec._TelemetryTimelineEvent_at(ctx, field, obj)
+		case "title":
+			out.Values[i] = ec._TelemetryTimelineEvent_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._TelemetryTimelineEvent_description(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -119806,6 +125234,241 @@ func (ec *executionContext) marshalNSupportedSignals2ᚖgithubᚗcomᚋodigosᚑ
 	return ec._SupportedSignals(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNTelemetryActivityDetail2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivityDetail(ctx context.Context, sel ast.SelectionSet, v model.TelemetryActivityDetail) graphql.Marshaler {
+	return ec._TelemetryActivityDetail(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTelemetryActivityDetail2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivityDetail(ctx context.Context, sel ast.SelectionSet, v *model.TelemetryActivityDetail) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetryActivityDetail(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTelemetryActivityFiltersInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivityFiltersInput(ctx context.Context, v any) (model.TelemetryActivityFiltersInput, error) {
+	res, err := ec.unmarshalInputTelemetryActivityFiltersInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTelemetryActivityPage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivityPage(ctx context.Context, sel ast.SelectionSet, v model.TelemetryActivityPage) graphql.Marshaler {
+	return ec._TelemetryActivityPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTelemetryActivityPage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivityPage(ctx context.Context, sel ast.SelectionSet, v *model.TelemetryActivityPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetryActivityPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTelemetryActivitySummary2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivitySummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TelemetryActivitySummary) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTelemetryActivitySummary2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivitySummary(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTelemetryActivitySummary2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryActivitySummary(ctx context.Context, sel ast.SelectionSet, v *model.TelemetryActivitySummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetryActivitySummary(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTelemetryEvidence2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryEvidence(ctx context.Context, sel ast.SelectionSet, v *model.TelemetryEvidence) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetryEvidence(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTelemetrySample2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetrySample(ctx context.Context, sel ast.SelectionSet, v *model.TelemetrySample) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetrySample(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTelemetryScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryScope(ctx context.Context, sel ast.SelectionSet, v *model.TelemetryScope) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetryScope(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTelemetrySourceRef2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetrySourceRef(ctx context.Context, sel ast.SelectionSet, v *model.TelemetrySourceRef) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetrySourceRef(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTelemetryTargetChange2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryTargetChangeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TelemetryTargetChange) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTelemetryTargetChange2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryTargetChange(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTelemetryTargetChange2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryTargetChange(ctx context.Context, sel ast.SelectionSet, v *model.TelemetryTargetChange) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetryTargetChange(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTelemetryTimelineEvent2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryTimelineEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TelemetryTimelineEvent) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTelemetryTimelineEvent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryTimelineEvent(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTelemetryTimelineEvent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryTimelineEvent(ctx context.Context, sel ast.SelectionSet, v *model.TelemetryTimelineEvent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TelemetryTimelineEvent(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNTemplatizationWorkloadFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilter(ctx context.Context, sel ast.SelectionSet, v *model.TemplatizationWorkloadFilter) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -121127,6 +126790,21 @@ func (ec *executionContext) unmarshalOHeadSamplingQueryParamMatcherInput2ᚕᚖg
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOHeadSamplingSurge2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingSurge(ctx context.Context, sel ast.SelectionSet, v *model.HeadSamplingSurge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._HeadSamplingSurge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOHeadSamplingSurgeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingSurgeInput(ctx context.Context, v any) (*model.HeadSamplingSurgeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputHeadSamplingSurgeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOHeadersCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadersCollection(ctx context.Context, sel ast.SelectionSet, v *model.HeadersCollection) graphql.Marshaler {
@@ -124061,6 +129739,107 @@ func (ec *executionContext) unmarshalOTailSamplingOperationMatcherInput2ᚖgithu
 	}
 	res, err := ec.unmarshalInputTailSamplingOperationMatcherInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTelemetryEvidence2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryEvidenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TelemetryEvidence) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTelemetryEvidence2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryEvidence(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOTelemetryMetricTrigger2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetryMetricTrigger(ctx context.Context, sel ast.SelectionSet, v *model.TelemetryMetricTrigger) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TelemetryMetricTrigger(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTelemetrySample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetrySampleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TelemetrySample) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTelemetrySample2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTelemetrySample(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOTemplatizationWorkloadFilter2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TemplatizationWorkloadFilter) graphql.Marshaler {
