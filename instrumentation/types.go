@@ -83,6 +83,11 @@ type Reporter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails
 	OnExit(ctx context.Context, pid int, pg processDetails) error
 }
 
+// StatusReporter optionally reports changes after the initial load.
+type StatusReporter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] interface {
+	OnStatus(ctx context.Context, pid int, pg processDetails, status Status) error
+}
+
 // SettingsGetter is used to fetch the initial settings of an instrumentation.
 type SettingsGetter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] interface {
 	// GetSettings will fetch the initial settings of an instrumentation.

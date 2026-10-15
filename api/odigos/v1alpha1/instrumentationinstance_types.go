@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -122,7 +123,8 @@ type InstrumentationInstanceStatus struct {
 	// +kubebuilder:validation:Format=date-time
 	LastStatusTime metav1.Time `json:"lastStatusTime"`
 
-	Components []InstrumentationLibraryStatus `json:"components,omitempty"`
+	Components   []InstrumentationLibraryStatus          `json:"components,omitempty"`
+	CustomProbes *instrumentationrules.CustomProbeReport `json:"customProbes,omitempty"`
 }
 
 //+genclient
