@@ -204,12 +204,10 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	var profilingCfg *odigoscommon.ProfilingConfiguration
 	var insightsCfg *odigoscommon.InsightsConfiguration
 	var interrogationCfg *odigoscommon.InterrogationConfiguration
-	var transactionIdentityCfg *odigoscommon.TransactionIdentityConfiguration
 	var cardinalityControlCfg *odigoscommon.CardinalityControlConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
 		interrogationCfg = odigosCfg.Interrogation
-		transactionIdentityCfg = odigosCfg.TransactionIdentity
 		insightsCfg = effectiveInsightsConfig(odigosCfg.Insights, tier)
 		cardinalityControlCfg = effectiveCardinalityControl(odigosCfg.CardinalityControl, tier)
 		if odigosCfg.ComponentLogLevels != nil {
@@ -256,7 +254,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				if gatewayOptions.TraceAggregationWaitDuration != nil && *gatewayOptions.TraceAggregationWaitDuration != "" {
 					groupByWait = *gatewayOptions.TraceAggregationWaitDuration
 				}
-				if err := addInterrogationExporters(c, env.GetCurrentNamespace(), interrogationCfg, transactionIdentityCfg, groupByWait); err != nil {
+				if err := addInterrogationExporters(c, env.GetCurrentNamespace(), interrogationCfg, groupByWait); err != nil {
 					return err
 				}
 				addEnterpriseAuthExtension(c)

@@ -27,9 +27,8 @@ const (
 	// for async correlation. Appended to the gateway profiles pipeline when enabled.
 	InterrogationProfilesExporter = "odigos_interrogation_profiles"
 
-	// InterrogationTracesExporter persists service invocations to insights ClickHouse
-	// for async correlation with profile samples. Appended to the gateway root
-	// traces pipeline when enabled.
+	// InterrogationTracesExporter is retained for tests asserting the exporter is
+	// not wired on the gateway; call-trie writes live in insights.
 	InterrogationTracesExporter = "odigos_interrogation_traces"
 )
 
