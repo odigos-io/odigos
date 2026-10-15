@@ -21,8 +21,10 @@ import { useConfig, useCSRF } from '@/hooks';
 import { CenterThis, Loader } from '@odigos/ui-kit/components';
 import { API, INITIAL_CONTEXT, IS_LOCAL, toPlatformType } from '@/utils';
 import { normalizeActionForWire, parseRenamesString } from './action-form-normalization';
+import { createTelemetryApi } from './telemetry-api';
 import {
   OdigosApiProvider,
+  TelemetryApiProvider,
   type CreateDestinationResult,
   type DiagnoseResult,
   type GetActionsData,
@@ -776,6 +778,11 @@ const OdigosApiAdapter: FC<AdapterProps> = ({ children }) => {
     [token],
   );
 
+  const telemetryApi = useMemo(
+    () => createTelemetryApi({ graphqlUrl: API.GRAPHQL, credentials: apolloConfig.credentials, headers: apolloConfig.csrfHeader }),
+    [apolloConfig],
+  );
+
   if (!ready) {
     return (
       <CenterThis style={{ height: '100%' }}>
@@ -786,8 +793,10 @@ const OdigosApiAdapter: FC<AdapterProps> = ({ children }) => {
 
   return (
     <OdigosApiProvider apolloConfig={apolloConfig} operations={operations} context={syncedContext}>
-      <ConfigSync onChange={onContextChange} />
-      {children}
+      <TelemetryApiProvider api={telemetryApi}>
+        <ConfigSync onChange={onContextChange} />
+        {children}
+      </TelemetryApiProvider>
     </OdigosApiProvider>
   );
 };

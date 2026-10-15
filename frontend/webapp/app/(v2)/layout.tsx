@@ -7,7 +7,7 @@ import { OverviewHeader } from '@/components';
 import { Navbar } from '@odigos/ui-kit/components';
 import { ToastList } from '@odigos/ui-kit/containers';
 import OdigosApiAdapter from '@/lib/odigos-api-adapter';
-import { OdigosProvider } from '@odigos/ui-kit/contexts';
+import { OdigosProvider, useTelemetryApi } from '@odigos/ui-kit/contexts';
 import { getNavbarIcons, INITIAL_CONTEXT, toPlatformType } from '@/utils';
 import { useConfig, useSSE, useTokenTracker } from '@/hooks';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
@@ -29,13 +29,14 @@ function InnerLayout({ children }: PropsWithChildren) {
   const router = useRouter();
   const pathname = usePathname();
   const { config } = useConfig();
+  const telemetry = useTelemetryApi();
 
   return (
     <OdigosProvider platformType={toPlatformType(config?.platformType)} tier={config?.tier ?? INITIAL_CONTEXT.tier} version={config?.odigosVersion || INITIAL_CONTEXT.version}>
       <ViewportColumn $gap={0}>
         <OverviewHeader />
         <ContentRow $gap={0}>
-          <Navbar height='calc(100vh - 60px)' icons={getNavbarIcons(router, pathname, config?.insightsEnabled)} />
+          <Navbar height='calc(100vh - 60px)' icons={getNavbarIcons(router, pathname, config?.insightsEnabled, !!telemetry)} />
           {children}
         </ContentRow>
       </ViewportColumn>
