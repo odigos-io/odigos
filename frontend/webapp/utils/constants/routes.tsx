@@ -7,6 +7,7 @@ export const ROUTES = {
   COLLECTORS: '/collectors',
   SETTINGS: '/settings',
   SAMPLING: '/sampling',
+  TELEMETRY_ACTIVITY: '/telemetry-activity',
   URL_TEMPLATIZATION: '/url-templatization',
   INSTRUMENTATION_AGENTS: '/instrumentation-agents',
 
