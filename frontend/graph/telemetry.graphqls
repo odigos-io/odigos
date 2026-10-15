@@ -1,0 +1,117 @@
+# Telemetry activity: changes Odigos made to the telemetry it collects, and why: the trace surges, in
+# the status of the Sampling objects while they are open and in odigos insights once they end.
+
+type TelemetryScope {
+  serviceId: String!
+  service: String!
+  namespace: String!
+  operation: String
+}
+
+type TelemetrySourceRef {
+  # trace_surge
+  kind: String!
+  id: String!
+  name: String!
+  version: String
+}
+
+type TelemetrySample {
+  at: String!
+  value: Float!
+}
+
+type TelemetryMetricTrigger {
+  scope: TelemetryScope!
+  metric: String!
+  previousValue: Float
+  observedValue: Float!
+  threshold: Float!
+  sustainedSeconds: Int!
+  observedAt: String!
+  requestCount: Int
+  measurement: String
+  samples: [TelemetrySample!]
+}
+
+type TelemetryActivitySummary {
+  id: ID!
+  updatedAt: String!
+  title: String!
+  before: String!
+  after: String!
+  targetSummary: String!
+  scopeSummary: String!
+  source: TelemetrySourceRef!
+  reason: String!
+  trigger: TelemetryMetricTrigger
+  # the trace surge's phase: Limited, Boosting or Recovering while it is open, Restored once it ended.
+  status: String!
+  # why a trace surge did not raise sampling: the trace surge limit that held it back.
+  limitReason: String
+}
+
+type TelemetryTargetChange {
+  id: ID!
+  scope: TelemetryScope!
+  before: String!
+  after: String!
+  broadScopeReason: String
+}
+
+type TelemetryTimelineEvent {
+  id: ID!
+  # unset for the next step, not taken yet.
+  at: String
+  title: String!
+  description: String
+}
+
+type TelemetryEvidence {
+  label: String!
+  value: String!
+}
+
+type TelemetryActivityDetail {
+  id: ID!
+  updatedAt: String!
+  title: String!
+  before: String!
+  after: String!
+  targetSummary: String!
+  scopeSummary: String!
+  source: TelemetrySourceRef!
+  reason: String!
+  trigger: TelemetryMetricTrigger
+  status: String!
+  limitReason: String
+  targets: [TelemetryTargetChange!]!
+  timeline: [TelemetryTimelineEvent!]!
+  evidence: [TelemetryEvidence!]
+}
+
+type TelemetryActivityPage {
+  items: [TelemetryActivitySummary!]!
+  nextCursor: String
+  asOf: String!
+  # set when odigos insights holds more ended surges in the time range than it returns: the latest
+  # ended this many are listed.
+  historyLimit: Int
+}
+
+input TelemetryActivityFiltersInput {
+  # history or active
+  view: String!
+  # trace_surge
+  source: String
+  # the id of the rule whose changes to list
+  sourceId: String
+  query: String
+  from: String!
+  to: String!
+}
+
+extend type Query {
+  telemetryActivity(filters: TelemetryActivityFiltersInput!, cursor: String): TelemetryActivityPage!
+  telemetryChange(id: ID!): TelemetryActivityDetail!
+}

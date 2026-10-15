@@ -37,6 +37,20 @@ func (r *mutationResolver) DeleteNoisyOperationRule(ctx context.Context, samplin
 	return sampling.DeleteNoisyOperationRule(ctx, samplingID, ruleID)
 }
 
+// SaveHeadSamplingRule is the resolver for the saveHeadSamplingRule field.
+func (r *mutationResolver) SaveHeadSamplingRule(ctx context.Context, samplingID string, ruleID *string, rule model.NoisyOperationRuleInput, surge *model.HeadSamplingSurgeInput, surgeVersion string) (*model.NoisyOperationRule, error) {
+	if surge != nil {
+		cfg, err := services.GetEffectiveConfig(ctx, r.K8sCacheClient)
+		if err != nil {
+			return nil, err
+		}
+		if err := sampling.SurgeAllowed(cfg); err != nil {
+			return nil, err
+		}
+	}
+	return sampling.SaveHeadSamplingRule(ctx, samplingID, ruleID, rule, surge, surgeVersion)
+}
+
 // CreateHighlyRelevantOperationRule is the resolver for the createHighlyRelevantOperationRule field.
 func (r *mutationResolver) CreateHighlyRelevantOperationRule(ctx context.Context, samplingID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
 	return sampling.CreateHighlyRelevantOperationRule(ctx, samplingID, rule)

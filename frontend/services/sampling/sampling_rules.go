@@ -2,9 +2,13 @@ package sampling
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -181,6 +185,109 @@ func DeleteNoisyOperationRule(ctx context.Context, samplingID string, ruleID str
 	})
 
 	return err == nil, err
+}
+
+// SaveHeadSamplingRule creates (ruleID nil) or updates a noisy operation rule together with its
+// trace surge, in one write. A nil surge removes it. surgeVersion is the version of the rule's
+// surge the edit started from, empty when it had none: the save fails if the stored surge changed
+// since, removals included. Removing a surge is allowed while trace surges cannot run.
+func SaveHeadSamplingRule(ctx context.Context, samplingID string, ruleID *string, input model.NoisyOperationRuleInput, surge *model.HeadSamplingSurgeInput, surgeVersion string) (*model.NoisyOperationRule, error) {
+	var result *model.NoisyOperationRule
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		cr, err := getOrCreateSamplingCR(ctx, samplingID)
+		if err != nil {
+			return err
+		}
+
+		var existing *v1alpha1.NoisyOperation
+		idx := -1
+		if ruleID != nil {
+			idx = findNoisyOperationByHash(cr.Spec.NoisyOperations, *ruleID)
+			if idx < 0 {
+				return errors.New("This rule was deleted. Refresh the page.")
+			}
+			existing = &cr.Spec.NoisyOperations[idx]
+		}
+
+		rule, err := headSamplingRule(existing, input, surge, surgeVersion)
+		if err != nil {
+			return err
+		}
+		if idx >= 0 {
+			cr.Spec.NoisyOperations[idx] = rule
+		} else {
+			cr.Spec.NoisyOperations = append(cr.Spec.NoisyOperations, rule)
+		}
+		if _, err := updateSamplingCR(ctx, cr); err != nil {
+			return err
+		}
+		result = convertNoisyOperationToModel(&rule)
+		return nil
+	})
+	return result, err
+}
+
+var errSurgeChanged = errors.New("This rule's surge changed elsewhere. Reopen it before saving.")
+
+// headSamplingRule is the rule stored as existing (nil for a new rule) after a save of input and
+// surge that started from surgeVersion.
+func headSamplingRule(existing *v1alpha1.NoisyOperation, input model.NoisyOperationRuleInput, surge *model.HeadSamplingSurgeInput, surgeVersion string) (v1alpha1.NoisyOperation, error) {
+	rule := noisyOperationFromInput(input)
+	storedVersion := ""
+	if existing != nil {
+		rule = mergeNoisyOperationUpdate(*existing, input)
+		if existing.Surge != nil {
+			storedVersion = existing.Surge.Version
+		}
+	}
+	if surgeVersion != storedVersion {
+		return rule, errSurgeChanged
+	}
+	rule.Surge = nil
+	if surge == nil {
+		return rule, nil
+	}
+	normal := 0.0
+	if rule.PercentageAtMost != nil {
+		normal = *rule.PercentageAtMost
+	}
+	if err := validateSurge(surge, normal); err != nil {
+		return rule, err
+	}
+	version, err := newSurgeVersion()
+	if err != nil {
+		return rule, err
+	}
+	rule.Surge = surgeFromInput(surge, version)
+	return rule, nil
+}
+
+// newSurgeVersion returns a random version, so an edit that started before a surge was removed and
+// added back cannot match the new one.
+func newSurgeVersion() (string, error) {
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("failed to generate a trace surge version: %w", err)
+	}
+	return hex.EncodeToString(b), nil
+}
+
+var (
+	errTraceSurgesOff = errors.New("Trace surges are turned off. Set sampling.traceSurge.enabled in the Odigos configuration to save a rule with a trace surge.")
+	errInsightsOff    = errors.New("Trace surges need Odigos Insights, which stores the RED metrics they evaluate. Enable Insights to save a rule with a trace surge.")
+)
+
+// SurgeAllowed returns why a rule cannot be saved with a trace surge under the odigos configuration
+// cfg, or nil when trace surges can run: the same condition as the traceSurgesEnabled of the
+// Config query. Saving a rule without one, which removes its surge, is allowed either way.
+func SurgeAllowed(cfg *common.OdigosConfiguration) error {
+	if cfg == nil || !common.TraceSurgesEnabled(cfg.Sampling) {
+		return errTraceSurgesOff
+	}
+	if !cfg.InsightsEnabled() {
+		return errInsightsOff
+	}
+	return nil
 }
 
 func findNoisyOperationByHash(rules []v1alpha1.NoisyOperation, hash string) int {

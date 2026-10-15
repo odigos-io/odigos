@@ -269,6 +269,7 @@ type Config struct {
 	ClusterName           *string             `json:"clusterName,omitempty"`
 	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
 	InsightsEnabled       bool                `json:"insightsEnabled"`
+	TraceSurgesEnabled    bool                `json:"traceSurgesEnabled"`
 }
 
 type ConfigYaml struct {
@@ -744,6 +745,33 @@ type HeadSamplingQueryParamMatcher struct {
 type HeadSamplingQueryParamMatcherInput struct {
 	Name       string  `json:"name"`
 	ValueExact *string `json:"valueExact,omitempty"`
+}
+
+type HeadSamplingSurge struct {
+	Version             string  `json:"version"`
+	IncludeDownstream   bool    `json:"includeDownstream"`
+	Evaluation          string  `json:"evaluation"`
+	Metric              string  `json:"metric"`
+	Threshold           float64 `json:"threshold"`
+	SustainedSeconds    int     `json:"sustainedSeconds"`
+	MinimumRequests     int     `json:"minimumRequests"`
+	BoostPercent        float64 `json:"boostPercent"`
+	RecoveryThreshold   float64 `json:"recoveryThreshold"`
+	RecoverySeconds     int     `json:"recoverySeconds"`
+	MinimumBoostSeconds int     `json:"minimumBoostSeconds"`
+}
+
+type HeadSamplingSurgeInput struct {
+	IncludeDownstream   bool    `json:"includeDownstream"`
+	Evaluation          string  `json:"evaluation"`
+	Metric              string  `json:"metric"`
+	Threshold           float64 `json:"threshold"`
+	SustainedSeconds    int     `json:"sustainedSeconds"`
+	MinimumRequests     int     `json:"minimumRequests"`
+	BoostPercent        float64 `json:"boostPercent"`
+	RecoveryThreshold   float64 `json:"recoveryThreshold"`
+	RecoverySeconds     int     `json:"recoverySeconds"`
+	MinimumBoostSeconds int     `json:"minimumBoostSeconds"`
 }
 
 type HeadersCollection struct {
@@ -2727,6 +2755,7 @@ type NoisyOperationRule struct {
 	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
 	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
 	Notes            *string                       `json:"notes,omitempty"`
+	Surge            *HeadSamplingSurge            `json:"surge,omitempty"`
 }
 
 type NoisyOperationRuleInput struct {
@@ -3174,6 +3203,107 @@ type TailSamplingOperationMatcherInput struct {
 	HTTPServer    *TailSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
 	KafkaConsumer *TailSamplingKafkaMatcherInput      `json:"kafkaConsumer,omitempty"`
 	KafkaProducer *TailSamplingKafkaMatcherInput      `json:"kafkaProducer,omitempty"`
+}
+
+type TelemetryActivityDetail struct {
+	ID            string                    `json:"id"`
+	UpdatedAt     string                    `json:"updatedAt"`
+	Title         string                    `json:"title"`
+	Before        string                    `json:"before"`
+	After         string                    `json:"after"`
+	TargetSummary string                    `json:"targetSummary"`
+	ScopeSummary  string                    `json:"scopeSummary"`
+	Source        *TelemetrySourceRef       `json:"source"`
+	Reason        string                    `json:"reason"`
+	Trigger       *TelemetryMetricTrigger   `json:"trigger,omitempty"`
+	Status        string                    `json:"status"`
+	LimitReason   *string                   `json:"limitReason,omitempty"`
+	Targets       []*TelemetryTargetChange  `json:"targets"`
+	Timeline      []*TelemetryTimelineEvent `json:"timeline"`
+	Evidence      []*TelemetryEvidence      `json:"evidence,omitempty"`
+}
+
+type TelemetryActivityFiltersInput struct {
+	View     string  `json:"view"`
+	Source   *string `json:"source,omitempty"`
+	SourceID *string `json:"sourceId,omitempty"`
+	Query    *string `json:"query,omitempty"`
+	From     string  `json:"from"`
+	To       string  `json:"to"`
+}
+
+type TelemetryActivityPage struct {
+	Items        []*TelemetryActivitySummary `json:"items"`
+	NextCursor   *string                     `json:"nextCursor,omitempty"`
+	AsOf         string                      `json:"asOf"`
+	HistoryLimit *int                        `json:"historyLimit,omitempty"`
+}
+
+type TelemetryActivitySummary struct {
+	ID            string                  `json:"id"`
+	UpdatedAt     string                  `json:"updatedAt"`
+	Title         string                  `json:"title"`
+	Before        string                  `json:"before"`
+	After         string                  `json:"after"`
+	TargetSummary string                  `json:"targetSummary"`
+	ScopeSummary  string                  `json:"scopeSummary"`
+	Source        *TelemetrySourceRef     `json:"source"`
+	Reason        string                  `json:"reason"`
+	Trigger       *TelemetryMetricTrigger `json:"trigger,omitempty"`
+	Status        string                  `json:"status"`
+	LimitReason   *string                 `json:"limitReason,omitempty"`
+}
+
+type TelemetryEvidence struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type TelemetryMetricTrigger struct {
+	Scope            *TelemetryScope    `json:"scope"`
+	Metric           string             `json:"metric"`
+	PreviousValue    *float64           `json:"previousValue,omitempty"`
+	ObservedValue    float64            `json:"observedValue"`
+	Threshold        float64            `json:"threshold"`
+	SustainedSeconds int                `json:"sustainedSeconds"`
+	ObservedAt       string             `json:"observedAt"`
+	RequestCount     *int               `json:"requestCount,omitempty"`
+	Measurement      *string            `json:"measurement,omitempty"`
+	Samples          []*TelemetrySample `json:"samples,omitempty"`
+}
+
+type TelemetrySample struct {
+	At    string  `json:"at"`
+	Value float64 `json:"value"`
+}
+
+type TelemetryScope struct {
+	ServiceID string  `json:"serviceId"`
+	Service   string  `json:"service"`
+	Namespace string  `json:"namespace"`
+	Operation *string `json:"operation,omitempty"`
+}
+
+type TelemetrySourceRef struct {
+	Kind    string  `json:"kind"`
+	ID      string  `json:"id"`
+	Name    string  `json:"name"`
+	Version *string `json:"version,omitempty"`
+}
+
+type TelemetryTargetChange struct {
+	ID               string          `json:"id"`
+	Scope            *TelemetryScope `json:"scope"`
+	Before           string          `json:"before"`
+	After            string          `json:"after"`
+	BroadScopeReason *string         `json:"broadScopeReason,omitempty"`
+}
+
+type TelemetryTimelineEvent struct {
+	ID          string  `json:"id"`
+	At          *string `json:"at,omitempty"`
+	Title       string  `json:"title"`
+	Description *string `json:"description,omitempty"`
 }
 
 type TemplatizationWorkloadFilter struct {

@@ -67,6 +67,7 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
 	response.ClusterName = &config.ClusterName
 	response.InsightsEnabled = config.InsightsEnabled()
+	response.TraceSurgesEnabled = response.InsightsEnabled && common.TraceSurgesEnabled(config.Sampling)
 	isConnected, err := isCentralProxyRunning(ctx)
 	if err != nil {
 		log.Printf("Error checking if central proxy connected: %v\n", err)
