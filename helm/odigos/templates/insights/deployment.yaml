@@ -75,8 +75,8 @@ spec:
               value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/odigos_insights"
             {{- if include "odigos.interrogationEnabled" . }}
             # Interrogation shares the ClickHouse server and credentials but
-            # keeps its own database (written by the gateway's interrogation
-            # exporters).
+            # keeps its own database. Call-trie edges are written by insights
+            # from Redis profile stacks; the LLM loop reads that database.
             - name: INTERROGATION_ENABLED
               value: "true"
             - name: INTERROGATION_CLICKHOUSE_DSN
@@ -88,6 +88,11 @@ spec:
                   key: master-key
             - name: INTERROGATION_AUTO_APPLY
               value: {{ .Values.insights.interrogation.model.autoApply | default false | quote }}
+            # cacheDb Redis (logical DB 1) — profile stacks from the
+            # odigos_interrogation_profiles exporter; insights expands them
+            # into interrogation.tx_call_trie.
+            - name: INTERROGATION_REDIS_ENDPOINT
+              value: "odigos-cache.{{ .Release.Namespace }}:6379"
             {{- end }}
           livenessProbe:
             httpGet:
