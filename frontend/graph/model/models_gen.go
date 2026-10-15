@@ -667,6 +667,7 @@ type GolangCustomProbe struct {
 	FunctionName       *string `json:"functionName,omitempty"`
 	ReceiverName       *string `json:"receiverName,omitempty"`
 	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+	Notes              *string `json:"notes,omitempty"`
 }
 
 type GolangCustomProbeInput struct {
@@ -674,6 +675,7 @@ type GolangCustomProbeInput struct {
 	FunctionName       *string `json:"functionName,omitempty"`
 	ReceiverName       *string `json:"receiverName,omitempty"`
 	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+	Notes              *string `json:"notes,omitempty"`
 }
 
 type HeadSamplingHTTPClientMatcher struct {
@@ -1933,11 +1935,13 @@ type InstrumentorConfig struct {
 type JavaCustomProbe struct {
 	ClassName  *string `json:"className,omitempty"`
 	MethodName *string `json:"methodName,omitempty"`
+	Notes      *string `json:"notes,omitempty"`
 }
 
 type JavaCustomProbeInput struct {
 	ClassName  *string `json:"className,omitempty"`
 	MethodName *string `json:"methodName,omitempty"`
+	Notes      *string `json:"notes,omitempty"`
 }
 
 type K8sActualNamespace struct {
@@ -2648,11 +2652,13 @@ type PersistNamespaceSourceInput struct {
 type PhpCustomProbe struct {
 	ClassName    *string `json:"className,omitempty"`
 	FunctionName *string `json:"functionName,omitempty"`
+	Notes        *string `json:"notes,omitempty"`
 }
 
 type PhpCustomProbeInput struct {
 	ClassName    *string `json:"className,omitempty"`
 	FunctionName *string `json:"functionName,omitempty"`
+	Notes        *string `json:"notes,omitempty"`
 }
 
 type PodAnalyze struct {

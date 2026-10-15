@@ -48,6 +48,9 @@ func (ci *CustomInstrumentations) Verify() error {
 type JavaCustomProbe struct {
 	ClassName  string `json:"className,omitempty" yaml:"className,omitempty"`
 	MethodName string `json:"methodName,omitempty" yaml:"methodName,omitempty"`
+	// A free-form text field that allows you to attach notes regarding the probe for convenience.
+	// For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes string `json:"notes,omitempty" yaml:"notes,omitempty"`
 }
 
 // For java we always require both class name and method name
@@ -84,6 +87,9 @@ type GolangCustomProbe struct {
 	// for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
 	// ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
 	ReceiverMethodName string `json:"receiverMethodName,omitempty" yaml:"receiverMethodName,omitempty"`
+	// A free-form text field that allows you to attach notes regarding the probe for convenience.
+	// For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes string `json:"notes,omitempty" yaml:"notes,omitempty"`
 }
 
 // For golang we require package name and either function name or receiver name + method name
@@ -109,6 +115,9 @@ type CppCustomProbe struct {
 	// namespace::function - targeting a function (and its possible overloads) in a specific namespac
 	// function - for C-like functions a single function name can be used: e.g SSL_write
 	Signature string `json:"signature"`
+	// A free-form text field that allows you to attach notes regarding the probe for convenience.
+	// For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes string `json:"notes,omitempty" yaml:"notes,omitempty"`
 }
 
 func (c *CppCustomProbe) Verify() error {
@@ -126,6 +135,9 @@ func (c *CppCustomProbe) Verify() error {
 type PhpCustomProbe struct {
 	ClassName    string `json:"className,omitempty" yaml:"className,omitempty"`
 	FunctionName string `json:"functionName" yaml:"functionName"`
+	// A free-form text field that allows you to attach notes regarding the probe for convenience.
+	// For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes string `json:"notes,omitempty" yaml:"notes,omitempty"`
 }
 
 func (pcp *PhpCustomProbe) Verify() error {
