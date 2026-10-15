@@ -9,7 +9,14 @@ const (
 	kubeletstatsReceiverName  = "kubeletstats"
 	hostmetricsReceiverName   = "hostmetrics"
 	odigosMetricsPipelineName = "metrics"
-	dropAgentSpanMetricsName  = "filter/drop-agent-span-metrics"
+
+	// the pipeline that sends the span metrics agents record to the metrics destinations, in place of
+	// the span metrics connector's for the spans they counted.
+	AgentSpanMetricsDestinationsPipelineName = "metrics/agent-span-metrics"
+	dropAgentSpanMetricsName                 = "filter/drop-agent-span-metrics"
+	keepAgentSpanMetricsName                 = "filter/keep-agent-span-metrics"
+	agentSpanMetricsRemoveDimensionsName     = "resource/agent-span-metrics/remove-dimensions"
+	agentSpanMetricsNamePattern              = `IsMatch(name, "^traces\\.span\\.metrics\\.")`
 )
 
 func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.GenericMap, []string) {
@@ -88,21 +95,58 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	if opts.ResourceDetectionEnabled {
 		baseProcessors = append(baseProcessors, resourceDetectionProcessorName)
 	}
-	metricsPipelineProcessors := baseProcessors
+	settings := opts.MetricsConfigSettings
+	metricsPipelineProcessors := append([]string{}, baseProcessors...)
 	metricsPipelineProcessors = append(metricsPipelineProcessors, opts.ManifestProcessorNames...)
-	// span metrics recorded only for trace surges go to odigos insights, not to destinations.
-	var processors config.GenericMap
-	if asm := opts.MetricsConfigSettings.AgentSpanMetrics; asm != nil && !asm.Destinations && opts.MetricsConfigSettings.AgentsTelemetry != nil {
-		processors = config.GenericMap{dropAgentSpanMetricsName: config.GenericMap{
-			"error_mode": "ignore",
-			"metrics":    config.GenericMap{"metric": []string{`IsMatch(name, "^traces\\.span\\.metrics\\.")`}},
-		}}
-		metricsPipelineProcessors = append(metricsPipelineProcessors, dropAgentSpanMetricsName)
+
+	// span metrics recorded only for trace surges go to odigos insights, and to the metrics
+	// destinations only when one wants span metrics or span metrics in the agents are enabled.
+	processors := config.GenericMap{}
+	pipelines := map[string]config.Pipeline{}
+	if agentSpanMetrics := settings.AgentSpanMetrics; agentSpanMetrics != nil {
+		dropFromAgentsTelemetry := settings.AgentsTelemetry != nil
+		if settings.SpanMetrics != nil {
+			// the span metrics connector skips the spans these agents counted: their own span metrics
+			// take their place, without the resource attributes the connector's are aggregated without.
+			processors[keepAgentSpanMetricsName] = config.GenericMap{
+				"error_mode": "ignore",
+				"metrics":    config.GenericMap{"metric": []string{"not " + agentSpanMetricsNamePattern}},
+			}
+			processors[agentSpanMetricsRemoveDimensionsName] = spanMetricsRemoveDimensionsProcessor(*settings.SpanMetrics)
+			// the processors configured for the node's metrics apply to them as to the agents' other metrics.
+			processorNames := append(append([]string{}, baseProcessors...), keepAgentSpanMetricsName)
+			processorNames = append(processorNames, opts.ManifestProcessorNames...)
+			pipelines[AgentSpanMetricsDestinationsPipelineName] = config.Pipeline{
+				Receivers:  []string{OTLPInReceiverName},
+				Processors: append(processorNames, agentSpanMetricsRemoveDimensionsName),
+				Exporters:  []string{clusterCollectorMetricsExporterName},
+			}
+		} else if agentSpanMetrics.Destinations {
+			// span metrics in the agents are enabled: they go with the agents' other metrics.
+			dropFromAgentsTelemetry = false
+		}
+		if dropFromAgentsTelemetry {
+			processors[dropAgentSpanMetricsName] = config.GenericMap{
+				"error_mode": "ignore",
+				"metrics":    config.GenericMap{"metric": []string{agentSpanMetricsNamePattern}},
+			}
+			metricsPipelineProcessors = append(metricsPipelineProcessors, dropAgentSpanMetricsName)
+		}
+	}
+	if len(processors) == 0 {
+		processors = nil
 	}
 	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
-	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings)
-	if len(pipelineReceiverNames) == 0 {
+	receivers, pipelineReceiverNames := metricsReceivers(settings)
+	if len(pipelineReceiverNames) > 0 {
+		pipelines[odigosMetricsPipelineName] = config.Pipeline{
+			Receivers:  pipelineReceiverNames,
+			Processors: metricsPipelineProcessors,
+			Exporters:  []string{clusterCollectorMetricsExporterName},
+		}
+	}
+	if len(pipelines) == 0 {
 		// if all metrics sources are not enabled, skip the metrics pipeline generation as it has no receivers and will fail the collector
 		return config.Config{}
 	}
@@ -110,14 +154,6 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	return config.Config{
 		Receivers:  receivers,
 		Processors: processors,
-		Service: config.Service{
-			Pipelines: map[string]config.Pipeline{
-				odigosMetricsPipelineName: {
-					Receivers:  pipelineReceiverNames,
-					Processors: metricsPipelineProcessors,
-					Exporters:  []string{clusterCollectorMetricsExporterName},
-				},
-			},
-		},
+		Service:    config.Service{Pipelines: pipelines},
 	}
 }

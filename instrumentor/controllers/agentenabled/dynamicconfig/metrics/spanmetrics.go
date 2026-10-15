@@ -26,6 +26,16 @@ func AgentSpanMetricsEnabled(effectiveConfig *common.OdigosConfiguration) bool {
 		effectiveConfig.MetricsSources.AgentMetrics.SpanMetrics.Enabled
 }
 
+// AgentRecordsSpanMetricsForDestinations reports whether an agent records the span metrics that
+// metrics destinations receive: span metrics in the agents are enabled explicitly, the agent can
+// record them, and they reach the destinations: with the agents' other metrics when the metrics
+// signal is on, or on their own when a destination wants span metrics.
+func AgentRecordsSpanMetricsForDestinations(effectiveConfig *common.OdigosConfiguration, distro *distro.OtelDistro, metricsEnabled bool, nodeCollectorsGroup *odigosv1.CollectorsGroup) bool {
+	destinationsWantSpanMetrics := nodeCollectorsGroup != nil && nodeCollectorsGroup.Spec.Metrics != nil &&
+		nodeCollectorsGroup.Spec.Metrics.SpanMetrics != nil && nodeCollectorsGroup.Spec.Metrics.AgentSpanMetrics != nil
+	return DistroSupportsAgentSpanMetrics(distro) && AgentSpanMetricsEnabled(effectiveConfig) && (metricsEnabled || destinationsWantSpanMetrics)
+}
+
 func CalculateAgentSpanMetricsConfig(effectiveConfig *common.OdigosConfiguration, distro *distro.OtelDistro) (*agentsignalconfig.AgentSpanMetricsConfig, *odigosv1.AgentDisabledInfo) {
 	// TODO: these defaults are duplication of the value written to the
 	// collector config in autoscaler.

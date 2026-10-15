@@ -12,6 +12,10 @@ import (
 const (
 	// SpanInstrumentationScopeNameAttributeName is the span attribute name used to store the instrumentation scope name
 	SpanInstrumentationScopeNameAttributeName = "span.instrumentation.scope.name"
+
+	// AgentRecordedSpanMetricsScopeAttribute marks the instrumentation scopes of an agent that records
+	// span metrics itself: the collector does not count their spans again.
+	AgentRecordedSpanMetricsScopeAttribute = "odigos.span_metrics.recorded"
 )
 
 var (
@@ -21,6 +25,7 @@ var (
 	spanMetricsExportingPipelineName                 = "metrics/spanmetrics-exporting"
 	spanMetricsResourceRemoveDimensionsProcessorName = "resource/spanmetrics/remove-dimensions"
 	spanMetricsCopyScopeSpanMetricsProcessorName     = "transform/copy-scope-span-metrics"
+	spanMetricsSkipAgentRecordedProcessorName        = "filter/spanmetrics-skip-agent-recorded"
 	odigosTraceFilterProcessorName                   = "odigos_trace_filter"
 )
 
@@ -94,10 +99,43 @@ func getSpanMetricsConnectors(spanMetricsConfig common.MetricsSourceSpanMetricsC
 	}
 }
 
-func getSpanMetricsPipelineProcessors(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) (config.GenericMap, []string) {
+func getSpanMetricsPipelineProcessors(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration, agentsRecord bool) (config.GenericMap, []string) {
 
 	processors := config.GenericMap{}
 	processorNames := []string{}
+
+	if agentsRecord {
+		// the agents that record span metrics themselves counted these spans already, sampled or not.
+		processors[spanMetricsSkipAgentRecordedProcessorName] = config.GenericMap{
+			"error_mode": "ignore",
+			"traces": config.GenericMap{
+				"span": []string{`instrumentation_scope.attributes["` + AgentRecordedSpanMetricsScopeAttribute + `"] == true`},
+			},
+		}
+		processorNames = append(processorNames, spanMetricsSkipAgentRecordedProcessorName)
+	}
+
+	processors[spanMetricsCopyScopeSpanMetricsProcessorName] = config.GenericMap{
+		"trace_statements": []config.GenericMap{
+			{
+				"context": "span",
+				"statements": []string{
+					"set(span.attributes[\"" + SpanInstrumentationScopeNameAttributeName + "\"], instrumentation_scope.name)",
+				},
+			},
+		},
+	}
+	processorNames = append(processorNames, spanMetricsCopyScopeSpanMetricsProcessorName)
+
+	processors[spanMetricsResourceRemoveDimensionsProcessorName] = spanMetricsRemoveDimensionsProcessor(spanMetricsConfig)
+	processorNames = append(processorNames, spanMetricsResourceRemoveDimensionsProcessorName)
+
+	return processors, processorNames
+}
+
+// spanMetricsRemoveDimensionsProcessor deletes the resource attributes span metrics are aggregated
+// without.
+func spanMetricsRemoveDimensionsProcessor(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) config.GenericMap {
 	resourceAttrToExclude := []string{
 		// always delete these two attributes, as they are just noise in span metrics
 		// TODO: consider making it an opt-in configuration option one day
@@ -129,18 +167,6 @@ func getSpanMetricsPipelineProcessors(spanMetricsConfig common.MetricsSourceSpan
 	slices.Sort(resourceAttrToExclude)
 	resourceAttrToExclude = slices.Compact(resourceAttrToExclude)
 
-	processors[spanMetricsCopyScopeSpanMetricsProcessorName] = config.GenericMap{
-		"trace_statements": []config.GenericMap{
-			{
-				"context": "span",
-				"statements": []string{
-					"set(span.attributes[\"" + SpanInstrumentationScopeNameAttributeName + "\"], instrumentation_scope.name)",
-				},
-			},
-		},
-	}
-	processorNames = append(processorNames, spanMetricsCopyScopeSpanMetricsProcessorName)
-
 	attributes := []config.GenericMap{}
 	for _, attributeName := range resourceAttrToExclude {
 		attributes = append(attributes, config.GenericMap{
@@ -148,18 +174,16 @@ func getSpanMetricsPipelineProcessors(spanMetricsConfig common.MetricsSourceSpan
 			"action": "delete",
 		})
 	}
-
-	processors[spanMetricsResourceRemoveDimensionsProcessorName] = config.GenericMap{
+	return config.GenericMap{
 		"attributes": attributes,
 	}
-	processorNames = append(processorNames, spanMetricsResourceRemoveDimensionsProcessorName)
-
-	return processors, processorNames
 }
 
-func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) (config.Config, []string, []string, []string) {
+// GetSpanMetricsConfig returns the span metrics connector's pipelines. agentsRecord is whether some
+// agents record span metrics themselves: the connector then skips the spans they counted.
+func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration, agentsRecord bool) (config.Config, []string, []string, []string) {
 	connectors := getSpanMetricsConnectors(spanMetricsConfig)
-	processors, processorNames := getSpanMetricsPipelineProcessors(spanMetricsConfig)
+	processors, processorNames := getSpanMetricsPipelineProcessors(spanMetricsConfig, agentsRecord)
 
 	// this config domain api to the outside world.
 	// when set, the caller also needs to:

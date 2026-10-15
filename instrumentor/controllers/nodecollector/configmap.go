@@ -236,7 +236,7 @@ func calculateCollectorConfigDomains(
 
 		// span metrics
 		if metricsConfigSettings.SpanMetrics != nil {
-			spanMetricsConfig, additionalSpanMetricsTraceExporters, _, spanMetricsPostProcessors := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
+			spanMetricsConfig, additionalSpanMetricsTraceExporters, _, spanMetricsPostProcessors := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics, metricsConfigSettings.AgentSpanMetrics != nil)
 			additionalTraceExporters = append(additionalTraceExporters, additionalSpanMetricsTraceExporters...)
 			postSpanMetricsProcessorNames = append(postSpanMetricsProcessorNames, spanMetricsPostProcessors...)
 			// NOTICE: temporarily bypass the normal metrics pipeline.
@@ -378,8 +378,9 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 		if !slices.Contains(pipeline.Receivers, collectorconfig.OTLPInReceiverName) {
 			continue
 		}
-		// trace surge span metrics must not turn the metrics signal on for every agent.
-		if pipelineName == collectorconfig.AgentSpanMetricsInsightsPipelineName {
+		// the span metrics agents record must not turn the metrics signal on for every agent: the
+		// agents that record them send them without it.
+		if pipelineName == collectorconfig.AgentSpanMetricsInsightsPipelineName || pipelineName == collectorconfig.AgentSpanMetricsDestinationsPipelineName {
 			continue
 		}
 		if strings.HasPrefix(pipelineName, "traces") {
