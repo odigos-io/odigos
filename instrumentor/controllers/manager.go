@@ -23,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/podsmanifestinjectionstatus"
 	"github.com/odigos-io/odigos/instrumentor/controllers/recommendations"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
+	"github.com/odigos-io/odigos/instrumentor/controllers/tracesurge"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
@@ -225,6 +226,14 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 	err = agentenabled.SetupWithManager(mgr, dp)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
+	}
+
+	err = mgr.Add(&tracesurge.Evaluator{
+		Client: mgr.GetClient(),
+		Logger: mgr.GetLogger().WithName("tracesurge"),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to add trace surge evaluator: %w", err)
 	}
 
 	err = sourceinstrumentation.SetupWithManager(mgr, k8sVersion)

@@ -201,3 +201,23 @@ func TestMergeConfigs_NoCardinalityControlOverlayLeavesBaseUntouched(t *testing.
 		t.Errorf("CardinalityControl = %+v, want nil when the overlay sets none", base.CardinalityControl)
 	}
 }
+
+// sampling.traceSurge is helm-only: odigos insights reads the same switch from its environment.
+func TestMergeConfigs_TraceSurgeIsHelmOnly(t *testing.T) {
+	maxActive := 3
+	overlay := &common.OdigosConfiguration{Sampling: &common.SamplingConfiguration{
+		TraceSurge: &common.TraceSurgeConfiguration{Enabled: boolPtr(true), MaxActiveSurges: &maxActive},
+	}}
+
+	base := &common.OdigosConfiguration{}
+	mergeConfigs(base, overlay)
+	if common.TraceSurgesEnabled(base.Sampling) {
+		t.Errorf("an overlay must not turn trace surges on")
+	}
+
+	base = &common.OdigosConfiguration{Sampling: &common.SamplingConfiguration{TraceSurge: &common.TraceSurgeConfiguration{Enabled: boolPtr(false)}}}
+	mergeConfigs(base, overlay)
+	if common.TraceSurgesEnabled(base.Sampling) || base.Sampling.TraceSurge.MaxActiveSurges != nil {
+		t.Errorf("sampling.traceSurge = %+v, want helm's", base.Sampling.TraceSurge)
+	}
+}
