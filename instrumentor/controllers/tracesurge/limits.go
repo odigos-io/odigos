@@ -117,7 +117,7 @@ func (e *Evaluator) enforceLimits(ctx context.Context, now time.Time, active map
 	end := func(reason string) {
 		key := raising[len(raising)-1]
 		raising = raising[:len(raising)-1]
-		e.restore(ctx, active[key], now, reason)
+		e.restore(ctx, active[key], now, causeLimitLowered, reason)
 		delete(active, key)
 	}
 
