@@ -266,6 +266,8 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 
 	// merge the entire remote sampling configuration (if exists) into the base configuration.
 	// this allows local ui / central to set dynamic configs which were not specified in helm during deployment.
+	// sampling.traceSurge is helm-only on purpose: odigos insights reads the same switch from its
+	// environment, which only helm sets.
 	if addtionalConfig.Sampling != nil {
 		if baseConfig.Sampling == nil {
 			baseConfig.Sampling = &common.SamplingConfiguration{}
