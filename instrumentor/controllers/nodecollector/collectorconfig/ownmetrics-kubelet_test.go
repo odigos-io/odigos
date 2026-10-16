@@ -39,3 +39,12 @@ func TestAddKubeletStatsToOwnMetrics_EmptyConfig(t *testing.T) {
 		t.Fatal("pipeline must still reference destination kubeletstats")
 	}
 }
+
+func contains(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
+}

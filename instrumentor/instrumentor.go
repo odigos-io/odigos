@@ -20,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	controllerconfig "github.com/odigos-io/odigos/instrumentor/controllers/controller_config"
 	"github.com/odigos-io/odigos/instrumentor/controllers/metricshandler"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
@@ -61,6 +62,9 @@ type Options struct {
 	// so the runnable can use its cached client. Runnables participate in manager
 	// lifecycle and can opt into leader election via manager.LeaderElectionRunnable.
 	Runnables []func(mgr manager.Manager) manager.Runnable
+	// CollectorHooks lets enterprise mutate node/cluster collector configs and
+	// the cluster-collector Deployment. Nil means community-only generation.
+	CollectorHooks *collectorhooks.CollectorHooks
 }
 
 func New(opts Options) (*Instrumentor, error) {
@@ -189,9 +193,10 @@ func New(opts Options) (*Instrumentor, error) {
 	// wire up the controllers and webhooks
 	scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention := parseFirstInstrumentedPodAtNodeLabelRetention()
 	configOpts := controllers.OdigosConfigurationOptions{
-		Tier:          env.GetOdigosTierFromEnv(),
-		OdigosVersion: os.Getenv(consts.OdigosVersionEnvVarName),
-		DynamicClient: dynamicClient,
+		Tier:           env.GetOdigosTierFromEnv(),
+		OdigosVersion:  os.Getenv(consts.OdigosVersionEnvVarName),
+		DynamicClient:  dynamicClient,
+		CollectorHooks: opts.CollectorHooks,
 	}
 	err = controllers.SetupWithManager(context.Background(), mgr, opts.DistrosProvider, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention, configOpts)
 	if err != nil {

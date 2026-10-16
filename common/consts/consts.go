@@ -58,14 +58,9 @@ const (
 	// name of the secret that contains the oidc client secret
 	OidcSecretName = "odigos-oidc"
 
-	ServiceGraphConnectorName = "servicegraph"
-	ServiceGraphEndpointPort  = 9090
-
-	// ServiceGraphInsightsExporterName is the OTLP gRPC exporter that ships the
-	// servicegraph connector's metrics to the odigos-insights service so it can
-	// build the blast-radius topology. Added as a second exporter on the existing
-	// metrics/servicegraph pipeline when insights is active.
-	ServiceGraphInsightsExporterName = "otlp_grpc/servicegraph-insights"
+	ServiceGraphConnectorName       = "servicegraph"
+	ServiceGraphMetricsPipelineName = "metrics/servicegraph"
+	ServiceGraphEndpointPort        = 9090
 
 	// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
 	// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.

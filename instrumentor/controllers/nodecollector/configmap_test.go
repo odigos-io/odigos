@@ -10,6 +10,8 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
+	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,6 +23,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -183,10 +186,10 @@ func TestCalculateConfigMapData(t *testing.T) {
 				},
 			},
 		},
-		false,                   /* onGKE */
-		true,                    /* loadBalancingNeeded */
-		nil,                     /* profiling */
-		common.OnPremOdigosTier, /* tier */
+		false, /* onGKE */
+		true,  /* loadBalancingNeeded */
+		common.OdigosConfiguration{},
+		nil, /* hooks */
 	)
 
 	assert.Equal(t, err, nil)
@@ -266,11 +269,11 @@ func TestNodeCollectorUsesLoadBalancingExporterForTailSampling(t *testing.T) {
 			},
 		},
 		[]common.ObservabilitySignal{common.TracesObservabilitySignal},
-		nil,                     /* processors */
-		false,                   /* onGKE */
-		loadBalancingNeeded,     /* loadBalancingNeeded */
-		nil,                     /* profiling */
-		common.OnPremOdigosTier, /* tier */
+		nil,                 /* processors */
+		false,               /* onGKE */
+		loadBalancingNeeded, /* loadBalancingNeeded */
+		common.OdigosConfiguration{},
+		nil, /* hooks */
 	)
 
 	assert.NoError(t, err)
@@ -336,12 +339,129 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 				},
 			},
 		},
-		false,                   /* onGKE */
-		false,                   /* loadBalancingNeeded */
-		nil,                     /* profiling */
-		common.OnPremOdigosTier, /* tier */
+		false, /* onGKE */
+		false, /* loadBalancingNeeded */
+		common.OdigosConfiguration{},
+		nil, /* hooks */
 	)
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)
+}
+
+const hookReceiverName = "test/hook-receiver"
+
+type nodeConfigHook struct{}
+
+func (nodeConfigHook) MutateConfig(in collectorhooks.NodeCollectorHookInput) error {
+	in.AddReceiver(hookReceiverName, config.GenericMap{})
+	in.AppendReceiverToTraces(hookReceiverName)
+	in.SetLogsReceivers([]string{hookReceiverName})
+	return nil
+}
+
+func nodeCollectorConfig(t *testing.T, signals []common.ObservabilitySignal, hooks *collectorhooks.CollectorHooks) config.Config {
+	t.Helper()
+	_, got, err := calculateCollectorConfigDomains(
+		context.Background(),
+		"odigos-system",
+		&odigosv1.CollectorsGroup{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
+			Spec:       odigosv1.CollectorsGroupSpec{CollectorOwnMetricsPort: 4317},
+		},
+		&odigosv1.InstrumentationConfigList{
+			Items: []v1alpha1.InstrumentationConfig{
+				*NewMockInstrumentationConfig(NewMockTestDeployment(NewMockNamespace("default"))),
+			},
+		},
+		signals,
+		nil,   /* processors */
+		false, /* onGKE */
+		false, /* loadBalancingNeeded */
+		common.OdigosConfiguration{},
+		hooks,
+	)
+	require.NoError(t, err)
+	var cfg config.Config
+	require.NoError(t, yaml.Unmarshal([]byte(got), &cfg))
+	return cfg
+}
+
+func anyPipelineHasAllReceivers(cfg config.Config, names ...string) bool {
+	for _, p := range cfg.Service.Pipelines {
+		ok := true
+		for _, name := range names {
+			if !containsString(p.Receivers, name) {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			return true
+		}
+	}
+	return false
+}
+
+func anyPipelineReceiversEqual(cfg config.Config, names []string) bool {
+	for _, p := range cfg.Service.Pipelines {
+		if len(p.Receivers) != len(names) {
+			continue
+		}
+		match := true
+		for i := range names {
+			if p.Receivers[i] != names[i] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
+func containsString(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
+}
+
+func TestNodeCollectorHook_NilIsCommunity(t *testing.T) {
+	cfg := nodeCollectorConfig(t, []common.ObservabilitySignal{
+		common.TracesObservabilitySignal,
+		common.LogsObservabilitySignal,
+	}, nil)
+	assert.NotContains(t, cfg.Receivers, hookReceiverName)
+	assert.False(t, anyPipelineHasAllReceivers(cfg, hookReceiverName))
+}
+
+func TestNodeCollectorHook_MutatesMergedConfig(t *testing.T) {
+	hooks := &collectorhooks.CollectorHooks{NodeCollectorConfig: nodeConfigHook{}}
+	cfg := nodeCollectorConfig(t, []common.ObservabilitySignal{
+		common.TracesObservabilitySignal,
+		common.LogsObservabilitySignal,
+	}, hooks)
+
+	assert.Contains(t, cfg.Receivers, hookReceiverName)
+	assert.True(t, anyPipelineHasAllReceivers(cfg, collectorconfig.OTLPInReceiverName, hookReceiverName),
+		"hook receiver should be appended alongside the community traces receiver")
+	assert.True(t, anyPipelineReceiversEqual(cfg, []string{hookReceiverName}),
+		"hook should replace the community logs receivers")
+}
+
+func TestNodeCollectorHook_MissingLogsPipelineIsNoop(t *testing.T) {
+	hooks := &collectorhooks.CollectorHooks{NodeCollectorConfig: nodeConfigHook{}}
+	cfg := nodeCollectorConfig(t, []common.ObservabilitySignal{
+		common.TracesObservabilitySignal,
+	}, hooks)
+
+	assert.Contains(t, cfg.Receivers, hookReceiverName)
+	assert.True(t, anyPipelineHasAllReceivers(cfg, collectorconfig.OTLPInReceiverName, hookReceiverName))
+	assert.False(t, anyPipelineReceiversEqual(cfg, []string{hookReceiverName}),
+		"SetLogsReceivers must not create a logs pipeline")
 }

@@ -5,29 +5,20 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 )
 
 const (
 	odigosTracesLoadbalancingExporterName     = "loadbalancing/traces"
-	odigosTracesPipelineName                  = "traces"
+	OdigosTracesPipelineName                  = "traces"
 	odigosTracesExportingForwardConnectorName = "forward/traces-exporting"
 	odigosTracesExportingPipelineName         = "traces/exporting"
 	nopExporterName                           = "nop"
 )
 
 // tracesPipelineReceivers returns the receiver names wired into the traces pipeline.
-func tracesPipelineReceivers(tier common.OdigosTier) []string {
-	receivers := []string{OTLPInReceiverName}
-
-	// odigosebpfreceiver only exists in the enterprise collector image - see the comment on
-	// odigosEbpfReceiverName in common.go.
-	if tier.IsEnterprise() {
-		receivers = append(receivers, odigosEbpfReceiverName)
-	}
-
-	return receivers
+func tracesPipelineReceivers() []string {
+	return []string{OTLPInReceiverName}
 }
 
 func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, tracesEnabledInClusterCollector bool, loadBalancingNeeded bool) (config.GenericMap, []string) {
@@ -126,14 +117,14 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, opts TracesConfigOptions) co
 
 	baseProcessors := []string{
 		batchProcessorName,         // always start with batch
-		memoryLimiterProcessorName, // memory limiter is temporary, until we migrate all inputs to rtml based memory protection
+		MemoryLimiterProcessorName, // memory limiter is temporary, until we migrate all inputs to rtml based memory protection
 		nodeNameProcessorName,
 	}
 	if opts.ResourceDetectionEnabled {
 		baseProcessors = append(baseProcessors, resourceDetectionProcessorName)
 	}
 	tracePipelineProcessors := append(baseProcessors, opts.ManifestProcessorNames...)
-	tracePipelineProcessors = append(tracePipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
+	tracePipelineProcessors = append(tracePipelineProcessors, OdigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	// conditionally, create another pipeline for span exporting,
 	// which will run after spanmetrics, but before exporting.
@@ -159,8 +150,8 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, opts TracesConfigOptions) co
 	}
 
 	tracePipeline := map[string]config.Pipeline{
-		odigosTracesPipelineName: {
-			Receivers:  tracesPipelineReceivers(opts.Tier),
+		OdigosTracesPipelineName: {
+			Receivers:  tracesPipelineReceivers(),
 			Processors: tracePipelineProcessors,
 			Exporters:  tracesMainPipelineExporterNames,
 		},

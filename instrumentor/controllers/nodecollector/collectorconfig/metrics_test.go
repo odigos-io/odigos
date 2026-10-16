@@ -19,5 +19,5 @@ func TestMetricsConfig_MetricsPipelineProcessorOrder(t *testing.T) {
 	require.True(t, ok)
 	// traffic accounting must stay last so counts reflect the final metric shape.
 	require.NotEmpty(t, pl.Processors)
-	assert.Equal(t, odigosTrafficMetricsProcessorName, pl.Processors[len(pl.Processors)-1])
+	assert.Equal(t, OdigosTrafficMetricsProcessorName, pl.Processors[len(pl.Processors)-1])
 }

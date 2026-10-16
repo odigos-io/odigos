@@ -3,7 +3,6 @@ package collectorconfig
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -31,15 +30,13 @@ func NodeHasSQLQueryProcessor(processors []*odigosv1.Processor) bool {
 
 // NodeNeedsOdigosConfigK8sExtension reports whether the node collector should merge
 // the odigos_config_k8s extension domain.
-func NodeNeedsOdigosConfigK8sExtension(processors []*odigosv1.Processor, profiling *odigoscommon.ProfilingConfiguration) bool {
-	// odigos_config_k8s is added when a node-side processor needs per-source config, or profiling is on.
+func NodeNeedsOdigosConfigK8sExtension(processors []*odigosv1.Processor) bool {
+	// Community processors that need per-source config. Profiling adds the same
+	// extension from the enterprise node hook, not here.
 	if NodeHasURLTemplateProcessor(processors) {
 		return true
 	}
 	if NodeHasSQLQueryProcessor(processors) {
-		return true
-	}
-	if odigoscommon.ProfilingPipelineActive(profiling) {
 		return true
 	}
 

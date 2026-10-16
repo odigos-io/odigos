@@ -5,23 +5,16 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 )
 
 const (
 	filelogReceiverName                  = "filelog"
-	logsPipelineName                     = "logs"
+	LogsPipelineName                     = "logs"
 	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
 )
 
-func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string, tier common.OdigosTier) (config.GenericMap, []string) {
-
-	if tier.IsEnterprise() && isEbpfLogCaptureEnabled(sources) {
-		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
-		return config.GenericMap{}, []string{odigosEbpfReceiverName}
-	}
-
+func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) (config.GenericMap, []string) {
 	includes := make([]string, 0)
 	for _, element := range sources.Items {
 		// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
@@ -73,24 +66,6 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 	}, []string{filelogReceiverName}
 }
 
-func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
-	if sources == nil {
-		return false
-	}
-	for _, ic := range sources.Items {
-		// check container config (new path)
-		for _, container := range ic.Spec.Containers {
-			if container.Logs != nil &&
-				container.Logs.EbpfLogCapture != nil &&
-				container.Logs.EbpfLogCapture.Enabled != nil &&
-				*container.Logs.EbpfLogCapture.Enabled {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 type LogsConfigOptions struct {
 	CommonSignalConfig
 	Sources *odigosv1.InstrumentationConfigList
@@ -99,7 +74,7 @@ type LogsConfigOptions struct {
 func LogsConfig(nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config.Config {
 
 	pipelineProcessors := []string{
-		memoryLimiterProcessorName,
+		MemoryLimiterProcessorName,
 		nodeNameProcessorName,
 	}
 	if opts.ResourceDetectionEnabled {
@@ -110,15 +85,15 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config
 	)
 	pipelineProcessors = append(pipelineProcessors, opts.ManifestProcessorNames...)
 	// append odigos traffic metrics processor last (after manifest processors)
-	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
+	pipelineProcessors = append(pipelineProcessors, OdigosTrafficMetricsProcessorName)
 
-	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace, opts.Tier)
+	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace)
 
 	return config.Config{
 		Receivers: receivers,
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
-				logsPipelineName: {
+				LogsPipelineName: {
 					Receivers:  pipelineReceivers,
 					Processors: pipelineProcessors,
 					Exporters:  []string{clusterCollectorLogsExporterName},

@@ -14,6 +14,7 @@ import (
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -50,12 +51,12 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
-	var profilingCfg *odigoscommon.ProfilingConfiguration
-	if cfg, err := utils.GetCurrentOdigosConfiguration(ctx, b.Client); err == nil {
-		profilingCfg = cfg.Profiling
+	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, b.Client)
+	if err != nil {
+		odigosConfiguration = odigoscommon.OdigosConfiguration{}
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, pipeline.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.tier)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, pipeline.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, odigosConfiguration, b.hooks)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -176,32 +177,30 @@ func calculateCollectorConfigDomains(
 	processors []*odigosv1.Processor,
 	onGKE bool,
 	loadBalancingNeeded bool,
-	profiling *odigoscommon.ProfilingConfiguration,
-	tier odigoscommon.OdigosTier) (map[string]config.Config, string, error) {
+	odigosConfiguration odigoscommon.OdigosConfiguration,
+	hooks *collectorhooks.CollectorHooks) (map[string]config.Config, string, error) {
 
 	logger := commonlogger.FromContext(ctx)
 
 	// common config domains - always set and active
 	configDomains := map[string]config.Config{
-		"common": collectorconfig.CommonConfig(tier),
+		"common": collectorconfig.CommonConfig(),
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
 	configDomains["own_metrics_ui"] = collectorconfig.OwnMetricsConfigUi(ownMetricsPort)
 
+	hookInput := collectorhooks.NodeCollectorHookInput{
+		OdigosConfiguration: odigosConfiguration,
+		Sources:             sources,
+		OdigosNamespace:     odigosNamespace,
+	}
+
 	// all the rest of the config is only evaluated if the node collector group is not nil
 	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.
 	// this logic should be revisited in the future, but kept as is for now (nov 2025)
 	if nodeCG == nil {
-		mergedConfig, err := config.MergeConfigs(configDomains)
-		if err != nil {
-			return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
-		}
-		mergedConfigYaml, err := yaml.Marshal(mergedConfig)
-		if err != nil {
-			return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
-		}
-		return configDomains, string(mergedConfigYaml), nil
+		return mergeNodeCollectorConfig(configDomains, hooks, hookInput)
 	}
 
 	// processors from k8s "Processor" custom resource
@@ -211,20 +210,20 @@ func calculateCollectorConfigDomains(
 		return nil, "", err
 	}
 	configDomains["processors"] = processorsResults.ProcessorsConfig
+	hookInput.Processors = processorsResults
 
-	if collectorconfig.NodeNeedsOdigosConfigK8sExtension(processors, profiling) {
+	if collectorconfig.NodeNeedsOdigosConfigK8sExtension(processors) {
 		configDomains["odigos_config_extension"] = collectorconfig.NodeOdigosExtDomain()
 	}
 
 	// resource detectors [ec2, eks, azure, aks, gcp] built once.
 	detectors := collectorconfig.BuildResourceDetectors(nodeCG.Spec.ResourceDetectors, onGKE)
-	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace, detectors, tier)
+	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace, detectors)
 
 	commonSignalConfig := collectorconfig.CommonSignalConfig{
 		Logger:                   logger.Logr(),
 		OdigosNamespace:          odigosNamespace,
 		ResourceDetectionEnabled: collectorconfig.ResourceDetectionEnabled(detectors),
-		Tier:                     tier,
 	}
 
 	// metrics
@@ -297,21 +296,26 @@ func calculateCollectorConfigDomains(
 		configDomains["logs"] = logsConfig
 	}
 
-	// The profiling pipeline's receiver is enterprise-only, so community tier never gets one
-	// regardless of what OdigosConfiguration asks for.
-	if tier.IsEnterprise() && odigoscommon.ProfilingPipelineActive(profiling) {
-		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors)
-	}
+	return mergeNodeCollectorConfig(configDomains, hooks, hookInput)
+}
 
+func mergeNodeCollectorConfig(
+	configDomains map[string]config.Config,
+	hooks *collectorhooks.CollectorHooks,
+	in collectorhooks.NodeCollectorHookInput,
+) (map[string]config.Config, string, error) {
 	mergedConfig, err := config.MergeConfigs(configDomains)
 	if err != nil {
 		return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
+	}
+	in.Config = &mergedConfig
+	if err := collectorhooks.ApplyNodeConfig(hooks, in); err != nil {
+		return nil, "", errors.Join(err, errors.New("failed to apply node collector config hooks"))
 	}
 	mergedConfigYaml, err := yaml.Marshal(mergedConfig)
 	if err != nil {
 		return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
 	}
-
 	return configDomains, string(mergedConfigYaml), nil
 }
 

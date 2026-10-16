@@ -3,8 +3,8 @@ package clustercollector
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,7 +14,7 @@ type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	OdigosVersion string
-	Tier          common.OdigosTier
+	Hooks         *collectorhooks.CollectorHooks
 }
 
 // Reconcile ensures that any changes to the InstrumentationConfig CRs (creation, deletion, or label modifications)
@@ -22,5 +22,5 @@ type InstrumentationConfigReconciler struct {
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := commonlogger.FromContext(ctx)
 	logger.Info("Reconciling InstrumentationConfig")
-	return reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion, r.Tier)
+	return reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion, r.Hooks)
 }

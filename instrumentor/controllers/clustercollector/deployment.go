@@ -25,6 +25,7 @@ import (
 	cfg "github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/instrumentor/k8sconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -45,7 +46,7 @@ func GetDeploymentName(gatewayCg *odigosv1.CollectorsGroup) string {
 }
 
 func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, odigosVersion string, tier common.OdigosTier) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, odigosVersion string, hooks *collectorhooks.CollectorHooks) (*appsv1.Deployment, error) {
 	logger := commonlogger.FromContext(ctx)
 
 	instrumentorDeploymentName := env.GetComponentDeploymentNameOrDefault(k8sconsts.InstrumentorDeploymentName)
@@ -63,7 +64,7 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
 	configDataHash := Sha256Hash(secretsVersionHash)
 	desiredDeployment, err := getDesiredDeployment(ctx, c, enabledDests, configDataHash, gateway,
-		scheme, odigosVersion, autoScalerTopologySpreadConstraints, tier)
+		scheme, odigosVersion, autoScalerTopologySpreadConstraints, hooks)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -138,7 +139,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *odigosv1.DestinationList, configDataHash string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, odigosVersion string, topologySpreadConstraints []corev1.TopologySpreadConstraint, tier common.OdigosTier) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, odigosVersion string, topologySpreadConstraints []corev1.TopologySpreadConstraint, hooks *collectorhooks.CollectorHooks) (*appsv1.Deployment, error) {
 
 	nodeSelector := gateway.Spec.NodeSelector
 	if nodeSelector == nil {
@@ -159,21 +160,6 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 	}
 
 	extraEnvVars := []corev1.EnvVar{}
-	// The odigos_enterprise_auth extension verifies this token at startup and refuses to run
-	// without it. Community tier has neither the extension nor the odigos-pro secret.
-	if tier.IsEnterprise() {
-		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
-			Name: k8sconsts.OdigosOnpremTokenEnvName,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: k8sconsts.OdigosProSecretName,
-					},
-					Key: k8sconsts.OdigosOnpremTokenSecretKey,
-				},
-			},
-		})
-	}
 	if gateway.Spec.HttpsProxyAddress != nil {
 		odigosNs := env.GetCurrentNamespace()
 		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
@@ -345,13 +331,17 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = adjusted
 	}
 
-	var featureGates []string
-	if common.ProfilingPipelineActive(odigosConfiguration.Profiling) {
-		featureGates = append(featureGates, "service.profilesSupport")
+	hookIn := &collectorhooks.GatewayDeploymentHookInput{
+		OdigosConfiguration: odigosConfiguration,
+		Deployment:          desiredDeployment,
 	}
+	collectorhooks.ApplyGatewayDeployment(hooks, hookIn)
+
+	var featureGates []string
 	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
 		featureGates = append(featureGates, "clickhouse.json")
 	}
+	featureGates = append(featureGates, hookIn.FeatureGates()...)
 	if len(featureGates) > 0 {
 		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
 			desiredDeployment.Spec.Template.Spec.Containers[0].Args,

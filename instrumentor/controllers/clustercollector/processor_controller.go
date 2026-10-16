@@ -4,7 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +17,7 @@ type ProcessorReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	OdigosVersion string
-	Tier          common.OdigosTier
+	Hooks         *collectorhooks.CollectorHooks
 }
 
 func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -36,7 +36,7 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	result, err := reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion, r.Tier)
+	result, err := reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion, r.Hooks)
 	if err != nil {
 		return utils.K8SUpdateErrorHandler(err)
 	}

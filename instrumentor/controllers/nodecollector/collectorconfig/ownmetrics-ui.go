@@ -12,10 +12,6 @@ import (
 
 // internal, not meant to be used outside of this service
 const (
-
-	// this processor should be added to any user telemetry pipeline to track the amount of data being exported by each source
-	odigosTrafficMetricsProcessorName = "odigostrafficmetrics"
-
 	podNameProcessorName       = "resource/pod-name"
 	collectorRoleProcessorName = "resource/odigos-collector-role"
 	ownMetricsUiExporterName   = "otlp_grpc/odigos-own-telemetry-ui"
@@ -31,7 +27,7 @@ func init() {
 	odigosNamespace := env.GetCurrentNamespace()
 
 	staticOwnMetricsUiProcessors = config.GenericMap{
-		odigosTrafficMetricsProcessorName: config.GenericMap{
+		OdigosTrafficMetricsProcessorName: config.GenericMap{
 			"res_attributes_keys": []string{
 				string(semconv.ServiceNameKey),
 				string(semconv.K8SNamespaceNameKey),

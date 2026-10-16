@@ -41,7 +41,6 @@ import (
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentor/controllers/clustercollector"
 	controllerconfig "github.com/odigos-io/odigos/instrumentor/controllers/controller_config"
@@ -103,7 +102,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = clustercollector.SetupWithManager(k8sManager, "", common.OnPremOdigosTier)
+	err = clustercollector.SetupWithManager(k8sManager, "", nil)
 	Expect(err).ToNot(HaveOccurred())
 
 	setupResources()

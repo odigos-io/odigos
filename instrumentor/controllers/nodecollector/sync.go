@@ -10,6 +10,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/instrumentor/controllers/collectorhooks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,11 +27,10 @@ const (
 
 type nodeCollectorBaseReconciler struct {
 	client.Client
-	scheme               *runtime.Scheme
+	scheme          *runtime.Scheme
 	ownerDeployment *appsv1.Deployment
-	odigosNamespace      string
-	// tier is read once from ODIGOS_TIER at autoscaler startup.
-	tier common.OdigosTier
+	odigosNamespace string
+	hooks           *collectorhooks.CollectorHooks
 }
 
 func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context) (ctrl.Result, error) {
