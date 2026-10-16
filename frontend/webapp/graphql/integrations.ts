@@ -1,0 +1,1 @@
+export const INSIGHTS_INTEGRATION_FIELDS = `id name type enabled config filters { minSeverity kinds notifyOnResolve } health { lastSuccessAt lastFailureAt lastError consecutiveFailures pending failed dead } createdAt updatedAt`;
