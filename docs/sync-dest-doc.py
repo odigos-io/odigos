@@ -370,11 +370,16 @@ def get_documenation(yaml_content):
     fields = generate_fields(yaml_content)
     note = generate_note(yaml_content)
 
+    description = (
+        f"{name} retirement and migration guidance"
+        if yaml_content.get("spec", {}).get("deprecated", False)
+        else f"Configuring the {name} backend ({category})"
+    )
     start_before_custom = "---"
     content_before_custom = (
         f"{start_before_custom}"
         + f"\ntitle: '{name}'"
-        + f"\ndescription: 'Configuring the {name} backend ({category})'"
+        + f"\ndescription: '{description}'"
         + f"\nsidebarTitle: '{name}'"
         + "\nicon: 'signal-stream'"
         + "\n---"
@@ -439,6 +444,16 @@ def get_documenation(yaml_content):
         + "\n  </Step>"
         + "\n</Steps>"
     )
+    if yaml_content.get("spec", {}).get("deprecated", False):
+        content_after_custom = (
+            f"{start_after_custom}"
+            + "\n\n### Existing Configuration Reference"
+            + note_content
+            + signals_content
+            + fields_content
+            + "\n\nThe manifest below is a reference for existing configurations, not a new setup guide."
+            + f"\n\n{generate_kubectl_apply(yaml_content)}"
+        )
     end_after_custom = content_after_custom[-50:]
 
     return {
@@ -477,13 +492,19 @@ def update_mdx(mdx_path, yaml_content):
         documenation.get("content_before_custom"),
         False
     )
-    mdx_content = replace_section(
-        mdx_content,
-        documenation.get("start_after_custom"),
-        documenation.get("end_after_custom"),
-        documenation.get("content_after_custom"),
-        True
-    )
+    if yaml_content.get("spec", {}).get("deprecated", False):
+        mdx_content = (
+            mdx_content.split(documenation["start_after_custom"], 1)[0]
+            + documenation["content_after_custom"]
+        )
+    else:
+        mdx_content = replace_section(
+            mdx_content,
+            documenation.get("start_after_custom"),
+            documenation.get("end_after_custom"),
+            documenation.get("content_after_custom"),
+            True
+        )
 
     with open(mdx_path, 'w') as mdx_file:
         mdx_file.write(mdx_content)
@@ -585,6 +606,8 @@ def process_overview(backend_yaml_dir, docs_dir):
                     name = meta.get("displayName", "")
                     category = meta.get("category", "")
                     signals = yaml_content.get("spec", {}).get("signals", {})
+                    if yaml_content.get("spec", {}).get("deprecated", False):
+                        continue
 
                     rows.append(
                         f"{generate_logo(yaml_content, True, 4)} | "
