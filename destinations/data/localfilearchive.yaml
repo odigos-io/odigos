@@ -1,0 +1,88 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: localfilearchive
+  displayName: Local File Archive
+  category: self hosted
+spec:
+  image: localfilearchive.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+  - name: FILE_ARCHIVE_PATH
+    displayName: Persistent Archive Directory
+    componentType: input
+    componentProps:
+      required: true
+      type: text
+      placeholder: /var/lib/odigos/archive
+      tooltip: Absolute writable persistent directory. Files are separated by destination
+        and signal; Kubernetes also separates pods.
+  - name: FILE_ARCHIVE_PVC
+    displayName: Kubernetes Persistent Volume Claim
+    componentType: input
+    componentProps:
+      required: false
+      type: text
+      tooltip: 'Required on Kubernetes: existing Filesystem PVC in the Odigos namespace
+        with ReadWriteMany access. Leave empty on VMs.'
+  - name: FILE_ARCHIVE_FORMAT
+    displayName: OTLP Encoding
+    componentType: dropdown
+    componentProps:
+      required: true
+      values:
+      - json
+      - proto
+      tooltip: JSON is newline-delimited OTLP and can be replayed with otlpjsonfile.
+        Protobuf uses 4-byte big-endian length-prefixed batches.
+    initialValue: json
+  - name: FILE_ARCHIVE_COMPRESSION
+    displayName: Compression
+    componentType: dropdown
+    componentProps:
+      required: true
+      values:
+      - none
+      - zstd
+      tooltip: Bundled exporter supports zstd. By default compressed batches use 4-byte
+        length framing; they are not plain .zst streams and cannot be replayed directly
+        by otlpjsonfile.
+    initialValue: none
+  - name: FILE_ARCHIVE_MAX_MEGABYTES
+    displayName: Rotation Size (MiB)
+    componentType: input
+    componentProps:
+      required: true
+      type: number
+      min: 0
+      tooltip: Maximum size per signal file. Set 0 to disable rotation and append
+        across restarts; disk use is then unbounded. A batch larger than the limit
+        is rejected.
+    initialValue: '100'
+  - name: FILE_ARCHIVE_MAX_BACKUPS
+    displayName: Maximum Rotated Files
+    componentType: input
+    componentProps:
+      required: true
+      type: number
+      min: 1
+      tooltip: Maximum backups per signal and writer directory; must be at least 1.
+    initialValue: '10'
+  - name: FILE_ARCHIVE_MAX_DAYS
+    displayName: Rotated File Retention (Days)
+    componentType: input
+    componentProps:
+      required: true
+      type: number
+      min: 0
+      tooltip: Retention for rotated files; 0 disables age-based deletion. Pod directories
+        from removed pods need external lifecycle cleanup.
+    initialValue: '7'

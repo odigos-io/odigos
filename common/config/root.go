@@ -48,6 +48,7 @@ var availableConfigers = []Configer{
 	&Last9{},
 	&Lightstep{},
 	&Logzio{},
+	&LocalFileArchive{},
 	&Loki{},
 	&Lumigo{},
 	&Middleware{},
