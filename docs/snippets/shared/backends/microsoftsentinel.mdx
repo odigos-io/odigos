@@ -1,0 +1,131 @@
+---
+title: 'Microsoft Sentinel'
+description: 'Configuring the Microsoft Sentinel backend (Managed)'
+sidebarTitle: 'Microsoft Sentinel'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/microsoftsentinel.svg" alt="microsoftsentinel" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **MICROSOFT_SENTINEL_ENDPOINT** `string` : Logs Ingestion Endpoint. HTTPS logs ingestion endpoint from the DCR endpoints.logsIngestion or associated DCE. Supply the base URL, without the datacollectionRules path.
+  - This field is required
+- **MICROSOFT_SENTINEL_TENANT_ID** `string` : Tenant ID. Directory tenant ID of the Microsoft Entra application. Azure public cloud authentication is supported.
+  - This field is required
+- **MICROSOFT_SENTINEL_CLIENT_ID** `string` : Client ID. Application client ID of the service principal. Assign Monitoring Metrics Publisher on the DCR.
+  - This field is required
+- **MICROSOFT_SENTINEL_CLIENT_SECRET** `string` : Client Secret. Client secret VALUE of the Entra application, not its secret ID.
+  - This field is required
+- **MICROSOFT_SENTINEL_RULE_ID** `string` : DCR Immutable ID. The immutable ID starting with dcr-, not the Azure resource ID.
+  - This field is required
+- **MICROSOFT_SENTINEL_STREAM_NAME** `string` : DCR Input Stream. Exact case-sensitive input stream from DCR streamDeclarations, starting with Custom-. This may differ from the output table name.
+  - This field is required
+
+<Note>
+  This destination sends logs through the Azure Logs Ingestion API to a Sentinel-enabled Log Analytics workspace. Traces, metrics and profiles are unsupported. It is distinct from the Azure Monitor Application Insights and Azure Event Hubs destinations. Azure public cloud service-principal authentication is supported; the Azure SDK caches and renews Entra tokens. Sovereign-cloud authorities and managed identity are not exposed.
+
+  Enable Microsoft Sentinel on your Log Analytics workspace. Create a custom table (for example, `OdigosLogs_CL`) with these columns: `TimeGenerated` (datetime), `RawData` (string), `ResourceAttributes` (dynamic), `LogAttributes` (dynamic), `ScopeName` (string), `ScopeVersion` (string), `SeverityText` (string), `SeverityNumber` (int), `TraceId` (string), `SpanId` (string). Declare the same columns and types in the DCR input stream (for example, `Custom-OdigosLogs`), set `transformKql` to `source`, and route its data flow to the workspace with `outputStream: Custom-OdigosLogs_CL`. Configure the input stream name, not the output table name, in Odigos. Missing trace/span IDs are allowed.
+
+  Register an Entra application, create a client secret, and assign its service principal **Monitoring Metrics Publisher** on the DCR. Use the DCR immutable ID and HTTPS `endpoints.logsIngestion` URL. If the DCR has no direct ingestion endpoint, create and associate a DCE and use its logs ingestion URL. Keep TLS certificate verification enabled and allow outbound HTTPS to the ingestion endpoint and `login.microsoftonline.com`. Expired secrets and missing role permissions prevent ingestion; update the destination secret when rotating credentials.
+
+  Log bodies are converted to strings (maps and arrays become JSON). Resource and log attributes are retained in dynamic columns, with scope, severity and trace context in separate columns. Logs from multiple resources share the configured stream without losing source identity. Missing event timestamps use the observed timestamp, then the current time. Upstream per-record `sentinel_rule_id` and `sentinel_stream_name` routing overrides are cleared for this named destination. ASIM normalization and security-event parsing are not automatic: ordinary application logs remain ordinary logs. Configure and validate your own downstream KQL parsers or ASIM mappings before using detection rules.
+
+  The maintained Bindplane Azure Log Analytics exporter sends uncompressed JSON; gzip is not exposed. Azure limits each request to 1 MB, compressed or uncompressed. The exporter does not split oversized payloads: reduce upstream batches and individual log sizes. It uses the Azure SDK plus bounded exporter retries (up to five minutes) for transient failures and a bounded sending queue. HTTP 400, 401, 403 and 413 responses are permanent; HTTP 429, 502, 503 and 504 are retried, honoring Retry-After. HTTP 500 is classified as permanent after SDK retries. A failed batch can drop all its records; retried batches may duplicate records. Azure returns HTTP 204 acceptance, not per-record partial-success counts or proof of storage. Even malformed JSON can receive HTTP 204 before asynchronous validation; DCR transformations can filter records after acceptance. Monitor collector export failures and Azure DCR ingestion errors, and query the actual table to confirm delivery.
+
+  In Microsoft Sentinel **Logs**, query `OdigosLogs_CL | where TimeGenerated > ago(1h) | project TimeGenerated, RawData, ResourceAttributes, LogAttributes, SeverityText, TraceId`. A new table may take 5-15 minutes to show its first records. Verify all source resources and parser output; a successful exporter request alone does not prove queryability.
+
+  References: [Logs Ingestion API](https://learn.microsoft.com/en-us/azure/azure-monitor/logs/logs-ingestion-api-overview), [API limits](https://learn.microsoft.com/en-us/azure/azure-monitor/fundamentals/service-limits#logs-ingestion-api), [upstream exporter](https://github.com/observIQ/bindplane-otel-contrib/tree/exporter/azureloganalyticsexporter/v1.13.0/exporter/azureloganalyticsexporter), and [ASIM](https://learn.microsoft.com/en-us/azure/sentinel/normalization).
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Microsoft Sentinel` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `microsoftsentinel.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: microsoftsentinel-example
+      namespace: odigos-system
+    spec:
+      data:
+        MICROSOFT_SENTINEL_CLIENT_ID: <Client ID>
+        MICROSOFT_SENTINEL_ENDPOINT: <Logs Ingestion Endpoint>
+        MICROSOFT_SENTINEL_RULE_ID: <DCR Immutable ID>
+        MICROSOFT_SENTINEL_STREAM_NAME: <DCR Input Stream>
+        MICROSOFT_SENTINEL_TENANT_ID: <Tenant ID>
+      destinationName: microsoftsentinel
+      secretRef:
+        name: microsoftsentinel-secret
+      signals:
+      - LOGS
+      type: microsoftsentinel
+
+    ---
+
+    apiVersion: v1
+    data:
+      MICROSOFT_SENTINEL_CLIENT_SECRET: <Base64 Client Secret>
+    kind: Secret
+    metadata:
+      name: microsoftsentinel-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f microsoftsentinel.yaml
+    ```
+  </Step>
+</Steps>

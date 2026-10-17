@@ -51,6 +51,7 @@ var availableConfigers = []Configer{
 	&Loki{},
 	&Lumigo{},
 	&Middleware{},
+	&MicrosoftSentinel{},
 	&Mock{},
 	&NewRelic{},
 	&Nop{},
