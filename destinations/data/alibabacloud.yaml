@@ -2,7 +2,7 @@ apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
   type: alibabacloud
-  displayName: Alibaba Cloud
+  displayName: Alibaba Cloud Managed Service for OpenTelemetry
   category: managed
 spec:
   image: alibabacloud.svg
@@ -10,7 +10,7 @@ spec:
     traces:
       supported: true
     metrics:
-      supported: false
+      supported: true
     logs:
       supported: false
     profiles:
@@ -22,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: The format is `host:port`, host is required, port is required. Do not add the prefix `http://`.
+        tooltip: Copy the gRPC endpoint from the Integration Center, including its port. Use the public endpoint outside Alibaba Cloud. Enable TLS only if that endpoint supports it; gRPC can also use plaintext. This destination does not use OTLP/HTTP.
     - name: ALIBABA_TOKEN
       displayName: Token
       componentType: input
@@ -30,3 +30,26 @@ spec:
       componentProps:
         type: password
         required: true
+    - name: OTLP_GRPC_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: "Secure connection"
+      customReadDataLabels:
+        - condition: "true"
+          title: "TLS"
+          value: "Encrypted"
+        - condition: "false"
+          title: "TLS"
+          value: "Unencrypted"
+    - name: OTLP_GRPC_CA_PEM
+      displayName: Certificate Authority
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA"
+      renderCondition: ["OTLP_GRPC_TLS_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]

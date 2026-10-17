@@ -1,0 +1,159 @@
+---
+title: 'Alibaba Cloud Simple Log Service'
+description: 'Configuring the Alibaba Cloud Simple Log Service backend (Managed)'
+sidebarTitle: 'Alibaba Cloud Simple Log Service'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/alibabacloud.svg" alt="alibabacloudsls" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+Activate Simple Log Service, create a Project in your chosen region, and create a
+standard Logstore. Use the **regional service endpoint**, for example
+`https://eu-central-1.log.aliyuncs.com`; the SDK adds the project name to the host.
+A project-prefixed endpoint is also accepted; Odigos removes that prefix to avoid
+duplicating it. Use the public endpoint when
+Odigos runs outside Alibaba Cloud. HTTPS verifies the server with system roots.
+
+Create a RAM user with `log:PostLogStoreLogs` permission for this Project and
+Logstore, and put its AccessKey ID and AccessKey Secret in the destination Secret.
+Use long-lived RAM AccessKeys; this destination does not configure STS tokens or
+ECS role authentication.
+
+Enable full-text indexing, and optionally field indexes for `content`, `service`,
+`host`, `severityText`, `traceID`, and `spanID`, in the Logstore's **Search & Analysis**
+index settings. Indexing is required for searchable ingestion and applies to new
+data. Query `*` with a time range covering the log timestamps, then filter by
+`service` or a unique string in `content` to verify receipt.
+
+The pinned upstream `alibabacloud_logservice` exporter maps ordinary string and
+structured log bodies to `content`; resource attributes to `resource` (JSON),
+`service`, and `host`; log attributes to `attribute` (JSON); and scope metadata to
+`otlp.name` and `otlp.version`. Attribute values are stringified. Severity, trace
+and span IDs, and the original nanosecond timestamp are retained as fields. SLS's
+log time has second precision; missing timestamps use the collector's current
+time. Empty log bodies are skipped by the upstream exporter.
+
+Odigos splits incoming batches to at most 512 records with a one-second timeout.
+The SDK sends when reaching 512 KiB or 4,096 records (thresholds, not hard byte
+limits), with a two-second linger, a 100 MiB
+in-memory producer buffer per destination, LZ4 compression, and up to ten retries
+with backoff. These are upstream defaults and are not destination options.
+This buffer is volatile. The exporter acknowledges enqueueing before delivery;
+final service failures appear as `Send to LogService failed` warnings and are
+not returned to the collector as rejected records or OTLP partial success.
+The upstream exporter also does not flush its producer on collector shutdown.
+Use destination queries to confirm ingestion and monitor gateway warnings;
+collector acceptance does not prove persisted data. Oversized or invalid records
+can reject a batch, and retries can duplicate already accepted records.
+
+This named destination supports **logs only**. Use Alibaba Cloud Managed Service
+for OpenTelemetry for traces and metrics. Profiles are unsupported.
+
+See [Alibaba Cloud ingestion setup](https://www.alibabacloud.com/help/en/opentelemetry/user-guide/use-opentelemetry-sdks)
+and the [upstream SLS exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.159.0/exporter/alibabacloudlogserviceexporter).
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **SLS_ENDPOINT** `string` : SLS Endpoint. Use the regional SLS service endpoint. HTTPS is required and is added when the scheme is omitted. A project prefix is removed automatically. Do not include a URL path.
+  - This field is required
+  - Example: `https://eu-central-1.log.aliyuncs.com`
+- **SLS_PROJECT** `string` : Project.
+  - This field is required
+- **SLS_LOGSTORE** `string` : Logstore. Create a standard Logstore and enable indexing to search ingested logs.
+  - This field is required
+- **SLS_ACCESS_KEY_ID** `string` : AccessKey ID. Use a RAM user with log-write permissions for this project and Logstore.
+  - This field is required
+- **SLS_ACCESS_KEY_SECRET** `string` : AccessKey Secret.
+  - This field is required
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Alibaba Cloud Simple Log Service` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `alibabacloudsls.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: alibabacloudsls-example
+      namespace: odigos-system
+    spec:
+      data:
+        SLS_ENDPOINT: <SLS Endpoint>
+        SLS_LOGSTORE: <Logstore>
+        SLS_PROJECT: <Project>
+      destinationName: alibabacloudsls
+      secretRef:
+        name: alibabacloudsls-secret
+      signals:
+      - LOGS
+      type: alibabacloudsls
+
+    ---
+
+    apiVersion: v1
+    data:
+      SLS_ACCESS_KEY_ID: <Base64 AccessKey ID>
+      SLS_ACCESS_KEY_SECRET: <Base64 AccessKey Secret>
+    kind: Secret
+    metadata:
+      name: alibabacloudsls-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f alibabacloudsls.yaml
+    ```
+  </Step>
+</Steps>

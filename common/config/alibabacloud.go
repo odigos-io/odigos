@@ -24,7 +24,8 @@ func (j *AlibabaCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 	if !exists {
 		return nil, errorMissingKey(ALIBABA_ENDPOINT)
 	}
-	endpoint, err := parseOtlpGrpcUrl(endpoint, false)
+	tlsEnabled := config[genericOtlpTlsKey] == "true"
+	endpoint, err := parseOtlpGrpcUrl(endpoint, tlsEnabled)
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +36,19 @@ func (j *AlibabaCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 		"headers": GenericMap{
 			"Authentication": SecretEnvPlaceholder("ALIBABA_TOKEN", dest),
 		},
-		"tls": GenericMap{
-			"insecure": true,
-		},
+		"tls": buildGenericOtlpTlsConfig(dest, config, tlsEnabled, false),
 	}
 
 	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
+		cfg.Service.Pipelines[pipeName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+		pipelineNames = append(pipelineNames, pipeName)
+	}
+
+	if isMetricsEnabled(dest) {
+		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
