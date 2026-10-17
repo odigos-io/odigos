@@ -2,6 +2,7 @@ package actions
 
 import (
 	"embed"
+	"io/fs"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -29,11 +30,13 @@ func GetActionByType(actionType string) (Action, bool) {
 	return action, ok
 }
 
-func load(fs embed.FS) error {
+// fsys is an interface rather than the concrete embed.FS so the catalog can be loaded from a
+// synthetic filesystem in tests; Load always passes the embedded one.
+func load(fsys fs.ReadDirFS) error {
 	var acts []Action
 	var actsByTypeMap = make(map[string]Action)
 
-	files, err := fs.ReadDir("data")
+	files, err := fsys.ReadDir("data")
 	if err != nil {
 		return err
 	}
@@ -45,7 +48,7 @@ func load(fs embed.FS) error {
 			continue
 		}
 
-		bytesData, err := fs.ReadFile("data/" + file.Name())
+		bytesData, err := fs.ReadFile(fsys, "data/"+file.Name())
 		if err != nil {
 			return err
 		}
