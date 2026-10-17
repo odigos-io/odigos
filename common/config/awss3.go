@@ -67,9 +67,9 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 
 	marshaler, ok := dest.GetConfig()[s3Marshaller]
 	if !ok {
-		marshaler = "otlp_json"
+		marshaler = otlpJSONEncoding
 	}
-	if marshaler != "otlp_json" && marshaler != "otlp_proto" {
+	if marshaler != otlpJSONEncoding && marshaler != otlpProtoEncoding {
 		return nil, errors.New("invalid marshaller specified, gateway will not be configured for AWS S3")
 	}
 

@@ -1,0 +1,138 @@
+---
+title: 'Azure Event Hubs'
+description: 'Configuring the Azure Event Hubs backend (Managed)'
+sidebarTitle: 'Azure Event Hubs'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/azureeventhubs.svg" alt="azureeventhubs" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **AZURE_EVENT_HUBS_NAMESPACE** `string` : Namespace. Event Hubs namespace name, without the .servicebus.windows.net suffix. Requires Standard, Premium or Dedicated tier; Basic does not support Kafka.
+  - This field is required
+  - Example: `my-namespace`
+- **AZURE_EVENT_HUBS_CONNECTION_STRING** `string` : Connection String. Namespace-level SAS connection string with Send permission. Use a dedicated policy and omit EntityPath when exporting multiple signals.
+  - This field is required
+- **AZURE_EVENT_HUBS_TRACES_TOPIC** `string` : Traces Event Hub. Pre-create this event hub in Azure. Each signal requires a separate event hub for downstream OTLP decoding.
+  - This field is optional and defaults to `otlp_spans`
+- **AZURE_EVENT_HUBS_METRICS_TOPIC** `string` : Metrics Event Hub. Pre-create this event hub in Azure.
+  - This field is optional and defaults to `otlp_metrics`
+- **AZURE_EVENT_HUBS_LOGS_TOPIC** `string` : Logs Event Hub. Pre-create this event hub in Azure.
+  - This field is optional and defaults to `otlp_logs`
+- **AZURE_EVENT_HUBS_ENCODING** `string` : OTLP Encoding. Use the same encoding in the downstream Kafka receiver. OTLP JSON allows payload inspection in Azure Data Explorer.
+  - This field is optional and defaults to `otlp_proto`
+- **AZURE_EVENT_HUBS_COMPRESSION** `string` : Compression. Use none on Standard tier. Kafka gzip compression requires Premium or Dedicated tier.
+  - This field is optional and defaults to `none`
+
+<Note>
+  Event Hubs transports OTLP telemetry; it does not provide an APM query interface. Profiles are unsupported.
+
+  Create a namespace on Standard, Premium or Dedicated tier (Basic has no Kafka endpoint). Pre-create one event hub per enabled signal, using the configured names (defaults: `otlp_spans`, `otlp_metrics`, `otlp_logs`). Kafka topic auto-creation is disabled. Allow outbound TCP port 9093.
+
+  In Azure Portal, open the namespace's **Shared access policies**, create a dedicated policy with **Send** permission, and copy its namespace-level connection string to the secret field. Do not use a generated SAS token. A namespace-level connection string without `EntityPath` can publish to all three hubs. This integration supports SASL/PLAIN over verified TLS 1.2 or newer; OAuth and managed identity are not exposed.
+
+  Use a downstream OpenTelemetry Collector with the Kafka receiver, a separate pipeline per signal, the same topics and encoding, TLS enabled and SASL/PLAIN authentication. Give the consumer its own **Listen** policy. Set `initial_offset: earliest` for initial verification and a unique `group_id`; consume all partitions before retention expires. Forward decoded telemetry to a queryable backend such as Jaeger for traces, Prometheus for metrics and an OTLP-capable logs backend. Each record contains the signal-specific OTLP export request, preserving resource attributes, including multi-resource batches; arbitrary JSON and raw log encodings are not used.
+
+  The producer limits each uncompressed message to 1,000,000 bytes and buffers one record at a time to keep requests below Azure's 1,046,528-byte limit. This favors compatibility over throughput. Use `none` on Standard tier. Kafka `gzip` compression requires Premium or Dedicated tier; Standard rejects compressed records. Other codecs are unsupported. Oversized records fail permanently; reduce upstream batches or oversized individual records. An oversized OTLP batch can drop all its items, including small records. The OTLP receiver can acknowledge a queued request before this export failure occurs. Retriable failures use queued retries for up to 120 seconds. Delivery is at least once, so consumers must tolerate duplicates. Kafka acknowledgments confirm transport, not downstream processing, and do not contain OTLP per-item partial-success counts.
+
+  For UI payload inspection, select `otlp_json`, open the namespace's **Data Explorer**, select the event hub and consumer group, select **Oldest position**, and choose **View events**. Select a received event to inspect its OTLP body. Alternatively, configure an Azure Data Explorer Event Hubs data connection with JSON format, mapping the signal's `resourceSpans`, `resourceMetrics` or `resourceLogs` into a dynamic column. Portal message-count charts alone do not prove each signal arrived. Bound downstream fetch sizes and allow sufficient request timeout for the namespace's throughput capacity.
+
+  References: [Kafka connectivity and authentication](https://learn.microsoft.com/en-us/azure/event-hubs/azure-event-hubs-apache-kafka-overview), [client constraints](https://learn.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations), [quotas](https://learn.microsoft.com/en-us/azure/event-hubs/event-hubs-quotas), and [Kafka receiver configuration](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.159.0/receiver/kafkareceiver).
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Azure Event Hubs` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `azureeventhubs.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: azureeventhubs-example
+      namespace: odigos-system
+    spec:
+      data:
+        AZURE_EVENT_HUBS_NAMESPACE: <Namespace>
+        # Note: The commented fields below are optional.
+        # AZURE_EVENT_HUBS_TRACES_TOPIC: <Traces Event Hub (default: otlp_spans)>
+        # AZURE_EVENT_HUBS_METRICS_TOPIC: <Metrics Event Hub (default: otlp_metrics)>
+        # AZURE_EVENT_HUBS_LOGS_TOPIC: <Logs Event Hub (default: otlp_logs)>
+        # AZURE_EVENT_HUBS_ENCODING: <OTLP Encoding (default: otlp_proto) (options: [otlp_proto, otlp_json])>
+        # AZURE_EVENT_HUBS_COMPRESSION: <Compression (default: none) (options: [none, gzip])>
+      destinationName: azureeventhubs
+      secretRef:
+        name: azureeventhubs-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: azureeventhubs
+
+    ---
+
+    apiVersion: v1
+    data:
+      AZURE_EVENT_HUBS_CONNECTION_STRING: <Base64 Connection String>
+    kind: Secret
+    metadata:
+      name: azureeventhubs-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f azureeventhubs.yaml
+    ```
+  </Step>
+</Steps>
