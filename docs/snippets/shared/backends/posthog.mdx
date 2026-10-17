@@ -1,0 +1,113 @@
+---
+title: 'PostHog'
+description: 'Configuring the PostHog backend (Managed)'
+sidebarTitle: 'PostHog'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/posthog.svg" alt="posthog" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **POSTHOG_REGION** `string` : Region. Select the region of your PostHog project. Data is sent to https://us.i.posthog.com or https://eu.i.posthog.com.
+  - This field is required and defaults to `us`
+- **POSTHOG_PROJECT_TOKEN** `string` : Project Token. Use the project token from Project Settings, starting with phc_. Personal API keys (phx_) cannot be used for ingestion.
+  - This field is required
+  - Example: `phc_...`
+- **POSTHOG_COMPRESSION** `string` : Compression Type. Compression for OTLP/HTTP requests. Defaults to none.
+  - This field is optional and defaults to `none`
+
+<Warning>
+  Enable Logs and Application Metrics in your PostHog project before exporting. Application Metrics is in open alpha and its availability and ingestion requirements may change. Traces and profiles are not supported by this destination. Logs include OpenTelemetry severity, event timestamps, resource attributes and trace context; linking to product events or sessions requires application-specific IDs. PostHog normalizes severity text and assigns its own observed timestamp. Verify data in PostHog after setup: ingestion can return HTTP 200 even with an invalid project token.
+</Warning>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `PostHog` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `posthog.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: posthog-example
+      namespace: odigos-system
+    spec:
+      data:
+        POSTHOG_REGION: '<Region (default: us) (options: [us, eu])>'
+        # Note: The commented fields below are optional.
+        # POSTHOG_COMPRESSION: <Compression Type (default: none) (options: [none, gzip])>
+      destinationName: posthog
+      secretRef:
+        name: posthog-secret
+      signals:
+      - METRICS
+      - LOGS
+      type: posthog
+
+    ---
+
+    apiVersion: v1
+    data:
+      POSTHOG_PROJECT_TOKEN: <Base64 Project Token>
+    kind: Secret
+    metadata:
+      name: posthog-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f posthog.yaml
+    ```
+  </Step>
+</Steps>

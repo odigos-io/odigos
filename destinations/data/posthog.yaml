@@ -1,0 +1,51 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: posthog
+  displayName: PostHog
+  category: managed
+spec:
+  image: posthog.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: POSTHOG_REGION
+      displayName: Region
+      componentType: dropdown
+      initialValue: us
+      componentProps:
+        required: true
+        values:
+          - us
+          - eu
+        tooltip: "Select the region of your PostHog project. Data is sent to https://us.i.posthog.com or https://eu.i.posthog.com."
+    - name: POSTHOG_PROJECT_TOKEN
+      displayName: Project Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        placeholder: phc_...
+        tooltip: "Use the project token from Project Settings, starting with phc_. Personal API keys (phx_) cannot be used for ingestion."
+    - name: POSTHOG_COMPRESSION
+      displayName: Compression Type
+      componentType: dropdown
+      initialValue: none
+      componentProps:
+        required: false
+        values:
+          - none
+          - gzip
+        tooltip: "Compression for OTLP/HTTP requests. Defaults to none."
+  note:
+    type: Warning
+    content: |
+      Enable Logs and Application Metrics in your PostHog project before exporting. Application Metrics is in open alpha and its availability and ingestion requirements may change. Traces and profiles are not supported by this destination. Logs include OpenTelemetry severity, event timestamps, resource attributes and trace context; linking to product events or sessions requires application-specific IDs. PostHog normalizes severity text and assigns its own observed timestamp. Verify data in PostHog after setup: ingestion can return HTTP 200 even with an invalid project token.
