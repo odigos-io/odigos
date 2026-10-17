@@ -1,0 +1,109 @@
+---
+title: 'LaunchDarkly'
+description: 'Configuring the LaunchDarkly backend (Managed)'
+sidebarTitle: 'LaunchDarkly'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/launchdarkly.svg" alt="launchdarkly" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **LAUNCHDARKLY_SDK_KEY** `string` : LaunchDarkly SDK Key. The server-side SDK key for the LaunchDarkly environment receiving telemetry, available in Project settings > Environments.
+  - This field is required
+
+<Check>
+  Enable Observability in your LaunchDarkly account before adding this destination.
+  Use the server-side SDK key from the LaunchDarkly environment receiving telemetry.
+  Odigos sends OTLP over HTTPS to `https://otel.observability.app.launchdarkly.com` on port 443 and sets the `launchdarkly.project_id` resource attribute for you.
+  See [LaunchDarkly's OpenTelemetry configuration](https://launchdarkly.com/docs/sdk/features/opentelemetry-server-side#setting-resource-attributes).
+</Check>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `LaunchDarkly` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `launchdarkly.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: launchdarkly-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: launchdarkly
+      secretRef:
+        name: launchdarkly-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: launchdarkly
+
+    ---
+
+    apiVersion: v1
+    data:
+      LAUNCHDARKLY_SDK_KEY: <Base64 LaunchDarkly SDK Key>
+    kind: Secret
+    metadata:
+      name: launchdarkly-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f launchdarkly.yaml
+    ```
+  </Step>
+</Steps>
