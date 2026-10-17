@@ -1,0 +1,20 @@
+
+ traceid                          | spanname    | duration | service
+----------------------------------+-------------+----------+---------------------
+ 0732772b3ec3f1e58f8d295cd01b9427 | GET /orders |     1000 |  "checkout-service"
+ c5090ca0cb3d71dc593a876bf5d80955 | GET /orders |      875 | "inventory-service"
+ a7b4c2f06bde20a69a01e5ec2e5b7d01 | GET /orders |     1917 |  "checkout-service"
+ ceb5fbb604b3b517e2fc8eecc958f8f8 | GET /orders |     9500 | "inventory-service"
+ 15dd33722176585f433703c8e05a34d6 | GET /orders |    28208 |  "checkout-service"
+ 8700971f23653b54fad5fad0b7dcd583 | GET /orders |     1500 | "inventory-service"
+
+(6 rows)
+
+ count
+-------
+     6
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key

@@ -1,0 +1,133 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: cassandra
+  displayName: Apache Cassandra
+  category: self hosted
+spec:
+  image: cassandra.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+  - name: CASSANDRA_DSN
+    displayName: Host
+    componentType: input
+    componentProps:
+      required: true
+      tooltip: A single Cassandra hostname or IP address, without scheme or port.
+        This is a CQL storage integration, not an APM UI.
+      type: text
+  - name: CASSANDRA_PORT
+    displayName: Port
+    componentType: input
+    componentProps:
+      required: false
+      tooltip: Cassandra native transport port.
+      type: number
+    initialValue: '9042'
+  - name: CASSANDRA_USERNAME
+    displayName: Username
+    componentType: input
+    componentProps:
+      required: false
+      tooltip: Cassandra role with CREATE, ALTER and MODIFY permissions for the telemetry
+        schema.
+      type: text
+  - name: CASSANDRA_PASSWORD
+    displayName: Password
+    componentType: input
+    componentProps:
+      required: false
+      tooltip: Required when a username is supplied.
+      type: password
+    secret: true
+  - name: CASSANDRA_KEYSPACE
+    displayName: Keyspace
+    componentType: input
+    componentProps:
+      required: false
+      tooltip: Created automatically when absent. Use a lowercase unquoted CQL identifier.
+      type: text
+    initialValue: otel
+  - name: CASSANDRA_TRACE_TABLE
+    displayName: Traces table
+    componentType: input
+    componentProps:
+      required: false
+      tooltip: 'Use a new table: the Odigos schema stores duration as bigint and keys
+        spans by trace and span ID.'
+      type: text
+    initialValue: otel_spans
+    renderCondition:
+    - SIGNALS
+    - INCLUDES
+    - traces
+  - name: CASSANDRA_LOGS_TABLE
+    displayName: Logs table
+    componentType: input
+    componentProps:
+      required: false
+      tooltip: 'Use a new table: the Odigos schema uses deterministic log IDs to prevent
+        unrelated logs overwriting each other.'
+      type: text
+    initialValue: otel_logs
+    renderCondition:
+    - SIGNALS
+    - INCLUDES
+    - logs
+  - name: CASSANDRA_REPLICATION_FACTOR
+    displayName: Replication factor
+    componentType: input
+    componentProps:
+      required: false
+      tooltip: SimpleStrategy is used for new keyspaces. Pre-create a NetworkTopologyStrategy
+        keyspace for production; the exporter does not alter existing replication.
+      type: number
+    initialValue: '1'
+  - name: CASSANDRA_COMPRESSION
+    displayName: Compression
+    componentType: input
+    componentProps:
+      required: false
+      tooltip: 'Table compression: LZ4Compressor, SnappyCompressor, DeflateCompressor
+        or ZstdCompressor. Configure retention separately in Cassandra.'
+      type: text
+    initialValue: LZ4Compressor
+  - name: CASSANDRA_TLS_ENABLED
+    displayName: Enable TLS
+    componentType: checkbox
+    componentProps:
+      required: false
+      tooltip: Verify the Cassandra server certificate using the system roots or a
+        supplied CA.
+    initialValue: false
+  - name: CASSANDRA_USE_CUSTOM_CA
+    displayName: Use custom CA
+    componentType: checkbox
+    componentProps:
+      required: false
+      tooltip: Use a private CA certificate for server verification.
+    initialValue: false
+    renderCondition:
+    - CASSANDRA_TLS_ENABLED
+    - ==
+    - 'true'
+  - name: CASSANDRA_CA_PEM
+    displayName: CA certificate
+    componentType: textarea
+    componentProps:
+      required: false
+      tooltip: PEM encoded CA certificate. Client certificate authentication is not
+        exposed by this destination.
+    secret: true
+    renderCondition:
+    - CASSANDRA_USE_CUSTOM_CA
+    - ==
+    - 'true'

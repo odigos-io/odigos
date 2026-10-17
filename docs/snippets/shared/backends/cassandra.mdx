@@ -1,0 +1,186 @@
+---
+title: 'Apache Cassandra'
+description: 'Configuring the Apache Cassandra backend (Self-Hosted)'
+sidebarTitle: 'Apache Cassandra'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/cassandra.svg" alt="cassandra" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+
+
+Apache Cassandra is a CQL storage destination for **traces and logs**. Metrics and profiles are unsupported. Cassandra has no built-in APM or log search UI: operate your own database, queries, indexes and retention policies. This integration uses the alpha Cassandra exporter pinned to v0.159.0 with Odigos fixes for TLS, startup schema creation, write errors and record keys.
+
+### Prerequisites
+
+- Make a Cassandra native-transport endpoint reachable from the Odigos gateway. Supply one hostname or IP and its port (default 9042), rather than an HTTP URL, comma-separated host list or secure-connect bundle.
+- For production, pre-create the keyspace with `NetworkTopologyStrategy` and suitable replication for your datacenters. Automatic creation uses `SimpleStrategy` and the configured replication factor (default 1), which is intended for development. Existing keyspaces are not altered. Writes use `QUORUM`; sufficient replicas must be available.
+- The exporter runs `CREATE KEYSPACE`, `CREATE TYPE` and `CREATE TABLE IF NOT EXISTS` at startup. Grant the writer role the required CREATE permissions on the keyspace and types/tables, plus MODIFY on the tables. There is no switch to disable schema initialization. Apply least privilege according to your Cassandra version and schema ownership. SELECT permission is needed separately for users querying the data.
+- Use new table names if you previously used the unmodified upstream exporter. Its schema is incompatible: Odigos uses a composite trace/span key, 64-bit span durations, timestamp columns and deterministic log IDs. `IF NOT EXISTS` does not migrate existing tables.
+- Configure server-side client encryption and enable TLS in Odigos. Certificate verification uses system roots or your supplied PEM CA. Username/password authentication is supported; the password and custom CA use destination-scoped secrets. The form does not expose client certificates, IAM authentication or managed-provider secure-connect bundles. Managed Cassandra services are not validated by this integration.
+
+### Data model and limits
+
+Each resource and scope in an incoming batch is traversed. Resource and record attributes are stored as JSON strings in CQL maps; log bodies are JSON encoded. The schema stores timestamps at millisecond precision and span durations in nanoseconds as `bigint`.
+
+Traces are keyed by `(traceid, spanid)`. Logs are keyed by a deterministic hash of the record's timestamp, observed timestamp, trace/span IDs, flags, severity, body and resource/record attributes. Distinct uncorrelated records are preserved; exact duplicate records coalesce. Writes are individual CQL inserts, not atomic database batches. Odigos can batch incoming telemetry before export. Failures return to the collector's retry helper; retrying the whole batch upserts previously written rows. A successful exporter call means all its writes succeeded. OTLP receiver acknowledgements can precede storage when batching is enabled. A terminal failure may leave a successfully written prefix; no OTLP partial-success count is returned. Retries are bounded by the collector helper's default backoff window (5 minutes).
+
+The alpha upstream mapping does **not** store instrumentation scope metadata, schema URLs, span events/links, dropped counts, or log observed timestamps as queryable columns. Unsupported/non-JSON attribute values may be omitted. Traces must have valid trace/span IDs. This is a storage integration for this documented subset of telemetry, not a lossless OTLP archive.
+
+### Querying and retention
+
+Find a trace by its trace ID using CQL:
+
+```sql
+SELECT traceid, spanid, spanname, duration, resourceattributes
+FROM otel.otel_spans WHERE traceid = '<trace-id>';
+```
+
+Logs are keyed by their log ID. For a small development dataset you can inspect rows with:
+
+```sql
+SELECT timestamp, severitytext, body, resourceattributes FROM otel.otel_logs LIMIT 20;
+```
+
+Production log search by service, timestamp or severity requires a query-oriented data model or appropriate indexes maintained downstream. Do not use unrestricted scans as a production search strategy.
+
+There is no automatic retention. Set table TTLs and suitable compaction, and monitor disk usage, tombstones and partition sizes. For example, apply a seven-day default TTL before ingesting data:
+
+```sql
+ALTER TABLE otel.otel_spans WITH default_time_to_live = 604800;
+ALTER TABLE otel.otel_logs WITH default_time_to_live = 604800;
+```
+
+TTL applies to subsequent writes; it does not expire existing rows retroactively. The compression setting applies when creating tables and does not change existing tables. Supported algorithms are LZ4, Snappy, Deflate and Zstd (subject to the server version).
+
+See [Cassandra schema and replication](https://cassandra.apache.org/doc/latest/cassandra/developing/cql/ddl.html), [compression](https://cassandra.apache.org/doc/latest/cassandra/managing/operating/compression.html), and the [pinned upstream exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.159.0/exporter/cassandraexporter).
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **CASSANDRA_DSN** `string` : Host. A single Cassandra hostname or IP address, without scheme or port. This is a CQL storage integration, not an APM UI.
+  - This field is required
+- **CASSANDRA_PORT** `number` : Port. Cassandra native transport port.
+  - This field is optional and defaults to `9042`
+- **CASSANDRA_USERNAME** `string` : Username. Cassandra role with CREATE, ALTER and MODIFY permissions for the telemetry schema.
+  - This field is optional
+- **CASSANDRA_PASSWORD** `string` : Password. Required when a username is supplied.
+  - This field is optional
+- **CASSANDRA_KEYSPACE** `string` : Keyspace. Created automatically when absent. Use a lowercase unquoted CQL identifier.
+  - This field is optional and defaults to `otel`
+- **CASSANDRA_TRACE_TABLE** `string` : Traces table. Use a new table: the Odigos schema stores duration as bigint and keys spans by trace and span ID.
+  - This field is optional and defaults to `otel_spans`
+- **CASSANDRA_LOGS_TABLE** `string` : Logs table. Use a new table: the Odigos schema uses deterministic log IDs to prevent unrelated logs overwriting each other.
+  - This field is optional and defaults to `otel_logs`
+- **CASSANDRA_REPLICATION_FACTOR** `number` : Replication factor. SimpleStrategy is used for new keyspaces. Pre-create a NetworkTopologyStrategy keyspace for production; the exporter does not alter existing replication.
+  - This field is optional and defaults to `1`
+- **CASSANDRA_COMPRESSION** `string` : Compression. Table compression: LZ4Compressor, SnappyCompressor, DeflateCompressor or ZstdCompressor. Configure retention separately in Cassandra.
+  - This field is optional and defaults to `LZ4Compressor`
+- **CASSANDRA_TLS_ENABLED** `boolean` : Enable TLS. Verify the Cassandra server certificate using the system roots or a supplied CA.
+  - This field is optional and defaults to `False`
+- **CASSANDRA_USE_CUSTOM_CA** `boolean` : Use custom CA. Use a private CA certificate for server verification.
+  - This field is optional and defaults to `False`
+- **CASSANDRA_CA_PEM** `string` : CA certificate. PEM encoded CA certificate. Client certificate authentication is not exposed by this destination.
+  - This field is optional
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Apache Cassandra` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `cassandra.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: cassandra-example
+      namespace: odigos-system
+    spec:
+      data:
+        CASSANDRA_DSN: <Host>
+        # Note: The commented fields below are optional.
+        # CASSANDRA_PORT: <Port (default: 9042)>
+        # CASSANDRA_USERNAME: <Username>
+        # CASSANDRA_KEYSPACE: <Keyspace (default: otel)>
+        # CASSANDRA_TRACE_TABLE: <Traces table (default: otel_spans)>
+        # CASSANDRA_LOGS_TABLE: <Logs table (default: otel_logs)>
+        # CASSANDRA_REPLICATION_FACTOR: <Replication factor (default: 1)>
+        # CASSANDRA_COMPRESSION: <Compression (default: LZ4Compressor)>
+        # CASSANDRA_TLS_ENABLED: <Enable TLS>
+        # CASSANDRA_USE_CUSTOM_CA: <Use custom CA>
+      destinationName: cassandra
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: cassandra-secret
+      signals:
+      - TRACES
+      - LOGS
+      type: cassandra
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   CASSANDRA_CA_PEM: <Base64 CA certificate>
+    #   CASSANDRA_PASSWORD: <Base64 Password>
+    # kind: Secret
+    # metadata:
+    #   name: cassandra-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f cassandra.yaml
+    ```
+  </Step>
+</Steps>

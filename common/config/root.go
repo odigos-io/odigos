@@ -22,6 +22,7 @@ var availableConfigers = []Configer{
 	&Checkly{},
 	&Chronosphere{},
 	&Clickhouse{},
+	&Cassandra{},
 	&Coralogix{},
 	&Dash0{},
 	&Datadog{},

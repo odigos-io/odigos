@@ -999,8 +999,6 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexpl
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.159.0/go.mod h1:UT4913GdSXAW1T6Cm0p9TBOBG53Zrdm9zCsytJFFymM=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.159.0 h1:kmcgWFqbRGnUmN4cbX+c+vfTmbfWWXGcHW/jMETTZNY=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.159.0/go.mod h1:RgVydiWmBdTkiCvbgCSDYeUkvmY9TvUXD+O2P5i7UfQ=
-github.com/open-telemetry/opentelemetry-collector-contrib/exporter/cassandraexporter v0.159.0 h1:838O+n63dfr6EVJx/KCtdDGCh6X/f8GKc/Ue+mCGQkI=
-github.com/open-telemetry/opentelemetry-collector-contrib/exporter/cassandraexporter v0.159.0/go.mod h1:DRMw3ADPlmt7u3c555GpBUwiW6Lz2TJTu8lc1Pz5ePQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.159.0 h1:HwsmDcdQ+CLBFWxYWkJBFJPamETM13rT+O+L8Vp8u6s=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.159.0/go.mod h1:My4cszl8UlC1Srv9VT1tTiAOzvt3CL2cyc1wJamsoD8=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/coralogixexporter v0.159.0 h1:tg9Z6uFK8NXXAlsUmA88AemXoMlvR9pYcIbMIURlhi8=
