@@ -511,6 +511,20 @@ def create_mdx(mdx_path, yaml_content):
     with open(mdx_path, 'w') as mdx_file:
         mdx_file.write(mdx_content)
 
+    # New destinations need product pages for the generated navigation links.
+    docs_dir = os.path.dirname(os.path.abspath(__file__))
+    backend_file = os.path.basename(mdx_path)
+    frontmatter = mdx_content.split('---', 2)[1]
+    for product in ('oss', 'enterprise'):
+        product_path = os.path.join(docs_dir, product, 'backends', backend_file)
+        if not os.path.exists(product_path):
+            with open(product_path, 'w') as product_file:
+                product_file.write(
+                    f'---{frontmatter}---\n\n'
+                    f'import Content from "/snippets/shared/backends/{backend_file}";\n\n'
+                    '<Content />\n'
+                )
+
 
 # Root
 

@@ -28,6 +28,7 @@ const (
 	GCSDestinationType                    DestinationType = "gcs"
 	GenericOTLPDestinationType            DestinationType = "otlp"
 	GoogleCloudDestinationType            DestinationType = "googlecloud"
+	GoogleSecOpsDestinationType           DestinationType = "googlesecops"
 	GoogleCloudOTLPDestinationType        DestinationType = "googlecloudotlp"
 	GrafanaCloudLokiDestinationType       DestinationType = "grafanacloudloki"
 	GrafanaCloudPrometheusDestinationType DestinationType = "grafanacloudprometheus"

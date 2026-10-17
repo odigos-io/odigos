@@ -964,6 +964,14 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
+github.com/observiq/bindplane-otel-contrib/exporter/chronicleexporter v1.13.0 h1:MhltEb5wEya7o+iE/I3vEqcrErIqOyQsYCSW2FfdRCc=
+github.com/observiq/bindplane-otel-contrib/exporter/chronicleexporter v1.13.0/go.mod h1:/SJa8T9pRaP9+0urqN0M28/GdUwwFdieubCdNOMUQjg=
+github.com/observiq/bindplane-otel-contrib/internal/testutils v1.13.0 h1:ZsY1s0RWLPprT7J9l2u8p/+4Pz3NxElVSGHGpjuoDoI=
+github.com/observiq/bindplane-otel-contrib/internal/testutils v1.13.0/go.mod h1:86lmxQ0+sUIq4j62lFVGdTBuJBxStb4MqfSivWLtlvc=
+github.com/observiq/bindplane-otel-contrib/pkg/expr v1.13.0 h1:XsEQ6jEqvCrt0E+K56in+RgwMWT/EcomPRRjrCQNUAY=
+github.com/observiq/bindplane-otel-contrib/pkg/expr v1.13.0/go.mod h1:0x/lck7LAhQgoOIoGxoaTyitFOl1xhwe6O/UnmyGDNY=
+github.com/observiq/bindplane-otel-contrib/pkg/osinfo v1.13.0 h1:tkj+x4iucDbN9Xx4ZKBWc0zPJmoUP0PMvsF/pNRXbL0=
+github.com/observiq/bindplane-otel-contrib/pkg/osinfo v1.13.0/go.mod h1:FE7+72uskK4ULGEhc5Qq6oOuTgMmGpxxLngIVfKpzcM=
 github.com/odigos-io/go-rtml v0.0.1 h1:5w21AOXZGq/6UhECv5B9RCrW7R8PzA8YgwdxqtajD0w=
 github.com/odigos-io/go-rtml v0.0.1/go.mod h1:LqKwlorUKSNj1WQ0p/5e9+aOkirEiHQx+FOxdhku/cs=
 github.com/oklog/ulid/v2 v2.1.1 h1:suPZ4ARWLOJLegGFiZZ1dFAkqzhMjL3J1TzI+5wHz8s=
@@ -1345,8 +1353,8 @@ github.com/shirou/gopsutil/v3 v3.24.5 h1:i0t8kL+kQTvpAYToeuiVk3TgDeKOFioZO3Ztz/i
 github.com/shirou/gopsutil/v3 v3.24.5/go.mod h1:bsoOS1aStSs9ErQ1WWfxllSeS1K5D+U30r2NfcubMVk=
 github.com/shirou/gopsutil/v4 v4.26.7 h1:IXzpHz/dkMRYAhKkOXr1HB6SuzWU3eoyyeWe7g3bNZc=
 github.com/shirou/gopsutil/v4 v4.26.7/go.mod h1:5O9FjBiXoTDFatIWjZZosqj4pV0DRtLx598xGbBehzM=
-github.com/shoenig/go-m1cpu v0.1.6 h1:nxdKQNcEB6vzgA2E2bvzKIYRuNj7XNJ4S/aRSwKzFtM=
-github.com/shoenig/go-m1cpu v0.1.6/go.mod h1:1JJMcUBvfNwpq05QDQVAnx3gUHr9IYF7GNg9SUEw2VQ=
+github.com/shoenig/go-m1cpu v0.1.7 h1:C76Yd0ObKR82W4vhfjZiCp0HxcSZ8Nqd84v+HZ0qyI0=
+github.com/shoenig/go-m1cpu v0.1.7/go.mod h1:KkDOw6m3ZJQAPHbrzkZki4hnx+pDRR1Lo+ldA56wD5w=
 github.com/shoenig/test v1.13.2 h1:SaGxHxg7xkRuKuNtuFmHf0LgNGaAgcBT7HN4WHCKfqU=
 github.com/shoenig/test v1.13.2/go.mod h1:MKmiRyEeuFl8y9PCoThaRDgYQZeWBhRQlH99poXz5LI=
 github.com/shopspring/decimal v1.4.0 h1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp81k=
@@ -1470,8 +1478,8 @@ github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5t
 github.com/yusufpapurcu/wmi v1.2.2/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
 github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo0=
 github.com/yusufpapurcu/wmi v1.2.4/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
-github.com/zeebo/assert v1.3.0 h1:g7C04CbJuIDKNPFHmsk4hwZDO5O+kntRxzaUoNXj+IQ=
-github.com/zeebo/assert v1.3.0/go.mod h1:Pq9JiuJQpG8JLJdtkwrJESF0Foym2/D9XMU5ciN/wJ0=
+github.com/zeebo/assert v1.3.1 h1:vukIABvugfNMZMQO1ABsyQDJDTVQbn+LWSMy1ol1h6A=
+github.com/zeebo/assert v1.3.1/go.mod h1:Pq9JiuJQpG8JLJdtkwrJESF0Foym2/D9XMU5ciN/wJ0=
 github.com/zeebo/xxh3 v1.1.0 h1:s7DLGDK45Dyfg7++yxI0khrfwq9661w9EN78eP/UZVs=
 github.com/zeebo/xxh3 v1.1.0/go.mod h1:IisAie1LELR4xhVinxWS5+zf1lA4p0MW4T+w+W07F5s=
 go.elastic.co/fastjson v1.5.1 h1:zeh1xHrFH79aQ6Xsw7YxixvnOdAl3OSv0xch/jRDzko=
