@@ -65,6 +65,7 @@ const (
 	SplunkDestinationType                 DestinationType = "splunk"
 	SplunkOTLPDestinationType             DestinationType = "splunkotlp"
 	SumoLogicDestinationType              DestinationType = "sumologic"
+	SyslogDestinationType                 DestinationType = "syslog"
 	TelemetryHubDestinationType           DestinationType = "telemetryhub"
 	TempoDestinationType                  DestinationType = "tempo"
 	TingyunDestinationType                DestinationType = "tingyun"

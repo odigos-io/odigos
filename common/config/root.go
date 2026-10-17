@@ -70,6 +70,7 @@ var availableConfigers = []Configer{
 	&Splunk{},
 	&SplunkOTLP{},
 	&SumoLogic{},
+	&Syslog{},
 	&TelemetryHub{},
 	&Tempo{},
 	&Tingyun{},

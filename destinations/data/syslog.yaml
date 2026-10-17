@@ -1,0 +1,133 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: syslog
+  displayName: Generic Syslog
+  category: self hosted
+spec:
+  image: syslog.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: false
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+  - name: SYSLOG_ENDPOINT
+    displayName: Syslog Host
+    componentType: input
+    componentProps:
+      required: true
+      placeholder: syslog.example.com
+      tooltip: Hostname or IP address only; configure the port separately.
+  - name: SYSLOG_PORT
+    displayName: Port
+    componentType: input
+    componentProps:
+      type: number
+      required: false
+      tooltip: Defaults to 6514 for TLS and 514 for plaintext TCP/UDP.
+  - name: SYSLOG_NETWORK
+    displayName: Transport
+    componentType: dropdown
+    componentProps:
+      values:
+      - tcp
+      - udp
+      required: true
+      tooltip: UDP is unencrypted and has no delivery guarantee. Disable TLS to use
+        UDP.
+    initialValue: tcp
+  - name: SYSLOG_PROTOCOL
+    displayName: Syslog Format
+    componentType: dropdown
+    componentProps:
+      values:
+      - rfc5424
+      - rfc3164
+      required: true
+    initialValue: rfc5424
+  - name: SYSLOG_OCTET_COUNTING
+    displayName: RFC6587 Octet Counting
+    componentType: dropdown
+    componentProps:
+      tooltip: Auto enables octet counting for TCP/RFC5424 and newline framing otherwise.
+        True requires TCP/RFC5424.
+      values:
+      - auto
+      - 'true'
+      - 'false'
+    initialValue: auto
+  - name: SYSLOG_FACILITY
+    displayName: Facility
+    componentType: input
+    componentProps:
+      type: number
+      required: false
+      tooltip: Syslog facility number from 0 to 23; default 16 (local0).
+    initialValue: 16
+  - name: SYSLOG_MAX_MESSAGE_BYTES
+    displayName: Maximum Message Bytes
+    componentType: input
+    componentProps:
+      type: number
+      required: false
+      tooltip: UTF-8 safe body truncation. RFC5424 defaults to 8192 (maximum 64000);
+        RFC3164 defaults to and permits at most 480. Header bytes are additional.
+  - name: SYSLOG_TLS_ENABLED
+    displayName: Enable TLS
+    componentType: checkbox
+    componentProps:
+      tooltip: Enabled by default. Requires TCP. Server certificate and hostname are
+        verified.
+    initialValue: true
+  - name: SYSLOG_CA_PEM
+    displayName: CA Certificate
+    componentType: textarea
+    componentProps:
+      type: text
+      required: false
+      tooltip: PEM CA for server verification; empty uses system roots.
+    renderCondition:
+    - SYSLOG_TLS_ENABLED
+    - ==
+    - 'true'
+    hideFromReadData:
+    - 'true'
+  - name: SYSLOG_MTLS_ENABLED
+    displayName: Enable Mutual TLS
+    componentType: checkbox
+    componentProps:
+      tooltip: Authenticate with a client certificate. Requires TCP and enables TLS.
+    initialValue: false
+  - name: SYSLOG_CLIENT_CERT_PEM
+    displayName: Client Certificate
+    componentType: textarea
+    componentProps:
+      type: text
+      required: true
+      tooltip: PEM client credential stored in a destination-scoped Secret.
+    secret: true
+    renderCondition:
+    - SYSLOG_MTLS_ENABLED
+    - ==
+    - 'true'
+    hideFromReadData:
+    - 'true'
+  - name: SYSLOG_CLIENT_KEY_PEM
+    displayName: Client Private Key
+    componentType: textarea
+    componentProps:
+      type: password
+      required: true
+      tooltip: PEM client credential stored in a destination-scoped Secret.
+    secret: true
+    renderCondition:
+    - SYSLOG_MTLS_ENABLED
+    - ==
+    - 'true'
+    hideFromReadData:
+    - 'true'
