@@ -13,6 +13,7 @@ import (
 
 type GCSWriter struct {
 	gcsClient *storage.Client
+	logger    *zap.Logger
 }
 
 // generate the gcs time key based on partition configuration
@@ -48,7 +49,7 @@ func (gcsWriter *GCSWriter) WriteBuffer(ctx context.Context, buf []byte, config 
 		config.GCSUploader.GCSPrefix, config.GCSUploader.GCSPartition,
 		config.GCSUploader.FilePrefix, metadata, format)
 
-	config.logger.Info("Writing to GCS", zap.String("key", key))
+	gcsWriter.logger.Debug("Writing to GCS", zap.String("key", key))
 
 	// Write to GCS
 	bucket := gcsWriter.gcsClient.Bucket(config.GCSUploader.GCSBucket)

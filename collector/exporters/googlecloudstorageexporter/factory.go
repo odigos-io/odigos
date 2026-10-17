@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter/internal/metadata"
+	"go.opentelemetry.io/collector/config/configoptional"
+	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/exporter"
 
 	"go.opentelemetry.io/collector/component"
@@ -26,7 +28,9 @@ func createDefaultConfig() component.Config {
 		},
 
 		MarshalerName: "otlp_json",
-		logger:        nil,
+		TimeoutConfig: exporterhelper.NewDefaultTimeoutConfig(),
+		RetryConfig:   configretry.NewDefaultBackOffConfig(),
+		QueueConfig:   configoptional.Some(exporterhelper.NewDefaultQueueConfig()),
 	}
 }
 
@@ -45,7 +49,12 @@ func createLogsExporter(
 		ctx,
 		set,
 		cfg,
-		gcsExporter.ConsumeLogs)
+		gcsExporter.ConsumeLogs,
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithStart(gcsExporter.Start),
+		exporterhelper.WithShutdown(gcsExporter.Shutdown))
 }
 
 func createTracesExporter(
@@ -64,8 +73,9 @@ func createTracesExporter(
 		set,
 		cfg,
 		gcsExporter.ConsumeTraces,
-		exporterhelper.WithStart(func(ctx context.Context, host component.Host) error {
-			pCfg.logger.Info("Starting GCS exporter")
-			return nil
-		}))
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithStart(gcsExporter.Start),
+		exporterhelper.WithShutdown(gcsExporter.Shutdown))
 }

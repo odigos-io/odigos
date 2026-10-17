@@ -10,6 +10,7 @@ import (
 )
 
 var availableK8sConfigers = map[common.DestinationType]K8sConfiger{
+	common.GCSDestinationType:             &GoogleCloud{},
 	common.GoogleCloudDestinationType:     &GoogleCloud{},
 	common.GoogleCloudOTLPDestinationType: &GoogleCloud{},
 	common.ClickhouseDestinationType:      &Clickhouse{},

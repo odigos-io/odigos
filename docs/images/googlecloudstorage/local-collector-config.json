@@ -1,0 +1,88 @@
+{
+  "receivers": {
+    "otlp": {
+      "protocols": {
+        "http": {
+          "endpoint": "127.0.0.1:15438"
+        }
+      }
+    }
+  },
+  "exporters": {
+    "googlecloudstorage/otlp_json": {
+      "gcs": {
+        "bucket": "core36-gcs-e2e",
+        "partition": "minute",
+        "prefix": "core36/otlp_json"
+      },
+      "marshaler_name": "otlp_json"
+    },
+    "googlecloudstorage/otlp_proto": {
+      "gcs": {
+        "bucket": "core36-gcs-e2e",
+        "partition": "minute",
+        "prefix": "core36/otlp_proto"
+      },
+      "marshaler_name": "otlp_proto"
+    }
+  },
+  "processors": {
+    "batch": {
+      "send_batch_max_size": 5,
+      "send_batch_size": 5,
+      "timeout": "1s"
+    }
+  },
+  "service": {
+    "pipelines": {
+      "logs/gcs-otlp_json": {
+        "receivers": [
+          "otlp"
+        ],
+        "processors": [
+          "batch"
+        ],
+        "exporters": [
+          "googlecloudstorage/otlp_json"
+        ]
+      },
+      "logs/gcs-otlp_proto": {
+        "receivers": [
+          "otlp"
+        ],
+        "processors": [
+          "batch"
+        ],
+        "exporters": [
+          "googlecloudstorage/otlp_proto"
+        ]
+      },
+      "traces/gcs-otlp_json": {
+        "receivers": [
+          "otlp"
+        ],
+        "processors": [
+          "batch"
+        ],
+        "exporters": [
+          "googlecloudstorage/otlp_json"
+        ]
+      },
+      "traces/gcs-otlp_proto": {
+        "receivers": [
+          "otlp"
+        ],
+        "processors": [
+          "batch"
+        ],
+        "exporters": [
+          "googlecloudstorage/otlp_proto"
+        ]
+      }
+    },
+    "telemetry": {
+      "metrics": {},
+      "logs": {}
+    }
+  }
+}
