@@ -446,6 +446,17 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
+	// interrogation.enabled is deliberately not merged: turning it on renders the insights and
+	// LiteLLM workloads, which only helm can do at install time.
+	// The model is replaced as a unit so an overlay can clear fields such as apiBase when
+	// switching providers.
+	if addtionalConfig.Interrogation != nil && addtionalConfig.Interrogation.Model != nil && addtionalConfig.Interrogation.Model.Provider != "" {
+		if baseConfig.Interrogation == nil {
+			baseConfig.Interrogation = &common.InterrogationConfiguration{}
+		}
+		baseConfig.Interrogation.Model = addtionalConfig.Interrogation.Model.DeepCopy()
+	}
+
 	// Future fields can be added here following the same pattern:
 	// - ignoredNamespaces, ignoredContainers
 	// - profiles

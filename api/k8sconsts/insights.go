@@ -24,6 +24,15 @@ const (
 	// OdigosInsightsClickHousePasswordEnv is the gateway env var that holds the
 	// bundled ClickHouse password (distinct from destination CLICKHOUSE_PASSWORD).
 	OdigosInsightsClickHousePasswordEnv = "ODIGOS_INSIGHTS_CLICKHOUSE_PASSWORD"
+
+	// Bundled LiteLLM proxy for interrogation. The Deployment, Service, Secret and
+	// ConfigMap all share this name.
+	OdigosLiteLLMName                    = "odigos-litellm"
+	OdigosLiteLLMConfigFileName          = "config.yaml"
+	OdigosLiteLLMUpstreamApiKeySecretKey = "upstream-api-key"
+	// OdigosLiteLLMConfigHashAnnotation is set on the LiteLLM pod template so the
+	// proxy restarts when its rendered config or upstream API key changes.
+	OdigosLiteLLMConfigHashAnnotation = "odigos.io/litellm-config-hash"
 )
 
 // InsightsHTTPEndpoint returns the base URL of the insights HTTP API in the

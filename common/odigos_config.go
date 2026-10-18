@@ -646,6 +646,25 @@ type TransactionIdentityConfiguration struct {
 // I/O correlations.
 type InterrogationConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	// Model selects the LLM that the bundled LiteLLM proxy routes interrogation
+	// requests to. The upstream API key is kept in the odigos-litellm Secret.
+	Model *InterrogationModelConfiguration `json:"model,omitempty" yaml:"model,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// InterrogationModelConfiguration is the upstream model served behind the
+// LiteLLM "interrogation" alias.
+type InterrogationModelConfiguration struct {
+	// Provider is the LiteLLM provider prefix, such as openai, anthropic,
+	// gemini or hosted_vllm.
+	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
+
+	// Name is the provider's model name, such as gpt-4o-mini.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+
+	// ApiBase is an optional OpenAI-compatible base URL for the provider.
+	ApiBase string `json:"apiBase,omitempty" yaml:"apiBase,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

@@ -201,3 +201,58 @@ func TestMergeConfigs_NoCardinalityControlOverlayLeavesBaseUntouched(t *testing.
 		t.Errorf("CardinalityControl = %+v, want nil when the overlay sets none", base.CardinalityControl)
 	}
 }
+
+func interrogationModelConfig(enabled *bool, model *common.InterrogationModelConfiguration) *common.OdigosConfiguration {
+	return &common.OdigosConfiguration{
+		Interrogation: &common.InterrogationConfiguration{Enabled: enabled, Model: model},
+	}
+}
+
+// The interrogation model is editable from the UI settings page, which writes it into
+// odigos-local-ui-config. The overlay model replaces the helm one as a unit, so fields it
+// leaves empty (e.g. apiBase when moving off a self-hosted endpoint) are cleared.
+func TestMergeConfigs_InterrogationModelOverlay(t *testing.T) {
+	base := interrogationModelConfig(boolPtr(true), &common.InterrogationModelConfiguration{
+		Provider: "openai",
+		Name:     "gpt-4o-mini",
+		ApiBase:  "https://llm.example.com/v1",
+	})
+	overlay := interrogationModelConfig(nil, &common.InterrogationModelConfiguration{
+		Provider: "anthropic",
+		Name:     "claude-sonnet-4-5",
+	})
+
+	mergeConfigs(base, overlay)
+
+	model := base.Interrogation.Model
+	if model == nil {
+		t.Fatalf("interrogation.model was dropped by mergeConfigs")
+	}
+	if model.Provider != "anthropic" {
+		t.Errorf("Provider = %q, want \"anthropic\" (overlay override)", model.Provider)
+	}
+	if model.Name != "claude-sonnet-4-5" {
+		t.Errorf("Name = %q, want \"claude-sonnet-4-5\" (overlay override)", model.Name)
+	}
+	if model.ApiBase != "" {
+		t.Errorf("ApiBase = %q, want it cleared by the overlay model", model.ApiBase)
+	}
+	if !base.InterrogationEnabled() {
+		t.Errorf("Enabled was lost by the merge, want the helm value true to survive")
+	}
+}
+
+// interrogation.enabled renders the insights and LiteLLM workloads, so only helm may turn it on.
+func TestMergeConfigs_InterrogationEnabledIsHelmOnly(t *testing.T) {
+	base := &common.OdigosConfiguration{}
+	overlay := interrogationModelConfig(boolPtr(true), &common.InterrogationModelConfiguration{Provider: "gemini"})
+
+	mergeConfigs(base, overlay)
+
+	if base.InterrogationEnabled() {
+		t.Errorf("overlay must not enable interrogation")
+	}
+	if base.Interrogation == nil || base.Interrogation.Model == nil || base.Interrogation.Model.Provider != "gemini" {
+		t.Errorf("overlay model not applied to empty base: %+v", base.Interrogation)
+	}
+}
