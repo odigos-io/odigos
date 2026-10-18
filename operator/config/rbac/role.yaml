@@ -326,6 +326,7 @@ rules:
   - odigos.io
   resources:
   - instrumentationrules
+  - odigoscloudconnectors
   - recommendations
   - sampling
   verbs:

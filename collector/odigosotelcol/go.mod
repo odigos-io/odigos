@@ -6,7 +6,6 @@ go 1.26.2
 
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.159.0
-	github.com/odigos-io/odigos/collector/connectors/serviceioconnector v0.159.0
 	github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension v0.159.0
 	github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.159.0
 	github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.159.0
@@ -17,6 +16,7 @@ require (
 	github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.159.0
 	github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.159.0
 	github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.159.0
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.159.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.159.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.159.0
@@ -489,7 +489,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/odigos-io/go-rtml v0.0.1 // indirect
-	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.159.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/basicauth v0.159.0 // indirect
@@ -787,8 +786,6 @@ replace github.com/odigos-io/odigos/collector/processors/odigostracefilterproces
 replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
 
 replace github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
-
-replace github.com/odigos-io/odigos/collector/connectors/serviceioconnector => ../connectors/serviceioconnector
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
 

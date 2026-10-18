@@ -167,6 +167,11 @@ type OdigosCloudConnectorSpec struct {
 	// +kubebuilder:validation:Optional
 	ConnectorType string `json:"connectorType,omitempty"`
 
+	// BootstrapRegion selects the initial provider API region for identity and region enumeration.
+	// Discovery scope is independent of this setting. Empty uses the provider default.
+	// +kubebuilder:validation:Optional
+	BootstrapRegion string `json:"bootstrapRegion,omitempty"`
+
 	// DisplayName is the human-friendly connector name shown in the UI.
 	// +kubebuilder:validation:Optional
 	DisplayName string `json:"displayName,omitempty"`

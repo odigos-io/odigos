@@ -3,6 +3,7 @@ package graph
 import (
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	fecommon "github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/frontend/services/insights"
@@ -15,11 +16,9 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	MetricsConsumer             *collectormetrics.OdigosMetricsConsumer
-	Logger                      logr.Logger
-	PromAPI                     v1.API
-	CorrelationsPromAPI         v1.API
-	CorrelationsMetricsStoreURL string
+	MetricsConsumer *collectormetrics.OdigosMetricsConsumer
+	Logger          logr.Logger
+	PromAPI         v1.API
 	// K8sCacheClient is the controller-runtime client that reads from the informer cache (fast, no API round-trip).
 	// Use this in resolvers for read-only access to cluster state.
 	K8sCacheClient client.Client
@@ -32,4 +31,8 @@ type Resolver struct {
 	// DistrosProvider resolves the default otel distro per language for the
 	// running tier — the same provider the instrumentor uses.
 	DistrosProvider *distros.Provider
+	// UrlTemplatizationLiveTrafficLearning resolves
+	// K8sWorkloadContainerUrlTemplatization.liveTrafficLearning.
+	// Nil in OSS; enterprise UI sets this after Bootstrap.
+	UrlTemplatizationLiveTrafficLearning services.UrlTemplatizationLiveTrafficLearning
 }

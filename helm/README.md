@@ -49,6 +49,31 @@ Make sure to replace `$CUSTOM_DOCKER_REGISTRY` with the URL of your Docker regis
 
 For more details on configuring a custom Docker registry, refer to the [Docker Registry Setup Documentation](https://docs.odigos.io/setup/docker-registry).
 
+### Upgrade an existing Interrogation proxy
+
+Existing installations may have a Helm-managed `odigos-litellm` ConfigMap. Upgrade in two phases with compatible Instrumentor and Insights images so the new controller can take over that ConfigMap without interrupting the proxy:
+
+```sh
+export KUBE_CONTEXT=<your-kubernetes-context>
+helm --kube-context "$KUBE_CONTEXT" upgrade odigos ./helm/odigos \
+  --namespace odigos-system --reuse-values \
+  --set insights.interrogation.litellm.bootstrapConfig=true
+kubectl --context "$KUBE_CONTEXT" -n odigos-system get configmap odigos-interrogation-status \
+  -o jsonpath='{.data.proxy}'
+kubectl --context "$KUBE_CONTEXT" -n odigos-system get deployment odigos-litellm \
+  -o jsonpath='{.spec.template.metadata.annotations.odigos\.io/ai-settings-revision}'
+```
+
+Wait for the proxy status to report `READY` and verify its revision matches the `odigos.io/ai-settings-revision` annotation on the LiteLLM Deployment. Then remove the temporary Helm template; the keep annotation prevents Helm from deleting the ConfigMap while the Instrumentor remains its owner:
+
+```sh
+helm --kube-context "$KUBE_CONTEXT" upgrade odigos ./helm/odigos \
+  --namespace odigos-system --reuse-values \
+  --set insights.interrogation.litellm.bootstrapConfig=false
+```
+
+If the first upgrade must be rolled back, use `helm --kube-context "$KUBE_CONTEXT" rollback odigos <previous-revision> --namespace odigos-system`. The previous chart resumes rendering the proxy ConfigMap and using the Helm-managed upstream credential.
+
 ### Uninstall Odigos
 
 ```sh

@@ -49,9 +49,8 @@ spec:
             - name: LITELLM_UPSTREAM_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: odigos-litellm
+                  name: odigos-litellm-runtime
                   key: upstream-api-key
-                  optional: true
           volumeMounts:
             - name: config
               mountPath: /app/config.yaml

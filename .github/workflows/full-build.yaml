@@ -22,7 +22,7 @@ jobs:
         service: [instrumentor, odiglet, agents, frontend, operator]
         include:
           - service: instrumentor
-            dockerfile_path: .
+            dockerfile_path: instrumentor
           - service: odiglet
             dockerfile_path: odiglet
           - service: agents

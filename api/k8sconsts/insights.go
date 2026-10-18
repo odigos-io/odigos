@@ -27,9 +27,15 @@ const (
 
 	// Bundled LiteLLM proxy for interrogation. The Deployment, Service, Secret and
 	// ConfigMap all share this name.
-	OdigosLiteLLMName                    = "odigos-litellm"
-	OdigosLiteLLMConfigFileName          = "config.yaml"
-	OdigosLiteLLMUpstreamApiKeySecretKey = "upstream-api-key"
+	OdigosLiteLLMName                      = "odigos-litellm"
+	OdigosLiteLLMRuntimeSecretName         = "odigos-litellm-runtime"
+	OdigosLocalUIAICredentialSecretPrefix  = "odigos-local-ui-ai-"
+	OdigosLocalUIAIConfigSourceLabel       = "odigos.io/config-source"
+	OdigosLocalUIAIConfigSourceValue       = "local-ui-ai"
+	OdigosInterrogationStatusConfigMapName = "odigos-interrogation-status"
+	OdigosAISettingsRevisionAnnotation     = "odigos.io/ai-settings-revision"
+	OdigosLiteLLMConfigFileName            = "config.yaml"
+	OdigosLiteLLMUpstreamApiKeySecretKey   = "upstream-api-key"
 	// OdigosLiteLLMConfigHashAnnotation is set on the LiteLLM pod template so the
 	// proxy restarts when its rendered config or upstream API key changes.
 	OdigosLiteLLMConfigHashAnnotation = "odigos.io/litellm-config-hash"

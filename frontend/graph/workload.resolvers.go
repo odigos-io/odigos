@@ -858,6 +858,25 @@ func (r *k8sWorkloadResolver) RollbackOccurred(ctx context.Context, obj *model.K
 	return ic.Status.RollbackOccurred, nil
 }
 
+// URLTemplatization is the resolver for the urlTemplatization field.
+func (r *k8sWorkloadContainerResolver) URLTemplatization(ctx context.Context, obj *model.K8sWorkloadContainer) (*model.K8sWorkloadContainerURLTemplatization, error) {
+	if obj == nil || obj.ContainerName == "" {
+		return nil, fmt.Errorf("container name is required")
+	}
+	id, err := workloadIDFromContainerFieldContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	templatization, _, err := services.GetContainerUrlTemplatization(ctx, id.Namespace, string(id.Kind), id.Name, obj.ContainerName)
+	if err != nil {
+		return nil, err
+	}
+	return &model.K8sWorkloadContainerURLTemplatization{
+		Templatization: templatization,
+	}, nil
+}
+
 // InterrogationTransactions is the resolver for the interrogationTransactions field.
 func (r *k8sWorkloadContainerResolver) InterrogationTransactions(ctx context.Context, obj *model.K8sWorkloadContainer) ([]*model.InterrogationTransaction, error) {
 	if obj == nil || obj.ContainerName == "" {

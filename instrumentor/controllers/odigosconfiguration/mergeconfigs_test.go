@@ -213,13 +213,14 @@ func interrogationModelConfig(enabled *bool, model *common.InterrogationModelCon
 // leaves empty (e.g. apiBase when moving off a self-hosted endpoint) are cleared.
 func TestMergeConfigs_InterrogationModelOverlay(t *testing.T) {
 	base := interrogationModelConfig(boolPtr(true), &common.InterrogationModelConfiguration{
-		Provider: "openai",
-		Name:     "gpt-4o-mini",
-		ApiBase:  "https://llm.example.com/v1",
+		Provider: stringPtr("openai"),
+		Name:     stringPtr("gpt-4o-mini"),
+		ApiBase:  stringPtr("https://llm.example.com/v1"),
 	})
 	overlay := interrogationModelConfig(nil, &common.InterrogationModelConfiguration{
-		Provider: "anthropic",
-		Name:     "claude-sonnet-4-5",
+		Provider: stringPtr("anthropic"),
+		Name:     stringPtr("claude-sonnet-4-5"),
+		ApiBase:  stringPtr(""),
 	})
 
 	mergeConfigs(base, overlay)
@@ -228,14 +229,14 @@ func TestMergeConfigs_InterrogationModelOverlay(t *testing.T) {
 	if model == nil {
 		t.Fatalf("interrogation.model was dropped by mergeConfigs")
 	}
-	if model.Provider != "anthropic" {
-		t.Errorf("Provider = %q, want \"anthropic\" (overlay override)", model.Provider)
+	if model.Provider == nil || *model.Provider != "anthropic" {
+		t.Errorf("Provider = %v, want \"anthropic\" (overlay override)", model.Provider)
 	}
-	if model.Name != "claude-sonnet-4-5" {
-		t.Errorf("Name = %q, want \"claude-sonnet-4-5\" (overlay override)", model.Name)
+	if model.Name == nil || *model.Name != "claude-sonnet-4-5" {
+		t.Errorf("Name = %v, want \"claude-sonnet-4-5\" (overlay override)", model.Name)
 	}
-	if model.ApiBase != "" {
-		t.Errorf("ApiBase = %q, want it cleared by the overlay model", model.ApiBase)
+	if model.ApiBase == nil || *model.ApiBase != "" {
+		t.Errorf("ApiBase = %v, want it cleared by the overlay model", model.ApiBase)
 	}
 	if !base.InterrogationEnabled() {
 		t.Errorf("Enabled was lost by the merge, want the helm value true to survive")
@@ -245,14 +246,45 @@ func TestMergeConfigs_InterrogationModelOverlay(t *testing.T) {
 // interrogation.enabled renders the insights and LiteLLM workloads, so only helm may turn it on.
 func TestMergeConfigs_InterrogationEnabledIsHelmOnly(t *testing.T) {
 	base := &common.OdigosConfiguration{}
-	overlay := interrogationModelConfig(boolPtr(true), &common.InterrogationModelConfiguration{Provider: "gemini"})
+	overlay := interrogationModelConfig(boolPtr(true), &common.InterrogationModelConfiguration{Provider: stringPtr("gemini")})
 
 	mergeConfigs(base, overlay)
 
 	if base.InterrogationEnabled() {
 		t.Errorf("overlay must not enable interrogation")
 	}
-	if base.Interrogation == nil || base.Interrogation.Model == nil || base.Interrogation.Model.Provider != "gemini" {
-		t.Errorf("overlay model not applied to empty base: %+v", base.Interrogation)
+	if base.Interrogation != nil {
+		t.Errorf("overlay must not provision model on empty base: %+v", base.Interrogation)
+	}
+}
+
+func stringPtr(s string) *string { return &s }
+
+func TestMergeConfigs_InterrogationFieldPresenceAndAnalysis(t *testing.T) {
+	base := interrogationModelConfig(boolPtr(true), &common.InterrogationModelConfiguration{
+		Provider: stringPtr("openai"), Name: stringPtr("gpt-4o-mini"), ApiBase: stringPtr("https://old.example/v1"),
+	})
+	remote := interrogationModelConfig(nil, &common.InterrogationModelConfiguration{Name: stringPtr("gpt-4.1")})
+	remote.Interrogation.AnalysisEnabled = boolPtr(false)
+	remote.Interrogation.CredentialSecretName = "odigos-local-ui-ai-forged"
+	local := interrogationModelConfig(nil, &common.InterrogationModelConfiguration{ApiBase: stringPtr("")})
+	local.Interrogation.AnalysisEnabled = boolPtr(true)
+	mergeConfigs(base, remote)
+	mergeConfigs(base, local)
+
+	if got := *base.Interrogation.Model.Provider; got != "openai" {
+		t.Errorf("provider = %q, want helm provider", got)
+	}
+	if got := *base.Interrogation.Model.Name; got != "gpt-4.1" {
+		t.Errorf("name = %q, want remote name", got)
+	}
+	if got := *base.Interrogation.Model.ApiBase; got != "" {
+		t.Errorf("apiBase = %q, want local clear", got)
+	}
+	if !base.InterrogationAnalysisEnabled() {
+		t.Error("local analysis resume should win")
+	}
+	if base.Interrogation.CredentialSecretName != "" {
+		t.Error("remote credential reference must not merge")
 	}
 }

@@ -18,7 +18,6 @@ runs:
         git tag collector/config/configgrpc/${{ inputs.tag }}
         git tag collector/connectors/odigosrouterconnector/${{ inputs.tag }}
         git tag collector/connectors/servicegraphconnector/${{ inputs.tag }}
-        git tag collector/connectors/serviceioconnector/${{ inputs.tag }}
         git tag collector/exporters/azureblobstorageexporter/${{ inputs.tag }}
         git tag collector/exporters/googlecloudstorageexporter/${{ inputs.tag }}
         git tag collector/exporters/mockdestinationexporter/${{ inputs.tag }}
