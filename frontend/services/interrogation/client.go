@@ -1,5 +1,5 @@
 // Package interrogation reads transaction call-path tries from the
-// interrogation ClickHouse database written by the cluster-collector exporters.
+// interrogation ClickHouse database written by the insights service.
 package interrogation
 
 import (
@@ -18,7 +18,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 )
 
-// Must match odigosinterrogationtracesexporter storage layout.
+// Must match insights interrogation ClickHouse storage layout.
 const (
 	clickhouseUser     = "odigos_insights"
 	clickhouseDatabase = "interrogation"
