@@ -72,7 +72,7 @@ helm --kube-context "$KUBE_CONTEXT" upgrade odigos ./helm/odigos \
   --set insights.interrogation.litellm.bootstrapConfig=false
 ```
 
-If the first upgrade must be rolled back, use `helm --kube-context "$KUBE_CONTEXT" rollback odigos <previous-revision> --namespace odigos-system`. The previous chart resumes rendering the proxy ConfigMap and using the Helm-managed upstream credential.
+If the first upgrade must be rolled back, use `helm --kube-context "$KUBE_CONTEXT" rollback odigos <previous-revision> --namespace odigos-system`. The previous chart resumes rendering the proxy ConfigMap and using the Helm-managed upstream credential. With Helm 4 server-side apply, append `--force-conflicts` to transfer the ConfigMap fields back from the controller; otherwise rollback reports a field ownership conflict. Keep compatible Instrumentor and Insights images when rolling back only the bootstrap/ownership transition.
 
 ### Uninstall Odigos
 
