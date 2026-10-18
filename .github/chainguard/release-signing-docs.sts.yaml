@@ -1,0 +1,11 @@
+# Lets the release-signing repository's gated key-rotation job open the docs PR that
+# publishes a new package signing public key. The subject is environment-bound: the job
+# runs in release-signing's `release-gate` environment, which requires an approver.
+issuer: https://token.actions.githubusercontent.com
+subject_pattern: repo:odigos-io(@84347062)?/release-signing(@1407531138)?:environment:release-gate
+claim_pattern:
+  event_name: "workflow_dispatch"
+
+permissions:
+  contents: write
+  pull_requests: write
