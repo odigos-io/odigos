@@ -618,7 +618,7 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 			if len(sourceList) > 0 {
 				fmt.Printf("NOTE: Configured Namespace Source, but the following Workload Sources will not be affected (individual Workload Sources take priority over Namespace Sources):\n")
 				for _, line := range sourceList {
-					fmt.Printf(line)
+					fmt.Print(line)
 				}
 			}
 		}

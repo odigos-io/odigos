@@ -433,6 +433,18 @@ jobs:
           version: latest
           args: build --snapshot --clean
 
+  test-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.6"
+      - name: Test cli module
+        working-directory: ./cli
+        run: |
+          go test -v ./...
+
   test-k8sutils:
     runs-on: ubuntu-latest
     steps:
