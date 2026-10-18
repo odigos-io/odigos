@@ -1,0 +1,50 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: yandexcloudmonitoring
+  displayName: Yandex Cloud Monitoring
+  category: managed
+spec:
+  image: yandexcloud.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: false
+    profiles:
+      supported: false
+  note:
+    type: Note
+    content: |
+      Uses Yandex Managed Service for Prometheus within Yandex Cloud Monitoring. Create a Prometheus workspace in the target folder, then create a service account with the `monitoring.editor` role for that folder and an API key authorized to write monitoring metrics. Copy the workspace ID from its remote-write endpoint.
+
+      Supports gauges, cumulative sums and cumulative explicit-bucket histograms. Delta sums/histograms, exponential (native) histograms, exemplars and staleness markers are unsupported. Exponential histograms are filtered before export. Use cumulative metric temporality. `NaN` is treated as a missing point; infinite sample values may be processed incorrectly.
+
+      Names and labels use Prometheus underscore escaping with unit/type suffixes. `service.name` / `service.namespace` become `job`, and `service.instance.id` becomes `instance`. Selected resource attributes are copied to labels; avoid exceeding Yandex's limit of 28 custom labels per series. Automatic `target_info` generation is disabled to avoid copying every resource attribute.
+
+      Export uses TLS, Snappy compression, remote-write v1, no metadata, a bounded queue and one worker. Requests are split with a conservative 16 KB protobuf size limit rather than Prometheus's sample-count setting; a single oversized time series is not split. HTTP 429 and server errors retry with 100 ms initial / 15 s maximum backoff for up to 5 minutes. Permanent errors (including 400, 401, 403, 404 and 413) are dropped; remote-write v1 cannot report per-sample partial success. Query the workspace in Monitoring with PromQL to verify ingestion.
+  fields:
+    - name: YANDEX_CLOUD_MONITORING_WORKSPACE_ID
+      displayName: Prometheus Workspace ID
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: monb1exampleworkspace
+        tooltip: Copy the workspace ID from Monitoring > Prometheus > Workspace. It is the ID between /workspaces/ and /api/v1/write in the remote-write endpoint, not the folder ID.
+    - name: YANDEX_CLOUD_MONITORING_API_KEY
+      displayName: Service Account API Key
+      secret: true
+      componentType: input
+      componentProps:
+        type: password
+        required: true
+        tooltip: API key for a service account with monitoring.editor on the workspace folder. The key is sent as a Bearer token over HTTPS.
+    - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS
+      displayName: Resource Attributes Labels
+      componentType: multiInput
+      componentProps:
+        tooltip: Copy selected OpenTelemetry resource attributes to Prometheus labels. Keep each series within the 28 custom-label limit.
+      initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'

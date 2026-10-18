@@ -1,0 +1,118 @@
+---
+title: 'Yandex Cloud Monitoring'
+description: 'Configuring the Yandex Cloud Monitoring backend (Managed)'
+sidebarTitle: 'Yandex Cloud Monitoring'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/yandexcloud.svg" alt="yandexcloudmonitoring" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ✅ Metrics
+  ❌ Logs
+  ❌ Profiles
+</Accordion>
+
+- **YANDEX_CLOUD_MONITORING_WORKSPACE_ID** `string` : Prometheus Workspace ID. Copy the workspace ID from Monitoring > Prometheus > Workspace. It is the ID between /workspaces/ and /api/v1/write in the remote-write endpoint, not the folder ID.
+  - This field is required
+  - Example: `monb1exampleworkspace`
+- **YANDEX_CLOUD_MONITORING_API_KEY** `string` : Service Account API Key. API key for a service account with monitoring.editor on the workspace folder. The key is sent as a Bearer token over HTTPS.
+  - This field is required
+- **PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS** `string[]` : Resource Attributes Labels. Copy selected OpenTelemetry resource attributes to Prometheus labels. Keep each series within the 28 custom-label limit.
+  - This field is optional and defaults to `["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]`
+
+<Note>
+  Uses Yandex Managed Service for Prometheus within Yandex Cloud Monitoring. Create a Prometheus workspace in the target folder, then create a service account with the `monitoring.editor` role for that folder and an API key authorized to write monitoring metrics. Copy the workspace ID from its remote-write endpoint.
+
+  Supports gauges, cumulative sums and cumulative explicit-bucket histograms. Delta sums/histograms, exponential (native) histograms, exemplars and staleness markers are unsupported. Exponential histograms are filtered before export. Use cumulative metric temporality. `NaN` is treated as a missing point; infinite sample values may be processed incorrectly.
+
+  Names and labels use Prometheus underscore escaping with unit/type suffixes. `service.name` / `service.namespace` become `job`, and `service.instance.id` becomes `instance`. Selected resource attributes are copied to labels; avoid exceeding Yandex's limit of 28 custom labels per series. Automatic `target_info` generation is disabled to avoid copying every resource attribute.
+
+  Export uses TLS, Snappy compression, remote-write v1, no metadata, a bounded queue and one worker. Requests are split with a conservative 16 KB protobuf size limit rather than Prometheus's sample-count setting; a single oversized time series is not split. HTTP 429 and server errors retry with 100 ms initial / 15 s maximum backoff for up to 5 minutes. Permanent errors (including 400, 401, 403, 404 and 413) are dropped; remote-write v1 cannot report per-sample partial success. Query the workspace in Monitoring with PromQL to verify ingestion.
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Yandex Cloud Monitoring` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `yandexcloudmonitoring.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: yandexcloudmonitoring-example
+      namespace: odigos-system
+    spec:
+      data:
+        YANDEX_CLOUD_MONITORING_WORKSPACE_ID: <Prometheus Workspace ID>
+        # Note: The commented fields below are optional.
+        # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>
+      destinationName: yandexcloudmonitoring
+      secretRef:
+        name: yandexcloudmonitoring-secret
+      signals:
+      - METRICS
+      type: yandexcloudmonitoring
+
+    ---
+
+    apiVersion: v1
+    data:
+      YANDEX_CLOUD_MONITORING_API_KEY: <Base64 Service Account API Key>
+    kind: Secret
+    metadata:
+      name: yandexcloudmonitoring-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f yandexcloudmonitoring.yaml
+    ```
+  </Step>
+</Steps>
