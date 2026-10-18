@@ -94,7 +94,7 @@ COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # php-community
-COPY --from=public.ecr.aws/odigos/agents/php-community:v0.8.0@sha256:0489f13aadab0ca3f9fe2d435a91a023fa7d5dde5ef0fe638b69d9a78a7f8ed4 /instrumentations/php /instrumentations/php
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.9.0@sha256:dd1469ad9d8551a647dcc072bb2f8adb683e0484124e261ad0972ed24eef50c3 /instrumentations/php /instrumentations/php
 
 # ruby-community
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.9@sha256:5177737aba83e507ee968223fbd821d76e2df4e74bd1711e2d49e8d59f671d8c /instrumentations/ruby /instrumentations/ruby
