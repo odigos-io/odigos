@@ -110,6 +110,18 @@ models:
       rollbackOccurred:
         resolver: true
 
+  K8sWorkloadContainer:
+    fields:
+      urlTemplatization:
+        resolver: true
+      interrogationTransactions:
+        resolver: true
+
+  K8sWorkloadContainerUrlTemplatization:
+    fields:
+      liveTrafficLearning:
+        resolver: true
+
   K8sWorkloadRollout:
     fields:
       podsManifestInjectionOverview:
@@ -123,11 +135,6 @@ models:
   K8sWorkloadPodContainer:
     fields:
       processes:
-        resolver: true
-
-  K8sWorkloadContainer:
-    fields:
-      interrogationTransactions:
         resolver: true
 
   InterrogationTransaction:

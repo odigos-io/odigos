@@ -207,15 +207,8 @@ export const GET_EFFECTIVE_CONFIG = gql`
           }
         }
       }
-      traceCorrelations {
-        serviceIO {
-          enabled
-          inputSpanAttributes
-          outputSpanAttributes
-          metricsFlushInterval
-        }
-      }
       interrogation {
+        analysisEnabled
         enabled
         model {
           provider
@@ -248,6 +241,14 @@ export const GET_CONFIG_YAMLS = gql`
         componentProps
         renderCondition
       }
+    }
+  }
+`;
+
+export const GET_INTERROGATION_SETTINGS_STATUS = gql`
+  query GetInterrogationSettingsStatus {
+    interrogationSettingsStatus {
+      provisioned updateId observedUpdateId state error apiKeyConfigured apiKeySource
     }
   }
 `;

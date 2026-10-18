@@ -182,17 +182,6 @@ type CardinalityControlConfig {
   urlTemplatization: UrlTemplatizationCardinalityControlConfig
 }
 
-type TraceCorrelationsServiceIOConfig {
-  enabled: Boolean
-  inputSpanAttributes: [String!]
-  outputSpanAttributes: [String!]
-  metricsFlushInterval: String
-}
-
-type TraceCorrelationsConfig {
-  serviceIO: TraceCorrelationsServiceIOConfig
-}
-
 type InterrogationModelConfig {
   provider: String
   name: String
@@ -200,6 +189,7 @@ type InterrogationModelConfig {
 }
 
 type InterrogationConfig {
+  analysisEnabled: Boolean
   enabled: Boolean
   model: InterrogationModelConfig
 }
@@ -325,7 +315,6 @@ type EffectiveConfig {
   sampling: SamplingConfig
   profiling: ProfilingConfig
   cardinalityControl: CardinalityControlConfig
-  traceCorrelations: TraceCorrelationsConfig
   interrogation: InterrogationConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
@@ -393,17 +382,6 @@ input LocalUiConfigComponentLogLevelsInput {
   collector: OdigosLogLevel
 }
 
-input LocalUiConfigTraceCorrelationsServiceIOInput {
-  enabled: Boolean
-  inputSpanAttributes: [String!]
-  outputSpanAttributes: [String!]
-  metricsFlushInterval: String
-}
-
-input LocalUiConfigTraceCorrelationsInput {
-  serviceIO: LocalUiConfigTraceCorrelationsServiceIOInput
-}
-
 input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
   enabled: Boolean
 }
@@ -441,6 +419,9 @@ input InterrogationModelConfigInput {
 }
 
 input InterrogationConfigInput {
+  analysisEnabled: Boolean
+  updateId: String
+  resetPaths: [String!]
   model: InterrogationModelConfigInput
 }
 
@@ -458,9 +439,18 @@ input LocalUiConfigInput {
   goAutoOffsetsMode: String
   sampling: LocalUiConfigSamplingInput
   componentLogLevels: LocalUiConfigComponentLogLevelsInput
-  traceCorrelations: LocalUiConfigTraceCorrelationsInput
   cardinalityControl: LocalUiConfigCardinalityControlInput
   interrogation: InterrogationConfigInput
+}
+
+type InterrogationSettingsStatus {
+  provisioned: Boolean!
+  updateId: String!
+  observedUpdateId: String!
+  state: String!
+  error: String
+  apiKeyConfigured: Boolean!
+  apiKeySource: String!
 }
 
 type ConfigYamlField {
@@ -482,6 +472,7 @@ type ConfigYaml {
 }
 
 extend type Query {
+  interrogationSettingsStatus: InterrogationSettingsStatus!
   # key information about the cluster and the installation (self-defined config for UI control and usage)
   config: Config
   # odigos-remote-config ConfigMap managed by central-backend (deprecated, will be removed in the future)
@@ -499,5 +490,5 @@ extend type Mutation {
     level: OdigosLogLevel!
   ): Boolean!
   updateLocalUiConfig(config: LocalUiConfigInput!): Boolean!
-  resetLocalUiConfigToFactoryDefaults: Boolean!
+  resetLocalUiConfigToFactoryDefaults(updateId: String): Boolean!
 }

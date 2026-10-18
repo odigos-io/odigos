@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	v1 "k8s.io/api/core/v1"
@@ -26,16 +26,19 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 	ns := env.GetCurrentNamespace()
 
 	var effectiveConfig *common.OdigosConfiguration
-	if input.Interrogation != nil && input.Interrogation.Model != nil {
-		var err error
-		effectiveConfig, err = GetEffectiveConfig(ctx, c)
-		if err != nil {
+	var stagedCredential string
+	if input.Interrogation != nil {
+		if err := validateInterrogationInput(ctx, c, input.Interrogation); err != nil {
 			return err
 		}
-		if input.Interrogation.Model.APIKey != nil {
-			if err := setInterrogationUpstreamApiKey(ctx, ns, effectiveConfig, *input.Interrogation.Model.APIKey); err != nil {
-				return err
-			}
+		if input.Interrogation.UpdateID == nil || *input.Interrogation.UpdateID == "" {
+			id := uuid.NewString()
+			input.Interrogation.UpdateID = &id
+		}
+		var err error
+		stagedCredential, err = stageInterrogationCredential(ctx, c, input.Interrogation)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -44,7 +47,7 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 		err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosLocalUiConfigName}, &cm)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				return createLocalUiConfigMap(ctx, c, ns, input, effectiveConfig)
+				return createLocalUiConfigMap(ctx, c, ns, input, effectiveConfig, stagedCredential)
 			}
 			return err
 		}
@@ -57,6 +60,10 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 		}
 
 		applyLocalUiConfigInput(&cfg, input, effectiveConfig)
+		applyStagedCredential(&cfg, stagedCredential)
+		if err := validateResolvedInterrogation(ctx, c, &cfg, input.Interrogation); err != nil {
+			return err
+		}
 
 		data, err := yaml.Marshal(cfg)
 		if err != nil {
@@ -70,7 +77,7 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 	})
 }
 
-func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, input model.LocalUIConfigInput, effectiveConfig *common.OdigosConfiguration) error {
+func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, input model.LocalUIConfigInput, effectiveConfig *common.OdigosConfiguration, stagedCredential string) error {
 	ownerCm := v1.ConfigMap{}
 	if err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosConfigurationName}, &ownerCm); err != nil {
 		return fmt.Errorf("failed to get odigos-configuration for owner reference: %w", err)
@@ -78,6 +85,10 @@ func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, inp
 
 	cfg := common.OdigosConfiguration{}
 	applyLocalUiConfigInput(&cfg, input, effectiveConfig)
+	applyStagedCredential(&cfg, stagedCredential)
+	if err := validateResolvedInterrogation(ctx, c, &cfg, input.Interrogation); err != nil {
+		return err
+	}
 
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
@@ -98,7 +109,7 @@ func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, inp
 	return c.Create(ctx, &newCm)
 }
 
-func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) error {
+func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client, updateIDs ...string) error {
 	ns := env.GetCurrentNamespace()
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -106,12 +117,33 @@ func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) e
 		err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosLocalUiConfigName}, &cm)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
+				if len(updateIDs) > 0 && updateIDs[0] != "" {
+					id := updateIDs[0]
+					return UpdateLocalUIConfig(ctx, c, model.LocalUIConfigInput{Interrogation: &model.InterrogationConfigInput{UpdateID: &id}})
+				}
 				return nil
 			}
 			return err
 		}
 
 		emptyCfg := common.OdigosConfiguration{}
+		updateID := uuid.NewString()
+		if len(updateIDs) > 0 && updateIDs[0] != "" {
+			updateID = updateIDs[0]
+		}
+		if len(updateID) > 128 {
+			return fmt.Errorf("AI settings update identifier is too long")
+		}
+		// Retain the previous credential revision for rollback, without activating it.
+		var old common.OdigosConfiguration
+		if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &old); err != nil {
+			return err
+		}
+		emptyCfg.Interrogation = &common.InterrogationConfiguration{UpdateID: updateID}
+		if old.Interrogation != nil {
+			emptyCfg.Interrogation.PreviousCredentialSecretName = old.Interrogation.CredentialSecretName
+		}
+
 		data, err := yaml.Marshal(emptyCfg)
 		if err != nil {
 			return err
@@ -195,9 +227,6 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 		}
 		applyComponentLogLevelsInput(cfg.ComponentLogLevels, input.ComponentLogLevels)
 	}
-	if input.TraceCorrelations != nil {
-		applyTraceCorrelationsInput(cfg, input.TraceCorrelations)
-	}
 	if input.CardinalityControl != nil {
 		applyCardinalityControlInput(cfg, input.CardinalityControl)
 	}
@@ -206,66 +235,49 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 	}
 }
 
-// applyInterrogationInput writes a complete model snapshot, because an overlay model
-// replaces the effective model as a unit: a partial model would drop the other fields.
-// The API key is never stored here; it lives in the odigos-litellm Secret.
-func applyInterrogationInput(cfg *common.OdigosConfiguration, input *model.InterrogationConfigInput, effectiveConfig *common.OdigosConfiguration) {
-	modelInput := input.Model
-	if modelInput == nil || (modelInput.Provider == nil && modelInput.Name == nil && modelInput.APIBase == nil) {
-		return
-	}
-
-	snapshot := common.InterrogationModelConfiguration{}
-	if cfg.Interrogation != nil && cfg.Interrogation.Model != nil && cfg.Interrogation.Model.Provider != "" {
-		snapshot = *cfg.Interrogation.Model
-	} else if effectiveConfig != nil && effectiveConfig.Interrogation != nil && effectiveConfig.Interrogation.Model != nil {
-		snapshot = *effectiveConfig.Interrogation.Model
-	}
-
-	if modelInput.Provider != nil {
-		snapshot.Provider = *modelInput.Provider
-	}
-	if modelInput.Name != nil {
-		snapshot.Name = *modelInput.Name
-	}
-	if modelInput.APIBase != nil {
-		snapshot.ApiBase = *modelInput.APIBase
-	}
-
+func applyInterrogationInput(cfg *common.OdigosConfiguration, input *model.InterrogationConfigInput, _ *common.OdigosConfiguration) {
 	if cfg.Interrogation == nil {
 		cfg.Interrogation = &common.InterrogationConfiguration{}
 	}
-	cfg.Interrogation.Model = &snapshot
-}
-
-// setInterrogationUpstreamApiKey stores the LiteLLM upstream API key. An empty key keeps
-// the current one. The Secret is created by helm alongside LiteLLM, so a missing Secret
-// means LiteLLM is not deployed.
-func setInterrogationUpstreamApiKey(ctx context.Context, ns string, effectiveConfig *common.OdigosConfiguration, apiKey string) error {
-	apiKey = strings.TrimSpace(apiKey)
-	if apiKey == "" {
-		return nil
+	current := cfg.Interrogation
+	if current.Model == nil {
+		current.Model = &common.InterrogationModelConfiguration{}
 	}
-	if !effectiveConfig.InterrogationEnabled() {
-		return fmt.Errorf("cannot set the interrogation API key: interrogation is not enabled")
+	for _, path := range input.ResetPaths {
+		switch path {
+		case "interrogation.analysisEnabled":
+			current.AnalysisEnabled = nil
+		case "interrogation.model.provider":
+			current.Model.Provider = nil
+		case "interrogation.model.name":
+			current.Model.Name = nil
+		case "interrogation.model.apiBase":
+			current.Model.ApiBase = nil
+		case "interrogation.model.apiKey":
+			current.PreviousCredentialSecretName = current.CredentialSecretName
+			current.CredentialSecretName = ""
+		}
 	}
-
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		secrets := kube.DefaultClient.CoreV1().Secrets(ns)
-		secret, err := secrets.Get(ctx, k8sconsts.OdigosLiteLLMName, metav1.GetOptions{})
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return fmt.Errorf("cannot set the interrogation API key: secret %s not found, LiteLLM is not deployed", k8sconsts.OdigosLiteLLMName)
-			}
-			return err
+	if input.AnalysisEnabled != nil {
+		current.AnalysisEnabled = input.AnalysisEnabled
+	}
+	if input.UpdateID != nil {
+		current.UpdateID = *input.UpdateID
+	}
+	if input.Model != nil {
+		if input.Model.Provider != nil {
+			value := strings.TrimSpace(*input.Model.Provider)
+			current.Model.Provider = &value
 		}
-		if secret.Data == nil {
-			secret.Data = make(map[string][]byte)
+		if input.Model.Name != nil {
+			value := strings.TrimSpace(*input.Model.Name)
+			current.Model.Name = &value
 		}
-		secret.Data[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey] = []byte(apiKey)
-		_, err = secrets.Update(ctx, secret, metav1.UpdateOptions{})
-		return err
-	})
+		if input.Model.APIBase != nil {
+			value := strings.TrimSpace(*input.Model.APIBase)
+			current.Model.ApiBase = &value
+		}
+	}
 }
 
 func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.LocalUIConfigCardinalityControlInput) {
@@ -323,33 +335,6 @@ func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.
 
 	if ltlInput.AutomaticRules.Enabled != nil {
 		ltl.AutomaticRules.Enabled = ltlInput.AutomaticRules.Enabled
-	}
-}
-
-func applyTraceCorrelationsInput(cfg *common.OdigosConfiguration, input *model.LocalUIConfigTraceCorrelationsInput) {
-	if input == nil || input.ServiceIo == nil {
-		return
-	}
-
-	if cfg.TraceCorrelations == nil {
-		cfg.TraceCorrelations = &common.TraceCorrelationsConfiguration{}
-	}
-	if cfg.TraceCorrelations.ServiceIO == nil {
-		cfg.TraceCorrelations.ServiceIO = &common.TraceCorrelationsServiceIOConfiguration{}
-	}
-
-	serviceIO := input.ServiceIo
-	if serviceIO.Enabled != nil {
-		cfg.TraceCorrelations.ServiceIO.Enabled = serviceIO.Enabled
-	}
-	if serviceIO.InputSpanAttributes != nil {
-		cfg.TraceCorrelations.ServiceIO.InputSpanAttributes = serviceIO.InputSpanAttributes
-	}
-	if serviceIO.OutputSpanAttributes != nil {
-		cfg.TraceCorrelations.ServiceIO.OutputSpanAttributes = serviceIO.OutputSpanAttributes
-	}
-	if serviceIO.MetricsFlushInterval != nil {
-		cfg.TraceCorrelations.ServiceIO.MetricsFlushInterval = *serviceIO.MetricsFlushInterval
 	}
 }
 

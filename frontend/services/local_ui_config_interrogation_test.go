@@ -2,27 +2,25 @@ package services
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"testing"
+	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/stretchr/testify/require"
-
-	v1 "k8s.io/api/core/v1"
+	coordinationv1 "k8s.io/api/coordination/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	k8sfake "k8s.io/client-go/kubernetes/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/yaml"
 )
 
-const interrogationEffectiveConfig = `
-interrogation:
+const interrogationEffectiveConfig = `interrogation:
   enabled: true
   model:
     provider: openai
@@ -34,142 +32,166 @@ func interrogationModelInput(m model.InterrogationModelConfigInput) model.LocalU
 	return model.LocalUIConfigInput{Interrogation: &model.InterrogationConfigInput{Model: &m}}
 }
 
-func effectiveInterrogationModel() *common.OdigosConfiguration {
-	enabled := true
-	return &common.OdigosConfiguration{Interrogation: &common.InterrogationConfiguration{
-		Enabled: &enabled,
-		Model:   &common.InterrogationModelConfiguration{Provider: "openai", Name: "gpt-4o-mini", ApiBase: "https://proxy.example.com/v1"},
-	}}
+func aiConfigMap(name, config string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: env.GetCurrentNamespace(), UID: types.UID(name)}, Data: map[string]string{consts.OdigosConfigurationFileName: config}}
 }
 
-func liteLLMSecret(data map[string][]byte) *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.OdigosLiteLLMName, Namespace: env.GetCurrentNamespace()},
-		Data:       data,
+func aiTestClient(objects ...client.Object) client.Client {
+	objects = append([]client.Object{aiConfigMap(consts.OdigosConfigurationName, interrogationEffectiveConfig)}, objects...)
+	return fake.NewClientBuilder().WithObjects(objects...).Build()
+}
+
+func TestInterrogationPartialEditPreservesInheritanceAndExplicitClear(t *testing.T) {
+	ctx := context.Background()
+	c := aiTestClient()
+	require.NoError(t, UpdateLocalUIConfig(ctx, c, interrogationModelInput(model.InterrogationModelConfigInput{Name: StringPtr("gpt-4.1"), APIBase: StringPtr("")})))
+	cfg, err := GetLocalUIConfig(ctx, c)
+	require.NoError(t, err)
+	require.Nil(t, cfg.Interrogation.Model.Provider, "editing the name must not pin the inherited provider")
+	require.Equal(t, "gpt-4.1", *cfg.Interrogation.Model.Name)
+	require.NotNil(t, cfg.Interrogation.Model.ApiBase)
+	require.Empty(t, *cfg.Interrogation.Model.ApiBase)
+	provenance := map[string]string{}
+	recordOverlayProvenance(cfg, provenance, consts.OdigosLocalUiConfigName)
+	require.Equal(t, consts.OdigosLocalUiConfigName, provenance["interrogation.model.apiBase"])
+	require.Empty(t, provenance["interrogation.model.provider"])
+	require.NoError(t, UpdateLocalUIConfig(ctx, c, model.LocalUIConfigInput{Interrogation: &model.InterrogationConfigInput{ResetPaths: []string{"interrogation.model.name"}}}))
+	cfg, err = GetLocalUIConfig(ctx, c)
+	require.NoError(t, err)
+	require.Nil(t, cfg.Interrogation.Model.Name)
+	require.NotNil(t, cfg.Interrogation.Model.ApiBase)
+}
+
+func TestInterrogationCredentialOverrideIsAtomicAndHelmIndependent(t *testing.T) {
+	ctx := context.Background()
+	baseline := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "odigos-litellm", Namespace: env.GetCurrentNamespace()}, Data: map[string][]byte{"master-key": []byte("master-original"), "upstream-api-key": []byte("helm-original")}}
+	paused := aiConfigMap(consts.OdigosLocalUiConfigName, "interrogation:\n  analysisEnabled: false\n")
+	c := aiTestClient(baseline, paused)
+	input := interrogationModelInput(model.InterrogationModelConfigInput{Name: StringPtr("gpt-4.1"), APIKey: StringPtr("  test-new-key  ")})
+	require.NoError(t, UpdateLocalUIConfig(ctx, c, input))
+	cfg, err := GetLocalUIConfig(ctx, c)
+	require.NoError(t, err)
+	require.False(t, *cfg.Interrogation.AnalysisEnabled)
+	require.NotEmpty(t, cfg.Interrogation.CredentialSecretName)
+	selected := &corev1.Secret{}
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: cfg.Interrogation.CredentialSecretName}, selected))
+	require.True(t, *selected.Immutable)
+	require.Equal(t, "test-new-key", string(selected.Data["upstream-api-key"]))
+	cm := &corev1.ConfigMap{}
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: consts.OdigosLocalUiConfigName}, cm))
+	require.NotContains(t, cm.Data[consts.OdigosConfigurationFileName], "test-new-key")
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(baseline), baseline))
+	require.Equal(t, "helm-original", string(baseline.Data["upstream-api-key"]))
+	require.Equal(t, "master-original", string(baseline.Data["master-key"]))
+	status, err := GetInterrogationSettingsStatus(ctx, c)
+	require.NoError(t, err)
+	require.Equal(t, "APPLYING", status.State)
+	oldName := cfg.Interrogation.CredentialSecretName
+	require.NoError(t, UpdateLocalUIConfig(ctx, c, interrogationModelInput(model.InterrogationModelConfigInput{APIKey: StringPtr(" ")})))
+	cfg, err = GetLocalUIConfig(ctx, c)
+	require.NoError(t, err)
+	require.Equal(t, oldName, cfg.Interrogation.CredentialSecretName)
+	require.NoError(t, UpdateLocalUIConfig(ctx, c, model.LocalUIConfigInput{Interrogation: &model.InterrogationConfigInput{ResetPaths: []string{"interrogation.model.apiKey"}}}))
+	status, err = GetInterrogationSettingsStatus(ctx, c)
+	require.NoError(t, err)
+	cfg, err = GetLocalUIConfig(ctx, c)
+	require.NoError(t, err)
+	require.Empty(t, cfg.Interrogation.CredentialSecretName)
+}
+
+type failingAIConfigClient struct{ client.Client }
+
+func (c failingAIConfigClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	if obj.GetName() == consts.OdigosLocalUiConfigName {
+		return errors.New("simulated ConfigMap write failure")
 	}
+	return c.Client.Update(ctx, obj, opts...)
 }
 
-func setLiteLLMTestClient(t *testing.T, objs ...runtime.Object) {
-	t.Helper()
-	kube.SetDefaultClient(&kube.Client{Interface: k8sfake.NewSimpleClientset(objs...)})
-	t.Cleanup(func() { kube.SetDefaultClient(nil) })
-}
-
-func readLiteLLMSecret(t *testing.T) map[string][]byte {
-	t.Helper()
-	secret, err := kube.DefaultClient.CoreV1().Secrets(env.GetCurrentNamespace()).
-		Get(context.Background(), k8sconsts.OdigosLiteLLMName, metav1.GetOptions{})
+func TestInterrogationFailedCommitCannotActivateStagedCredential(t *testing.T) {
+	ctx := context.Background()
+	base := aiTestClient(aiConfigMap(consts.OdigosLocalUiConfigName, "{}"))
+	err := UpdateLocalUIConfig(ctx, failingAIConfigClient{base}, interrogationModelInput(model.InterrogationModelConfigInput{Name: StringPtr("gpt-4.1"), APIKey: StringPtr("inactive-key")}))
+	require.ErrorContains(t, err, "write failure")
+	cfg, err := GetLocalUIConfig(ctx, base)
 	require.NoError(t, err)
-	return secret.Data
-}
-
-func TestApplyInterrogationInput_SnapshotsEffectiveModel(t *testing.T) {
-	cfg := &common.OdigosConfiguration{}
-	applyLocalUiConfigInput(cfg, interrogationModelInput(model.InterrogationModelConfigInput{Name: StringPtr("gpt-4.1")}), effectiveInterrogationModel())
-
-	require.Equal(t, &common.InterrogationModelConfiguration{
-		Provider: "openai",
-		Name:     "gpt-4.1",
-		ApiBase:  "https://proxy.example.com/v1",
-	}, cfg.Interrogation.Model)
-	require.Nil(t, cfg.Interrogation.Enabled)
-}
-
-func TestApplyInterrogationInput_SnapshotsOverlayModel(t *testing.T) {
-	cfg := &common.OdigosConfiguration{Interrogation: &common.InterrogationConfiguration{
-		Model: &common.InterrogationModelConfiguration{Provider: "anthropic", Name: "claude-sonnet-4-5"},
-	}}
-	applyLocalUiConfigInput(cfg, interrogationModelInput(model.InterrogationModelConfigInput{APIBase: StringPtr("https://gateway.example.com")}), effectiveInterrogationModel())
-
-	require.Equal(t, &common.InterrogationModelConfiguration{
-		Provider: "anthropic",
-		Name:     "claude-sonnet-4-5",
-		ApiBase:  "https://gateway.example.com",
-	}, cfg.Interrogation.Model)
-}
-
-func TestApplyInterrogationInput_EmptyApiBaseClears(t *testing.T) {
-	cfg := &common.OdigosConfiguration{}
-	applyLocalUiConfigInput(cfg, interrogationModelInput(model.InterrogationModelConfigInput{
-		Provider: StringPtr("gemini"),
-		APIBase:  StringPtr(""),
-	}), effectiveInterrogationModel())
-
-	require.Equal(t, &common.InterrogationModelConfiguration{Provider: "gemini", Name: "gpt-4o-mini"}, cfg.Interrogation.Model)
-}
-
-func TestApplyInterrogationInput_ApiKeyOnlyLeavesModelUnset(t *testing.T) {
-	cfg := &common.OdigosConfiguration{}
-	applyLocalUiConfigInput(cfg, interrogationModelInput(model.InterrogationModelConfigInput{APIKey: StringPtr("sk-test")}), effectiveInterrogationModel())
-
 	require.Nil(t, cfg.Interrogation)
+	secrets := &corev1.SecretList{}
+	require.NoError(t, base.List(ctx, secrets))
+	require.Len(t, secrets.Items, 1, "the uncommitted immutable revision is safe to collect later")
 }
 
-func TestSetInterrogationUpstreamApiKey_PreservesOtherKeys(t *testing.T) {
-	setLiteLLMTestClient(t, liteLLMSecret(map[string][]byte{
-		"master-key": []byte("sk-master"),
-		k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey: []byte("sk-old"),
-	}))
+func TestInterrogationValidationPrecedesWrites(t *testing.T) {
+	tests := []struct {
+		name  string
+		input *model.InterrogationConfigInput
+	}{
+		{"blank provider", &model.InterrogationConfigInput{Model: &model.InterrogationModelConfigInput{Provider: StringPtr(" "), APIKey: StringPtr("must-not-be-written")}}},
+		{"blank model", &model.InterrogationConfigInput{Model: &model.InterrogationModelConfigInput{Name: StringPtr("")}}},
+		{"invalid endpoint", &model.InterrogationConfigInput{Model: &model.InterrogationModelConfigInput{APIBase: StringPtr("file:///tmp/model")}}},
+		{"unallowed reset", &model.InterrogationConfigInput{ResetPaths: []string{"interrogation.enabled"}}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := aiTestClient()
+			require.Error(t, UpdateLocalUIConfig(context.Background(), c, model.LocalUIConfigInput{Interrogation: test.input}))
+			secrets := &corev1.SecretList{}
+			require.NoError(t, c.List(context.Background(), secrets))
+			require.Empty(t, secrets.Items)
+			cfg, err := GetLocalUIConfig(context.Background(), c)
+			require.NoError(t, err)
+			require.Nil(t, cfg)
+		})
+	}
+	c := fake.NewClientBuilder().WithObjects(aiConfigMap(consts.OdigosConfigurationName, "{}")).Build()
+	enabled := true
+	require.ErrorContains(t, UpdateLocalUIConfig(context.Background(), c, model.LocalUIConfigInput{Interrogation: &model.InterrogationConfigInput{AnalysisEnabled: &enabled}}), "Helm provisioning")
+}
 
-	err := setInterrogationUpstreamApiKey(context.Background(), env.GetCurrentNamespace(), effectiveInterrogationModel(), "  sk-new\n")
+func TestInterrogationGlobalResetClearsCredentialAndAcknowledgesRevision(t *testing.T) {
+	ctx := context.Background()
+	c := aiTestClient()
+	require.NoError(t, UpdateLocalUIConfig(ctx, c, interrogationModelInput(model.InterrogationModelConfigInput{APIKey: StringPtr("local-key")})))
+	cfg, err := GetLocalUIConfig(ctx, c)
 	require.NoError(t, err)
-
-	data := readLiteLLMSecret(t)
-	require.Equal(t, "sk-new", string(data[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey]))
-	require.Equal(t, "sk-master", string(data["master-key"]))
-}
-
-func TestSetInterrogationUpstreamApiKey_EmptyKeepsCurrent(t *testing.T) {
-	setLiteLLMTestClient(t, liteLLMSecret(map[string][]byte{k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey: []byte("sk-old")}))
-
-	err := setInterrogationUpstreamApiKey(context.Background(), env.GetCurrentNamespace(), effectiveInterrogationModel(), "   ")
+	old := cfg.Interrogation.CredentialSecretName
+	require.NoError(t, ResetLocalUiConfigToFactoryDefaults(ctx, c, "reset-request"))
+	cfg, err = GetLocalUIConfig(ctx, c)
 	require.NoError(t, err)
-	require.Equal(t, "sk-old", string(readLiteLLMSecret(t)[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey]))
+	require.Equal(t, "reset-request", cfg.Interrogation.UpdateID)
+	require.Empty(t, cfg.Interrogation.CredentialSecretName)
+	require.Equal(t, old, cfg.Interrogation.PreviousCredentialSecretName)
+	require.Nil(t, cfg.Interrogation.Model)
 }
 
-func TestSetInterrogationUpstreamApiKey_InterrogationDisabled(t *testing.T) {
-	setLiteLLMTestClient(t, liteLLMSecret(nil))
-
-	err := setInterrogationUpstreamApiKey(context.Background(), env.GetCurrentNamespace(), &common.OdigosConfiguration{}, "sk-new")
-	require.ErrorContains(t, err, "interrogation is not enabled")
-	require.Empty(t, readLiteLLMSecret(t))
-}
-
-func TestSetInterrogationUpstreamApiKey_SecretMissing(t *testing.T) {
-	setLiteLLMTestClient(t)
-
-	err := setInterrogationUpstreamApiKey(context.Background(), env.GetCurrentNamespace(), effectiveInterrogationModel(), "sk-new")
-	require.ErrorContains(t, err, "LiteLLM is not deployed")
-}
-
-func TestUpdateLocalUIConfig_InterrogationModelAndApiKey(t *testing.T) {
-	ns := env.GetCurrentNamespace()
-	setLiteLLMTestClient(t, liteLLMSecret(map[string][]byte{"master-key": []byte("sk-master")}))
-	c := fake.NewClientBuilder().WithObjects(
-		effectiveConfigCM(interrogationEffectiveConfig),
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: consts.OdigosConfigurationName, Namespace: ns, UID: "owner-uid"}},
-	).Build()
-
-	err := UpdateLocalUIConfig(context.Background(), c, interrogationModelInput(model.InterrogationModelConfigInput{
-		Name:   StringPtr("gpt-4.1"),
-		APIKey: StringPtr("sk-new"),
-	}))
+func TestInterrogationStatusRejectsFormerLeaderAndWrongRevision(t *testing.T) {
+	ctx := context.Background()
+	identity := "current-leader"
+	duration := int32(15)
+	renew := metav1.NewMicroTime(time.Now())
+	lease := &coordinationv1.Lease{ObjectMeta: metav1.ObjectMeta{Name: "odigos-insights-leader", Namespace: env.GetCurrentNamespace()}, Spec: coordinationv1.LeaseSpec{HolderIdentity: &identity, LeaseDurationSeconds: &duration, RenewTime: &renew}}
+	encode := func(a interrogationAcknowledgement) string {
+		raw, err := json.Marshal(a)
+		require.NoError(t, err)
+		return string(raw)
+	}
+	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: interrogationStatusName, Namespace: env.GetCurrentNamespace()}, Data: map[string]string{
+		"proxy":    encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: "READY", ModelHash: common.InterrogationModelHash(&common.InterrogationModelConfiguration{Provider: StringPtr("openai"), Name: StringPtr("gpt-4o-mini"), ApiBase: StringPtr("https://proxy.example.com/v1")})}),
+		"analysis": encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: "PAUSED", HolderIdentity: "former-leader"}),
+	}}
+	c := aiTestClient(lease, cm, aiConfigMap(consts.OdigosEffectiveConfigName, interrogationEffectiveConfig+"  analysisEnabled: false\n"), aiConfigMap(consts.OdigosLocalUiConfigName, "interrogation:\n  updateId: request\n"))
+	status, err := GetInterrogationSettingsStatus(ctx, c)
 	require.NoError(t, err)
-
-	var cm v1.ConfigMap
-	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Namespace: ns, Name: consts.OdigosLocalUiConfigName}, &cm))
-	raw := cm.Data[consts.OdigosConfigurationFileName]
-	require.NotContains(t, raw, "sk-new")
-
-	local := common.OdigosConfiguration{}
-	require.NoError(t, yaml.Unmarshal([]byte(raw), &local))
-	require.Equal(t, &common.InterrogationModelConfiguration{
-		Provider: "openai",
-		Name:     "gpt-4.1",
-		ApiBase:  "https://proxy.example.com/v1",
-	}, local.Interrogation.Model)
-
-	data := readLiteLLMSecret(t)
-	require.Equal(t, "sk-new", string(data[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey]))
-	require.Equal(t, "sk-master", string(data["master-key"]))
+	require.Equal(t, "APPLYING", status.State)
+	cm.Data["analysis"] = encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: "PAUSED", HolderIdentity: identity})
+	require.NoError(t, c.Update(ctx, cm))
+	status, err = GetInterrogationSettingsStatus(ctx, c)
+	require.NoError(t, err)
+	require.Equal(t, "PAUSED", status.State)
+	require.Equal(t, "request", status.ObservedUpdateID)
+	cm.Data["analysis"] = encode(interrogationAcknowledgement{UpdateID: "request", Revision: "older-revision", State: "RUNNING", HolderIdentity: identity})
+	require.NoError(t, c.Update(ctx, cm))
+	status, err = GetInterrogationSettingsStatus(ctx, c)
+	require.NoError(t, err)
+	require.Equal(t, "APPLYING", status.State)
 }

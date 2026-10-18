@@ -9,13 +9,13 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list", "create", "update", "patch"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get"]
   - apiGroups: ["odigos.io"]
     resources: ["odigoscloudconnectors"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 {{- end }}
 
 

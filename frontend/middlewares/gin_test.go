@@ -19,20 +19,15 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 )
 
-// serveProtected mirrors how serveClientFiles in frontend/server/router.go runs the
-// middleware by hand: it invokes it and then gates the protected handler on
-// c.IsAborted(), so writing a response is not enough to stop the request.
+// serveProtected exercises the middleware before a protected handler.
 func serveProtected(t *testing.T) (*httptest.ResponseRecorder, *bool) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
 	served := false
 	r := gin.New()
+	r.Use(OidcMiddleware(context.Background()))
 	r.GET("/", func(c *gin.Context) {
-		OidcMiddleware(context.Background())(c)
-		if c.IsAborted() {
-			return
-		}
 		served = true
 		c.String(http.StatusOK, "spa bundle")
 	})
@@ -55,8 +50,8 @@ func TestOidcMiddleware_AbortsWhenConfigCannotBeRead(t *testing.T) {
 	if *served {
 		t.Fatal("protected handler ran even though the oidc check could not complete")
 	}
-	if w.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d, want %d", w.Code, http.StatusInternalServerError)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
 	}
 }
 

@@ -1,6 +1,10 @@
 package common
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"strings"
+
 	"github.com/odigos-io/odigos/common/api/sampling"
 )
 
@@ -478,38 +482,6 @@ type AgentsInitContainerResources struct {
 }
 
 // +kubebuilder:object:generate=true
-type TraceCorrelationsServiceIOConfiguration struct {
-	// enable/disable for service I/O correlation metrics (serviceio connector).
-	// disabled by default.
-	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-
-	// OpenTelemetry span attribute names read from inbound spans when correlating service I/O
-	// on the receiving side (e.g. server spans). Each name should refer to a low-cardinality attribute.
-	InputSpanAttributes []string `json:"inputSpanAttributes,omitempty" yaml:"inputSpanAttributes,omitempty"`
-
-	// OpenTelemetry span attribute names read from outbound spans when correlating service I/O
-	// on the sending side (e.g. client/producer spans). Each name should refer to a low-cardinality attribute.
-	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty" yaml:"outputSpanAttributes,omitempty"`
-
-	// interval at which service I/O metrics are flushed (format: 15s, 1m, etc). default is 60s.
-	MetricsFlushInterval string `json:"metricsFlushInterval,omitempty" yaml:"metricsFlushInterval,omitempty"`
-}
-
-// +kubebuilder:object:generate=true
-type TraceCorrelationsConfiguration struct {
-	ServiceIO *TraceCorrelationsServiceIOConfiguration `json:"serviceIO,omitempty" yaml:"serviceIO,omitempty"`
-}
-
-// TraceCorrelationsServiceIOPipelineActive reports whether the serviceio connector pipeline should be applied.
-// Service I/O correlation is opt-in: serviceIO.Enabled must be explicitly true; nil or false keeps the feature off.
-func TraceCorrelationsServiceIOPipelineActive(t *TraceCorrelationsConfiguration) bool {
-	return t != nil &&
-		t.ServiceIO != nil &&
-		t.ServiceIO.Enabled != nil &&
-		*t.ServiceIO.Enabled
-}
-
-// +kubebuilder:object:generate=true
 type MetricsSourceConfiguration struct {
 
 	// configuration for span metrics.
@@ -646,10 +618,18 @@ type TransactionIdentityConfiguration struct {
 // I/O correlations.
 type InterrogationConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	// AnalysisEnabled pauses model analysis and rule writes without removing the
+	// Helm-provisioned interrogation data pipeline. Nil defaults to enabled.
+	AnalysisEnabled *bool `json:"analysisEnabled,omitempty" yaml:"analysisEnabled,omitempty"`
 
 	// Model selects the LLM that the bundled LiteLLM proxy routes interrogation
-	// requests to. The upstream API key is kept in the odigos-litellm Secret.
+	// requests to. The upstream API key is kept in a Kubernetes Secret.
 	Model *InterrogationModelConfiguration `json:"model,omitempty" yaml:"model,omitempty"`
+	// CredentialSecretName and PreviousCredentialSecretName are internal references
+	// to UI-owned credential revisions; remote configuration cannot set them.
+	CredentialSecretName         string `json:"credentialSecretName,omitempty" yaml:"credentialSecretName,omitempty"`
+	PreviousCredentialSecretName string `json:"previousCredentialSecretName,omitempty" yaml:"previousCredentialSecretName,omitempty"`
+	UpdateID                     string `json:"updateId,omitempty" yaml:"updateId,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -658,13 +638,13 @@ type InterrogationConfiguration struct {
 type InterrogationModelConfiguration struct {
 	// Provider is the LiteLLM provider prefix, such as openai, anthropic,
 	// gemini or hosted_vllm.
-	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
+	Provider *string `json:"provider,omitempty" yaml:"provider,omitempty"`
 
 	// Name is the provider's model name, such as gpt-4o-mini.
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name *string `json:"name,omitempty" yaml:"name,omitempty"`
 
 	// ApiBase is an optional OpenAI-compatible base URL for the provider.
-	ApiBase string `json:"apiBase,omitempty" yaml:"apiBase,omitempty"`
+	ApiBase *string `json:"apiBase,omitempty" yaml:"apiBase,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -778,24 +758,23 @@ type OdigosConfiguration struct {
 	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
 	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
-	CustomContainerRuntimeSocketPath  string                          `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
-	AgentEnvVarsInjectionMethod       *EnvInjectionMethod             `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
-	UserInstrumentationEnvs           *UserInstrumentationEnvs        `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
-	NodeSelector                      map[string]string               `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
-	KarpenterEnabled                  *bool                           `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
-	Rollout                           *RolloutConfiguration           `json:"rollout,omitempty" yaml:"rollout"`
-	RollbackDisabled                  *bool                           `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
-	RollbackGraceTime                 string                          `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
-	RollbackStabilityWindow           string                          `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
-	Oidc                              *OidcConfiguration              `json:"oidc,omitempty" yaml:"oidc"`
-	OdigletHealthProbeBindPort        int                             `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
-	GoAutoOffsetsCron                 string                          `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
-	GoAutoOffsetsMode                 string                          `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
-	ClickhouseJsonTypeEnabledProperty *bool                           `json:"clickhouseJsonTypeEnabled,omitempty"`
-	CheckDeviceHealthBeforeInjection  *bool                           `json:"checkDeviceHealthBeforeInjection,omitempty"`
-	ResourceSizePreset                string                          `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
-	MetricsSources                    *MetricsSourceConfiguration     `json:"metricsSources,omitempty" yaml:"metricsSources"`
-	TraceCorrelations                 *TraceCorrelationsConfiguration `json:"traceCorrelations,omitempty" yaml:"traceCorrelations"`
+	CustomContainerRuntimeSocketPath  string                      `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+	AgentEnvVarsInjectionMethod       *EnvInjectionMethod         `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
+	UserInstrumentationEnvs           *UserInstrumentationEnvs    `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
+	NodeSelector                      map[string]string           `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  *bool                       `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	Rollout                           *RolloutConfiguration       `json:"rollout,omitempty" yaml:"rollout"`
+	RollbackDisabled                  *bool                       `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 string                      `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           string                      `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	Oidc                              *OidcConfiguration          `json:"oidc,omitempty" yaml:"oidc"`
+	OdigletHealthProbeBindPort        int                         `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 string                      `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	GoAutoOffsetsMode                 string                      `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
+	ClickhouseJsonTypeEnabledProperty *bool                       `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection  *bool                       `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset                string                      `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+	MetricsSources                    *MetricsSourceConfiguration `json:"metricsSources,omitempty" yaml:"metricsSources"`
 
 	//nolint:lll // AgentsInitContainerResources line is long due to struct tag requirements
 	AgentsInitContainerResources *AgentsInitContainerResources `json:"agentsInitContainerResources,omitempty" yaml:"agentsInitContainerResources"`
@@ -870,6 +849,57 @@ func InterrogationActive(c *InterrogationConfiguration) bool {
 // this configuration.
 func (o *OdigosConfiguration) InterrogationEnabled() bool {
 	return o != nil && InterrogationActive(o.Interrogation)
+}
+
+// InterrogationAnalysisEnabled reports whether the Helm-provisioned loop should
+// analyze and apply probes. Pausing analysis does not disable data collection.
+func (o *OdigosConfiguration) InterrogationAnalysisEnabled() bool {
+	return o.InterrogationEnabled() && (o.Interrogation.AnalysisEnabled == nil || *o.Interrogation.AnalysisEnabled)
+}
+
+// MergeInterrogationSettings applies fields that can be changed without
+// provisioning workloads. It intentionally ignores Enabled and credential
+// references, whose ownership is handled separately.
+func MergeInterrogationSettings(base, overlay *InterrogationConfiguration) {
+	if base == nil || overlay == nil {
+		return
+	}
+	if overlay.AnalysisEnabled != nil {
+		base.AnalysisEnabled = overlay.AnalysisEnabled
+	}
+	if overlay.Model == nil {
+		return
+	}
+	if base.Model == nil {
+		base.Model = &InterrogationModelConfiguration{}
+	}
+	if overlay.Model.Provider != nil {
+		base.Model.Provider = overlay.Model.Provider
+	}
+	if overlay.Model.Name != nil {
+		base.Model.Name = overlay.Model.Name
+	}
+	if overlay.Model.ApiBase != nil {
+		base.Model.ApiBase = overlay.Model.ApiBase
+	}
+}
+
+// InterrogationModelHash identifies the selected, non-secret upstream routing
+// settings. Credentials and the runtime analysis switch do not affect it.
+func InterrogationModelHash(model *InterrogationModelConfiguration) string {
+	provider, name, apiBase := "openai", "gpt-4o-mini", ""
+	if model != nil {
+		if model.Provider != nil {
+			provider = strings.TrimSpace(*model.Provider)
+		}
+		if model.Name != nil {
+			name = strings.TrimSpace(*model.Name)
+		}
+		if model.ApiBase != nil {
+			apiBase = strings.TrimSpace(*model.ApiBase)
+		}
+	}
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(provider+"\x00"+name+"\x00"+apiBase)))
 }
 
 // UrlTemplatizationLiveTrafficLearningActive reports whether traffic-based URL

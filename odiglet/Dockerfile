@@ -63,8 +63,8 @@ COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8@sha256:6
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.90@sha256:26be5a681e6cde7585f0bff6714fd74dbc90515a239d4759f5b6225591a78185 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.16.0@sha256:46f225a7041046b141a1804f5f812ac2842b96a30b3f25e4368c4bf670bf1058 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.16.0@sha256:46f225a7041046b141a1804f5f812ac2842b96a30b3f25e4368c4bf670bf1058 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.17.0@sha256:c8e0f4c3ceb33a3be3120d32220ecfd6a43e813c3e8dc8a5ea87b885cf356da1 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.17.0@sha256:c8e0f4c3ceb33a3be3120d32220ecfd6a43e813c3e8dc8a5ea87b885cf356da1 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198ee74c61539f39614ec96b4ef9c7069140079e121541231f11f8b13863283 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198ee74c61539f39614ec96b4ef9c7069140079e121541231f11f8b13863283 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
@@ -73,7 +73,7 @@ COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # php-community
-COPY --from=public.ecr.aws/odigos/agents/php-community:v0.8.0@sha256:0489f13aadab0ca3f9fe2d435a91a023fa7d5dde5ef0fe638b69d9a78a7f8ed4 /instrumentations/php /instrumentations/php
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.9.0@sha256:dd1469ad9d8551a647dcc072bb2f8adb683e0484124e261ad0972ed24eef50c3 /instrumentations/php /instrumentations/php
 
 # ruby-community
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.9@sha256:5177737aba83e507ee968223fbd821d76e2df4e74bd1711e2d49e8d59f671d8c /instrumentations/ruby /instrumentations/ruby

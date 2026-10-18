@@ -77,6 +77,13 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		logger.Error(err, "Failed to get local UI config, using only helm-managed config")
 	} else if localUiConfig != nil {
 		mergeConfigs(&odigosConfiguration, localUiConfig)
+		// Credential references are accepted only from the local UI ConfigMap.
+		// Remote configuration cannot point the proxy at an arbitrary Secret.
+		if localUiConfig.Interrogation != nil && odigosConfiguration.InterrogationEnabled() {
+			odigosConfiguration.Interrogation.CredentialSecretName = localUiConfig.Interrogation.CredentialSecretName
+			odigosConfiguration.Interrogation.PreviousCredentialSecretName = localUiConfig.Interrogation.PreviousCredentialSecretName
+			odigosConfiguration.Interrogation.UpdateID = localUiConfig.Interrogation.UpdateID
+		}
 		logger.Debug("Merged local UI config into effective config")
 	}
 
@@ -377,28 +384,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
-	if addtionalConfig.TraceCorrelations != nil && addtionalConfig.TraceCorrelations.ServiceIO != nil {
-		if baseConfig.TraceCorrelations == nil {
-			baseConfig.TraceCorrelations = &common.TraceCorrelationsConfiguration{}
-		}
-		if baseConfig.TraceCorrelations.ServiceIO == nil {
-			baseConfig.TraceCorrelations.ServiceIO = &common.TraceCorrelationsServiceIOConfiguration{}
-		}
-		overlay, dst := addtionalConfig.TraceCorrelations.ServiceIO, baseConfig.TraceCorrelations.ServiceIO
-		if overlay.Enabled != nil {
-			dst.Enabled = overlay.Enabled
-		}
-		if overlay.InputSpanAttributes != nil {
-			dst.InputSpanAttributes = overlay.InputSpanAttributes
-		}
-		if overlay.OutputSpanAttributes != nil {
-			dst.OutputSpanAttributes = overlay.OutputSpanAttributes
-		}
-		if overlay.MetricsFlushInterval != "" {
-			dst.MetricsFlushInterval = overlay.MetricsFlushInterval
-		}
-	}
-
 	// liveTrafficLearning.enabled is deliberately not merged: it is isHelmOnly in the config catalog
 	// because turning it on renders the odigos-cache workload, which only helm can do at install time.
 	// An overlay that enabled it would point the gateway exporter at a Service that was never created.
@@ -446,15 +431,10 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
-	// interrogation.enabled is deliberately not merged: turning it on renders the insights and
-	// LiteLLM workloads, which only helm can do at install time.
-	// The model is replaced as a unit so an overlay can clear fields such as apiBase when
-	// switching providers.
-	if addtionalConfig.Interrogation != nil && addtionalConfig.Interrogation.Model != nil && addtionalConfig.Interrogation.Model.Provider != "" {
-		if baseConfig.Interrogation == nil {
-			baseConfig.Interrogation = &common.InterrogationConfiguration{}
-		}
-		baseConfig.Interrogation.Model = addtionalConfig.Interrogation.Model.DeepCopy()
+	// Helm alone provisions interrogation. Model fields and the runtime analysis
+	// switch may be overridden only after the feature is provisioned.
+	if baseConfig.InterrogationEnabled() && addtionalConfig.Interrogation != nil {
+		common.MergeInterrogationSettings(baseConfig.Interrogation, addtionalConfig.Interrogation)
 	}
 
 	// Future fields can be added here following the same pattern:

@@ -13,6 +13,7 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -137,6 +138,8 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		Scheme: scheme,
 		Cache: &client.CacheOptions{
 			Reader: k8sCache,
+			// Lease ownership must be current, and the UI only has get permission.
+			DisableFor: []client.Object{&coordinationv1.Lease{}},
 		},
 	})
 	if err != nil {

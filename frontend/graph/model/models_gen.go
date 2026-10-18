@@ -532,7 +532,6 @@ type EffectiveConfig struct {
 	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
 	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
 	CardinalityControl               *CardinalityControlConfig           `json:"cardinalityControl,omitempty"`
-	TraceCorrelations                *TraceCorrelationsConfig            `json:"traceCorrelations,omitempty"`
 	Interrogation                    *InterrogationConfig                `json:"interrogation,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
@@ -1946,12 +1945,16 @@ type InterrogationCallTrieNode struct {
 }
 
 type InterrogationConfig struct {
-	Enabled *bool                     `json:"enabled,omitempty"`
-	Model   *InterrogationModelConfig `json:"model,omitempty"`
+	AnalysisEnabled *bool                     `json:"analysisEnabled,omitempty"`
+	Enabled         *bool                     `json:"enabled,omitempty"`
+	Model           *InterrogationModelConfig `json:"model,omitempty"`
 }
 
 type InterrogationConfigInput struct {
-	Model *InterrogationModelConfigInput `json:"model,omitempty"`
+	AnalysisEnabled *bool                          `json:"analysisEnabled,omitempty"`
+	UpdateID        *string                        `json:"updateId,omitempty"`
+	ResetPaths      []string                       `json:"resetPaths,omitempty"`
+	Model           *InterrogationModelConfigInput `json:"model,omitempty"`
 }
 
 // One detected function from a profile sample linked to a transaction.
@@ -1976,6 +1979,16 @@ type InterrogationModelConfigInput struct {
 	Name     *string `json:"name,omitempty"`
 	APIBase  *string `json:"apiBase,omitempty"`
 	APIKey   *string `json:"apiKey,omitempty"`
+}
+
+type InterrogationSettingsStatus struct {
+	Provisioned      bool    `json:"provisioned"`
+	UpdateID         string  `json:"updateId"`
+	ObservedUpdateID string  `json:"observedUpdateId"`
+	State            string  `json:"state"`
+	Error            *string `json:"error,omitempty"`
+	APIKeyConfigured bool    `json:"apiKeyConfigured"`
+	APIKeySource     string  `json:"apiKeySource"`
 }
 
 // One transaction observed for a workload container, with ClickHouse-stored functions.
@@ -2162,13 +2175,14 @@ type K8sWorkloadConditions struct {
 }
 
 type K8sWorkloadContainer struct {
-	ContainerName    string                                           `json:"containerName"`
-	RuntimeInfo      *K8sWorkloadRuntimeInfoContainer                 `json:"runtimeInfo,omitempty"`
-	AgentEnabled     *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
-	Overrides        *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
-	AgentConfig      *K8sWorkloadContainerAgentConfig                 `json:"agentConfig,omitempty"`
-	CollectorConfig  *K8sWorkloadContainerCollectorConfig             `json:"collectorConfig,omitempty"`
-	Instrumentations []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
+	ContainerName     string                                           `json:"containerName"`
+	RuntimeInfo       *K8sWorkloadRuntimeInfoContainer                 `json:"runtimeInfo,omitempty"`
+	AgentEnabled      *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
+	Overrides         *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
+	AgentConfig       *K8sWorkloadContainerAgentConfig                 `json:"agentConfig,omitempty"`
+	CollectorConfig   *K8sWorkloadContainerCollectorConfig             `json:"collectorConfig,omitempty"`
+	Instrumentations  []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
+	URLTemplatization *K8sWorkloadContainerURLTemplatization           `json:"urlTemplatization,omitempty"`
 	// Trace interrogation: transactions and detected stack functions for this
 	// container, read from interrogation ClickHouse (tx_call_trie). Empty when
 	// interrogation is disabled or nothing has been stored yet.
@@ -2233,11 +2247,23 @@ type K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation struct {
 	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
 }
 
+type K8sWorkloadContainerLiveTrafficLearning struct {
+	UnmatchedServerPaths   []*UnmatchedURLPath                   `json:"unmatchedServerPaths,omitempty"`
+	UnmatchedClientPaths   []*UnmatchedURLPath                   `json:"unmatchedClientPaths,omitempty"`
+	ServerRecommendedRules []*LiveTrafficLearningRecommendedRule `json:"serverRecommendedRules,omitempty"`
+	ClientRecommendedRules []*LiveTrafficLearningRecommendedRule `json:"clientRecommendedRules,omitempty"`
+}
+
 type K8sWorkloadContainerOverrides struct {
 	ContainerName         string                           `json:"containerName"`
 	RuntimeInfo           *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
 	OtelDistroName        *string                          `json:"otelDistroName,omitempty"`
 	AllowConcurrentAgents *bool                            `json:"allowConcurrentAgents,omitempty"`
+}
+
+type K8sWorkloadContainerURLTemplatization struct {
+	Templatization      *LiveTrafficLearningTemplatization       `json:"templatization,omitempty"`
+	LiveTrafficLearning *K8sWorkloadContainerLiveTrafficLearning `json:"liveTrafficLearning,omitempty"`
 }
 
 type K8sWorkloadID struct {
@@ -2378,9 +2404,41 @@ type LiveTrafficLearningConfig struct {
 	AutomaticRules             *LiveTrafficLearningAutomaticRulesConfig  `json:"automaticRules,omitempty"`
 }
 
+type LiveTrafficLearningPatternBasedTemplatization struct {
+	Disabled   bool                                `json:"disabled"`
+	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
+}
+
+type LiveTrafficLearningRecommendedRule struct {
+	Template string                                   `json:"template"`
+	Reason   string                                   `json:"reason"`
+	Segments []*LiveTrafficLearningRecommendedSegment `json:"segments"`
+}
+
+type LiveTrafficLearningRecommendedSegment struct {
+	TemplateName string   `json:"templateName"`
+	Static       bool     `json:"static"`
+	Certainty    float64  `json:"certainty"`
+	Examples     []string `json:"examples"`
+}
+
 type LiveTrafficLearningRuleComputationConfig struct {
 	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
 	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
+}
+
+type LiveTrafficLearningTemplate struct {
+	Template   string    `json:"template"`
+	Examples   []string  `json:"examples"`
+	Notes      *string   `json:"notes,omitempty"`
+	ActionID   *string   `json:"actionId,omitempty"`
+	ActionName *string   `json:"actionName,omitempty"`
+	ManagedBy  ManagedBy `json:"managedBy"`
+}
+
+type LiveTrafficLearningTemplatization struct {
+	Templates                  []*LiveTrafficLearningTemplate                 `json:"templates"`
+	PatternBasedTemplatization *LiveTrafficLearningPatternBasedTemplatization `json:"patternBasedTemplatization,omitempty"`
 }
 
 type LocalUIConfigAllowConcurrentAgentsInput struct {
@@ -2422,7 +2480,6 @@ type LocalUIConfigInput struct {
 	GoAutoOffsetsMode     *string                                  `json:"goAutoOffsetsMode,omitempty"`
 	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
 	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
-	TraceCorrelations     *LocalUIConfigTraceCorrelationsInput     `json:"traceCorrelations,omitempty"`
 	CardinalityControl    *LocalUIConfigCardinalityControlInput    `json:"cardinalityControl,omitempty"`
 	Interrogation         *InterrogationConfigInput                `json:"interrogation,omitempty"`
 }
@@ -2466,17 +2523,6 @@ type LocalUIConfigSpanSamplingAttributesInput struct {
 	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
 	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
 	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
-}
-
-type LocalUIConfigTraceCorrelationsInput struct {
-	ServiceIo *LocalUIConfigTraceCorrelationsServiceIOInput `json:"serviceIO,omitempty"`
-}
-
-type LocalUIConfigTraceCorrelationsServiceIOInput struct {
-	Enabled              *bool    `json:"enabled,omitempty"`
-	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
-	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
-	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
 }
 
 type LocalUIConfigURLTemplatizationCardinalityControlInput struct {
@@ -3040,48 +3086,6 @@ type TestConnectionResponse struct {
 	Reason          *string `json:"reason,omitempty"`
 }
 
-type TraceCorrelations struct {
-	Workloads []*TraceCorrelationsWorkload `json:"workloads"`
-}
-
-type TraceCorrelationsConfig struct {
-	ServiceIo *TraceCorrelationsServiceIOConfig `json:"serviceIO,omitempty"`
-}
-
-type TraceCorrelationsInputGroup struct {
-	Attributes []*NonIdentifyingAttribute       `json:"attributes"`
-	Outputs    []*TraceCorrelationsOutputSeries `json:"outputs"`
-}
-
-type TraceCorrelationsOutputSeries struct {
-	Attributes      []*NonIdentifyingAttribute `json:"attributes"`
-	ConnectionCount int                        `json:"connectionCount"`
-	FirstDetectedAt string                     `json:"firstDetectedAt"`
-}
-
-type TraceCorrelationsServiceIOConfig struct {
-	Enabled              *bool    `json:"enabled,omitempty"`
-	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
-	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
-	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
-}
-
-type TraceCorrelationsTimeRangeInput struct {
-	Start string `json:"start"`
-	End   string `json:"end"`
-}
-
-type TraceCorrelationsWorkload struct {
-	Namespace             string                         `json:"namespace"`
-	Kind                  K8sResourceKind                `json:"kind"`
-	Name                  string                         `json:"name"`
-	ContainerName         string                         `json:"containerName"`
-	TelemetrySdkLanguage  *string                        `json:"telemetrySdkLanguage,omitempty"`
-	ProcessRuntimeName    *string                        `json:"processRuntimeName,omitempty"`
-	ProcessRuntimeVersion *string                        `json:"processRuntimeVersion,omitempty"`
-	Inputs                []*TraceCorrelationsInputGroup `json:"inputs"`
-}
-
 type URLTemplatizationRule struct {
 	Template string   `json:"template"`
 	Notes    *string  `json:"notes,omitempty"`
@@ -3092,6 +3096,11 @@ type URLTemplatizationRuleInput struct {
 	Template string   `json:"template"`
 	Notes    *string  `json:"notes,omitempty"`
 	Examples []string `json:"examples,omitempty"`
+}
+
+type UnmatchedURLPath struct {
+	Path  string `json:"path"`
+	Count int    `json:"count"`
 }
 
 type URLTemplatizationCardinalityControlConfig struct {
@@ -4837,22 +4846,24 @@ func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) Marsha
 type ManagedBy string
 
 const (
-	ManagedByProfile           ManagedBy = "Profile"
-	ManagedByOdigosUI          ManagedBy = "OdigosUi"
-	ManagedByInterrogationLoop ManagedBy = "InterrogationLoop"
-	ManagedByUnknown           ManagedBy = "Unknown"
+	ManagedByProfile             ManagedBy = "Profile"
+	ManagedByOdigosUI            ManagedBy = "OdigosUi"
+	ManagedByInterrogationLoop   ManagedBy = "InterrogationLoop"
+	ManagedByLiveTrafficLearning ManagedBy = "LiveTrafficLearning"
+	ManagedByUnknown             ManagedBy = "Unknown"
 )
 
 var AllManagedBy = []ManagedBy{
 	ManagedByProfile,
 	ManagedByOdigosUI,
 	ManagedByInterrogationLoop,
+	ManagedByLiveTrafficLearning,
 	ManagedByUnknown,
 }
 
 func (e ManagedBy) IsValid() bool {
 	switch e {
-	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByUnknown:
+	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByLiveTrafficLearning, ManagedByUnknown:
 		return true
 	}
 	return false

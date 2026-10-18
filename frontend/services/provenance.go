@@ -155,22 +155,6 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 		}
 	}
 
-	if config.TraceCorrelations != nil && config.TraceCorrelations.ServiceIO != nil {
-		serviceIO := config.TraceCorrelations.ServiceIO
-		if serviceIO.Enabled != nil {
-			provenance["traceCorrelations.serviceIO.enabled"] = sourceName
-		}
-		if serviceIO.InputSpanAttributes != nil {
-			provenance["traceCorrelations.serviceIO.inputSpanAttributes"] = sourceName
-		}
-		if serviceIO.OutputSpanAttributes != nil {
-			provenance["traceCorrelations.serviceIO.outputSpanAttributes"] = sourceName
-		}
-		if serviceIO.MetricsFlushInterval != "" {
-			provenance["traceCorrelations.serviceIO.metricsFlushInterval"] = sourceName
-		}
-	}
-
 	if config.CardinalityControl != nil &&
 		config.CardinalityControl.UrlTemplatization != nil &&
 		config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
@@ -202,13 +186,23 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 		}
 	}
 
-	// The overlay model replaces the effective model as a unit once it has a provider,
-	// so every model field originates from this source, including cleared ones.
-	if config.Interrogation != nil && config.Interrogation.Model != nil && config.Interrogation.Model.Provider != "" {
-		provenance["interrogation.model.provider"] = sourceName
-		provenance["interrogation.model.name"] = sourceName
-		provenance["interrogation.model.apiBase"] = sourceName
+	if config.Interrogation != nil {
+		if config.Interrogation.AnalysisEnabled != nil {
+			provenance["interrogation.analysisEnabled"] = sourceName
+		}
+		if m := config.Interrogation.Model; m != nil {
+			if m.Provider != nil {
+				provenance["interrogation.model.provider"] = sourceName
+			}
+			if m.Name != nil {
+				provenance["interrogation.model.name"] = sourceName
+			}
+			if m.ApiBase != nil {
+				provenance["interrogation.model.apiBase"] = sourceName
+			}
+		}
 	}
+
 }
 
 // detectProfileProvenance identifies fields modified by profile application.

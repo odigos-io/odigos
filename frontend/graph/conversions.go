@@ -499,51 +499,28 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		}
 	}
 
-	if config.TraceCorrelations != nil {
-		result.TraceCorrelations = &model.TraceCorrelationsConfig{
-			ServiceIo: &model.TraceCorrelationsServiceIOConfig{},
-		}
-		if config.TraceCorrelations.ServiceIO != nil {
-			serviceIO := config.TraceCorrelations.ServiceIO
-			result.TraceCorrelations.ServiceIo.Enabled = serviceIO.Enabled
-			if serviceIO.Enabled != nil {
-				pc.record("traceCorrelations.serviceIO.enabled")
-			}
-			if len(serviceIO.InputSpanAttributes) > 0 {
-				result.TraceCorrelations.ServiceIo.InputSpanAttributes = serviceIO.InputSpanAttributes
-				pc.record("traceCorrelations.serviceIO.inputSpanAttributes")
-			}
-			if len(serviceIO.OutputSpanAttributes) > 0 {
-				result.TraceCorrelations.ServiceIo.OutputSpanAttributes = serviceIO.OutputSpanAttributes
-				pc.record("traceCorrelations.serviceIO.outputSpanAttributes")
-			}
-			if serviceIO.MetricsFlushInterval != "" {
-				result.TraceCorrelations.ServiceIo.MetricsFlushInterval = ptrStr(serviceIO.MetricsFlushInterval)
-				pc.record("traceCorrelations.serviceIO.metricsFlushInterval")
-			}
-		}
-	}
-
 	if config.Interrogation != nil {
 		result.Interrogation = &model.InterrogationConfig{
-			Enabled: config.Interrogation.Enabled,
+			Enabled:         config.Interrogation.Enabled,
+			AnalysisEnabled: ptrBool(config.InterrogationAnalysisEnabled()),
 		}
+		pc.record("interrogation.analysisEnabled")
 		if config.Interrogation.Enabled != nil {
 			pc.record("interrogation.enabled")
 		}
 		if config.Interrogation.Model != nil {
 			m := config.Interrogation.Model
 			result.Interrogation.Model = &model.InterrogationModelConfig{}
-			if m.Provider != "" {
-				result.Interrogation.Model.Provider = ptrStr(m.Provider)
+			if m.Provider != nil {
+				result.Interrogation.Model.Provider = m.Provider
 				pc.record("interrogation.model.provider")
 			}
-			if m.Name != "" {
-				result.Interrogation.Model.Name = ptrStr(m.Name)
+			if m.Name != nil {
+				result.Interrogation.Model.Name = m.Name
 				pc.record("interrogation.model.name")
 			}
-			if m.ApiBase != "" {
-				result.Interrogation.Model.APIBase = ptrStr(m.ApiBase)
+			if m.ApiBase != nil {
+				result.Interrogation.Model.APIBase = m.ApiBase
 				pc.record("interrogation.model.apiBase")
 			}
 		}

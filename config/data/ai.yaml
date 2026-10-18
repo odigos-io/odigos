@@ -5,12 +5,13 @@ metadata:
   displayName: AI
 spec:
   fields:
-    - displayName: Interrogation
+    - displayName: AI analysis
       componentType: toggle
-      isHelmOnly: true
+      isHelmOnly: false
       isEnterpriseOnly: true
-      description: Correlate traces with profiles and analyze them with an LLM served through the bundled LiteLLM proxy. Requires insights and must be set via Helm (insights.interrogation.enabled).
-      helmValuePath: interrogation.enabled
+      description: Pause or resume AI analysis. Pausing stops LLM requests and new AI-generated rule changes while evidence collection continues.
+      helmValuePath: interrogation.analysisEnabled
+      renderCondition: ["interrogation.enabled", "==", "true"]
     - displayName: Provider
       componentType: dropdown
       isHelmOnly: false
@@ -45,7 +46,7 @@ spec:
       componentType: input
       isHelmOnly: false
       isEnterpriseOnly: true
-      description: The provider API key. Stored in the odigos-litellm Secret and never displayed. Leave empty to keep the current key.
+      description: The provider API key. Stored as a separate UI credential override and never displayed. Leave empty to keep the current key; reset to inherit the Helm credential.
       helmValuePath: interrogation.model.apiKey
       renderCondition: ["interrogation.enabled", "==", "true"]
       componentProps:

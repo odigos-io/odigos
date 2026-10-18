@@ -7,7 +7,7 @@ export const UPDATE_LOCAL_UI_CONFIG = gql`
 `;
 
 export const RESET_LOCAL_UI_CONFIG_TO_FACTORY_DEFAULTS = gql`
-  mutation ResetLocalUiConfigToFactoryDefaults {
-    resetLocalUiConfigToFactoryDefaults
+  mutation ResetLocalUiConfigToFactoryDefaults($updateId: String) {
+    resetLocalUiConfigToFactoryDefaults(updateId: $updateId)
   }
 `;

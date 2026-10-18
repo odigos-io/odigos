@@ -1,0 +1,68 @@
+# Types for K8sWorkloadContainer.urlTemplatization (see workload.graphqls).
+#
+# Resolved UrlTemplatization config (from InstrumentationConfig), plus optional
+# live-traffic learning (unmatched HTTP paths from cacheDb and recommended rules
+# computed on each query). Paths that already match an accepted templatization
+# rule for the container are omitted from the path lists and from
+# recommended-rule computation.
+
+type UnmatchedUrlPath {
+  path: String!
+  count: Int!
+}
+
+type LiveTrafficLearningRecommendedSegment {
+  templateName: String!
+  # True for concrete path literals; false for dynamic * / {name} segments.
+  static: Boolean!
+  # Confidence in this segment: 0 (uncertain) to 1 (most certain).
+  certainty: Float!
+  examples: [String!]!
+}
+
+type LiveTrafficLearningRecommendedRule {
+  template: String!
+  reason: String!
+  segments: [LiveTrafficLearningRecommendedSegment!]!
+}
+
+# Pattern-based (heuristic) templatization settings resolved for the container
+# (from UrlTemplatizationConfig.default).
+type LiveTrafficLearningPatternBasedTemplatization {
+  disabled: Boolean!
+  skipPolicy: UrlTemplatizationDefaultSkipPolicy
+}
+
+# One template applied to a container, resolved from the URLTemplatization Actions
+# whose rule scopes match the workload. actionId / actionName are null for templates
+# that are present in the resolved config but no longer match any Action rule.
+type LiveTrafficLearningTemplate {
+  template: String!
+  examples: [String!]!
+  notes: String
+  actionId: String
+  actionName: String
+  managedBy: ManagedBy!
+}
+
+# Resolved URL templatization applied to the container.
+type LiveTrafficLearningTemplatization {
+  templates: [LiveTrafficLearningTemplate!]!
+  patternBasedTemplatization: LiveTrafficLearningPatternBasedTemplatization
+}
+
+# Live-traffic learning data for a single container.
+# Null when live-traffic learning is not enabled, or when the feature is
+# unavailable (OSS / unset hook).
+type K8sWorkloadContainerLiveTrafficLearning {
+  unmatchedServerPaths: [UnmatchedUrlPath!]
+  unmatchedClientPaths: [UnmatchedUrlPath!]
+  serverRecommendedRules: [LiveTrafficLearningRecommendedRule!]
+  clientRecommendedRules: [LiveTrafficLearningRecommendedRule!]
+}
+
+# URL templatization for a single container.
+type K8sWorkloadContainerUrlTemplatization {
+  templatization: LiveTrafficLearningTemplatization
+  liveTrafficLearning: K8sWorkloadContainerLiveTrafficLearning
+}

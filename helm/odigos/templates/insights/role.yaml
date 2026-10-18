@@ -12,7 +12,11 @@ rules:
   # applies its suggested probes as InstrumentationRules.
   - apiGroups: [""]
     resources: ["configmaps"]
-    verbs: ["get", "list", "watch"]
+    verbs: ["get", "list", "watch", "create"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["odigos-interrogation-status"]
+    verbs: ["update", "patch"]
   - apiGroups: ["odigos.io"]
     resources: ["instrumentationrules"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
@@ -23,4 +27,9 @@ rules:
     resources: ["configmaps"]
     verbs: ["get"]
   {{- end }}
+  # Singleton jobs (findings notifier, recommendation sweeps) run on exactly one
+  # replica, elected through a Lease (odigos-insights-leader).
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update"]
 {{- end }}

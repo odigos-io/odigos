@@ -91,6 +91,7 @@ import {
   GET_DESTINATIONS,
   GET_DESTINATION_CATEGORIES,
   GET_EFFECTIVE_CONFIG,
+  GET_INTERROGATION_SETTINGS_STATUS,
   GET_INSTRUMENTATION_RULES,
   GET_INSTRUMENTATION_RULE_TYPES,
   GET_K8S_MANIFEST,
@@ -354,7 +355,11 @@ const operations: OdigosApiOperations = {
     },
   },
   GET_CONFIG_YAMLS: { document: GET_CONFIG_YAMLS },
-  UPDATE_LOCAL_UI_CONFIG: { document: UPDATE_LOCAL_UI_CONFIG },
+  GET_INTERROGATION_SETTINGS_STATUS: {
+    document: GET_INTERROGATION_SETTINGS_STATUS,
+    transformResult: (raw) => (raw as { interrogationSettingsStatus?: unknown } | undefined)?.interrogationSettingsStatus,
+  },
+  UPDATE_LOCAL_UI_CONFIG: { document: UPDATE_LOCAL_UI_CONFIG, noCache: true },
   RESET_LOCAL_UI_CONFIG_TO_FACTORY_DEFAULTS: { document: RESET_LOCAL_UI_CONFIG_TO_FACTORY_DEFAULTS },
 
   // describe / diagnose. Bare-shape slot for diagnose unwraps the

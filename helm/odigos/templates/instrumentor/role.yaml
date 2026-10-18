@@ -214,6 +214,17 @@ rules:
       - get
       - list
       - watch
+      - create
+      - delete
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    resourceNames:
+      - odigos-litellm-runtime
+    verbs:
+      - update
+      - patch
   - apiGroups:
       - ''
     resources:
