@@ -328,6 +328,7 @@
                       "oss/backends/tingyun",
                       "oss/backends/traceloop",
                       "oss/backends/uptrace",
+                      "oss/backends/victorialogs",
                       "oss/backends/victoriametricscloud"
                     ]
                   }
@@ -661,6 +662,7 @@
                       "enterprise/backends/tingyun",
                       "enterprise/backends/traceloop",
                       "enterprise/backends/uptrace",
+                      "enterprise/backends/victorialogs",
                       "enterprise/backends/victoriametricscloud"
                     ]
                   }
