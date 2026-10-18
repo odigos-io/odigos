@@ -20,11 +20,18 @@ func (ci *CustomInstrumentations) Verify() error {
 	if ci == nil {
 		return nil
 	}
-	// Validate Golang probes
+	// Validate Golang probes; one signature per symbol
+	goSignatures := make(map[GolangCustomProbe]string, len(ci.Golang))
 	for _, p := range ci.Golang {
 		if err := p.Verify(); err != nil {
 			return fmt.Errorf("invalid configuration for golang custom instrumentation: %w", err)
 		}
+		symbol := p
+		symbol.Signature = ""
+		if prev, ok := goSignatures[symbol]; ok && prev != p.Signature {
+			return fmt.Errorf("invalid configuration for golang custom instrumentation: %v declares signatures %q and %q", symbol, prev, p.Signature)
+		}
+		goSignatures[symbol] = p.Signature
 	}
 	// Validate Java probes
 	for _, p := range ci.Java {
@@ -84,6 +91,8 @@ type GolangCustomProbe struct {
 	// for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
 	// ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
 	ReceiverMethodName string `json:"receiverMethodName,omitempty" yaml:"receiverMethodName,omitempty"`
+	// Signature is the Go func type without the receiver, ie "func(id int64) uint64"; optional
+	Signature string `json:"signature,omitempty" yaml:"signature,omitempty"`
 }
 
 // For golang we require package name and either function name or receiver name + method name

@@ -141,6 +141,10 @@ spec:
                             ReceiverName is the name of the golang receiver struct to be instrumented, ie for the "net/http" package, "response" is a receiver struct
                             ReceiverName is disallowed if FunctionName is provided; Receiver must be a concrete type (not an interface)
                           type: string
+                        signature:
+                          description: Signature is the Go func type without the receiver,
+                            ie "func(id int64) uint64"; optional
+                          type: string
                       required:
                       - packageName
                       type: object

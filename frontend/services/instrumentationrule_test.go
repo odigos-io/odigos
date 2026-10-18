@@ -300,3 +300,27 @@ func TestUpdateInstrumentationRuleExplicitNullWidensSelectors(t *testing.T) {
 	require.Nil(t, updated.Spec.InstrumentationLibraries)
 	require.Equal(t, []string{"Authorization"}, updated.Spec.HeadersCollection.HeaderKeys)
 }
+
+func TestCustomInstrumentationsGolangSignatureRoundTrip(t *testing.T) {
+	packageName := "main"
+	functionName := "computeScore"
+	signature := "func(n int32) uint64"
+
+	input := model.InstrumentationRuleInput{
+		CustomInstrumentations: &model.CustomInstrumentationsInput{
+			Golang: []*model.GolangCustomProbeInput{
+				{PackageName: &packageName, FunctionName: &functionName, Signature: &signature},
+			},
+		},
+	}
+	api, err := getCustomInstrumentationsInput(input)
+	require.NoError(t, err)
+	require.Equal(t, signature, api.Golang[0].Signature)
+
+	gql := convertCustomInstrumentations(&apirules.CustomInstrumentations{
+		Golang: []apirules.GolangCustomProbe{
+			{PackageName: packageName, FunctionName: functionName, Signature: signature},
+		},
+	})
+	require.Equal(t, signature, *gql.Golang[0].Signature)
+}
