@@ -137,3 +137,13 @@ version listed in [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/
 The Rekor proof travels inside the signature bundle, so verification works offline:
 supply `--trusted-root` with a Sigstore trusted-root file instead of relying on
 `--offline` (removed in cosign 3.x).
+
+## Linux package signing keys
+
+Every `.rpm` and `.deb` we publish is signed with the current key below. The keyring at
+`https://docs.odigos.io/keys/odigos-package-signing-keys.asc` always contains every key that signed a published package: point `gpgkey=` at it once
+and never change it, rotation only appends.
+
+| Fingerprint | Issued | Status | Notes |
+| --- | --- | --- | --- |
+| `725C6BE6AAA4A85731F580C2EFC00F7F22848AE1` | 2026-10-18 | current | initial package signing key (RUN-1042) |
