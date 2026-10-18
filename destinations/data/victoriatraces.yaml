@@ -1,0 +1,89 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: victoriatraces
+  displayName: VictoriaTraces
+  category: self hosted
+spec:
+  image: victoriametrics.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+    profiles:
+      supported: false
+  fields:
+    - name: VICTORIA_TRACES_ENDPOINT
+      displayName: OTLP HTTP Traces Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: http://victoria-traces:10428/insert/opentelemetry/v1/traces
+        tooltip: Full trace ingestion URL. For a root URL, /insert/opentelemetry/v1/traces is appended. For Cloud or an authenticated proxy, copy its complete ingestion URL. HTTPS enables verified TLS.
+    - name: VICTORIA_TRACES_AUTH
+      displayName: Authentication
+      componentType: dropdown
+      initialValue: none
+      componentProps:
+        required: false
+        values:
+          - none
+          - bearer
+          - basic
+        tooltip: Use bearer for VictoriaMetrics Cloud access tokens or basic for an authenticated proxy such as vmauth.
+    - name: VICTORIA_TRACES_TOKEN
+      displayName: Access Token
+      componentType: input
+      secret: true
+      renderCondition: [VICTORIA_TRACES_AUTH, "==", bearer]
+      componentProps:
+        type: password
+        required: false
+        tooltip: Bearer token with permission to write traces. Required when bearer authentication is selected.
+    - name: OTLP_HTTP_BASIC_AUTH_USERNAME
+      displayName: Basic Auth Username
+      componentType: input
+      renderCondition: [VICTORIA_TRACES_AUTH, "==", basic]
+      componentProps:
+        type: text
+        required: false
+        tooltip: Required when basic authentication is selected.
+    - name: OTLP_HTTP_BASIC_AUTH_PASSWORD
+      displayName: Basic Auth Password
+      componentType: input
+      secret: true
+      renderCondition: [VICTORIA_TRACES_AUTH, "==", basic]
+      componentProps:
+        type: password
+        required: false
+        tooltip: Password for the authenticated proxy. Required when basic authentication is selected.
+    - name: OTLP_HTTP_CA_PEM
+      displayName: Certificate Authority
+      componentType: textarea
+      hideFromReadData: ["true"]
+      componentProps:
+        required: false
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: Optional CA certificate in PEM format for HTTPS. Uses system root CAs when empty.
+    - name: OTLP_HTTP_COMPRESSION
+      displayName: Compression
+      componentType: dropdown
+      initialValue: gzip
+      componentProps:
+        required: false
+        values:
+          - gzip
+          - none
+    - name: OTLP_HTTP_HEADERS
+      displayName: Tenant Headers
+      componentType: keyValuePairs
+      componentProps:
+        required: false
+        tooltip: Optional AccountID and ProjectID tenant headers or other non-secret ingestion headers. Use the authentication fields for credentials.
+  note:
+    type: Note
+    content: VictoriaTraces supports traces only. Self-hosted HTTP listens on port 10428 by default. Cloud deployments may require beta access; use the complete ingestion endpoint and a write access token from the Cloud console. Credentials must be stored in the destination Secret. Use HTTPS when sending credentials outside a trusted network.
