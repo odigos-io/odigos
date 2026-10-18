@@ -47,6 +47,7 @@ var availableConfigers = []Configer{
 	&KloudMate{},
 	&Last9{},
 	&Lightstep{},
+	&LogScale{},
 	&Logzio{},
 	&Loki{},
 	&Lumigo{},

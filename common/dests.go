@@ -42,6 +42,7 @@ const (
 	KloudMateDestinationType              DestinationType = "kloudmate"
 	Last9DestinationType                  DestinationType = "last9"
 	LightstepDestinationType              DestinationType = "lightstep"
+	LogScaleDestinationType               DestinationType = "logscale"
 	LogzioDestinationType                 DestinationType = "logzio"
 	LokiDestinationType                   DestinationType = "loki"
 	LumigoDestinationType                 DestinationType = "lumigo"

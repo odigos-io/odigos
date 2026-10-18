@@ -1,0 +1,46 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: logscale
+  displayName: CrowdStrike Falcon LogScale
+  category: managed
+spec:
+  image: logscale.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: false
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: LOGSCALE_ENDPOINT
+      displayName: LogScale Instance URL
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: https://cloud.humio.com
+        tooltip: "Your LogScale Cloud regional URL or self-hosted instance URL. Use HTTPS for Cloud. Odigos adds /api/v1/ingest/otlp/v1/logs; do not include /v1/logs. Falcon NG-SIEM is not supported."
+    - name: LOGSCALE_INGEST_TOKEN
+      displayName: Ingest Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        tooltip: "Create an ingest token in the target LogScale repository under Settings > Ingest tokens. This is a repository ingest token, not a user API token. Associate a parser appropriate for the OTLP JSON conversion."
+  note:
+    type: Note
+    content: |
+      Supports LogScale Cloud and self-hosted LogScale with the OTLP ingestion API enabled.
+      Falcon NG-SIEM does not expose these APIs and is not supported.
+      Only logs are supported by this Odigos destination; metrics, traces, and profiles are disabled.
+      Logs are sent as uncompressed binary Protobuf over OTLP/HTTP and converted to JSON by LogScale.
+      Create an ingest token in the target repository and associate a parser for the converted JSON if you need parsed fields.
+      The exporter splits queued batches at 5000 log records. Keep uncompressed requests below the recommended 5 MB; large log records can still exceed that recommendation.
+      HTTP 401, 403, and 500 are permanent failures in the reused OTLP exporter; 429, 502, 503, and 504 are retried.
+      Resource attributes are preserved in OTLP; Odigos does not flatten or discard them.
+      See [LogScale OTLP ingestion](https://library.humio.com/logscale-api/log-shippers-opentelemetry.html) and [ingest token and parser requirements](https://library.humio.com/logscale-api/api-ingest.html).
