@@ -11,6 +11,7 @@ var availableConfigers = []Configer{
 	&AlibabaCloud{},
 	&AppDynamics{},
 	&AWSCloudWatch{},
+	&AWSFirehose{},
 	&AWSS3{},
 	&AWSXRay{},
 	&Axiom{},

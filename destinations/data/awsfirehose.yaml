@@ -1,0 +1,50 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: firehose
+  displayName: Amazon Data Firehose (via CloudWatch Logs)
+  category: managed
+spec:
+  image: awsfirehose.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: false
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: AWS_CLOUDWATCH_LOG_GROUP_NAME
+      displayName: Source CloudWatch Log Group
+      componentType: input
+      componentProps:
+        required: true
+        tooltip: Create a subscription filter from this fixed log group to an active Firehose delivery stream before sending logs. Odigos does not create the subscription or delivery stream.
+    - name: AWS_CLOUDWATCH_LOG_STREAM_NAME
+      displayName: Source CloudWatch Log Stream
+      componentType: input
+      componentProps:
+        required: true
+        tooltip: The CloudWatch log stream that Odigos writes to in the subscribed log group.
+      initialValue: odigos
+    - name: AWS_CLOUDWATCH_REGION
+      displayName: AWS Region
+      componentType: input
+      componentProps:
+        required: true
+        placeholder: us-east-1
+        tooltip: AWS region containing the CloudWatch log group and Firehose delivery stream. The gateway uses the AWS SDK credential chain, such as an IAM role for its service account.
+    - name: FIREHOSE_ROLE_ARN
+      displayName: Producer IAM Role ARN
+      componentType: input
+      componentProps:
+        required: false
+        tooltip: Optional IAM role assumed by the gateway to write to CloudWatch Logs. This is separate from the CloudWatch subscription and Firehose delivery roles.
+    - name: FIREHOSE_EXTERNAL_ID
+      displayName: Producer Role External ID
+      componentType: input
+      componentProps:
+        required: false
+        tooltip: External ID required by the producer role trust policy when assuming a cross-account role.
