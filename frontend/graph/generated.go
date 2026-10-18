@@ -2147,6 +2147,7 @@ type ComplexityRoot struct {
 		InstrumentationAgents             func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
 		InstrumentationRuleTypes          func(childComplexity int) int
+		InterrogationAPIKey               func(childComplexity int) int
 		InterrogationSettingsStatus       func(childComplexity int) int
 		K8sManifest                       func(childComplexity int, namespace string, kind model.K8sResourceKind, name string) int
 		Namespaces                        func(childComplexity int) int
@@ -2605,6 +2606,7 @@ type QueryResolver interface {
 	GatewayPods(ctx context.Context) ([]*model.PodInfo, error)
 	OdigletPods(ctx context.Context) ([]*model.PodInfo, error)
 	CollectorPod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
+	InterrogationAPIKey(ctx context.Context) (*string, error)
 	InterrogationSettingsStatus(ctx context.Context) (*model.InterrogationSettingsStatus, error)
 	Config(ctx context.Context) (*model.Config, error)
 	RemoteConfig(ctx context.Context) (*model.RemoteConfig, error)
@@ -12642,6 +12644,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.InstrumentationRuleTypes(childComplexity), true
+
+	case "Query.interrogationAPIKey":
+		if e.complexity.Query.InterrogationAPIKey == nil {
+			break
+		}
+
+		return e.complexity.Query.InterrogationAPIKey(childComplexity), true
 
 	case "Query.interrogationSettingsStatus":
 		if e.complexity.Query.InterrogationSettingsStatus == nil {
@@ -81938,6 +81947,47 @@ func (ec *executionContext) fieldContext_Query_collectorPod(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_interrogationAPIKey(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_interrogationAPIKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().InterrogationAPIKey(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_interrogationAPIKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_interrogationSettingsStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_interrogationSettingsStatus(ctx, field)
 	if err != nil {
@@ -112071,6 +112121,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "interrogationAPIKey":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_interrogationAPIKey(ctx, field)
 				return res
 			}
 

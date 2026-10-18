@@ -231,3 +231,61 @@ func TestInterrogationStatusErrorsAndExpiredAcknowledgements(t *testing.T) {
 		})
 	}
 }
+
+type credentialReadCounter struct {
+	client.Client
+	reads int
+}
+
+func (c *credentialReadCounter) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	if _, ok := obj.(*corev1.Secret); ok {
+		c.reads++
+	}
+	return c.Client.Get(ctx, key, obj, opts...)
+}
+
+func TestInterrogationAPIKeyRespectsReadonlyAndCredentialOwnership(t *testing.T) {
+	for _, test := range []struct {
+		name, config, localRef, want string
+		invalid, wantError           bool
+		wantReads                    int
+	}{
+		{name: "Helm credential", config: interrogationEffectiveConfig, want: "helm-key", wantReads: 1},
+		{name: "UI credential", config: interrogationEffectiveConfig, localRef: "odigos-local-ui-ai-test", want: "ui-key", wantReads: 1},
+		{name: "readonly", config: "uiMode: readonly\n" + interrogationEffectiveConfig},
+		{name: "unprovisioned", config: "{}"},
+		{name: "missing configuration", wantError: true},
+		{name: "invalid local reference", config: interrogationEffectiveConfig, localRef: "another-secret", wantError: true},
+		{name: "invalid local revision", config: interrogationEffectiveConfig, localRef: "odigos-local-ui-ai-test", invalid: true, wantError: true, wantReads: 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			immutable := true
+			label := interrogationCredentialLabelValue
+			if test.invalid {
+				label = "other-owner"
+			}
+			objects := []client.Object{
+				aiConfigMap(consts.OdigosEffectiveConfigName, test.config),
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "odigos-litellm", Namespace: env.GetCurrentNamespace()}, Data: map[string][]byte{"upstream-api-key": []byte("helm-key"), "master-key": []byte("never-return-master")}},
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "odigos-local-ui-ai-test", Namespace: env.GetCurrentNamespace(), Labels: map[string]string{interrogationCredentialLabel: label}}, Immutable: &immutable, Data: map[string][]byte{"upstream-api-key": []byte("ui-key")}},
+			}
+			if test.localRef != "" {
+				objects = append(objects, aiConfigMap(consts.OdigosLocalUiConfigName, "interrogation:\n  credentialSecretName: "+test.localRef+"\n"))
+			}
+			c := &credentialReadCounter{Client: aiTestClient(objects...)}
+			got, err := GetInterrogationAPIKey(context.Background(), c)
+			if test.wantError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			if test.want == "" {
+				require.Nil(t, got)
+			} else {
+				require.NotNil(t, got)
+				require.Equal(t, test.want, *got)
+			}
+			require.Equal(t, test.wantReads, c.reads)
+		})
+	}
+}

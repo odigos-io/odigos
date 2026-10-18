@@ -46,7 +46,7 @@ spec:
       componentType: input
       isHelmOnly: false
       isEnterpriseOnly: true
-      description: The provider API key. Stored as a separate UI credential override and never displayed. Leave empty to keep the current key; reset to inherit the Helm credential.
+      description: The provider API key. Stored as a separate UI credential override. The current key can be revealed when UI read-only mode is off. Leave empty to keep the current key; reset to inherit the Helm credential.
       helmValuePath: interrogation.model.apiKey
       renderCondition: ["interrogation.enabled", "==", "true"]
       componentProps:

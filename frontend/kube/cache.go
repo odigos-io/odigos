@@ -138,8 +138,8 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		Scheme: scheme,
 		Cache: &client.CacheOptions{
 			Reader: k8sCache,
-			// Lease ownership must be current, and the UI only has get permission.
-			DisableFor: []client.Object{&coordinationv1.Lease{}},
+			// Read credentials and lease ownership directly without creating informers.
+			DisableFor: []client.Object{&coordinationv1.Lease{}, &corev1.Secret{}},
 		},
 	})
 	if err != nil {

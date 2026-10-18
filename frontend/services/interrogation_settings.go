@@ -154,6 +154,46 @@ func validateResolvedInterrogation(ctx context.Context, c client.Client, local *
 	return nil
 }
 
+func GetInterrogationAPIKey(ctx context.Context, c client.Client) (*string, error) {
+	cfg, err := GetEffectiveConfig(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	if cfg == nil {
+		return nil, fmt.Errorf("AI settings configuration is unavailable")
+	}
+	if cfg.UiMode == common.UiModeReadonly || !cfg.InterrogationEnabled() {
+		return nil, nil
+	}
+	local, err := GetLocalUIConfig(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	name := "odigos-litellm"
+	localOverride := local != nil && local.Interrogation != nil && local.Interrogation.CredentialSecretName != ""
+	if localOverride {
+		name = local.Interrogation.CredentialSecretName
+		if !strings.HasPrefix(name, interrogationCredentialPrefix) {
+			return nil, fmt.Errorf("AI credential reference is invalid")
+		}
+	}
+	secret := &corev1.Secret{}
+	if err := c.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: name}, secret); err != nil {
+		if apierrors.IsNotFound(err) && !localOverride {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("AI credential could not be read")
+	}
+	if localOverride && (secret.Immutable == nil || !*secret.Immutable || secret.Labels[interrogationCredentialLabel] != interrogationCredentialLabelValue) {
+		return nil, fmt.Errorf("AI credential revision is invalid")
+	}
+	key := string(secret.Data["upstream-api-key"])
+	if key == "" {
+		return nil, nil
+	}
+	return &key, nil
+}
+
 type interrogationAcknowledgement struct {
 	UpdateID         string `json:"updateId"`
 	Revision         string `json:"revision"`

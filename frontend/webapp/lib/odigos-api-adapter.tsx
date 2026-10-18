@@ -92,6 +92,7 @@ import {
   GET_DESTINATION_CATEGORIES,
   GET_EFFECTIVE_CONFIG,
   GET_INTERROGATION_SETTINGS_STATUS,
+  GET_INTERROGATION_API_KEY,
   GET_INSTRUMENTATION_RULES,
   GET_INSTRUMENTATION_RULE_TYPES,
   GET_K8S_MANIFEST,
@@ -358,6 +359,11 @@ const operations: OdigosApiOperations = {
   GET_INTERROGATION_SETTINGS_STATUS: {
     document: GET_INTERROGATION_SETTINGS_STATUS,
     transformResult: (raw) => (raw as { interrogationSettingsStatus?: unknown } | undefined)?.interrogationSettingsStatus,
+  },
+  GET_INTERROGATION_API_KEY: {
+    document: GET_INTERROGATION_API_KEY,
+    noCache: true,
+    transformResult: (raw: unknown) => (raw as { interrogationAPIKey?: string | null } | undefined)?.interrogationAPIKey ?? null,
   },
   UPDATE_LOCAL_UI_CONFIG: { document: UPDATE_LOCAL_UI_CONFIG, noCache: true },
   RESET_LOCAL_UI_CONFIG_TO_FACTORY_DEFAULTS: { document: RESET_LOCAL_UI_CONFIG_TO_FACTORY_DEFAULTS },

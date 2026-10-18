@@ -252,3 +252,9 @@ export const GET_INTERROGATION_SETTINGS_STATUS = gql`
     }
   }
 `;
+
+export const GET_INTERROGATION_API_KEY = gql`
+  query GetInterrogationAPIKey {
+    interrogationAPIKey
+  }
+`;

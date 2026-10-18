@@ -472,6 +472,7 @@ type ConfigYaml {
 }
 
 extend type Query {
+  interrogationAPIKey: String
   interrogationSettingsStatus: InterrogationSettingsStatus!
   # key information about the cluster and the installation (self-defined config for UI control and usage)
   config: Config
