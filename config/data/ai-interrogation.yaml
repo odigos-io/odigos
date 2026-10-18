@@ -1,8 +1,8 @@
 apiVersion: internal.odigos.io/v1beta1
 kind: Configuration
 metadata:
-  name: ai
-  displayName: AI
+  name: ai-interrogation
+  displayName: AI Interrogation
 spec:
   fields:
     - displayName: AI analysis
