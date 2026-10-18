@@ -195,3 +195,39 @@ func TestInterrogationStatusRejectsFormerLeaderAndWrongRevision(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "APPLYING", status.State)
 }
+
+func TestInterrogationStatusErrorsAndExpiredAcknowledgements(t *testing.T) {
+	for _, test := range []struct {
+		name, proxyState, analysisState, want string
+		renewAge, observedAge                 time.Duration
+	}{
+		{name: "proxy error", proxyState: "ERROR", want: "ERROR"},
+		{name: "analysis error", proxyState: "READY", analysisState: "ERROR", want: "ERROR"},
+		{name: "expired leader", proxyState: "READY", analysisState: "PAUSED", renewAge: time.Minute, want: "APPLYING"},
+		{name: "stale acknowledgement", proxyState: "READY", analysisState: "PAUSED", observedAge: 2 * time.Minute, want: "APPLYING"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			identity, duration := "current-leader", int32(15)
+			renew := metav1.NewMicroTime(time.Now().Add(-test.renewAge))
+			lease := &coordinationv1.Lease{ObjectMeta: metav1.ObjectMeta{Name: "odigos-insights-leader", Namespace: env.GetCurrentNamespace()}, Spec: coordinationv1.LeaseSpec{HolderIdentity: &identity, LeaseDurationSeconds: &duration, RenewTime: &renew}}
+			encode := func(a interrogationAcknowledgement) string {
+				raw, err := json.Marshal(a)
+				require.NoError(t, err)
+				return string(raw)
+			}
+			cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: interrogationStatusName, Namespace: env.GetCurrentNamespace()}, Data: map[string]string{
+				"proxy":    encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: test.proxyState, ModelHash: common.InterrogationModelHash(&common.InterrogationModelConfiguration{Provider: StringPtr("openai"), Name: StringPtr("gpt-4o-mini"), ApiBase: StringPtr("https://proxy.example.com/v1")})}),
+				"analysis": encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: test.analysisState, HolderIdentity: identity, ObservedAt: time.Now().Add(-test.observedAge).UTC().Format(time.RFC3339Nano)}),
+			}}
+			c := aiTestClient(lease, cm, aiConfigMap(consts.OdigosEffectiveConfigName, interrogationEffectiveConfig+"  analysisEnabled: false\n"), aiConfigMap(consts.OdigosLocalUiConfigName, "interrogation:\n  updateId: request\n"))
+			status, err := GetInterrogationSettingsStatus(context.Background(), c)
+			require.NoError(t, err)
+			require.Equal(t, test.want, status.State)
+			require.Equal(t, "request", status.UpdateID)
+			require.Empty(t, status.ObservedUpdateID)
+			if test.want == "ERROR" {
+				require.NotNil(t, status.Error)
+			}
+		})
+	}
+}
