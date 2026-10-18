@@ -67,7 +67,7 @@ To install the Odigos VM Agent, configure your package manager or obtain the RPM
 
 ## Root and non-root
 
-Fresh installs run as the unprivileged `odigos` user. The packaged unit still defaults to `User=root`; non-root mode is applied by the drop-in `/etc/systemd/system/odigos-vmagent.service.d/nonroot.conf` (capabilities, relocated writable trees, collector as a child process).
+Fresh installs run as the unprivileged `odigos` user. The packaged unit still defaults to `User=root`; non-root mode is applied by the drop-in `/etc/systemd/system/odigos-vmagent.service.d/nonroot.conf` (`User=`, capabilities, collector as a child process). Writable paths are the same in both modes.
 
 | Mode | When to use |
 |---|---|
@@ -181,14 +181,14 @@ If you run Odigos Central, follow [Connecting VM Agent](/central/adding-connecti
 
 ## Layout
 
-Config, license, sources, destinations, actions, and rules live under one tree for both root and non-root:
+Config, license, sources, destinations, actions, rules, runtime state, and logs live under one tree for both root and non-root. Only directory ownership differs (`odigos` vs `root`).
 
 | Path | Purpose |
 |---|---|
 | `/var/lib/odigos-agent/config/` | Agent configuration and `license.jwt` |
-| `/var/lib/odigos-agent/user-mode` | Sticky `root` / `nonroot` preference |
-| `/var/lib/odigos-agent/log/` | Agent logs in non-root mode |
-| `/var/odigos/` | Instrumentation files (both modes; do not relocate) |
+| `/var/lib/odigos-agent/run/` | Runtime state (traces, symbols, diagnose) |
+| `/var/lib/odigos-agent/log/` | Agent and collector log files |
+| `/var/odigos/` | Instrumentation files (do not relocate) |
 | `/etc/odigos-otelcol/` | Collector configuration |
 | `/etc/systemd/system/odigos-vmagent.service.d/nonroot.conf` | Non-root user, capabilities, and environment |
 
