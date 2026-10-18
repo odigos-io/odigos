@@ -1,0 +1,155 @@
+---
+title: 'Google SecOps (Chronicle)'
+description: 'Configuring the Google SecOps (Chronicle) backend (Managed)'
+sidebarTitle: 'Google SecOps (Chronicle)'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/gcp.svg" alt="googlesecops" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **GOOGLE_SECOPS_PROJECT** `string` : GCP Project Number. The project number from Google SecOps Settings > Profile > Organization Details.
+  - This field is required
+- **GOOGLE_SECOPS_CUSTOMER_ID** `string` : Customer ID. The SecOps instance UUID from Organization Details.
+  - This field is required
+- **GOOGLE_SECOPS_LOCATION** `string` : Region. The provisioned SecOps location, such as us or europe. Credentials must have access to this region.
+  - This field is required
+- **GOOGLE_SECOPS_LOG_TYPE** `string` : Log Type / Parser. A supported log type with a parser for JSON containing body, attributes and resource_attributes. Ordinary application logs need a custom parser.
+  - This field is required
+- **GOOGLE_SECOPS_CREDENTIALS** `string` : Service Account Credentials. The JSON service-account key with Chronicle API ingestion access. Stored in a Kubernetes Secret.
+  - This field is required
+- **GOOGLE_SECOPS_ENDPOINT** `string` : Endpoint. Hostname only. Defaults to chronicle.googleapis.com, prefixed by Region. A custom hostname is used exactly as entered.
+  - This field is optional
+- **GOOGLE_SECOPS_NAMESPACE** `string` : Namespace. Optional data-domain namespace identifying the environment that produced the logs.
+  - This field is optional
+
+<Note>
+  This destination exports **logs only**, using the current HTTPS Chronicle API (v1).
+  It requires an existing Google SecOps SIEM tenant; a Google Cloud account alone does not provision one.
+
+  Enable the Chronicle API in the tenant's Google Cloud project and grant a service account
+  a custom role containing `chronicle.logs.import`, following the
+  [HTTPS ingestion setup guide](https://docs.bindplane.com/how-to-guides/partner-integrations/google-secops/google-secops-configuring-the-https-dataplane-api-protocol.md).
+  Agent-metrics reporting is disabled, so `chronicle.forwarders.importStatsEvents` is not required.
+  Enter the service-account JSON key in the Credentials field. Find the project number and customer ID in
+  **Settings > Profile > Organization Details**. Use the tenant's provisioned region.
+  The default host becomes `REGION-chronicle.googleapis.com`; a custom hostname is used verbatim.
+  TLS certificate verification is always enabled.
+
+  The exporter sends a JSON envelope with `body`, `attributes`, and `resource_attributes`.
+  String log bodies are supported, including JSON encoded as a string. Map, array, byte and numeric
+  bodies are not supported: the upstream envelope serializer reads a string body.
+  Log and resource attributes retain their JSON types; event/observed timestamps are sent separately.
+  Severity, trace/span IDs and instrumentation scope are not included in the envelope.
+  Configure a [custom parser](https://docs.cloud.google.com/chronicle/docs/event-processing/parsing-overview)
+  for this envelope and map application and Kubernetes resource attributes into UDM fields.
+  An unrelated built-in security-product parser cannot make ordinary Odigos logs queryable.
+  Per-record `chronicle_log_type`, `chronicle_namespace`, and `chronicle_ingestion_label` attributes can override defaults.
+
+  Gzip, an in-memory sending queue and exporter-helper retries are enabled. HTTP 429, 500, 502, 503 and 504
+  and transport errors are retried; authentication errors and other non-retryable responses are permanent failures.
+  Retry exhaustion or a full queue can lose logs. The queue does not survive collector restarts.
+  Requests are grouped by log type and split at the upstream 4,000,000-byte limit; oversized individual logs are dropped.
+  If some requests succeed before another fails, retrying the batch can duplicate accepted logs.
+  HTTP success confirms API acceptance, not parser success or search availability.
+  Successful response bodies are not inspected for per-record rejection or asynchronous processing errors.
+  Check ingestion health and parser errors in SecOps and query a unique test marker from each resource to verify delivery.
+
+  See [Google SecOps ingestion configuration](https://docs.bindplane.com/integrations/destinations/google-secops-chronicle)
+  for endpoint provisioning, log types and service-account requirements. Deprecated Backstory APIs are not used.
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Google SecOps (Chronicle)` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `googlesecops.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: googlesecops-example
+      namespace: odigos-system
+    spec:
+      data:
+        GOOGLE_SECOPS_CUSTOMER_ID: <Customer ID>
+        GOOGLE_SECOPS_LOCATION: <Region>
+        GOOGLE_SECOPS_LOG_TYPE: <Log Type / Parser>
+        GOOGLE_SECOPS_PROJECT: <GCP Project Number>
+        # Note: The commented fields below are optional.
+        # GOOGLE_SECOPS_ENDPOINT: <Endpoint>
+        # GOOGLE_SECOPS_NAMESPACE: <Namespace>
+      destinationName: googlesecops
+      secretRef:
+        name: googlesecops-secret
+      signals:
+      - LOGS
+      type: googlesecops
+
+    ---
+
+    apiVersion: v1
+    data:
+      GOOGLE_SECOPS_CREDENTIALS: <Base64 Service Account Credentials>
+    kind: Secret
+    metadata:
+      name: googlesecops-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f googlesecops.yaml
+    ```
+  </Step>
+</Steps>
