@@ -1,8 +1,9 @@
-{{- if and .Values.interrogation.enabled (include "odigos.secretExists" .) }}
+{{- if and (include "odigos.interrogationEnabled" .) (include "odigos.secretExists" .) }}
+{{- /* Interrogation campaigns for the odigos-insights-leader Lease. */}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: odigos-interrogation-leader-election
+  name: odigos-insights-leader-election
   namespace: {{ .Release.Namespace }}
   labels:
     odigos.io/system-object: "true"
@@ -12,6 +13,6 @@ roleRef:
   name: odigos-leader-election-role
 subjects:
   - kind: ServiceAccount
-    name: odigos-interrogation
+    name: odigos-insights
     namespace: {{ .Release.Namespace }}
 {{- end }}

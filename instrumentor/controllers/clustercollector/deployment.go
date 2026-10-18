@@ -327,24 +327,6 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
 	}
 
-	// Interrogation profiles exporter persists to the bundled insights ClickHouse.
-	if common.InterrogationActive(odigosConfiguration.Interrogation) {
-		desiredDeployment.Spec.Template.Spec.Containers[0].Env = append(
-			desiredDeployment.Spec.Template.Spec.Containers[0].Env,
-			corev1.EnvVar{
-				Name: k8sconsts.OdigosInsightsClickHousePasswordEnv,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: k8sconsts.OdigosInsightsClickHouseSecretName,
-						},
-						Key: k8sconsts.OdigosInsightsClickHouseSecretKey,
-					},
-				},
-			},
-		)
-	}
-
 	if len(odigosConfiguration.ImagePullSecrets) > 0 {
 		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 		for _, secret := range odigosConfiguration.ImagePullSecrets {
