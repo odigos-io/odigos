@@ -1,0 +1,150 @@
+---
+title: 'OpenStack Swift S3 Gateway'
+description: 'Configuring the OpenStack Swift S3 Gateway backend (Self-Hosted)'
+sidebarTitle: 'OpenStack Swift S3 Gateway'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/openstackswift.svg" alt="openstackswift" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+This destination archives traces, metrics and logs as OTLP JSON or protobuf objects in Swift. It does not provide native APM views, metric queries, log search, or profile storage. Download objects and decode them with OpenTelemetry pdata, or use a downstream pipeline that understands OTLP and the selected compression.
+
+**Deployment prerequisites**
+
+Enable Swift [s3api middleware](https://docs.openstack.org/swift/latest/middleware.html#aws-s3-api) on the actual proxy deployment. For Keystone authentication the pipeline must include `s3api`, `s3token`, and `keystoneauth`; include `bulk` and `slo` for multipart uploads. A deployment with only the native Swift API cannot accept this destination.
+
+Create an existing container/bucket and obtain Keystone EC2 credentials using the Horizon API Access panel or `openstack ec2 credentials create`. Use the EC2 access and secret keys in the destination's secret fields. A raw Swift token, Keystone password or application credential is not an S3 signing credential. Each destination has its own credential environment variables and S3 client.
+
+Set `S3_ENDPOINT` to the deployment's S3 base URL, not `/v1/AUTH_<project>`. `S3_REGION` must match Swift's configured s3api location (commonly `us-east-1`). Path style is enabled by default; virtual-host addressing requires bucket DNS and matching TLS certificates. Prefer HTTPS. For a private CA, set `S3_CA_PEM`; certificate verification stays enabled. An explicit `http://` URL is suitable for local testing.
+
+**Data and delivery behavior**
+
+The upstream S3 exporter writes batches using unique object keys and retains OTLP resources, scopes, attributes and signal data in `otlp_json` or `otlp_proto`. All OpenTelemetry metric types are serialized; no conversion to Swift-native metrics occurs. Objects may be uncompressed, gzip or zstd compressed. Optional AWS SDK checksums are disabled for Swift compatibility; mandatory checksums remain enabled.
+
+The SDK retries transient S3 failures (three attempts by default), and the collector uses its sending queue and retry helper. Authentication errors and missing buckets prevent archival. S3 has no OTLP partial-success response: an upload either succeeds or fails, and multipart completion must succeed before its object is readable. Retries can create duplicate archive objects; this is not an exactly-once delivery guarantee. Check both upload and multipart behavior on your deployed middleware version and verify object download/decoding before relying on the archive.
+
+
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **S3_ENDPOINT** `string` : S3 Gateway Endpoint. S3 API base URL. Requires deployed s3api middleware; do not use the native Swift /v1/AUTH endpoint.
+  - This field is required
+  - Example: `https://swift.example.com`
+- **S3_BUCKET** `string` : Bucket Name. Existing Swift container accessible through the S3 API.
+  - This field is required
+- **S3_REGION** `string` : Signing Region. Must match the location configured in Swift s3api.
+  - This field is required and defaults to `us-east-1`
+- **S3_ACCESS_KEY_ID** `string` : Keystone EC2 Access Key. Keystone EC2 credential access key, not a Swift token.
+  - This field is required
+- **S3_SECRET_ACCESS_KEY** `string` : Keystone EC2 Secret Key.
+  - This field is required
+- **S3_FORCE_PATH_STYLE** `string` : Use Path Style Addressing. Use path style unless the deployment supports bucket hostnames.
+  - This field is optional and defaults to `true`
+- **S3_CA_PEM** `string` : Trusted CA Certificate. PEM CA certificate for an HTTPS endpoint signed by a private CA. TLS verification remains enabled.
+  - This field is optional
+- **S3_PARTITION_FORMAT** `string` : Partition Format.
+  - This field is optional
+  - Example: `%Y/%m/%d/%H/%M`
+- **S3_MARSHALER** `string` : Data Format.
+  - This field is required and defaults to `otlp_json`
+- **S3_COMPRESSION** `string` : Object Compression.
+  - This field is optional and defaults to `none`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `OpenStack Swift S3 Gateway` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `openstackswift.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: openstackswift-example
+      namespace: odigos-system
+    spec:
+      data:
+        S3_BUCKET: <Bucket Name>
+        S3_ENDPOINT: <S3 Gateway Endpoint>
+        S3_MARSHALER: '<Data Format (default: otlp_json) (options: [otlp_json, otlp_proto])>'
+        S3_REGION: '<Signing Region (default: us-east-1)>'
+        # Note: The commented fields below are optional.
+        # S3_FORCE_PATH_STYLE: <Use Path Style Addressing (default: true) (options: [true, false])>
+        # S3_CA_PEM: <Trusted CA Certificate>
+        # S3_PARTITION_FORMAT: <Partition Format>
+        # S3_COMPRESSION: <Object Compression (default: none) (options: [none, gzip, zstd])>
+      destinationName: openstackswift
+      secretRef:
+        name: openstackswift-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: openstackswift
+
+    ---
+
+    apiVersion: v1
+    data:
+      S3_ACCESS_KEY_ID: <Base64 Keystone EC2 Access Key>
+      S3_SECRET_ACCESS_KEY: <Base64 Keystone EC2 Secret Key>
+    kind: Secret
+    metadata:
+      name: openstackswift-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f openstackswift.yaml
+    ```
+  </Step>
+</Steps>
