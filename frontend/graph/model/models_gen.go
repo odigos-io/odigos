@@ -533,6 +533,7 @@ type EffectiveConfig struct {
 	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
 	CardinalityControl               *CardinalityControlConfig           `json:"cardinalityControl,omitempty"`
 	TraceCorrelations                *TraceCorrelationsConfig            `json:"traceCorrelations,omitempty"`
+	Interrogation                    *InterrogationConfig                `json:"interrogation,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
@@ -1944,6 +1945,15 @@ type InterrogationCallTrieNode struct {
 	SeenCount int `json:"seenCount"`
 }
 
+type InterrogationConfig struct {
+	Enabled *bool                     `json:"enabled,omitempty"`
+	Model   *InterrogationModelConfig `json:"model,omitempty"`
+}
+
+type InterrogationConfigInput struct {
+	Model *InterrogationModelConfigInput `json:"model,omitempty"`
+}
+
 // One detected function from a profile sample linked to a transaction.
 type InterrogationFunction struct {
 	Name string `json:"name"`
@@ -1955,6 +1965,19 @@ type InterrogationFunction struct {
 	SeenCount int `json:"seenCount"`
 }
 
+type InterrogationModelConfig struct {
+	Provider *string `json:"provider,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	APIBase  *string `json:"apiBase,omitempty"`
+}
+
+type InterrogationModelConfigInput struct {
+	Provider *string `json:"provider,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	APIBase  *string `json:"apiBase,omitempty"`
+	APIKey   *string `json:"apiKey,omitempty"`
+}
+
 // One transaction observed for a workload container, with ClickHouse-stored functions.
 type InterrogationTransaction struct {
 	// Transaction id as stored in tx_call_trie.TransactionId.
@@ -1962,7 +1985,8 @@ type InterrogationTransaction struct {
 	// Times this transaction was observed.
 	SeenCount int                      `json:"seenCount"`
 	Functions []*InterrogationFunction `json:"functions"`
-	// OTLP JSON traces sample for this transaction, if stored.
+	// OTLP JSON traces sample for this transaction (service-invocation spans only),
+	// if stored in interrogation.tx_transactions. Null when missing or interrogation is off.
 	SampleTrace *string `json:"sampleTrace,omitempty"`
 	// Flat call-path trie nodes for this transaction. Resolved on demand from
 	// ClickHouse tx_call_trie when selected; null when missing or interrogation is
@@ -2400,6 +2424,7 @@ type LocalUIConfigInput struct {
 	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
 	TraceCorrelations     *LocalUIConfigTraceCorrelationsInput     `json:"traceCorrelations,omitempty"`
 	CardinalityControl    *LocalUIConfigCardinalityControlInput    `json:"cardinalityControl,omitempty"`
+	Interrogation         *InterrogationConfigInput                `json:"interrogation,omitempty"`
 }
 
 type LocalUIConfigInstrumentorInput struct {

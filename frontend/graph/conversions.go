@@ -524,6 +524,31 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		}
 	}
 
+	if config.Interrogation != nil {
+		result.Interrogation = &model.InterrogationConfig{
+			Enabled: config.Interrogation.Enabled,
+		}
+		if config.Interrogation.Enabled != nil {
+			pc.record("interrogation.enabled")
+		}
+		if config.Interrogation.Model != nil {
+			m := config.Interrogation.Model
+			result.Interrogation.Model = &model.InterrogationModelConfig{}
+			if m.Provider != "" {
+				result.Interrogation.Model.Provider = ptrStr(m.Provider)
+				pc.record("interrogation.model.provider")
+			}
+			if m.Name != "" {
+				result.Interrogation.Model.Name = ptrStr(m.Name)
+				pc.record("interrogation.model.name")
+			}
+			if m.ApiBase != "" {
+				result.Interrogation.Model.APIBase = ptrStr(m.ApiBase)
+				pc.record("interrogation.model.apiBase")
+			}
+		}
+	}
+
 	return nil
 }
 

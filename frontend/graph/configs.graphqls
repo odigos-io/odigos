@@ -193,6 +193,17 @@ type TraceCorrelationsConfig {
   serviceIO: TraceCorrelationsServiceIOConfig
 }
 
+type InterrogationModelConfig {
+  provider: String
+  name: String
+  apiBase: String
+}
+
+type InterrogationConfig {
+  enabled: Boolean
+  model: InterrogationModelConfig
+}
+
 type KarpenterConfig {
   enabled: Boolean
 }
@@ -315,6 +326,7 @@ type EffectiveConfig {
   profiling: ProfilingConfig
   cardinalityControl: CardinalityControlConfig
   traceCorrelations: TraceCorrelationsConfig
+  interrogation: InterrogationConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
 }
@@ -420,6 +432,18 @@ input LocalUiConfigCardinalityControlInput {
   urlTemplatization: LocalUiConfigUrlTemplatizationCardinalityControlInput
 }
 
+input InterrogationModelConfigInput {
+  provider: String
+  name: String
+  apiBase: String
+  # write-only: stored in the odigos-litellm Secret, never in the config
+  apiKey: String
+}
+
+input InterrogationConfigInput {
+  model: InterrogationModelConfigInput
+}
+
 input LocalUiConfigInput {
   telemetryEnabled: Boolean
   ignoredNamespaces: [String!]
@@ -436,6 +460,7 @@ input LocalUiConfigInput {
   componentLogLevels: LocalUiConfigComponentLogLevelsInput
   traceCorrelations: LocalUiConfigTraceCorrelationsInput
   cardinalityControl: LocalUiConfigCardinalityControlInput
+  interrogation: InterrogationConfigInput
 }
 
 type ConfigYamlField {

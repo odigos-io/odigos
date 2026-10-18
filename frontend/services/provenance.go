@@ -201,6 +201,14 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 			}
 		}
 	}
+
+	// The overlay model replaces the effective model as a unit once it has a provider,
+	// so every model field originates from this source, including cleared ones.
+	if config.Interrogation != nil && config.Interrogation.Model != nil && config.Interrogation.Model.Provider != "" {
+		provenance["interrogation.model.provider"] = sourceName
+		provenance["interrogation.model.name"] = sourceName
+		provenance["interrogation.model.apiBase"] = sourceName
+	}
 }
 
 // detectProfileProvenance identifies fields modified by profile application.

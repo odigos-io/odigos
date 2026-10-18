@@ -3,12 +3,14 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	v1 "k8s.io/api/core/v1"
@@ -23,12 +25,26 @@ import (
 func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.LocalUIConfigInput) error {
 	ns := env.GetCurrentNamespace()
 
+	var effectiveConfig *common.OdigosConfiguration
+	if input.Interrogation != nil && input.Interrogation.Model != nil {
+		var err error
+		effectiveConfig, err = GetEffectiveConfig(ctx, c)
+		if err != nil {
+			return err
+		}
+		if input.Interrogation.Model.APIKey != nil {
+			if err := setInterrogationUpstreamApiKey(ctx, ns, effectiveConfig, *input.Interrogation.Model.APIKey); err != nil {
+				return err
+			}
+		}
+	}
+
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		var cm v1.ConfigMap
 		err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosLocalUiConfigName}, &cm)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				return createLocalUiConfigMap(ctx, c, ns, input)
+				return createLocalUiConfigMap(ctx, c, ns, input, effectiveConfig)
 			}
 			return err
 		}
@@ -40,7 +56,7 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 			}
 		}
 
-		applyLocalUiConfigInput(&cfg, input)
+		applyLocalUiConfigInput(&cfg, input, effectiveConfig)
 
 		data, err := yaml.Marshal(cfg)
 		if err != nil {
@@ -54,14 +70,14 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 	})
 }
 
-func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, input model.LocalUIConfigInput) error {
+func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, input model.LocalUIConfigInput, effectiveConfig *common.OdigosConfiguration) error {
 	ownerCm := v1.ConfigMap{}
 	if err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosConfigurationName}, &ownerCm); err != nil {
 		return fmt.Errorf("failed to get odigos-configuration for owner reference: %w", err)
 	}
 
 	cfg := common.OdigosConfiguration{}
-	applyLocalUiConfigInput(&cfg, input)
+	applyLocalUiConfigInput(&cfg, input, effectiveConfig)
 
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
@@ -108,7 +124,9 @@ func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) e
 	})
 }
 
-func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalUIConfigInput) {
+// effectiveConfig is only consulted for input that cannot be applied field by field,
+// such as the interrogation model, and may be nil otherwise.
+func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalUIConfigInput, effectiveConfig *common.OdigosConfiguration) {
 	if input.TelemetryEnabled != nil {
 		cfg.TelemetryEnabled = *input.TelemetryEnabled
 	}
@@ -183,6 +201,71 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 	if input.CardinalityControl != nil {
 		applyCardinalityControlInput(cfg, input.CardinalityControl)
 	}
+	if input.Interrogation != nil {
+		applyInterrogationInput(cfg, input.Interrogation, effectiveConfig)
+	}
+}
+
+// applyInterrogationInput writes a complete model snapshot, because an overlay model
+// replaces the effective model as a unit: a partial model would drop the other fields.
+// The API key is never stored here; it lives in the odigos-litellm Secret.
+func applyInterrogationInput(cfg *common.OdigosConfiguration, input *model.InterrogationConfigInput, effectiveConfig *common.OdigosConfiguration) {
+	modelInput := input.Model
+	if modelInput == nil || (modelInput.Provider == nil && modelInput.Name == nil && modelInput.APIBase == nil) {
+		return
+	}
+
+	snapshot := common.InterrogationModelConfiguration{}
+	if cfg.Interrogation != nil && cfg.Interrogation.Model != nil && cfg.Interrogation.Model.Provider != "" {
+		snapshot = *cfg.Interrogation.Model
+	} else if effectiveConfig != nil && effectiveConfig.Interrogation != nil && effectiveConfig.Interrogation.Model != nil {
+		snapshot = *effectiveConfig.Interrogation.Model
+	}
+
+	if modelInput.Provider != nil {
+		snapshot.Provider = *modelInput.Provider
+	}
+	if modelInput.Name != nil {
+		snapshot.Name = *modelInput.Name
+	}
+	if modelInput.APIBase != nil {
+		snapshot.ApiBase = *modelInput.APIBase
+	}
+
+	if cfg.Interrogation == nil {
+		cfg.Interrogation = &common.InterrogationConfiguration{}
+	}
+	cfg.Interrogation.Model = &snapshot
+}
+
+// setInterrogationUpstreamApiKey stores the LiteLLM upstream API key. An empty key keeps
+// the current one. The Secret is created by helm alongside LiteLLM, so a missing Secret
+// means LiteLLM is not deployed.
+func setInterrogationUpstreamApiKey(ctx context.Context, ns string, effectiveConfig *common.OdigosConfiguration, apiKey string) error {
+	apiKey = strings.TrimSpace(apiKey)
+	if apiKey == "" {
+		return nil
+	}
+	if !effectiveConfig.InterrogationEnabled() {
+		return fmt.Errorf("cannot set the interrogation API key: interrogation is not enabled")
+	}
+
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		secrets := kube.DefaultClient.CoreV1().Secrets(ns)
+		secret, err := secrets.Get(ctx, k8sconsts.OdigosLiteLLMName, metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return fmt.Errorf("cannot set the interrogation API key: secret %s not found, LiteLLM is not deployed", k8sconsts.OdigosLiteLLMName)
+			}
+			return err
+		}
+		if secret.Data == nil {
+			secret.Data = make(map[string][]byte)
+		}
+		secret.Data[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey] = []byte(apiKey)
+		_, err = secrets.Update(ctx, secret, metav1.UpdateOptions{})
+		return err
+	})
 }
 
 func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.LocalUIConfigCardinalityControlInput) {
