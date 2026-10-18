@@ -5,8 +5,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
 
-// managedByFromLabels maps the odigos.io/managed-by label to the GraphQL ManagedBy enum.
-func managedByFromLabels(labels map[string]string) model.ManagedBy {
+// ManagedByFromLabels maps the odigos.io/managed-by label to the GraphQL ManagedBy enum.
+func ManagedByFromLabels(labels map[string]string) model.ManagedBy {
 	if labels == nil {
 		return model.ManagedByUnknown
 	}
@@ -17,7 +17,14 @@ func managedByFromLabels(labels map[string]string) model.ManagedBy {
 		return model.ManagedByOdigosUI
 	case k8sconsts.OdigosInterrogationLoopManagedByValue:
 		return model.ManagedByInterrogationLoop
+	case k8sconsts.OdigosLiveTrafficLearningManagedByValue:
+		return model.ManagedByLiveTrafficLearning
 	default:
 		return model.ManagedByUnknown
 	}
+}
+
+// managedByFromLabels is kept for in-package call sites.
+func managedByFromLabels(labels map[string]string) model.ManagedBy {
+	return ManagedByFromLabels(labels)
 }

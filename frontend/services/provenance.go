@@ -113,6 +113,9 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 			if config.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				provenance["sampling.tailSampling.traceAggregationWaitDuration"] = sourceName
 			}
+			if config.Sampling.TailSampling.NoisyOperationsEnforcement != nil {
+				provenance["sampling.tailSampling.noisyOperationsEnforcement"] = sourceName
+			}
 		}
 		if config.Sampling.K8sHealthProbesSampling != nil {
 			if config.Sampling.K8sHealthProbesSampling.Enabled != nil {
@@ -149,22 +152,6 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 		}
 		if src.Collector != "" {
 			provenance["componentLogLevels.collector"] = sourceName
-		}
-	}
-
-	if config.TraceCorrelations != nil && config.TraceCorrelations.ServiceIO != nil {
-		serviceIO := config.TraceCorrelations.ServiceIO
-		if serviceIO.Enabled != nil {
-			provenance["traceCorrelations.serviceIO.enabled"] = sourceName
-		}
-		if serviceIO.InputSpanAttributes != nil {
-			provenance["traceCorrelations.serviceIO.inputSpanAttributes"] = sourceName
-		}
-		if serviceIO.OutputSpanAttributes != nil {
-			provenance["traceCorrelations.serviceIO.outputSpanAttributes"] = sourceName
-		}
-		if serviceIO.MetricsFlushInterval != "" {
-			provenance["traceCorrelations.serviceIO.metricsFlushInterval"] = sourceName
 		}
 	}
 

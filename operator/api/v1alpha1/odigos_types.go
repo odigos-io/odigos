@@ -81,7 +81,7 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePrefix string `json:"imagePrefix,omitempty"`
 
-	// (Optional) LogLevel sets the default log level for all Odigos components (e.g. autoscaler, odiglet, scheduler).
+	// (Optional) LogLevel sets the default log level for all Odigos components (e.g. instrumentor, odiglet, collector).
 	// Accepted values: debug, info, warn, error. Default=info when unset.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Log Level"
 	LogLevel string `json:"logLevel,omitempty"`

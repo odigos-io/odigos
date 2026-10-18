@@ -106,3 +106,35 @@ metadata:
     app.kubernetes.io/part-of: odigos
     odigos.io/system-object: "true"
 # the actual certificate will be populated by the controller
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: odigos-action-validating-webhook-configuration
+  labels:
+    app.kubernetes.io/name: odigos-action-validating-webhook
+    app.kubernetes.io/instance: odigos-action-validating-webhook-configuration
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: instrumentor
+    app.kubernetes.io/part-of: odigos
+    odigos.io/system-object: "true"
+webhooks:
+  - name: odigos-action-validating-webhook.odigos.io
+    clientConfig:
+      service:
+        name: odigos-instrumentor
+        namespace: {{ .Release.Namespace }}
+        path: /validate-odigos-io-v1alpha1-action
+        port: 9443
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups: ["odigos.io"]
+        apiVersions: ["v1alpha1"]
+        resources: ["actions"]
+        scope: Namespaced
+    failurePolicy: Ignore
+    sideEffects: None
+    timeoutSeconds: 10
+    admissionReviewVersions: ["v1"]

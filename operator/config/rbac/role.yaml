@@ -150,6 +150,7 @@ rules:
   - apiservices
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
@@ -333,6 +334,7 @@ rules:
 - apiGroups:
   - odigos.io
   resources:
+  - odigoscloudconnectors
   - recommendations
   - sampling
   verbs:
