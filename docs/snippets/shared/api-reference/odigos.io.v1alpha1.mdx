@@ -1571,7 +1571,7 @@ allowing enhanced tools and data for troubleshooting and sampling maintenance.</
 <code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-SourcesScopes"><code>SourcesScopes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScopes"><code>k8sconsts.SourcesScopes</code></a>
 </td>
 <td>
    <p>limit this rule to specific sources (by name, namespace, language, etc.)
@@ -1928,7 +1928,7 @@ allowing enhanced tools and data for troubleshooting and sampling maintenance.</
 <code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-SourcesScopes"><code>SourcesScopes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScopes"><code>k8sconsts.SourcesScopes</code></a>
 </td>
 <td>
    <p>limit the operation to specific sources.
@@ -2801,7 +2801,7 @@ allowing enhanced tools and data for troubleshooting and sampling maintenance.</
 <code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-SourcesScopes"><code>SourcesScopes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScopes"><code>k8sconsts.SourcesScopes</code></a>
 </td>
 <td>
    <p>limit this rule to specific sources (by name, namespace, language, etc.)
@@ -3596,18 +3596,4 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tr>
 </tbody>
 </table>
-
-## `SourcesScopes` <a id="odigos-io-v1alpha1-SourcesScopes"></a>
-
-
-**Appears in:**
-
-- [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
-- [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
-- [NoisyOperation](#odigos-io-v1alpha1-NoisyOperation)
-
-<p>SourcesScope is defined in api/k8sconsts so that both api and k8sutils can use it
-without a circular module dependency (k8sutils imports api).</p>
-
-
   
