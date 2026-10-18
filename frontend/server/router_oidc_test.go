@@ -161,6 +161,9 @@ func TestOidcRouter_Authentication(t *testing.T) {
 			if w.Code != tc.status {
 				t.Fatalf("status %d: %s", w.Code, w.Body.String())
 			}
+			if tc.path == "/graphql" && tc.status == http.StatusOK && w.Header().Get("Cache-Control") != "no-store" {
+				t.Fatal("GraphQL responses containing credentials must not be stored")
+			}
 			if strings.Contains(w.Body.String(), "SPA_MARKER") != tc.served {
 				t.Fatalf("unexpected SPA content: %s", w.Body.String())
 			}

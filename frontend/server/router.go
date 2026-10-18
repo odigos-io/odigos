@@ -91,6 +91,7 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 	})
 	gqlExecutor := executor.New(gqlSchema)
 	r.POST("/graphql", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
 		loader := loaders.NewLoaders(deps.Logger, deps.K8sCacheClient)
 		baseCtx := c.Request.Context()
 		if c.GetHeader(middlewares.AdminOverrideHeader) == "true" {
