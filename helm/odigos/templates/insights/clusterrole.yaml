@@ -1,0 +1,13 @@
+{{- if and (include "odigos.interrogationEnabled" .) (include "odigos.secretExists" .) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: odigos-insights
+  labels:
+    odigos.io/system-object: "true"
+rules:
+  # InstrumentationConfigs are created in workload namespaces.
+  - apiGroups: ["odigos.io"]
+    resources: ["instrumentationconfigs"]
+    verbs: ["get", "list", "watch"]
+{{- end }}
