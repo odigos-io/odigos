@@ -46,6 +46,7 @@ var availableConfigers = []Configer{
 	&Kafka{},
 	&KloudMate{},
 	&Last9{},
+	&LaunchDarkly{},
 	&Lightstep{},
 	&Logzio{},
 	&Loki{},
