@@ -336,6 +336,20 @@ type CostReductionRuleInput struct {
 	Notes            graphql.Omittable[*string]                            `json:"notes,omitempty"`
 }
 
+type CppCustomProbe struct {
+	Signature *string              `json:"signature,omitempty"`
+	Notes     *string              `json:"notes,omitempty"`
+	Category  *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt   *string              `json:"addedAt,omitempty"`
+}
+
+type CppCustomProbeInput struct {
+	Signature *string              `json:"signature,omitempty"`
+	Notes     *string              `json:"notes,omitempty"`
+	Category  *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt   *string              `json:"addedAt,omitempty"`
+}
+
 type CustomFormatMasking struct {
 	LookupKey  string               `json:"lookupKey"`
 	DataFormat ExtractionDataFormat `json:"dataFormat"`
@@ -350,12 +364,14 @@ type CustomInstrumentations struct {
 	Golang []*GolangCustomProbe `json:"golang,omitempty"`
 	Java   []*JavaCustomProbe   `json:"java,omitempty"`
 	Php    []*PhpCustomProbe    `json:"php,omitempty"`
+	Cpp    []*CppCustomProbe    `json:"cpp,omitempty"`
 }
 
 type CustomInstrumentationsInput struct {
 	Golang []*GolangCustomProbeInput `json:"golang,omitempty"`
 	Java   []*JavaCustomProbeInput   `json:"java,omitempty"`
 	Php    []*PhpCustomProbeInput    `json:"php,omitempty"`
+	Cpp    []*CppCustomProbeInput    `json:"cpp,omitempty"`
 }
 
 type CustomReadDataLabel struct {
@@ -665,17 +681,23 @@ type GoOffsetsUpdateCheck struct {
 }
 
 type GolangCustomProbe struct {
-	PackageName        *string `json:"packageName,omitempty"`
-	FunctionName       *string `json:"functionName,omitempty"`
-	ReceiverName       *string `json:"receiverName,omitempty"`
-	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+	PackageName        *string              `json:"packageName,omitempty"`
+	FunctionName       *string              `json:"functionName,omitempty"`
+	ReceiverName       *string              `json:"receiverName,omitempty"`
+	ReceiverMethodName *string              `json:"receiverMethodName,omitempty"`
+	Notes              *string              `json:"notes,omitempty"`
+	Category           *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt            *string              `json:"addedAt,omitempty"`
 }
 
 type GolangCustomProbeInput struct {
-	PackageName        *string `json:"packageName,omitempty"`
-	FunctionName       *string `json:"functionName,omitempty"`
-	ReceiverName       *string `json:"receiverName,omitempty"`
-	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+	PackageName        *string              `json:"packageName,omitempty"`
+	FunctionName       *string              `json:"functionName,omitempty"`
+	ReceiverName       *string              `json:"receiverName,omitempty"`
+	ReceiverMethodName *string              `json:"receiverMethodName,omitempty"`
+	Notes              *string              `json:"notes,omitempty"`
+	Category           *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt            *string              `json:"addedAt,omitempty"`
 }
 
 type HeadSamplingHTTPClientMatcher struct {
@@ -1997,13 +2019,19 @@ type InterrogationTransaction struct {
 }
 
 type JavaCustomProbe struct {
-	ClassName  *string `json:"className,omitempty"`
-	MethodName *string `json:"methodName,omitempty"`
+	ClassName  *string              `json:"className,omitempty"`
+	MethodName *string              `json:"methodName,omitempty"`
+	Notes      *string              `json:"notes,omitempty"`
+	Category   *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt    *string              `json:"addedAt,omitempty"`
 }
 
 type JavaCustomProbeInput struct {
-	ClassName  *string `json:"className,omitempty"`
-	MethodName *string `json:"methodName,omitempty"`
+	ClassName  *string              `json:"className,omitempty"`
+	MethodName *string              `json:"methodName,omitempty"`
+	Notes      *string              `json:"notes,omitempty"`
+	Category   *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt    *string              `json:"addedAt,omitempty"`
 }
 
 type K8sActualNamespace struct {
@@ -2719,13 +2747,19 @@ type PersistNamespaceSourceInput struct {
 }
 
 type PhpCustomProbe struct {
-	ClassName    *string `json:"className,omitempty"`
-	FunctionName *string `json:"functionName,omitempty"`
+	ClassName    *string              `json:"className,omitempty"`
+	FunctionName *string              `json:"functionName,omitempty"`
+	Notes        *string              `json:"notes,omitempty"`
+	Category     *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt      *string              `json:"addedAt,omitempty"`
 }
 
 type PhpCustomProbeInput struct {
-	ClassName    *string `json:"className,omitempty"`
-	FunctionName *string `json:"functionName,omitempty"`
+	ClassName    *string              `json:"className,omitempty"`
+	FunctionName *string              `json:"functionName,omitempty"`
+	Notes        *string              `json:"notes,omitempty"`
+	Category     *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt      *string              `json:"addedAt,omitempty"`
 }
 
 type PodAnalyze struct {
@@ -3341,6 +3375,49 @@ func (e *ContainerLifecycleStatus) UnmarshalGQL(v any) error {
 }
 
 func (e ContainerLifecycleStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type CustomProbeCategory string
+
+const (
+	CustomProbeCategoryObservability CustomProbeCategory = "observability"
+	CustomProbeCategorySecurity      CustomProbeCategory = "security"
+	CustomProbeCategoryPerformance   CustomProbeCategory = "performance"
+)
+
+var AllCustomProbeCategory = []CustomProbeCategory{
+	CustomProbeCategoryObservability,
+	CustomProbeCategorySecurity,
+	CustomProbeCategoryPerformance,
+}
+
+func (e CustomProbeCategory) IsValid() bool {
+	switch e {
+	case CustomProbeCategoryObservability, CustomProbeCategorySecurity, CustomProbeCategoryPerformance:
+		return true
+	}
+	return false
+}
+
+func (e CustomProbeCategory) String() string {
+	return string(e)
+}
+
+func (e *CustomProbeCategory) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CustomProbeCategory(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CustomProbeCategory", str)
+	}
+	return nil
+}
+
+func (e CustomProbeCategory) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
