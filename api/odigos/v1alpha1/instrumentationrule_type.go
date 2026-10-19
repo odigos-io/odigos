@@ -79,7 +79,7 @@ type InstrumentationRuleSpec struct {
 	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
 
 	// Add custom instrumentation probes
-	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+	CustomInstrumentations *instrumentationrules.CustomInstrumentationsWithMetadata `json:"customInstrumentations,omitempty"`
 
 	// Configure general fraction of traces to record if none of the rules evaluate to true.
 	// this can help in reducing very noisy and heavy traffic services.
