@@ -68,7 +68,7 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       <Tab title="Discovery + instrumentation">
         The connector can discover resources and instrument supported workloads. Prefer this for a full setup in one step.
 
-        Includes all discovery actions, plus Odigos-managed instrumentation for Lambda and Fargate.
+        Includes all discovery actions, plus Odigos-managed instrumentation for Lambda and Fargate. The policy also includes the actions and `Deny` statements used by the ADOT + Application Signals Lambda distro; see [IAM permissions](#iam-permissions).
 
         Odigos-managed instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online.
       </Tab>
@@ -305,11 +305,48 @@ Adds Odigos-managed instrumentation for Lambda and Fargate:
 | Manage Fargate task definitions | `ecs:RegisterTaskDefinition`, `ecs:UpdateService`, `ecs:TagResource` |
 | Pass task/execution roles when registering a task definition | `iam:PassRole` |
 | Access container images in Amazon ECR | `ecr:GetAuthorizationToken`, `ecr:BatchGetImage`, `ecr:GetDownloadUrlForLayer` |
+| Set up CloudWatch Application Signals (ADOT + Application Signals distros only) | `iam:GetPolicy`, `iam:ListAttachedRolePolicies`, `iam:AttachRolePolicy`, `iam:GetRole`, `application-signals:StartDiscovery`, `iam:CreateServiceLinkedRole`, `cloudtrail:CreateServiceLinkedChannel` |
 
 <Warning>
   Scope `iam:PassRole` with the condition `iam:PassedToService=ecs-tasks.amazonaws.com`
   so the connector can only pass roles to ECS tasks.
 </Warning>
+
+#### Application Signals actions
+
+The Application Signals actions are only exercised when a Lambda source uses the [ADOT with Application Signals](/cloud-connectors/aws/workloads/lambda/distros#adot-with-application-signals) distro. In that case the connector attaches the AWS-managed `CloudWatchLambdaApplicationSignalsExecutionRolePolicy` policy to the function's execution role and enables Application Signals discovery for the account. It never creates or edits IAM policies.
+
+The generated policy (the UI preview, CloudFormation and Terraform) also contains two `Deny` statements that limit these actions to that managed policy and to the Application Signals service-linked role:
+
+```json
+{
+  "Sid": "DenyUnrelatedPolicyAttachments",
+  "Effect": "Deny",
+  "Action": "iam:AttachRolePolicy",
+  "Resource": "*",
+  "Condition": {
+    "ArnNotLike": { "iam:PolicyARN": "arn:*:iam::aws:policy/CloudWatchLambdaApplicationSignalsExecutionRolePolicy" }
+  }
+}
+```
+
+```json
+{
+  "Sid": "DenyUnrelatedServiceLinkedRoles",
+  "Effect": "Deny",
+  "Action": "iam:CreateServiceLinkedRole",
+  "Resource": "*",
+  "Condition": {
+    "StringNotEquals": { "iam:AWSServiceName": "application-signals.cloudwatch.amazonaws.com" }
+  }
+}
+```
+
+<Note>
+  If you build the policy yourself, keep both `Deny` statements. If you already
+  have a connector role, update it with these actions before you enable the
+  preset in automatic mode.
+</Note>
 
 ### Collector management (read-only)
 

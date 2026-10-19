@@ -14,8 +14,8 @@ sidebarTitle: 'Preload'
 </Note>
 
 If you **self-manage** instrumentation, you have two choices for where the layer your CloudFormation, CDK,
-or Terraform attaches actually lives. Either way, the layer must be **v0.0.18 or newer**: older layers don't
-contain the launcher that reads `ODIGOS_LAMBDA_CONFIG`. See
+or Terraform attaches actually lives. Either way, the layer must be **v0.0.19 or newer**: older layers don't
+contain the launcher that reads the version 2 `ODIGOS_LAMBDA_CONFIG`. See
 [What gets added to your function](/cloud-connectors/aws/workloads/lambda/instrument#what-gets-added-to-your-function).
 
 <Tabs>
@@ -60,7 +60,7 @@ contain the launcher that reads `ODIGOS_LAMBDA_CONFIG`. See
       (for example `python/arm64`). The applications are published from account `233171357117` in
       `us-east-1`, named `odigos-otel-<family>-<arch>`, and you can search the console for that name. The
       families are the same as the public layers above.
-    - **Semantic version** — `SAR_SEMANTIC_VERSION` in the same package. Pin it (for example `0.0.18`); SAR
+    - **Semantic version** — `SAR_SEMANTIC_VERSION` in the same package. Pin it (for example `0.0.19`); SAR
       versions are immutable and that pin keeps the layer bytes stable across deploys.
 
     <Note>

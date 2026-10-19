@@ -53,8 +53,8 @@ npm install @odigos/aws-cdk
   instead.
 </Info>
 
-Pin an exact version. **The package version *is* the instrumentation version** — `@odigos/aws-cdk@0.0.18`
-installs the OpenTelemetry layer and agents bundle built by Odigos release `v0.0.18`, and nothing resolves
+Pin an exact version. **The package version *is* the instrumentation version** — `@odigos/aws-cdk@0.0.19`
+installs the OpenTelemetry layer and agents bundle built by Odigos release `v0.0.19`, and nothing resolves
 or moves at deploy time. Upgrading is a deliberate `npm update` followed by a `cdk diff` that shows you
 exactly what changes. An instrumentation agent that silently updated itself under a deployment that changed
 nothing is not a property you want.
@@ -112,7 +112,7 @@ something to fix.
 
 The construct also removes any `ODIGOS_IAC` or `ODIGOS_MANAGED` environment variables from the function's
 definition, such as ones written by an earlier package version. The only environment variables it writes are
-`AWS_LAMBDA_EXEC_WRAPPER` and `ODIGOS_LAMBDA_CONFIG`. See [CDK: Lambda](/cloud-connectors/aws/cdk/lambda).
+`AWS_LAMBDA_EXEC_WRAPPER` and `ODIGOS_LAMBDA_CONFIG`, plus your loader variable when you pass `existingLoaderValue`. See [CDK: Lambda](/cloud-connectors/aws/cdk/lambda).
 
 <Note>
   The deploying identity needs `lambda:TagResource` for the tags to be applied. A function
@@ -124,8 +124,10 @@ definition, such as ones written by an earlier package version. The only environ
 Fargate still uses the environment variable, with this shape:
 
 ```json
-{"v":1,"source":"cdk","version":"v0.0.18","lang":"java","image":"registry.odigos.io/odigos-fargate-agents:v0.0.18"}
+{"v":1,"source":"cdk","version":"v0.0.19","lang":"java","image":"registry.odigos.io/odigos-fargate-agents:v0.0.19"}
 ```
+
+Odigos reads `lang` and `image`; `v`, `source`, and `version` are informational.
 
 <Warning>
   There's a second marker, **`ODIGOS_MANAGED`**, that these constructs never write —
@@ -138,8 +140,9 @@ Fargate still uses the environment variable, with this shape:
 
 <ParamField path="debug" type="boolean" default="false">
   Makes the OpenTelemetry agent log verbosely, which helps when telemetry isn't arriving and you need to
-  see why. Available on both constructs. On Lambda it sets `"d":true` in `ODIGOS_LAMBDA_CONFIG`; on Fargate
-  it sets `OTEL_LOG_LEVEL=debug`.
+  see why. Available on both constructs. On Lambda it sets `"debug": true` in `ODIGOS_LAMBDA_CONFIG` (and has no
+  effect for functions in web-server mode); on Fargate it sets `OTEL_LOG_LEVEL=debug` on every instrumented
+  container.
 
   <Warning>
     Leave it off once you're done. It's expensive at volume, and Odigos expects it

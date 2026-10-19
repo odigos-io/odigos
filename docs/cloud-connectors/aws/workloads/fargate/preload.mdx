@@ -8,14 +8,14 @@ Every instrumented Fargate task pulls the same agents bundle at task-start time 
 task image, so the pull happens on every new task launch, and a failed pull blocks the whole task (the
 application container waits on the stager with a `SUCCESS` dependency).
 
-Most accounts need none of this — with Odigos-managed instrumentation, the connector pulls the image from
-Odigos' own registry on your behalf. Preloading matters if your Fargate tasks run in a network that cannot
+Most accounts need none of this — with Odigos-managed instrumentation, the connector points your task
+definitions at the image in Odigos' own registry on your behalf. Preloading matters if your Fargate tasks run in a network that cannot
 reach that public registry, or your organization requires every image your tasks pull to live in a registry
 you own.
 
 <Info>
-  The current release is **`v0.0.18`**. Use it as `<version>` below. The CDK package's version is the same
-  as the image tag it uses by default (`@odigos/aws-cdk@0.0.18` stages `odigos-fargate-agents:v0.0.18`).
+  The current release is **`v0.0.19`**. Use it as `<version>` below. The CDK package's version is the same
+  as the image tag it uses by default (`@odigos/aws-cdk@0.0.19` stages `odigos-fargate-agents:v0.0.19`).
 </Info>
 
 <Tabs>
@@ -59,8 +59,9 @@ you own.
 
         <Tip>
           Pin `<version>` to a specific released tag rather than mirroring on a
-          schedule — an unpinned mirror can drift from what the connector expects
-          if Odigos ships a newer bundle later.
+          schedule — a mirror that follows a newer bundle changes what your tasks stage
+          without a deploy, and with Odigos-managed instrumentation the connector
+          expects the exact image it is configured with.
         </Tip>
       </Step>
 
@@ -68,7 +69,8 @@ you own.
         <Tabs>
           <Tab title="CloudFormation">
             Replace the `Image` on the `odigos-agent` container in your task definition with your mirrored
-            tag — see [Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument).
+            tag, and put the same value in the `image` field of each container's `ODIGOS_IAC` — see
+            [Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument).
           </Tab>
 
           <Tab title="CDK">
@@ -99,7 +101,7 @@ you own.
               This overrides the Fargate agents bundle for **every** AWS connector the
               controller manages. Confirm the version and IAM access (the task
               execution role needs `ecr:GetDownloadUrlForLayer` / `ecr:BatchGetImage`
-              on the repository) with Odigos support before changing this in
+              on the repository, and `ecr:GetAuthorizationToken`) with Odigos support before changing this in
               production — a mismatched or unreachable override affects every
               Fargate service across every AWS connector at once.
             </Warning>

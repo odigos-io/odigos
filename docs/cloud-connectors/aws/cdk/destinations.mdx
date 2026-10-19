@@ -28,10 +28,13 @@ speaks:
   `https://otlp.example.com:4318`. Port 4318 is the convention.
 </ParamField>
 
-The two formats aren't interchangeable, and getting them mixed up is the most common mistake here — so the
-construct checks: a scheme in `endpoint`, or a missing one in `httpEndpoint`, stops the build immediately
-rather than deploying something that starts up fine and then quietly delivers nothing. Using a port that
-belongs to the other protocol (4318 with gRPC, or 4317 with HTTP) produces a warning.
+The two formats aren't interchangeable, and getting them mixed up is the most common mistake here. On
+Lambda the construct checks: a scheme in `endpoint`, or a missing one in `httpEndpoint`, stops the build
+immediately rather than deploying something that starts up fine and then quietly delivers nothing. On Fargate
+it doesn't check the format: `httpEndpoint` is written exactly as you give it, and `endpoint` is written as
+`https://host:port` (`http://host:port` when `insecure` is `true`), so double-check both. On both
+constructs, using a port that belongs to the other protocol (4318 with gRPC, or 4317 with HTTP) produces a
+warning.
 
 <Note>
   **How many endpoints to set differs between the two constructs.** Lambda takes
@@ -42,16 +45,26 @@ belongs to the other protocol (4318 with gRPC, or 4317 with HTTP) produces a war
 Two more optional settings:
 
 <ParamField path="destination.insecure" type="boolean" default="false">
-  Skip TLS verification. Applies to the gRPC `endpoint` only — the HTTP exporter takes its transport from
-  the URL scheme.
+  Connect to the gRPC `endpoint` without TLS. Applies to the gRPC `endpoint` only — the HTTP exporter takes
+  its transport from the URL scheme. On Fargate this is what makes the construct write `http://` instead of
+  `https://` in front of `endpoint`.
 </ParamField>
 
 <ParamField path="destination.headers" type="object">
   Headers sent with every request, which in practice means your destination's credential (an API key or
   token).
 
-  On Lambda they're stored in the `h` field of the `ODIGOS_LAMBDA_CONFIG` environment variable. On Fargate
-  they're stored in `OTEL_EXPORTER_OTLP_HEADERS`.
+  On Lambda they're stored in the `headers` field of the `ODIGOS_LAMBDA_CONFIG` environment variable. On Fargate
+  they're stored in `OTEL_EXPORTER_OTLP_HEADERS`, as a comma-separated `key=value` list sorted by key.
+
+  <Note>
+    **Fargate: pass header names and values already URL-encoded.** The construct writes them exactly as
+    given. Odigos compares `OTEL_EXPORTER_OTLP_HEADERS` against the destination's headers with names and values
+    URL-encoded (a space becomes `+`). Letters, digits, `-`, `_`, `.`, and `~` are the same either way, so a
+    plain API key needs nothing. A value with other characters, such as `Bearer <token>`, is reported as
+    drifted unless you give it in encoded form. If the destination in Odigos has no headers, don't set any
+    here.
+  </Note>
 
   <Warning>
     Both are plain-text environment variables on the workload — readable by
@@ -105,6 +118,12 @@ on when you want those signals and your destination is configured to accept them
   Read the enabled signals off the destination in Odigos and state the same ones
   here.
 </Warning>
+
+<Note>
+  The Application Signals distros (`*-adot-application-signals`) require both `destination.traces` and
+  `destination.metrics` to be `true`; the build fails otherwise. See
+  [ADOT and Application Signals](/cloud-connectors/aws/cdk/lambda#adot-and-application-signals).
+</Note>
 
 ### Signals by language
 

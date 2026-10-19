@@ -1,6 +1,6 @@
 ---
 title: 'Instrument Lambda with CDK, CloudFormation, or Terraform'
-description: 'Self-managed AWS Lambda instrumentation using the Odigos CDK construct, CloudFormation, Terraform, or the AWS CLI: the layers, exec wrapper, compact configuration, and tags Odigos expects.'
+description: 'Self-managed AWS Lambda instrumentation using the Odigos CDK construct, CloudFormation, Terraform, or the AWS CLI: the layers, exec wrapper, configuration, and tags Odigos expects.'
 sidebarTitle: 'Instrument Lambda'
 ---
 
@@ -25,10 +25,10 @@ However you apply it, self-managed Lambda instrumentation adds the same things t
 
 1. **One or two layers.** An OpenTelemetry SDK layer for your function's language and architecture. The ADOT
    distros also need a second, collector layer (`odigos-otel-adot-collector-<arch>`). The layer must be
-   **v0.0.18 or newer**.
+   **v0.0.19 or newer**, which is the first version that reads the current configuration format.
 2. **`AWS_LAMBDA_EXEC_WRAPPER`** — tells Lambda to run your handler through the layer's instrumentation first.
    The exact path depends on the distro. See [Exec wrapper per distro](#exec-wrapper-per-distro).
-3. **`ODIGOS_LAMBDA_CONFIG`** — one compact JSON value with your service name, the signals to export, and the
+3. **`ODIGOS_LAMBDA_CONFIG`** — one JSON value with your service name, the signals to export, and the
    destination endpoint. The layer expands it at startup into the full SDK and collector configuration, so
    your function's environment stays well under AWS's 4 KB limit.
 4. **Three resource tags** that tell Odigos "this function is instrumented, and here are the layers it runs":
@@ -47,48 +47,55 @@ untouched.
 
 ## ODIGOS_LAMBDA_CONFIG reference
 
-The value is a single-line JSON object stored as a string. Every key is one letter to keep it short:
+The value is a single-line JSON object stored as a string. This is schema **version 2**, which uses readable
+key names and needs layers **v0.0.19 or newer**.
 
 | Key | Required | Meaning |
 | --- | --- | --- |
-| `v` | Yes | Config version. Must be `1`. |
-| `s` | Yes | Service name. Must equal the Source's **Service Name** in Central — the function name unless you override it. |
-| `t` | Yes | Signals to export, as a bitmask: traces `1`, metrics `2`, logs `4`. Add them up (`1`–`7`): `7` is all three, `3` is traces and metrics. Must equal the signals your destination enables — even for Ruby, which doesn't produce metrics. |
-| `e` | Yes | Destination endpoint, exactly as configured on the connector's destination. For OTLP/gRPC, bare `host:port` with no scheme. For OTLP/HTTP, the full URL. |
-| `p` | No | `true` when `e` is an OTLP/HTTP endpoint. Omit for gRPC. |
-| `i` | No | `true` for an insecure (no TLS) connection. gRPC only. |
-| `h` | No | Map of headers sent to the destination, for example `{"x-api-key":"..."}`. Must match the headers configured on the destination. |
-| `a` | No | `true` for the ADOT + Application Signals preset. See [Distros](/cloud-connectors/aws/workloads/lambda/distros#adot-with-application-signals). |
-| `l` | No | `true` to collect the function's stdout and stderr as logs. Set it **exactly when** the destination enables logs **and** the function is in handler mode **and** runs Ruby or a lightweight Java wrapper. Leave it out otherwise — Odigos checks it. |
-| `d` | No | `true` for debug logging (`OTEL_LOG_LEVEL=debug`). Handler mode only. Set it only when debug telemetry is enabled for the connector. |
-| `w` | Web Adapter | The function's original `AWS_LAMBDA_EXEC_WRAPPER`, for functions behind the AWS Lambda Web Adapter. Use `""` when there is none. |
+| `version` | Yes | Config version. Must be `2`. |
+| `service` | Yes | Service name. Must equal the Source's **Service Name** in Central — the function name unless you override it. |
+| `signals` | Yes | Signals to export, as a list of unique names: `"traces"`, `"metrics"`, `"logs"`. At least one is required. Must equal the signals your destination enables — even for Ruby, which doesn't produce metrics. |
+| `endpoint` | Yes | Destination endpoint, exactly as configured on the connector's destination. For OTLP/gRPC, bare `host:port` with no scheme. For OTLP/HTTP, the full URL. |
+| `http` | No | `true` when `endpoint` is an OTLP/HTTP endpoint. Omit for gRPC. Must match the destination. |
+| `insecure` | No | `true` for an insecure (no TLS) connection. gRPC only. Must match the destination. |
+| `headers` | No | Map of headers sent to the destination, for example `{"x-api-key":"..."}`. Must match the headers configured on the destination. |
+| `applicationSignals` | No | `true` for the ADOT + Application Signals preset. Requires both `"traces"` and `"metrics"` in `signals`. See [Distros](/cloud-connectors/aws/workloads/lambda/distros#adot-with-application-signals). |
+| `functionLogs` | No | `true` to collect the function's stdout and stderr as logs. Set it **exactly when** the destination enables logs **and** the function is in handler mode **and** runs Ruby or a lightweight Java wrapper. Leave it out otherwise — Odigos checks it. |
+| `debug` | No | `true` for debug logging (`OTEL_LOG_LEVEL=debug`). Handler mode only. Set it only when debug telemetry is enabled for the connector. |
+| `webWrapper` | Web Adapter | The function's original `AWS_LAMBDA_EXEC_WRAPPER`, for functions behind the AWS Lambda Web Adapter. Use `""` when there is none. |
 
 <Tabs>
   <Tab title="gRPC, traces only">
     ```json
-    {"v":1,"s":"my-fn","t":1,"e":"otlp.example.com:4317"}
+    {"version":2,"service":"my-fn","signals":["traces"],"endpoint":"otlp.example.com:4317"}
     ```
   </Tab>
   <Tab title="HTTP, all signals, with a header">
     ```json
-    {"v":1,"s":"my-fn","t":7,"e":"https://otlp.example.com:4318","p":true,"h":{"x-api-key":"<API_KEY>"}}
+    {"version":2,"service":"my-fn","signals":["traces","metrics","logs"],"endpoint":"https://otlp.example.com:4318","http":true,"headers":{"x-api-key":"<API_KEY>"}}
     ```
   </Tab>
   <Tab title="Web Adapter">
     ```json
-    {"v":1,"s":"my-fn","t":1,"e":"otlp.example.com:4317","w":"/opt/bootstrap"}
+    {"version":2,"service":"my-fn","signals":["traces"],"endpoint":"otlp.example.com:4317","webWrapper":"/opt/bootstrap"}
     ```
   </Tab>
 </Tabs>
 
 <Warning>
-  If `ODIGOS_LAMBDA_CONFIG` is not valid JSON, or `v` is not `1`, `t` is outside `1`–`7`, or `e` is empty, the
-  layer's launcher exits and the function **fails to start**. The log line begins with
-  `odigos-lambda-startup:`. Check the JSON before you deploy.
+  The layer's launcher exits and the function **fails to start** if `ODIGOS_LAMBDA_CONFIG` is not valid JSON,
+  `version` is not `2` (or the legacy `1`), `signals` is empty, contains an unknown name, or repeats a name,
+  `endpoint` is empty, or `applicationSignals` is `true` without both `traces` and `metrics` in `signals`. The
+  log line begins with `odigos-lambda-startup:`. Check the JSON before you deploy.
 </Warning>
 
 <Warning>
-  Values in `h` are stored as **plain text** in the function's configuration, and anyone who can read the
+  A version 2 configuration on a layer older than **v0.0.19** also fails to start. The older launcher only
+  understands the short-key version 1 format. Upgrade the layers together with the configuration.
+</Warning>
+
+<Warning>
+  Values in `headers` are stored as **plain text** in the function's configuration, and anyone who can read the
   function configuration can read them. They also count toward the 4096-byte environment limit.
 </Warning>
 
@@ -193,7 +200,7 @@ Replace the placeholders in `<ANGLE_BRACKETS>`:
     Environment:
       Variables:
         AWS_LAMBDA_EXEC_WRAPPER: "<WRAPPER>"
-        ODIGOS_LAMBDA_CONFIG: '{"v":1,"s":"<SERVICE_NAME>","t":1,"e":"<OTLP_ENDPOINT>"}'
+        ODIGOS_LAMBDA_CONFIG: '{"version":2,"service":"<SERVICE_NAME>","signals":["traces"],"endpoint":"<OTLP_ENDPOINT>"}'
     ```
   </Tab>
 
@@ -215,7 +222,7 @@ Replace the placeholders in `<ANGLE_BRACKETS>`:
     Environment:
       Variables:
         AWS_LAMBDA_EXEC_WRAPPER: "<WRAPPER>"
-        ODIGOS_LAMBDA_CONFIG: '{"v":1,"s":"<SERVICE_NAME>","t":1,"e":"<OTLP_ENDPOINT>"}'
+        ODIGOS_LAMBDA_CONFIG: '{"version":2,"service":"<SERVICE_NAME>","signals":["traces"],"endpoint":"<OTLP_ENDPOINT>"}'
     ```
   </Tab>
 
@@ -237,7 +244,7 @@ Replace the placeholders in `<ANGLE_BRACKETS>`:
           { for key, value in var.existing_environment : key => value if !contains(["ODIGOS_MANAGED", "ODIGOS_IAC"], key) },
           {
             AWS_LAMBDA_EXEC_WRAPPER = "<WRAPPER>"
-            ODIGOS_LAMBDA_CONFIG    = jsonencode({ v = 1, s = "<SERVICE_NAME>", t = 1, e = "<OTLP_ENDPOINT>" })
+            ODIGOS_LAMBDA_CONFIG    = jsonencode({ version = 2, service = "<SERVICE_NAME>", signals = ["traces"], endpoint = "<OTLP_ENDPOINT>" })
           }
         )
       }
@@ -261,7 +268,7 @@ Replace the placeholders in `<ANGLE_BRACKETS>`:
     {
       "Variables": {
         "AWS_LAMBDA_EXEC_WRAPPER": "<WRAPPER>",
-        "ODIGOS_LAMBDA_CONFIG": "{\"v\":1,\"s\":\"<SERVICE_NAME>\",\"t\":1,\"e\":\"<OTLP_ENDPOINT>\"}"
+        "ODIGOS_LAMBDA_CONFIG": "{\"version\":2,\"service\":\"<SERVICE_NAME>\",\"signals\":[\"traces\"],\"endpoint\":\"<OTLP_ENDPOINT>\"}"
       }
     }
     JSON
@@ -292,8 +299,8 @@ Replace the placeholders in `<ANGLE_BRACKETS>`:
 </Tabs>
 
 <Tip>
-  The examples use `"t":1` (traces only). Set `t` to match the signals your destination enables, and add `p`,
-  `i`, `h`, and the other keys from the config reference above as needed.
+  The examples use `"signals":["traces"]` (traces only). Set `signals` to match the signals your destination
+  enables, and add `http`, `insecure`, `headers`, and the other keys from the config reference above as needed.
 </Tip>
 
 ### Functions behind the AWS Lambda Web Adapter
@@ -301,13 +308,13 @@ Replace the placeholders in `<ANGLE_BRACKETS>`:
 For a function that runs a web server behind the
 [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter), set the wrapper to
 `/opt/odigos-webserver` and record the function's existing wrapper (the adapter's, often `/opt/bootstrap`) in
-`w`:
+`webWrapper`:
 
 ```yaml
 Environment:
   Variables:
     AWS_LAMBDA_EXEC_WRAPPER: "/opt/odigos-webserver"
-    ODIGOS_LAMBDA_CONFIG: '{"v":1,"s":"<SERVICE_NAME>","t":1,"e":"<OTLP_ENDPOINT>","w":"/opt/bootstrap"}'
+    ODIGOS_LAMBDA_CONFIG: '{"version":2,"service":"<SERVICE_NAME>","signals":["traces"],"endpoint":"<OTLP_ENDPOINT>","webWrapper":"/opt/bootstrap"}'
 ```
 
 You no longer edit `NODE_OPTIONS`, `JAVA_TOOL_OPTIONS`, or `PYTHONPATH`. Web Adapter functions support the Java
@@ -330,11 +337,11 @@ full agent, the upstream Node.js distro, and the upstream Python distro. Ruby an
   </Accordion>
 
   <Accordion title="The configuration must match the destination exactly">
-    Odigos compares `ODIGOS_LAMBDA_CONFIG` with the connector's destination and Source: `s` with the Source's
-    service name, `t` with the destination's enabled signals, and `e`, `p`, `i`, and `h` with the destination's
-    endpoint, protocol, TLS setting, and headers. A missing signal and an extra signal are both drift, and the
+    Odigos compares `ODIGOS_LAMBDA_CONFIG` with the connector's destination and Source: `service` with the Source's
+    service name, `signals` with the destination's enabled signals, and `endpoint`, `http`, `insecure`, and
+    `headers` with the destination's endpoint, protocol, TLS setting, and headers. A missing signal and an extra signal are both drift, and the
     source shows **Instrumentation does not match**. To turn off a signal, turn it off on the destination first,
-    then remove its bit from `t`.
+    then remove it from `signals`.
   </Accordion>
 
   <Accordion title="OTEL_EXPORTER_OTLP_* variables you set are overridden">
@@ -354,25 +361,48 @@ full agent, the upstream Node.js distro, and the upstream Python distro. Ruby an
   </Accordion>
 
   <Accordion title="The environment is limited to 4096 bytes">
-    Your own variables plus `ODIGOS_LAMBDA_CONFIG` (including any headers in `h`) must fit in AWS's 4096-byte
+    Your own variables plus `ODIGOS_LAMBDA_CONFIG` (including any `headers`) must fit in AWS's 4096-byte
     limit for Lambda environment variables.
   </Accordion>
 </AccordionGroup>
 
-## Migrating from the earlier format
+## Migrating from earlier formats
 
-Earlier versions of this page had you set `ODIGOS_IAC`, `OPENTELEMETRY_COLLECTOR_CONFIG_URI`, `OTEL_SERVICE_NAME`,
-and per-signal `OTEL_*_EXPORTER` variables by hand. To move a self-managed function to the current format:
+Two earlier formats exist:
+
+- **The original environment-variable format**, where you set `ODIGOS_IAC`, `OPENTELEMETRY_COLLECTOR_CONFIG_URI`,
+  `OTEL_SERVICE_NAME`, and per-signal `OTEL_*_EXPORTER` variables by hand.
+- **The short-key version 1 configuration**, `{"v":1,...}`, introduced with layer v0.0.18.
+
+Odigos still recognizes functions deployed in either format during migration, but the instructions in Central
+and the CDK construct now produce version 2. Functions that Odigos instruments for you (**Odigos-managed**) are
+migrated automatically. For self-managed functions, switch to version 2 together with **v0.0.19 or newer**
+layers.
+
+To move a self-managed function from the original environment-variable format:
 
 1. **Remove** `ODIGOS_IAC`, `OPENTELEMETRY_COLLECTOR_CONFIG_URI`, and the `OTEL_SERVICE_NAME` and
    `OTEL_*_EXPORTER` variables Odigos had you set. For Web Adapter functions, also remove the `JAVA_TOOL_OPTIONS`,
    `NODE_OPTIONS`, and `PYTHONPATH` additions.
-2. **Upgrade** the Odigos layer(s) to **v0.0.18 or newer**.
-3. **Add** the `odigos:*` tags, plus `AWS_LAMBDA_EXEC_WRAPPER` and `ODIGOS_LAMBDA_CONFIG`.
+2. **Upgrade** the Odigos layer(s) to **v0.0.19 or newer**.
+3. **Add** the `odigos:*` tags, plus `AWS_LAMBDA_EXEC_WRAPPER` and a version 2 `ODIGOS_LAMBDA_CONFIG`.
 
-Odigos still recognizes functions deployed in the earlier format, but the instructions in Central and the CDK
-construct now produce the current format. Functions that Odigos instruments for you (**Odigos-managed**) are
-migrated automatically.
+To move from the version 1 configuration, upgrade the layers to v0.0.19 or newer and rewrite the value with
+these keys:
+
+| Version 1 | Version 2 |
+| --- | --- |
+| `v` | `version` (set to `2`) |
+| `s` | `service` |
+| `t` (bitmask: traces `1`, metrics `2`, logs `4`) | `signals` (list, for example `7` becomes `["traces","metrics","logs"]`) |
+| `e` | `endpoint` |
+| `p` | `http` |
+| `i` | `insecure` |
+| `h` | `headers` |
+| `a` | `applicationSignals` |
+| `l` | `functionLogs` |
+| `d` | `debug` |
+| `w` | `webWrapper` |
 
 <Check>
   Once the tags, wrapper, layer(s), and configuration all match, Odigos flips the function to **Instrumented**

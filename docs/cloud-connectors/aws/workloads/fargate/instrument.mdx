@@ -38,8 +38,9 @@ environment variables on your application container. Here's what happens each ti
 
 <Info>
   There's no intermediate collector inside the task — each Fargate task sends
-  telemetry **directly** to your OTLP destination, so that destination's endpoint
-  must be reachable from the task's network. See
+  telemetry **directly** to its OTLP endpoint (your destination, or the regional
+  Collector when one serves the service), so that endpoint must be reachable from
+  the task's network. See
   [Telemetry export](/cloud-connectors/aws/overview#telemetry-export).
 </Info>
 
@@ -394,9 +395,12 @@ Merge these properties into your task definition. Only the exact agent path, act
 
 <AccordionGroup>
   <Accordion title="ODIGOS_IAC is per container">
-    It's the only thing marking a container as instrumented. Its `lang` is checked against the language Odigos
-    detects for the container, and its `image` records the agents image you staged from — Odigos holds the
-    task to *that* image, so pinning or mirroring the image isn't reported as out of date. All marked containers in one task definition must record the same `image`. Use
+    It's the only thing marking a container as instrumented, and its mere presence is what counts. Odigos reads two
+    fields from it. `lang` is checked against the language Odigos detects for the container; leave it out and that
+    check is skipped. `image` records the agents image you staged from — Odigos holds the
+    task to *that* image, so pinning or mirroring the image isn't reported as out of date; leave it out and the
+    `odigos-agent` container is checked for being present, non-essential, and staging the right agents, whatever its tag.
+    `v` is the schema version (`1`). All marked containers in one task definition must record the same `image`. Use
     the same value as the `odigos-agent` container's `Image`. Never set `ODIGOS_MANAGED` — that's the
     connector's own rollback record, written only when you hand the workload to Odigos-managed
     instrumentation instead.
@@ -418,14 +422,16 @@ Merge these properties into your task definition. Only the exact agent path, act
   </Accordion>
 
   <Accordion title="Endpoint and protocol are one decision">
-    Both are compared exactly against what your OTLP destination resolves to on this connector. If it only
-    offers OTLP/gRPC, use the gRPC endpoint (standard port 4317) and `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`
-    instead of the `http/protobuf` shown above (except PHP and Ruby, which support HTTP only — see their
-    tabs). Pairing an endpoint with the wrong transport fails at runtime as an opaque connection reset.
+    Both are compared exactly against what your OTLP destination resolves to on this connector. If the
+    destination offers OTLP/HTTP, every language is expected to use it with `http/protobuf`; if it only
+    offers OTLP/gRPC, use the gRPC endpoint written as a URL with a scheme (for example `https://<host>:4317`) and
+    `OTEL_EXPORTER_OTLP_PROTOCOL=grpc` instead of the `http/protobuf` shown above (except PHP and Ruby, which
+    support HTTP only — see their tabs). Pairing an endpoint with the wrong transport fails at runtime as an
+    opaque connection reset. Copy the exact endpoint from the **How to instrument this workload** panel.
 
     If your destination needs headers (for example an API key), set `OTEL_EXPORTER_OTLP_HEADERS` to a
-    comma-separated `key=value` list, sorted by key, with URL-encoded values. It's compared exactly like the
-    endpoint.
+    comma-separated `key=value` list, sorted by key, with both names and values URL-encoded (a space becomes
+    `+`). It's compared exactly like the endpoint. If the destination has no headers, don't set the variable.
   </Accordion>
 
   <Accordion title="One odigos-agent container serves the whole task">
@@ -433,6 +439,17 @@ Merge these properties into your task definition. Only the exact agent path, act
     one language needs a chained `&& cp -r /instrumentations/<lang> /var/odigos/<lang>` for each, in
     alphabetical order — Odigos compares the command exactly against the union of every marked container's
     language.
+  </Accordion>
+
+  <Accordion title="OTEL_SERVICE_NAME is the ECS service name">
+    Set `<YOUR_SERVICE_NAME>` to your ECS service's name — not the task definition family, the container name, or
+    the cluster-prefixed name the source is listed under in Odigos. If you've set a reported service name on the
+    source, use that. A different value is reported as drift.
+  </Accordion>
+
+  <Accordion title="Debug logging">
+    Leave `OTEL_LOG_LEVEL` unset. Odigos expects it absent, and reports it as drift, unless debug telemetry is
+    enabled on the connector — in which case it expects `OTEL_LOG_LEVEL=debug`.
   </Accordion>
 
   <Accordion title="Roll the service, not just the revision">

@@ -126,29 +126,60 @@ On any other runtime the ADOT options don't appear in the picker.
 </Note>
 
 This distro runs ADOT with [CloudWatch Application Signals](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-application-signals.html)
-enabled. Your telemetry still goes to your Odigos destination; **AWS also receives service telemetry** for
-Application Signals. Metrics that AWS derives on its side appear in CloudWatch, not in your Odigos
-destination.
+enabled. It requires the destination to enable **traces and metrics** (logs are optional). This is enforced:
+without both, instrumentation fails with
+`ADOT + Application Signals requires traces and metrics to be enabled for the destination`.
 
-Before you select it, in the function's AWS account and region:
+What it does:
 
-<Steps>
-  <Step title="Enable Application Signals">
-    Enable CloudWatch Application Signals service discovery once per account and region. See
-    [Application Signals for Lambda](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-application-signals.html).
-  </Step>
-  <Step title="Grant the execution role">
-    Attach the AWS managed policy `CloudWatchLambdaApplicationSignalsExecutionRolePolicy` (or equivalent
-    permissions) to the **function's execution role**. The connector doesn't change your function's IAM role;
-    the [CDK construct](/cloud-connectors/aws/cdk/lambda#adot-and-application-signals) attaches it for you.
-  </Step>
-  <Step title="Enable traces and metrics on the destination">
-    The destination must have **traces** enabled, or instrumentation fails with
-    `ADOT + Application Signals requires traces to be enabled for the destination`. Application Signals is
-    only switched on at runtime when the destination enables **both traces and metrics** — with traces alone
-    the function runs ADOT with Application Signals off.
-  </Step>
-</Steps>
+- **Your destination is unchanged.** Odigos destination telemetry is sent as usual.
+- **AWS also receives enriched spans.** The SDK mirrors both sampled and unsampled enriched spans to Lambda's
+  embedded AWS agent for Application Signals. There is no second SDK.
+- **AWS runtime metrics stay off**, as is the Lambda default.
+- **RED metrics.** Java computes them locally. Node.js and Python rely on AWS-side processing of the spans.
+- **AWS-derived metrics stay in CloudWatch.** They are not forwarded to your Odigos destination.
+
+<Warning>
+  AWS receives this telemetry, so it may incur AWS charges.
+</Warning>
+
+Prerequisites depend on how the function is instrumented:
+
+<Tabs>
+  <Tab title="Odigos-managed">
+    Odigos handles the prerequisites automatically, before it changes the function. The connector:
+
+    1. Checks that the AWS managed policy `CloudWatchLambdaApplicationSignalsExecutionRolePolicy` exists, and
+       attaches it to the function's execution role if it isn't already attached.
+    2. Enables Application Signals discovery if the `AWSServiceRoleForCloudWatchApplicationSignals`
+       service-linked role is absent.
+
+    It never creates or edits IAM policies, and it rechecks on every cycle, so a removed attachment is repaired.
+    Failures, such as a missing policy or a denied permission, are reported on the source before the function
+    is changed. See [Errors you might see](#errors-you-might-see).
+
+    The policy attachment and discovery are **kept** when you uninstrument the function, because other functions
+    may share them.
+
+    This requires the connector's
+    [IAM permissions](/cloud-connectors/add-connectors/add-aws-connector#iam-permissions) for instrumentation.
+    Deploy the updated permissions before you enable this distro.
+  </Tab>
+  <Tab title="Self-managed (IaC)">
+    You do this yourself, in the function's AWS account and region:
+
+    1. **Enable Application Signals discovery** once per account and region. See
+       [Application Signals for Lambda](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-application-signals.html).
+    2. **Attach the policy.** Attach the AWS managed policy `CloudWatchLambdaApplicationSignalsExecutionRolePolicy`
+       to the function's execution role. The
+       [CDK construct](/cloud-connectors/aws/cdk/lambda#adot-and-application-signals) attaches it for you.
+  </Tab>
+</Tabs>
+
+<Tip>
+  **Verify in CloudWatch.** A configuration that matches what Odigos expects is not proof that data reaches
+  AWS. Invoke the function, then check its service, operations, and metrics in CloudWatch Application Signals.
+</Tip>
 
 ## Switch distros
 
@@ -257,7 +288,11 @@ and Bunyan) — a function that never logs produces no log records. No Lambda di
 | --- | --- |
 | `unsupported instrumentation distro "<name>" for Lambda <language> (handler)` / `(web-server)` | The selected distro doesn't exist for this language, or isn't offered for Web Adapter functions. The save is rejected. |
 | `Lambda distro <name> does not support runtime <runtime>` | An ADOT distro was selected for a runtime ADOT doesn't support. |
-| `ADOT + Application Signals requires traces to be enabled for the destination` | Enable traces on the connector's destination, or choose plain ADOT. |
+| `ADOT + Application Signals requires traces and metrics to be enabled for the destination` | Enable both traces and metrics on the connector's destination, or choose plain ADOT. |
+| `Application Signals requires existing policy <arn>: …` | The AWS managed policy doesn't exist or can't be read. Odigos never creates it. |
+| `attach existing Application Signals policy to execution role <name>: …` | Odigos couldn't attach the policy to the execution role, usually a missing IAM permission. |
+| `enable Application Signals discovery: …` | Odigos couldn't enable discovery, usually a missing permission. |
+| `Application Signals requires a valid Lambda execution-role ARN` | The function's execution role couldn't be determined. |
 | `max amount of layers was reached already: …` | The function already uses too many layers. ADOT needs two free slots, the other distros one. |
 | `Lambda environment requires N bytes, exceeding AWS's 4096-byte limit; …` | Your own environment variables plus destination headers don't fit. Shorten them. |
 | `unsupported: function sets a non-Odigos AWS_LAMBDA_EXEC_WRAPPER "<value>" …` | The function already uses its own exec wrapper. Odigos won't overwrite it. |
