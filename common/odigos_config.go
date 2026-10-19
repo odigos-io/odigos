@@ -1,10 +1,6 @@
 package common
 
 import (
-	"crypto/sha256"
-	"fmt"
-	"strings"
-
 	"github.com/odigos-io/odigos/common/api/sampling"
 )
 
@@ -618,9 +614,6 @@ type TransactionIdentityConfiguration struct {
 // I/O correlations.
 type InterrogationConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	// AnalysisEnabled pauses model analysis and rule writes without removing the
-	// Helm-provisioned interrogation data pipeline. Nil defaults to enabled.
-	AnalysisEnabled *bool `json:"analysisEnabled,omitempty" yaml:"analysisEnabled,omitempty"`
 
 	// Model selects the LLM that the bundled LiteLLM proxy routes interrogation
 	// requests to. The upstream API key is kept in a Kubernetes Secret.
@@ -629,7 +622,6 @@ type InterrogationConfiguration struct {
 	// to UI-owned credential revisions; remote configuration cannot set them.
 	CredentialSecretName         string `json:"credentialSecretName,omitempty" yaml:"credentialSecretName,omitempty"`
 	PreviousCredentialSecretName string `json:"previousCredentialSecretName,omitempty" yaml:"previousCredentialSecretName,omitempty"`
-	UpdateID                     string `json:"updateId,omitempty" yaml:"updateId,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -851,23 +843,11 @@ func (o *OdigosConfiguration) InterrogationEnabled() bool {
 	return o != nil && InterrogationActive(o.Interrogation)
 }
 
-// InterrogationAnalysisEnabled reports whether the Helm-provisioned loop should
-// analyze and apply probes. Pausing analysis does not disable data collection.
-func (o *OdigosConfiguration) InterrogationAnalysisEnabled() bool {
-	return o.InterrogationEnabled() && (o.Interrogation.AnalysisEnabled == nil || *o.Interrogation.AnalysisEnabled)
-}
-
 // MergeInterrogationSettings applies fields that can be changed without
 // provisioning workloads. It intentionally ignores Enabled and credential
 // references, whose ownership is handled separately.
 func MergeInterrogationSettings(base, overlay *InterrogationConfiguration) {
-	if base == nil || overlay == nil {
-		return
-	}
-	if overlay.AnalysisEnabled != nil {
-		base.AnalysisEnabled = overlay.AnalysisEnabled
-	}
-	if overlay.Model == nil {
+	if base == nil || overlay == nil || overlay.Model == nil {
 		return
 	}
 	if base.Model == nil {
@@ -882,24 +862,6 @@ func MergeInterrogationSettings(base, overlay *InterrogationConfiguration) {
 	if overlay.Model.ApiBase != nil {
 		base.Model.ApiBase = overlay.Model.ApiBase
 	}
-}
-
-// InterrogationModelHash identifies the selected, non-secret upstream routing
-// settings. Credentials and the runtime analysis switch do not affect it.
-func InterrogationModelHash(model *InterrogationModelConfiguration) string {
-	provider, name, apiBase := "openai", "gpt-4o-mini", ""
-	if model != nil {
-		if model.Provider != nil {
-			provider = strings.TrimSpace(*model.Provider)
-		}
-		if model.Name != nil {
-			name = strings.TrimSpace(*model.Name)
-		}
-		if model.ApiBase != nil {
-			apiBase = strings.TrimSpace(*model.ApiBase)
-		}
-	}
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(provider+"\x00"+name+"\x00"+apiBase)))
 }
 
 // UrlTemplatizationLiveTrafficLearningActive reports whether traffic-based URL

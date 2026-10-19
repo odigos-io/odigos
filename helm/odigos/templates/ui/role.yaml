@@ -7,14 +7,6 @@ metadata:
     odigos.io/system-object: "true"
 rules:
   - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    resourceNames:
-      - odigos-insights-leader
-    verbs:
-      - get
-  - apiGroups:
       - ''
     resources:
       - configmaps

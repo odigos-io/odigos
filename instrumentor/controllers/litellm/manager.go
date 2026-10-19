@@ -16,7 +16,6 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager) error {
 	liteLLMPredicate := &odigospredicates.ObjectNamePredicate{AllowedObjectName: k8sconsts.OdigosLiteLLMName}
-	statusPredicate := &odigospredicates.ObjectNamePredicate{AllowedObjectName: k8sconsts.OdigosInterrogationStatusConfigMapName}
 	credentialPredicate := predicate.NewPredicateFuncs(func(obj client.Object) bool {
 		return obj.GetName() == k8sconsts.OdigosLiteLLMName ||
 			obj.GetName() == k8sconsts.OdigosLiteLLMRuntimeSecretName ||
@@ -29,10 +28,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Named("litellm-config").
 		Watches(&corev1.ConfigMap{}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Or(
 			&odigospredicates.OdigosEffectiveConfigMapPredicate,
-			liteLLMPredicate,
-			statusPredicate))).
+			liteLLMPredicate))).
 		Watches(&corev1.Secret{}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(credentialPredicate)).
-		Watches(&appsv1.Deployment{}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(liteLLMPredicate)).
+		Watches(&appsv1.Deployment{}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(liteLLMPredicate, predicate.GenerationChangedPredicate{})).
 		Complete(&liteLLMController{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

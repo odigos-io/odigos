@@ -2,18 +2,15 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,17 +20,19 @@ import (
 
 const (
 	interrogationCredentialPrefix     = k8sconsts.OdigosLocalUIAICredentialSecretPrefix
-	interrogationStatusName           = k8sconsts.OdigosInterrogationStatusConfigMapName
 	interrogationCredentialLabel      = k8sconsts.OdigosLocalUIAIConfigSourceLabel
 	interrogationCredentialLabelValue = k8sconsts.OdigosLocalUIAIConfigSourceValue
 )
 
+// InterrogationAPIKeyProvenancePath is reported only while the local UI selects
+// its own credential revision.
+const InterrogationAPIKeyProvenancePath = "interrogation.model.apiKey"
+
 var interrogationResetPaths = map[string]bool{
-	"interrogation.analysisEnabled": true,
-	"interrogation.model.provider":  true,
-	"interrogation.model.name":      true,
-	"interrogation.model.apiBase":   true,
-	"interrogation.model.apiKey":    true,
+	"interrogation.model.provider":    true,
+	"interrogation.model.name":        true,
+	"interrogation.model.apiBase":     true,
+	InterrogationAPIKeyProvenancePath: true,
 }
 
 func validateInterrogationInput(ctx context.Context, c client.Client, input *model.InterrogationConfigInput) error {
@@ -43,9 +42,6 @@ func validateInterrogationInput(ctx context.Context, c client.Client, input *mod
 	}
 	if base == nil || !base.InterrogationEnabled() {
 		return fmt.Errorf("AI settings require Helm provisioning: insights.enabled=true and insights.interrogation.enabled=true with an enterprise token")
-	}
-	if input.UpdateID != nil && len(*input.UpdateID) > 128 {
-		return fmt.Errorf("AI settings update identifier is too long")
 	}
 	for _, path := range input.ResetPaths {
 		if !interrogationResetPaths[path] {
@@ -192,110 +188,4 @@ func GetInterrogationAPIKey(ctx context.Context, c client.Client) (*string, erro
 		return nil, nil
 	}
 	return &key, nil
-}
-
-type interrogationAcknowledgement struct {
-	UpdateID         string `json:"updateId"`
-	Revision         string `json:"revision"`
-	ModelHash        string `json:"modelHash"`
-	APIKeyConfigured bool   `json:"apiKeyConfigured"`
-	APIKeySource     string `json:"apiKeySource"`
-	ObservedAt       string `json:"observedAt"`
-	State            string `json:"state"`
-	Error            string `json:"error"`
-	HolderIdentity   string `json:"holderIdentity"`
-}
-
-// GetInterrogationSettingsStatus separates a persisted preference from the
-// configuration actually acknowledged by the proxy and elected analysis worker.
-func GetInterrogationSettingsStatus(ctx context.Context, c client.Client) (*model.InterrogationSettingsStatus, error) {
-	status := &model.InterrogationSettingsStatus{State: "NOT_INSTALLED", APIKeySource: "NONE"}
-	base, err := GetHelmDeploymentConfig(ctx, c)
-	if err != nil {
-		return nil, err
-	}
-	status.Provisioned = base != nil && base.InterrogationEnabled()
-	if !status.Provisioned {
-		return status, nil
-	}
-	status.State = "APPLYING"
-	local, err := GetLocalUIConfig(ctx, c)
-	if err != nil {
-		return nil, err
-	}
-	if local != nil && local.Interrogation != nil {
-		status.UpdateID = local.Interrogation.UpdateID
-	}
-	ns := env.GetCurrentNamespace()
-	cm := &corev1.ConfigMap{}
-	if err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: interrogationStatusName}, cm); err != nil {
-		if apierrors.IsNotFound(err) {
-			return status, nil
-		}
-		return nil, err
-	}
-	var proxy, analysis interrogationAcknowledgement
-	if err := json.Unmarshal([]byte(cm.Data["proxy"]), &proxy); err != nil {
-		return status, nil
-	}
-	effective, err := GetEffectiveConfig(ctx, c)
-	if err != nil {
-		return nil, err
-	}
-	if effective == nil || effective.Interrogation == nil || proxy.ModelHash != common.InterrogationModelHash(effective.Interrogation.Model) {
-		return status, nil
-	}
-	if proxy.UpdateID != status.UpdateID {
-		return status, nil
-	}
-	status.APIKeyConfigured = proxy.APIKeyConfigured
-	status.APIKeySource = proxy.APIKeySource
-	if status.APIKeySource != "HELM" && status.APIKeySource != "LOCAL_UI" {
-		status.APIKeySource = "NONE"
-	}
-	if proxy.State == "ERROR" {
-		status.State = "ERROR"
-		message := "AI proxy configuration could not be applied. Check the instrumentor logs."
-		status.Error = &message
-		return status, nil
-	}
-	if proxy.State != "READY" {
-		return status, nil
-	}
-	if err := json.Unmarshal([]byte(cm.Data["analysis"]), &analysis); err != nil {
-		return status, nil
-	}
-	if analysis.UpdateID != status.UpdateID || analysis.Revision != proxy.Revision {
-		return status, nil
-	}
-	// A former leader's acknowledgement cannot make the UI report success.
-	lease := &coordinationv1.Lease{}
-	if err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "odigos-insights-leader"}, lease); err != nil {
-		if apierrors.IsNotFound(err) {
-			return status, nil
-		}
-		return nil, err
-	}
-	if lease.Spec.HolderIdentity == nil || *lease.Spec.HolderIdentity != analysis.HolderIdentity || lease.Spec.RenewTime == nil || lease.Spec.LeaseDurationSeconds == nil || time.Since(lease.Spec.RenewTime.Time) > time.Duration(*lease.Spec.LeaseDurationSeconds)*time.Second {
-		return status, nil
-	}
-	if effective.InterrogationAnalysisEnabled() && analysis.State == "PAUSED" || !effective.InterrogationAnalysisEnabled() && analysis.State == "RUNNING" {
-		return status, nil
-	}
-	if analysis.ObservedAt != "" {
-		observed, err := time.Parse(time.RFC3339Nano, analysis.ObservedAt)
-		if err != nil || time.Since(observed) > time.Minute {
-			return status, nil
-		}
-	}
-	switch analysis.State {
-	case "RUNNING", "PAUSED":
-		status.State = analysis.State
-		status.ObservedUpdateID = analysis.UpdateID
-	case "ERROR":
-		status.State = "ERROR"
-		message := "AI analysis settings could not be applied. Check the Insights logs."
-		status.Error = &message
-	}
-	return status, nil
 }

@@ -501,12 +501,13 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 
 	if config.Interrogation != nil {
 		result.Interrogation = &model.InterrogationConfig{
-			Enabled:         config.Interrogation.Enabled,
-			AnalysisEnabled: ptrBool(config.InterrogationAnalysisEnabled()),
+			Enabled: config.Interrogation.Enabled,
 		}
-		pc.record("interrogation.analysisEnabled")
 		if config.Interrogation.Enabled != nil {
 			pc.record("interrogation.enabled")
+		}
+		if _, ok := pc.prov[services.InterrogationAPIKeyProvenancePath]; ok {
+			pc.record(services.InterrogationAPIKeyProvenancePath)
 		}
 		if config.Interrogation.Model != nil {
 			m := config.Interrogation.Model
