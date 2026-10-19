@@ -6,7 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -84,12 +86,26 @@ type callTrieEdgeRow struct {
 	Count         uint64
 }
 
+// TransactionsFilter narrows ListContainerTransactions. The zero value matches
+// every transaction of the container.
+type TransactionsFilter struct {
+	// IDs restricts results to these transaction ids when non-nil. An empty
+	// non-nil slice matches nothing.
+	IDs []string
+	// Search is a case-insensitive substring match on the transaction id.
+	Search string
+	// Limit caps the number of transactions returned; 0 means no limit.
+	Limit int
+	// Offset skips this many matching transactions in result order.
+	Offset int
+}
+
 // Client talks to interrogation ClickHouse (read-only).
 type Client struct {
-	db                 driver.Conn
-	listEdgesSQL       string
-	callTrieSQL        string
-	sampleTraceSQL     string
+	db             driver.Conn
+	callTrieFQN    string
+	callTrieSQL    string
+	sampleTraceSQL string
 }
 
 // NewClient builds a ClickHouse client for the interrogation database.
@@ -125,23 +141,8 @@ func newClientWithConn(db driver.Conn) *Client {
 	fqn := fmt.Sprintf("%q.%q", clickhouseDatabase, callTrieTable)
 	txFqn := fmt.Sprintf("%q.%q", clickhouseDatabase, transactionsTable)
 	return &Client{
-		db: db,
-		listEdgesSQL: fmt.Sprintf(`
-SELECT
-	TransactionId,
-	NodeId,
-	Parent,
-	FunctionName,
-	FrameType,
-	SampleType,
-	sum(Count) AS Count
-FROM %s
-WHERE Namespace = ?
-	AND WorkloadKind = ?
-	AND WorkloadName = ?
-	AND ContainerName = ?
-GROUP BY TransactionId, NodeId, Parent, FunctionName, FrameType, SampleType
-`, fqn),
+		db:          db,
+		callTrieFQN: fqn,
 		callTrieSQL: fmt.Sprintf(`
 SELECT
 	TransactionId,
@@ -219,9 +220,10 @@ func EnabledFromOdigosConfig(cfg *common.OdigosConfiguration) bool {
 	return cfg.InterrogationEnabled()
 }
 
-// ListContainerTransactions returns each transaction for the workload container
-// with aggregated functions from tx_call_trie.
-func (c *Client) ListContainerTransactions(ctx context.Context, namespace, kind, name, containerName string) (*ContainerTransactions, error) {
+// ListContainerTransactions returns the transactions of the workload container
+// that match filter, with aggregated functions from tx_call_trie, ordered by
+// seenCount desc, then id.
+func (c *Client) ListContainerTransactions(ctx context.Context, namespace, kind, name, containerName string, filter TransactionsFilter) (*ContainerTransactions, error) {
 	if c == nil || c.db == nil {
 		return nil, ErrUnavailable
 	}
@@ -232,8 +234,23 @@ func (c *Client) ListContainerTransactions(ctx context.Context, namespace, kind,
 	if namespace == "" || kind == "" || name == "" || containerName == "" {
 		return nil, fmt.Errorf("namespace, kind, name, and containerName are required")
 	}
+	if filter.Limit < 0 || filter.Offset < 0 {
+		return nil, fmt.Errorf("limit and offset must not be negative")
+	}
 
-	rows, err := c.db.Query(ctx, c.listEdgesSQL, namespace, kind, name, containerName)
+	result := &ContainerTransactions{
+		Namespace:     namespace,
+		Kind:          kind,
+		Name:          name,
+		ContainerName: containerName,
+		Transactions:  []Transaction{},
+	}
+	if filter.IDs != nil && len(filter.IDs) == 0 {
+		return result, nil
+	}
+
+	query, args := buildListEdgesQuery(c.callTrieFQN, namespace, kind, name, containerName, filter)
+	rows, err := c.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%w: query call trie: %v", ErrUnavailable, err)
 	}
@@ -244,13 +261,65 @@ func (c *Client) ListContainerTransactions(ctx context.Context, namespace, kind,
 		return nil, fmt.Errorf("%w: scan call trie: %v", ErrUnavailable, err)
 	}
 
-	return &ContainerTransactions{
-		Namespace:     namespace,
-		Kind:          kind,
-		Name:          name,
-		ContainerName: containerName,
-		Transactions:  assembleTransactions(edges),
-	}, nil
+	result.Transactions = assembleTransactions(edges)
+	return result, nil
+}
+
+// buildListEdgesQuery selects the aggregated call-trie edges of every
+// transaction matching filter. Paging runs in a subquery over transaction ids,
+// ordered like assembleTransactions, so each page holds whole transactions.
+func buildListEdgesQuery(table, namespace, kind, name, containerName string, filter TransactionsFilter) (string, []any) {
+	where := `Namespace = ?
+	AND WorkloadKind = ?
+	AND WorkloadName = ?
+	AND ContainerName = ?`
+	args := []any{namespace, kind, name, containerName}
+	if filter.IDs != nil {
+		ids := make([]any, 0, len(filter.IDs))
+		for _, id := range filter.IDs {
+			ids = append(ids, id)
+		}
+		where += `
+	AND TransactionId IN ?`
+		args = append(args, clickhouse.GroupSet{Value: ids})
+	}
+	if search := strings.TrimSpace(filter.Search); search != "" {
+		where += `
+	AND positionCaseInsensitiveUTF8(TransactionId, ?) > 0`
+		args = append(args, search)
+	}
+
+	if filter.Limit > 0 || filter.Offset > 0 {
+		limit := uint64(math.MaxUint64)
+		if filter.Limit > 0 {
+			limit = uint64(filter.Limit)
+		}
+		pageArgs := append(slices.Clone(args), limit, uint64(filter.Offset))
+		where += fmt.Sprintf(`
+	AND TransactionId IN (
+		SELECT TransactionId
+		FROM %s
+		WHERE %s
+		GROUP BY TransactionId
+		ORDER BY sumIf(Count, Parent = '%s' AND SampleType = 'samples') DESC, TransactionId ASC
+		LIMIT ? OFFSET ?
+	)`, table, where, trieRootParent)
+		args = append(args, pageArgs...)
+	}
+
+	return fmt.Sprintf(`
+SELECT
+	TransactionId,
+	NodeId,
+	Parent,
+	FunctionName,
+	FrameType,
+	SampleType,
+	sum(Count) AS Count
+FROM %s
+WHERE %s
+GROUP BY TransactionId, NodeId, Parent, FunctionName, FrameType, SampleType
+`, table, where), args
 }
 
 // GetTransactionSampleTrace returns the stored OTLP JSON sample for a
