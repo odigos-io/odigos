@@ -20,6 +20,7 @@ When `cloudConnectors.enabled` is `true` and the Central install secret exists, 
 - The `OdigosCloudConnector` CRD
 - The `connector-runtime` controller
 - Bundled PostgreSQL (`odigos-connector-postgres`) and a PVC when persistence is enabled
+- The `connector-opamp-gateway` Deployment and Service, only when [Managed Collectors](#managed-collectors) are enabled
 
 <Warning>
   A **StorageClass** must be defined for the Postgres PVC. Bundled Postgres
@@ -161,6 +162,78 @@ Cloud Connectors use a bundled PostgreSQL instance under `cloudConnectors.postgr
   </Accordion>
 </AccordionGroup>
 
+## Managed Collectors
+
+The AWS [regional Collector](/cloud-connectors/aws/regional-collector) runs in your AWS account and connects back to Central over OpAMP. To use it, enable Managed Collectors and give Collectors a public URL to reach Central:
+
+- `cloudConnectors.managedCollectors.enabled=true` deploys `connector-opamp-gateway`, the component that serves that URL.
+- `cloudConnectors.managedCollectors.externalEndpoint` is the public URL Collectors connect to, normally `wss://<central-host>/v1/opamp`.
+
+<Tabs>
+  <Tab title="CLI">
+    ```bash
+    odigos pro central upgrade \
+      --set cloudConnectors.managedCollectors.enabled=true \
+      --set cloudConnectors.managedCollectors.externalEndpoint=wss://<central-host>/v1/opamp
+    ```
+  </Tab>
+
+  <Tab title="Helm">
+    ```bash
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --reuse-values \
+      --set cloudConnectors.managedCollectors.enabled=true \
+      --set cloudConnectors.managedCollectors.externalEndpoint=wss://<central-host>/v1/opamp
+    ```
+
+    Or in `values.yaml`:
+
+    ```yaml
+    cloudConnectors:
+      enabled: true
+      managedCollectors:
+        enabled: true
+        externalEndpoint: "wss://<central-host>/v1/opamp"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  Odigos does not expose the gateway for you. Publish the `connector-opamp-gateway`
+  Service (ClusterIP, port `8080`, path `/v1/opamp`) through your own ingress or
+  load balancer at the `externalEndpoint` URL, so Collectors running in AWS can
+  reach it.
+</Warning>
+
+- The URL must use `wss://` (or `https://`) for any host that is not loopback.
+- If `externalEndpoint` is empty, no Collector is deployed.
+- Changing `externalEndpoint` does not move Collectors that are already deployed. Redeploy them to pick up the new URL.
+
+<ParamField path="cloudConnectors.managedCollectors.enabled" type="boolean" default="false">
+  Deploy the `connector-opamp-gateway`.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.externalEndpoint" type="string" default="">
+  Public URL Collectors connect to, for example `wss://<central-host>/v1/opamp`. Empty means no Collector is deployed.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.replicas" type="integer" default="2">
+  Number of gateway replicas.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.port" type="integer" default="8080">
+  Port the gateway listens on.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.path" type="string" default="/v1/opamp">
+  Path the gateway serves. Change it only together with `externalEndpoint`.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.revalidateInterval" type="string" default="">
+  How long a revoked Collector credential may keep an already-open session. Empty uses the default.
+</ParamField>
+
 ## Verify
 
 After enablement, confirm the subsystem is running in the Central namespace (default `odigos-central`):
@@ -170,6 +243,14 @@ kubectl get pods -n odigos-central -l 'app in (connector-runtime,odigos-connecto
 ```
 
 You should see `connector-runtime` and `odigos-connector-postgres` in a Running state.
+
+If you enabled [Managed Collectors](#managed-collectors), also check the gateway:
+
+```bash
+kubectl get pods -n odigos-central -l app=connector-opamp-gateway
+```
+
+You should see `connector-opamp-gateway` in a Running state.
 
 <Check>
   Once both pods are Running, you are ready to add a cloud provider connector.

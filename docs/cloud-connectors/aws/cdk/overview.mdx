@@ -53,8 +53,8 @@ npm install @odigos/aws-cdk
   instead.
 </Info>
 
-Pin an exact version. **The package version *is* the instrumentation version** — `@odigos/aws-cdk@0.0.15`
-installs the OpenTelemetry layer and agents bundle built by Odigos release `v0.0.15`, and nothing resolves
+Pin an exact version. **The package version *is* the instrumentation version** — `@odigos/aws-cdk@0.0.18`
+installs the OpenTelemetry layer and agents bundle built by Odigos release `v0.0.18`, and nothing resolves
 or moves at deploy time. Upgrading is a deliberate `npm update` followed by a `cdk diff` that shows you
 exactly what changes. An instrumentation agent that silently updated itself under a deployment that changed
 nothing is not a property you want.
@@ -65,7 +65,7 @@ nothing is not a property you want.
 | --- | --- | --- |
 | Construct | `OdigosLambdaInstrumentation` | `OdigosFargateInstrumentation` |
 | How the agent gets there | A Lambda layer attached to the function | Copied into the task by an extra short-lived container |
-| Languages | Python, Node.js, Java, Ruby | Java, Python, Node.js, .NET, PHP, Ruby |
+| Languages | Java, Python, Node.js, Ruby — with a [choice of distro](/cloud-connectors/aws/workloads/lambda/distros) per language | Java, Python, Node.js, .NET, PHP, Ruby — one agent per language |
 | Where telemetry goes | To a collector inside the same Lambda sandbox, which forwards it on after your handler returns | Straight from your application to your destination |
 | How the language is determined | Automatically, from the function's runtime | You state it explicitly |
 
@@ -85,8 +85,13 @@ options.
 
 ## How Odigos recognizes your workload
 
-Both constructs write an environment variable called **`ODIGOS_IAC`** onto everything they instrument. This
-is the one thing that tells Odigos "this workload is instrumented, and here's what with."
+Both constructs mark everything they instrument, so Odigos can tell "this workload is instrumented, and here's
+what with." The marker differs by service:
+
+| | Lambda | ECS Fargate |
+| --- | --- | --- |
+| Where the marker lives | Function **tags** | The **`ODIGOS_IAC`** environment variable on the container |
+| What it records | `odigos:iac=v1`, `odigos:sdk-layer` (the exact SDK layer ARN), and `odigos:collector-layer` (ADOT only) | The package version, the language, and the agents image |
 
 <Warning>
   Without that marker, Odigos reports the workload as **awaiting your deployment** —
@@ -95,9 +100,32 @@ is the one thing that tells Odigos "this workload is instrumented, and here's wh
   a `cdk diff`, and because hand-written instrumentation has to include it too.
 </Warning>
 
-The marker also records *which version* of instrumentation you deployed — the layer ARN on Lambda, the
+The marker also records *which version* of instrumentation you deployed — the layer ARNs on Lambda, the
 agents image on Fargate. That's what lets you pin a version and have Odigos respect it, rather than
 reporting your deliberately-pinned workload as out of date the day Odigos publishes something newer.
+
+### Lambda: tags
+
+The Lambda construct adds the tags with `Tags.of(fn)`. CDK applies a tag to every taggable resource under the
+function, so the function's **auto-created execution role is tagged too**. That's normal CDK behavior, not
+something to fix.
+
+The construct also removes any `ODIGOS_IAC` or `ODIGOS_MANAGED` environment variables from the function's
+definition, such as ones written by an earlier package version. The only environment variables it writes are
+`AWS_LAMBDA_EXEC_WRAPPER` and `ODIGOS_LAMBDA_CONFIG`. See [CDK: Lambda](/cloud-connectors/aws/cdk/lambda).
+
+<Note>
+  The deploying identity needs `lambda:TagResource` for the tags to be applied. A function
+  with no `odigos:iac` tag is treated as not instrumented.
+</Note>
+
+### Fargate: the `ODIGOS_IAC` variable
+
+Fargate still uses the environment variable, with this shape:
+
+```json
+{"v":1,"source":"cdk","version":"v0.0.18","lang":"java","image":"registry.odigos.io/odigos-fargate-agents:v0.0.18"}
+```
 
 <Warning>
   There's a second marker, **`ODIGOS_MANAGED`**, that these constructs never write —
@@ -110,7 +138,8 @@ reporting your deliberately-pinned workload as out of date the day Odigos publis
 
 <ParamField path="debug" type="boolean" default="false">
   Makes the OpenTelemetry agent log verbosely, which helps when telemetry isn't arriving and you need to
-  see why. Available on both constructs.
+  see why. Available on both constructs. On Lambda it sets `"d":true` in `ODIGOS_LAMBDA_CONFIG`; on Fargate
+  it sets `OTEL_LOG_LEVEL=debug`.
 
   <Warning>
     Leave it off once you're done. It's expensive at volume, and Odigos expects it
@@ -127,7 +156,7 @@ reporting your deliberately-pinned workload as out of date the day Odigos publis
   </Card>
 
   <Card title="Lambda construct" icon="bolt" href="/cloud-connectors/aws/cdk/lambda">
-    Layer sources, web-server mode, Java handler interfaces.
+    Distros, ADOT, layer sources, web-server mode.
   </Card>
 
   <Card title="Fargate construct" icon="cubes" href="/cloud-connectors/aws/cdk/fargate">

@@ -43,6 +43,9 @@ The connectors list and detail views show installation and runtime health. The c
 ## What you can change
 
 - You can update display name, credentials Secret contents, discovery interval, and **capabilities** (which types to discover/instrument), depending on what the UI exposes for your version.
+- **Bootstrap region** (AWS) cannot be changed in the UI after the connector is created. To change it, edit `spec.bootstrapRegion` on the `OdigosCloudConnector` resource. See [Bootstrap region](/cloud-connectors/add-connectors/add-aws-connector#bootstrap-region-advanced).
+- **Regional Collector mode** (AWS) can be changed from the **Connections** table with the row action **Collector mode**. Changing it restarts the connector.
+- **Destinations** can be enabled or disabled with the **Enable/Disable** toggle. A disabled destination keeps its configuration but is not used.
 - **`provider` is immutable** after the connector is created. To switch providers (for example from AWS to another cloud), create a new connector.
 
 ## Delete a connector
@@ -59,7 +62,7 @@ metadata:
   <Tab title="retain (default)">
     Deletes the connector from Central (the connector pod and related resources in the Central cluster). It does **not** uninstrument cloud workloads.
 
-    Any Odigos instrumentation already applied in the cloud account stays in place (for example Lambda layers or Cloud Run agent injection). To remove that instrumentation, [uninstrument Sources](/cloud-connectors/instrument-workloads#uninstrument-workloads) while the connector is still online, or change those resources outside Odigos after delete.
+    Any Odigos instrumentation already applied in the cloud account stays in place (for example Lambda layers or the agent container in Fargate task definitions). To remove that instrumentation, [uninstrument Sources](/cloud-connectors/instrument-workloads#uninstrument-workloads) while the connector is still online, or change those resources outside Odigos after delete.
 
     <Info>
       Creating a connector from the Central UI typically leaves the annotation
@@ -84,6 +87,10 @@ metadata:
     </Warning>
   </Tab>
 </Tabs>
+
+### Connectors with a regional Collector
+
+If Odigos deployed a [regional Collector](/cloud-connectors/aws/regional-collector) in your AWS account, we recommend [uninstalling it](/cloud-connectors/aws/regional-collector#uninstall) before you delete the connector.
 
 ### Sources on delete
 

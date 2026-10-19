@@ -1,0 +1,275 @@
+---
+title: 'Lambda Instrumentation Distros'
+description: 'Choose which OpenTelemetry distribution instruments each AWS Lambda function — the full Java agent, lightweight Java handler wrappers, AWS ADOT, or ADOT with CloudWatch Application Signals — and how to switch between them.'
+sidebarTitle: 'Distros'
+---
+
+Every instrumented Lambda function runs one **instrumentation distro**: the OpenTelemetry SDK or agent, the
+Lambda layer(s) that carry it, and the exec wrapper that loads it before your handler. Odigos picks a sensible
+default for each language. You can override it per Source when a function needs something different — a
+lighter-weight Java wrapper, or the AWS-maintained ADOT SDK.
+
+<Info>
+  Distros apply to **AWS Lambda** only. Fargate services always use the Odigos agents bundle for their
+  language — there's nothing to select. See [Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument).
+</Info>
+
+## Available distros
+
+The name in the first column is what the Central UI shows in the distro picker. The ID is what the
+[CDK `distro` option](/cloud-connectors/aws/cdk/lambda#choosing-a-distro) and the source's status badge use.
+
+### Java
+
+| UI name | ID | What it is |
+| --- | --- | --- |
+| **Full agent (2.32.0)** — default | `java-lambda-otel-agent` | The full OpenTelemetry Java agent, plus an Odigos handler bridge. Automatically instruments supported HTTP clients, database libraries, and frameworks. Works with both object (`RequestHandler`) and raw-stream (`RequestStreamHandler`) handlers. Adds cold-start overhead. |
+| **Generic handler · lightweight (0.21.0)** | `java-lambda-otel-wrapper` | Lightweight wrapper for a `RequestHandler` that takes maps or POJOs, including Function URL and HTTP API v2 events. Covers the invocation and AWS SDK calls only — no automatic HTTP client or database spans. |
+| **API Gateway proxy handler · lightweight (0.21.0)** | `java-lambda-otel-proxy-wrapper` | Lightweight wrapper for API Gateway REST API proxy events (payload v1), with HTTP span attributes and incoming context propagation. |
+| **SQS event handler · lightweight (0.21.0)** | `java-lambda-otel-sqs-wrapper` | Lightweight wrapper for handlers that receive `SQSEvent` batches, with SQS-specific tracing and message context. |
+| **Stream handler · lightweight (0.21.0)** | `java-lambda-otel-stream-wrapper` | Lightweight wrapper for a `RequestStreamHandler` that reads and writes bytes with its own serialization. |
+| **Java Lambda AWS ADOT (2.31.0)** | `java-lambda-adot` | The AWS Distro for OpenTelemetry (ADOT) Java agent. See [AWS ADOT](#aws-adot). |
+| **Java Lambda AWS ADOT + Application Signals (2.31.0)** | `java-lambda-adot-application-signals` | ADOT with CloudWatch Application Signals turned on. See [ADOT with Application Signals](#adot-with-application-signals). |
+
+### Node.js, Python, and Ruby
+
+| Language | UI name | ID |
+| --- | --- | --- |
+| Node.js | **Node.js Lambda OpenTelemetry (0.23.0)** — default | `nodejs-lambda-otel` |
+| Node.js | **Nodejs Lambda AWS ADOT (0.13.0)** | `nodejs-lambda-adot` |
+| Node.js | **Nodejs Lambda AWS ADOT + Application Signals (0.13.0)** | `nodejs-lambda-adot-application-signals` |
+| Python | **Python Lambda OpenTelemetry (0.21.0)** — default | `python-lambda-otel` |
+| Python | **Python Lambda AWS ADOT (0.21.0)** | `python-lambda-adot` |
+| Python | **Python Lambda AWS ADOT + Application Signals (0.21.0)** | `python-lambda-adot-application-signals` |
+| Ruby | **Ruby Lambda OpenTelemetry (0.14.0)** — default | `ruby-lambda-otel` |
+
+The defaults are the upstream [OpenTelemetry Lambda](https://github.com/open-telemetry/opentelemetry-lambda)
+layers, repackaged by Odigos. Ruby has a single distro.
+
+Go, .NET, and custom runtimes have no OpenTelemetry Lambda layer. They're discovered, and reported as
+**Not supported**.
+
+## Choosing a Java distro
+
+Java is the language where the choice matters most, because the options differ in coverage, cold-start cost,
+and which handler interface they can wrap.
+
+<Steps>
+  <Step title="Start with the full agent">
+    It's the default for a reason: it's the only Java option that produces spans for your outgoing HTTP calls,
+    database queries, and messaging clients, and it handles both `RequestHandler` and `RequestStreamHandler`
+    functions. The Odigos bridge extracts the incoming trace context (W3C `traceparent`, or the AWS X-Ray
+    header when there's no W3C parent), creates one server span per invocation, and flushes traces, metrics,
+    and logs before Lambda freezes the sandbox.
+  </Step>
+  <Step title="Switch to a lightweight wrapper when cold start matters more than depth">
+    The wrappers cover the invocation boundary and AWS SDK calls, nothing deeper. Pick the one that matches
+    your handler's input type:
+
+    | Your handler receives | Pick |
+    | --- | --- |
+    | A map or POJO (including Function URL and HTTP API v2 events) | Generic handler |
+    | API Gateway REST proxy events (payload v1) | API Gateway proxy handler |
+    | `SQSEvent` batches | SQS event handler |
+    | Raw `InputStream` / `OutputStream` (`RequestStreamHandler`) | Stream handler |
+
+    <Warning>
+      A wrapper is a correctness setting, not a level of detail. The generic handler on a
+      `RequestStreamHandler` function has the wrong method signature and **breaks the invocation**.
+    </Warning>
+  </Step>
+  <Step title="Pick ADOT when you standardize on AWS's distribution">
+    See [AWS ADOT](#aws-adot) below.
+  </Step>
+</Steps>
+
+<Note>
+  The Java default changed from the generic wrapper to the full agent. A Java function with no distro
+  override moves to the full agent the next time the connector reconciles it. If you relied on the old
+  default, set **Generic handler · lightweight** explicitly.
+</Note>
+
+## AWS ADOT
+
+The ADOT distros run the [AWS Distro for OpenTelemetry](https://aws-otel.github.io/) SDK for Java, Node.js,
+or Python instead of the upstream OpenTelemetry layer. Odigos downloads the official ADOT release,
+verifies its checksum, and republishes it as an Odigos layer — so ADOT functions are managed, upgraded, and
+rolled back exactly like the defaults.
+
+- **Two layers.** ADOT functions get an SDK layer (`odigos-otel-adot-<language>-<arch>`) **and** a separate
+  collector layer (`odigos-otel-adot-collector-<arch>`), because the Java SDK and collector together exceed
+  Lambda's direct-upload size limit. The function needs **two free layer slots** out of AWS's limit of five.
+- **Same export path.** Telemetry goes to the collector inside the layer and from there to your Odigos
+  destination. ADOT's own default of sending traces to X-Ray is turned off — every signal goes to your
+  destination.
+- **Application Signals is off.** The plain ADOT distros force CloudWatch Application Signals **off** at
+  startup, even if the function's environment sets `OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true`. If you were
+  already using Application Signals on that function, it stops reporting. Pick
+  [ADOT with Application Signals](#adot-with-application-signals) to keep it.
+- **Handler mode only.** ADOT isn't offered for functions behind the AWS Lambda Web Adapter.
+
+ADOT is offered only on the runtimes its SDK supports:
+
+| Language | Runtimes |
+| --- | --- |
+| Java | `java11`, `java17`, `java21` |
+| Node.js | `nodejs18.x`, `nodejs20.x`, `nodejs22.x`, `nodejs24.x` |
+| Python | `python3.10`, `python3.11`, `python3.12`, `python3.13` |
+
+On any other runtime the ADOT options don't appear in the picker.
+
+## ADOT with Application Signals
+
+<Note>
+  ADOT with Application Signals is in **beta**. Odigos has validated the core flow, but not every Application
+  Signals feature.
+</Note>
+
+This distro runs ADOT with [CloudWatch Application Signals](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-application-signals.html)
+enabled. Your telemetry still goes to your Odigos destination; **AWS also receives service telemetry** for
+Application Signals. Metrics that AWS derives on its side appear in CloudWatch, not in your Odigos
+destination.
+
+Before you select it, in the function's AWS account and region:
+
+<Steps>
+  <Step title="Enable Application Signals">
+    Enable CloudWatch Application Signals service discovery once per account and region. See
+    [Application Signals for Lambda](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-application-signals.html).
+  </Step>
+  <Step title="Grant the execution role">
+    Attach the AWS managed policy `CloudWatchLambdaApplicationSignalsExecutionRolePolicy` (or equivalent
+    permissions) to the **function's execution role**. The connector doesn't change your function's IAM role;
+    the [CDK construct](/cloud-connectors/aws/cdk/lambda#adot-and-application-signals) attaches it for you.
+  </Step>
+  <Step title="Enable traces and metrics on the destination">
+    The destination must have **traces** enabled, or instrumentation fails with
+    `ADOT + Application Signals requires traces to be enabled for the destination`. Application Signals is
+    only switched on at runtime when the destination enables **both traces and metrics** — with traces alone
+    the function runs ADOT with Application Signals off.
+  </Step>
+</Steps>
+
+## Switch distros
+
+<Steps>
+  <Step title="Open the source">
+    In Central, open the AWS connector, then click the Lambda Source to open its drawer.
+  </Step>
+  <Step title="Edit the distro">
+    In the **Instrumentation** card, click the pencil next to the status badge (**Override OpenTelemetry
+    distro name**).
+
+    <img
+      src="/images/cloud-connectors/aws-lambda-distro-override.png"
+      alt="Lambda source drawer with the Override OpenTelemetry distro name popup open, showing Full agent (2.32.0) selected"
+    />
+  </Step>
+  <Step title="Pick the distro and save">
+    Choose from **Instrumentation / handler type** (Java) or **OpenTelemetry distro name** (other languages).
+    The description under the field explains the selected option. Click the check button to save.
+
+    <img
+      src="/images/cloud-connectors/aws-lambda-distro-options-java.png"
+      alt="Distro picker for a Java Lambda listing Full agent as Default, four lightweight handler wrappers, and two AWS ADOT options"
+    />
+  </Step>
+</Steps>
+
+Once saved, the Instrumentation row shows an **Overridden** badge, and the status badge shows the distro ID
+in use (for example `Instrumented | java-lambda-otel-sqs-wrapper`). To go back to the language default, open
+the same popup and click the delete (trash) button.
+
+<img
+  src="/images/cloud-connectors/aws-lambda-distro-adot-app-signals.png"
+  alt="Distro picker with Java Lambda AWS ADOT + Application Signals selected and its description about CloudWatch Application Signals"
+/>
+
+### What happens when you switch
+
+<Tabs>
+  <Tab title="Odigos-managed">
+    The connector re-instruments the function in place with a single configuration update:
+
+    - Odigos layers from the previous distro are **replaced** by the new distro's layer(s). Your own layers
+      are kept. If the new layer isn't in your account yet, the connector publishes it first.
+    - Only the two Odigos environment variables change. See
+      [What gets added to your function](/cloud-connectors/aws/workloads/lambda/instrument#what-gets-added-to-your-function).
+    - The original, pre-Odigos configuration is kept, so uninstrumenting later still restores the function
+      exactly as it was.
+
+    The source shows **Applying instrumentation** for about one reconcile cycle, then **Instrumented**.
+
+    <Warning>
+      The connector updates the function's **unpublished (`$LATEST`) configuration**. If your callers invoke
+      a published version or an alias, publish a new version (and move the alias) to pick up the change.
+    </Warning>
+  </Tab>
+  <Tab title="Self-managed (IaC)">
+    Odigos never changes a self-managed function. The distro you select in Central is the one Odigos
+    **checks your deployment against** — and the one the **How to instrument this workload** snippets in the
+    drawer are generated for.
+
+    1. Select the distro in Central first, so the drawer's Terraform, CloudFormation, AWS CLI, and CDK
+       snippets match it.
+    2. Apply the change through your pipeline. With the CDK construct, set the
+       [`distro` option](/cloud-connectors/aws/cdk/lambda#choosing-a-distro) to the same ID.
+
+    If the function's wrapper or layer family doesn't match the distro selected in Central, the source reports
+    **Instrumentation does not match**.
+  </Tab>
+</Tabs>
+
+## Functions behind the AWS Lambda Web Adapter
+
+Functions that run a web server behind the [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter)
+are detected from their attached layers, and only distros with a verified web-server loader are offered:
+
+| Language | Distros offered |
+| --- | --- |
+| Java | Full agent only |
+| Node.js | Node.js Lambda OpenTelemetry only |
+| Python | Python Lambda OpenTelemetry only |
+| Ruby | None — not supported |
+
+ADOT and the lightweight Java wrappers are never offered for these functions.
+
+## Signals each distro produces
+
+Odigos exports the signals your destination enables, as far as each distro can produce them. See
+[Destination signals](/cloud-connectors/instrument-workloads#destination-signals).
+
+| Distro | Traces | Metrics | Logs |
+| --- | --- | --- | --- |
+| Java full agent, Java ADOT | Yes | Yes | Yes |
+| Java lightweight wrappers | Yes | Only metrics your code records | Function output (stdout/stderr) |
+| Node.js, Python (default and ADOT) | Yes | Yes | Yes |
+| Ruby | Yes | No | Function output (stdout/stderr) |
+
+"Function output" means logs are collected from the function's stdout and stderr through the Lambda
+Telemetry API, because those SDKs can't bridge your logging framework. For the other distros, application
+logs come from supported logging libraries (for example Logback or Log4j, Python `logging`, or Pino, Winston,
+and Bunyan) — a function that never logs produces no log records. No Lambda distro produces profiles.
+
+## Errors you might see
+
+| Message on the source | Meaning |
+| --- | --- |
+| `unsupported instrumentation distro "<name>" for Lambda <language> (handler)` / `(web-server)` | The selected distro doesn't exist for this language, or isn't offered for Web Adapter functions. The save is rejected. |
+| `Lambda distro <name> does not support runtime <runtime>` | An ADOT distro was selected for a runtime ADOT doesn't support. |
+| `ADOT + Application Signals requires traces to be enabled for the destination` | Enable traces on the connector's destination, or choose plain ADOT. |
+| `max amount of layers was reached already: …` | The function already uses too many layers. ADOT needs two free slots, the other distros one. |
+| `Lambda environment requires N bytes, exceeding AWS's 4096-byte limit; …` | Your own environment variables plus destination headers don't fit. Shorten them. |
+| `unsupported: function sets a non-Odigos AWS_LAMBDA_EXEC_WRAPPER "<value>" …` | The function already uses its own exec wrapper. Odigos won't overwrite it. |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Instrument Lambda with IaC" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
+    The exact layers, environment, and tags for each distro.
+  </Card>
+
+  <Card title="CDK: Lambda" icon="code" href="/cloud-connectors/aws/cdk/lambda">
+    Select a distro from your CDK app.
+  </Card>
+</CardGroup>

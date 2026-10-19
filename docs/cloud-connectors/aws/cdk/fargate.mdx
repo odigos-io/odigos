@@ -74,7 +74,7 @@ worth pointing it somewhere with headroom, since your application is doing the s
 | `JAVA` — also Kotlin, Scala | `JAVA_TOOL_OPTIONS` | Ignored — one agent covers the supported JVM range |
 | `PYTHON` | `PYTHONPATH` | Ignored — one agent covers the supported Python range |
 | `NODEJS` | `NODE_OPTIONS` | Ignored — one agent covers the supported Node.js range |
-| `DOTNET` | `CORECLR_*` / `DOTNET_*` | Ignored — one agent covers the supported .NET range |
+| `DOTNET` | `CORECLR_*` / `DOTNET_*` | Ignored — one agent covers .NET 8 and later |
 | `PHP` | `PHP_INI_SCAN_DIR` | **Required** — picks the per-version agent folder |
 | `RUBY` | `RUBYOPT` | **Required** — picks the per-version agent folder |
 
@@ -100,6 +100,16 @@ out would mean downloading and inspecting the image, which is network I/O a buil
     no agent at all.
   </Warning>
 </ParamField>
+
+<Info>
+  **There's no distro to choose on Fargate.** Each language has exactly one agent, from the agents image. The
+  [`distro` option](/cloud-connectors/aws/cdk/lambda#choosing-a-distro) is Lambda-only.
+</Info>
+
+<Info>
+  **.NET needs .NET 8 or later on a glibc image.** Alpine (musl) images can't load the .NET profiler, and the
+  container starts uninstrumented with no error.
+</Info>
 
 <Info>
   **Go can't be instrumented on Fargate at all** — not an omission, a platform
@@ -156,6 +166,37 @@ taskDefinition.addContainer('App', {
   already sets one, you get a build warning — fold whatever your application needs
   into the value Odigos sets.
 </Warning>
+
+## Telemetry environment
+
+Besides loading the agent, the construct sets the same OpenTelemetry environment on every instrumented
+container so that exactly the signals your [destination](/cloud-connectors/aws/cdk/destinations) enables are
+exported:
+
+| Variable | Value |
+| --- | --- |
+| `OTEL_SDK_DISABLED` | `false`, always |
+| `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER`, `OTEL_LOGS_EXPORTER` | `otlp` for an enabled signal, `none` for a disabled one. Always written, for all three |
+| `OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED` | Python only: `true` when logs are enabled, `false` otherwise |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL` | Your destination and its transport |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Only when `destination.headers` is set |
+
+<Warning>
+  **Don't set per-signal exporter variables on the container.** If a container sets any
+  `OTEL_EXPORTER_OTLP_<SIGNAL>_ENDPOINT`, `_PROTOCOL`, `_HEADERS`, or `_INSECURE` (where `<SIGNAL>` is `TRACES`,
+  `METRICS`, or `LOGS`), it overrides the configured destination, so the build stops with:
+
+  ```text
+  Odigos: remove OTEL_EXPORTER_OTLP_TRACES_ENDPOINT; it overrides the configured destination.
+  ```
+
+  The message names the variable it found. Remove it and use `destination` instead.
+</Warning>
+
+<Info>
+  **Ruby produces traces only.** The Ruby agent bundles the trace SDK, so enabling `metrics` or `logs` on the
+  destination produces a build warning, and only traces are exported from Ruby containers.
+</Info>
 
 ## Transport
 
@@ -216,7 +257,7 @@ release ships (multi-arch: Intel and ARM/Graviton).
   registry you own). Point the copy step at your own mirror:
 
   ```typescript
-  agentsImage: '111122223333.dkr.ecr.eu-west-1.amazonaws.com/odigos-fargate-agents:v0.0.15',
+  agentsImage: '111122223333.dkr.ecr.eu-west-1.amazonaws.com/odigos-fargate-agents:v0.0.18',
   ```
 
   See [Preload the Fargate agents image](/cloud-connectors/aws/workloads/fargate/preload) for how to build

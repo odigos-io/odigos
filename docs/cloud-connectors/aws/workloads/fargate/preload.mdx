@@ -13,6 +13,11 @@ Odigos' own registry on your behalf. Preloading matters if your Fargate tasks ru
 reach that public registry, or your organization requires every image your tasks pull to live in a registry
 you own.
 
+<Info>
+  The current release is **`v0.0.18`**. Use it as `<version>` below. The CDK package's version is the same
+  as the image tag it uses by default (`@odigos/aws-cdk@0.0.18` stages `odigos-fargate-agents:v0.0.18`).
+</Info>
+
 <Tabs>
   <Tab title="Odigos registry (default)">
     By default, tasks pull `registry.odigos.io/odigos-fargate-agents:<version>` — a public, multi-arch
