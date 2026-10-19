@@ -3,8 +3,60 @@ package instrumentationrules
 import (
 	"errors"
 	"fmt"
+	"time"
 )
 
+// CustomProbeCategory classifies why a custom probe was added.
+// +kubebuilder:validation:Enum=observability;security;performance
+type CustomProbeCategory string
+
+const (
+	CustomProbeCategoryObservability CustomProbeCategory = "observability"
+	CustomProbeCategorySecurity      CustomProbeCategory = "security"
+	CustomProbeCategoryPerformance   CustomProbeCategory = "performance"
+)
+
+func (c CustomProbeCategory) Verify() error {
+	switch c {
+	case "", CustomProbeCategoryObservability, CustomProbeCategorySecurity, CustomProbeCategoryPerformance:
+		return nil
+	default:
+		return fmt.Errorf("invalid category %q", c)
+	}
+}
+
+func verifyAddedAt(addedAt string) error {
+	if addedAt == "" {
+		return nil
+	}
+	if _, err := time.Parse(time.RFC3339, addedAt); err != nil {
+		return fmt.Errorf("addedAt must be an RFC3339 timestamp: %w", err)
+	}
+	return nil
+}
+
+// CustomProbeMetadata is bookkeeping stored with a probe on an InstrumentationRule.
+// It is not copied onto the InstrumentationConfig sent to agents.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type CustomProbeMetadata struct {
+	// Notes is a free-form text field that allows you to attach notes regarding this probe for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes string `json:"notes,omitempty" yaml:"notes,omitempty"`
+	// Category classifies why this probe was added.
+	Category CustomProbeCategory `json:"category,omitempty" yaml:"category,omitempty"`
+	// AddedAt is the time this probe was added, in RFC3339 form.
+	// +kubebuilder:validation:Format=date-time
+	AddedAt string `json:"addedAt,omitempty" yaml:"addedAt,omitempty"`
+}
+
+func (m CustomProbeMetadata) Verify() error {
+	if err := m.Category.Verify(); err != nil {
+		return err
+	}
+	return verifyAddedAt(m.AddedAt)
+}
+
+// CustomInstrumentations is the probe list sent to agents via InstrumentationConfig.
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type CustomInstrumentations struct {
@@ -41,6 +93,77 @@ func (ci *CustomInstrumentations) Verify() error {
 	return nil
 }
 
+// CustomInstrumentationsWithMetadata is the InstrumentationRule form of custom probes.
+// Metadata stays on the rule and is dropped when probes are copied to InstrumentationConfig.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type CustomInstrumentationsWithMetadata struct {
+	Golang []GolangCustomProbeWithMetadata `json:"golang,omitempty" yaml:"golang,omitempty"`
+	Java   []JavaCustomProbeWithMetadata   `json:"java,omitempty" yaml:"java,omitempty"`
+	Cpp    []CppCustomProbeWithMetadata    `json:"cpp,omitempty" yaml:"cpp,omitempty"`
+	Php    []PhpCustomProbeWithMetadata    `json:"php,omitempty" yaml:"php,omitempty"`
+}
+
+func (ci *CustomInstrumentationsWithMetadata) Verify() error {
+	if ci == nil {
+		return nil
+	}
+	for _, p := range ci.Golang {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for golang custom instrumentation: %w", err)
+		}
+	}
+	for _, p := range ci.Java {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for java custom instrumentation: %w", err)
+		}
+	}
+	for _, p := range ci.Php {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for php custom instrumentation: %w", err)
+		}
+	}
+	for _, p := range ci.Cpp {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for cpp custom instrumentation: %w", err)
+		}
+	}
+	return nil
+}
+
+// ToConfig returns the agent-facing probes with metadata removed.
+func (ci *CustomInstrumentationsWithMetadata) ToConfig() *CustomInstrumentations {
+	if ci == nil {
+		return nil
+	}
+	out := &CustomInstrumentations{}
+	if ci.Golang != nil {
+		out.Golang = make([]GolangCustomProbe, len(ci.Golang))
+		for i := range ci.Golang {
+			out.Golang[i] = ci.Golang[i].GolangCustomProbe
+		}
+	}
+	if ci.Java != nil {
+		out.Java = make([]JavaCustomProbe, len(ci.Java))
+		for i := range ci.Java {
+			out.Java[i] = ci.Java[i].JavaCustomProbe
+		}
+	}
+	if ci.Cpp != nil {
+		out.Cpp = make([]CppCustomProbe, len(ci.Cpp))
+		for i := range ci.Cpp {
+			out.Cpp[i] = ci.Cpp[i].CppCustomProbe
+		}
+	}
+	if ci.Php != nil {
+		out.Php = make([]PhpCustomProbe, len(ci.Php))
+		for i := range ci.Php {
+			out.Php[i] = ci.Php[i].PhpCustomProbe
+		}
+	}
+	return out
+}
+
 // java custom probe contains the details for a custom probe for java applications,
 // which includes the class name and method name to be instrumented.
 // +kubebuilder:object:generate=true
@@ -48,6 +171,14 @@ func (ci *CustomInstrumentations) Verify() error {
 type JavaCustomProbe struct {
 	ClassName  string `json:"className,omitempty" yaml:"className,omitempty"`
 	MethodName string `json:"methodName,omitempty" yaml:"methodName,omitempty"`
+}
+
+// JavaCustomProbeWithMetadata is a Java probe plus rule-only metadata.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type JavaCustomProbeWithMetadata struct {
+	JavaCustomProbe     `json:",inline"`
+	CustomProbeMetadata `json:",inline"`
 }
 
 // For java we always require both class name and method name
@@ -59,6 +190,13 @@ func (jcp *JavaCustomProbe) Verify() error {
 		return errors.New("method Name is required")
 	}
 	return nil
+}
+
+func (jcp *JavaCustomProbeWithMetadata) Verify() error {
+	if err := jcp.CustomProbeMetadata.Verify(); err != nil {
+		return err
+	}
+	return jcp.JavaCustomProbe.Verify()
 }
 
 // TODO(Barun): remove the String if you're not using it
@@ -86,6 +224,14 @@ type GolangCustomProbe struct {
 	ReceiverMethodName string `json:"receiverMethodName,omitempty" yaml:"receiverMethodName,omitempty"`
 }
 
+// GolangCustomProbeWithMetadata is a Go probe plus rule-only metadata.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type GolangCustomProbeWithMetadata struct {
+	GolangCustomProbe   `json:",inline"`
+	CustomProbeMetadata `json:",inline"`
+}
+
 // For golang we require package name and either function name or receiver name + method name
 func (gcp *GolangCustomProbe) Verify() error {
 	switch {
@@ -102,6 +248,13 @@ func (gcp *GolangCustomProbe) Verify() error {
 	}
 }
 
+func (gcp *GolangCustomProbeWithMetadata) Verify() error {
+	if err := gcp.CustomProbeMetadata.Verify(); err != nil {
+		return err
+	}
+	return gcp.GolangCustomProbe.Verify()
+}
+
 type CppCustomProbe struct {
 	// function signature to add custom probe for.
 	// the following scenarios are possible:
@@ -111,12 +264,27 @@ type CppCustomProbe struct {
 	Signature string `json:"signature"`
 }
 
+// CppCustomProbeWithMetadata is a C++ probe plus rule-only metadata.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type CppCustomProbeWithMetadata struct {
+	CppCustomProbe      `json:",inline"`
+	CustomProbeMetadata `json:",inline"`
+}
+
 func (c *CppCustomProbe) Verify() error {
 	if c.Signature == "" {
 		return errors.New("signature is required")
 	}
 
 	return nil
+}
+
+func (c *CppCustomProbeWithMetadata) Verify() error {
+	if err := c.CustomProbeMetadata.Verify(); err != nil {
+		return err
+	}
+	return c.CppCustomProbe.Verify()
 }
 
 // PhpCustomProbe contains the details for a custom probe for PHP applications.
@@ -128,11 +296,26 @@ type PhpCustomProbe struct {
 	FunctionName string `json:"functionName" yaml:"functionName"`
 }
 
+// PhpCustomProbeWithMetadata is a PHP probe plus rule-only metadata.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type PhpCustomProbeWithMetadata struct {
+	PhpCustomProbe      `json:",inline"`
+	CustomProbeMetadata `json:",inline"`
+}
+
 func (pcp *PhpCustomProbe) Verify() error {
 	if pcp.FunctionName == "" {
 		return errors.New("function name is required")
 	}
 	return nil
+}
+
+func (pcp *PhpCustomProbeWithMetadata) Verify() error {
+	if err := pcp.CustomProbeMetadata.Verify(); err != nil {
+		return err
+	}
+	return pcp.PhpCustomProbe.Verify()
 }
 
 func (pcp *PhpCustomProbe) String() string {
