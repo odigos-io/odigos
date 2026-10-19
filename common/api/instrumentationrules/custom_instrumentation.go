@@ -40,7 +40,8 @@ func verifyAddedAt(addedAt string) error {
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type CustomProbeMetadata struct {
-	// Notes is a free-form text field that allows you to attach notes regarding this probe for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+	// Notes is a free-form text field that allows you to attach notes regarding this probe for convenience.
+	// For example: why it was added. Odigos does not use or assume any meaning from this field.
 	Notes string `json:"notes,omitempty" yaml:"notes,omitempty"`
 	// Category classifies why this probe was added.
 	Category CustomProbeCategory `json:"category,omitempty" yaml:"category,omitempty"`

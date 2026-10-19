@@ -118,10 +118,9 @@ spec:
                           - performance
                           type: string
                         notes:
-                          description: 'Notes is a free-form text field that allows
-                            you to attach notes regarding this probe for convenience.
-                            For example: why it was added. Odigos does not use or
-                            assume any meaning from this field.'
+                          description: |-
+                            Notes is a free-form text field that allows you to attach notes regarding this probe for convenience.
+                            For example: why it was added. Odigos does not use or assume any meaning from this field.
                           type: string
                         signature:
                           description: |-
@@ -158,10 +157,9 @@ spec:
                             name will be "ListenAndServe"; Function name is disallowed if ReceiverName and ReceiverMethodName are provided
                           type: string
                         notes:
-                          description: 'Notes is a free-form text field that allows
-                            you to attach notes regarding this probe for convenience.
-                            For example: why it was added. Odigos does not use or
-                            assume any meaning from this field.'
+                          description: |-
+                            Notes is a free-form text field that allows you to attach notes regarding this probe for convenience.
+                            For example: why it was added. Odigos does not use or assume any meaning from this field.
                           type: string
                         packageName:
                           description: PackageName is the name of the golang package
@@ -204,10 +202,9 @@ spec:
                         methodName:
                           type: string
                         notes:
-                          description: 'Notes is a free-form text field that allows
-                            you to attach notes regarding this probe for convenience.
-                            For example: why it was added. Odigos does not use or
-                            assume any meaning from this field.'
+                          description: |-
+                            Notes is a free-form text field that allows you to attach notes regarding this probe for convenience.
+                            For example: why it was added. Odigos does not use or assume any meaning from this field.
                           type: string
                       type: object
                     type: array
@@ -233,10 +230,9 @@ spec:
                         functionName:
                           type: string
                         notes:
-                          description: 'Notes is a free-form text field that allows
-                            you to attach notes regarding this probe for convenience.
-                            For example: why it was added. Odigos does not use or
-                            assume any meaning from this field.'
+                          description: |-
+                            Notes is a free-form text field that allows you to attach notes regarding this probe for convenience.
+                            For example: why it was added. Odigos does not use or assume any meaning from this field.
                           type: string
                       required:
                       - functionName
