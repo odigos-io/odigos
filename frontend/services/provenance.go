@@ -26,10 +26,21 @@ func ComputeProvenance(ctx context.Context, c client.Client, effectiveConfig *co
 	// Record overlay provenance in precedence order: remote first, then local UI overwrites.
 	recordOverlayProvenance(remoteConfig, provenance, consts.OdigosRemoteConfigName)
 	recordOverlayProvenance(localUIConfig, provenance, consts.OdigosLocalUiConfigName)
+	recordInterrogationCredentialProvenance(localUIConfig, provenance)
 
 	detectProfileProvenance(baseConfig, remoteConfig, localUIConfig, effectiveConfig, provenance)
 
 	return provenance, nil
+}
+
+// recordInterrogationCredentialProvenance attributes the API key to the local UI
+// when it selects a credential revision. The instrumentor accepts credential
+// references only from the local UI config, and the Helm credential lives in a
+// Secret rather than in any config, so no other source is recorded.
+func recordInterrogationCredentialProvenance(localUIConfig *common.OdigosConfiguration, provenance map[string]string) {
+	if localUIConfig != nil && localUIConfig.Interrogation != nil && localUIConfig.Interrogation.CredentialSecretName != "" {
+		provenance[InterrogationAPIKeyProvenancePath] = consts.OdigosLocalUiConfigName
+	}
 }
 
 // recordOverlayProvenance checks which fields are set in an overlay config
@@ -187,9 +198,6 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 	}
 
 	if config.Interrogation != nil {
-		if config.Interrogation.AnalysisEnabled != nil {
-			provenance["interrogation.analysisEnabled"] = sourceName
-		}
 		if m := config.Interrogation.Model; m != nil {
 			if m.Provider != nil {
 				provenance["interrogation.model.provider"] = sourceName
