@@ -45,9 +45,11 @@ type PiiMaskingConfig struct {
 
 	// CustomFormatMaskings is the list of format-based masking rules to apply, in order.
 	// +kubebuilder:validation:Optional
+	//nolint:lll // CustomFormatMaskings line is long due to struct tag requirements
 	CustomFormatMaskings []CustomFormatMasking `json:"customFormatMaskings,omitempty" yaml:"customFormatMaskings,omitempty" mapstructure:"custom_format_maskings"`
 
 	// CustomRegexMaskings is the list of regex-based masking rules to apply, in order.
 	// +kubebuilder:validation:Optional
+	//nolint:lll // CustomRegexMaskings line is long due to struct tag requirements
 	CustomRegexMaskings []CustomRegexMasking `json:"customRegexMaskings,omitempty" yaml:"customRegexMaskings,omitempty" mapstructure:"custom_regex_maskings"`
 }
