@@ -65,3 +65,55 @@ func TestBuildConfigResponseInsightsEnabled(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildConfigResponseInterrogationEnabled(t *testing.T) {
+	tests := []struct {
+		name       string
+		configYAML string
+		want       bool
+	}{
+		{
+			name:       "enabled",
+			configYAML: "interrogation:\n  enabled: true\n",
+			want:       true,
+		},
+		{
+			name:       "disabled",
+			configYAML: "interrogation:\n  enabled: false\n",
+			want:       false,
+		},
+		{
+			name:       "unset",
+			configYAML: "configVersion: 1\n",
+			want:       false,
+		},
+	}
+
+	originalClient := kube.DefaultClient
+	t.Cleanup(func() {
+		kube.SetDefaultClient(originalClient)
+	})
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			effectiveConfig := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      consts.OdigosEffectiveConfigName,
+					Namespace: env.GetCurrentNamespace(),
+				},
+				Data: map[string]string{
+					consts.OdigosConfigurationFileName: tt.configYAML,
+				},
+			}
+			kube.SetDefaultClient(&kube.Client{
+				Interface: fake.NewSimpleClientset(effectiveConfig),
+			})
+
+			config := buildConfigResponse(context.Background(), map[string]string{
+				k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey: string(Finished),
+			})
+
+			assert.Equal(t, tt.want, config.InterrogationEnabled)
+		})
+	}
+}
