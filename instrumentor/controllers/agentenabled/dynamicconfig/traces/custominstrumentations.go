@@ -19,7 +19,7 @@ func CalculateCustomInstrumentationsConfig(d *distro.OtelDistro, irls *[]odigosv
 
 	var result *instrumentationrules.CustomInstrumentations
 	for _, irl := range *irls {
-		result = mergeCustomInstrumentations(result, irl.Spec.CustomInstrumentations, d.Language)
+		result = mergeCustomInstrumentations(result, irl.Spec.CustomInstrumentations.ToConfig(), d.Language)
 	}
 
 	return result
