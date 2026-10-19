@@ -136,8 +136,10 @@ func TestUpdateInstrumentationRulePreservesOmittedFields(t *testing.T) {
 		Language: common.JavaProgrammingLanguage,
 	}}
 	headers := &apirules.HttpHeadersCollection{HeaderKeys: []string{"Authorization", "X-Request-Id"}}
-	custom := &apirules.CustomInstrumentations{
-		Java: []apirules.JavaCustomProbe{{ClassName: "com.example.Service", MethodName: "handle"}},
+	custom := &apirules.CustomInstrumentationsWithMetadata{
+		Java: []apirules.JavaCustomProbeWithMetadata{{
+			JavaCustomProbe: apirules.JavaCustomProbe{ClassName: "com.example.Service", MethodName: "handle"},
+		}},
 	}
 
 	setFakeOdigosInstrumentationRuleClient(t, &v1alpha1.InstrumentationRule{
@@ -299,4 +301,45 @@ func TestUpdateInstrumentationRuleExplicitNullWidensSelectors(t *testing.T) {
 	require.Nil(t, updated.Spec.Scopes)
 	require.Nil(t, updated.Spec.InstrumentationLibraries)
 	require.Equal(t, []string{"Authorization"}, updated.Spec.HeadersCollection.HeaderKeys)
+}
+
+func TestCustomInstrumentationsMetadataRoundTrip(t *testing.T) {
+	notes := "called from checkout"
+	addedAt := "2026-10-19T09:00:00Z"
+	category := model.CustomProbeCategorySecurity
+	className := "com.acme.Pricing"
+	methodName := "calculate"
+	signature := "SSL_write"
+
+	got, err := getCustomInstrumentationsInput(model.InstrumentationRuleInput{
+		CustomInstrumentations: &model.CustomInstrumentationsInput{
+			Java: []*model.JavaCustomProbeInput{{
+				ClassName:  &className,
+				MethodName: &methodName,
+				Notes:      &notes,
+				Category:   &category,
+				AddedAt:    &addedAt,
+			}},
+			Cpp: []*model.CppCustomProbeInput{{
+				Signature: &signature,
+				Notes:     &notes,
+				Category:  &category,
+				AddedAt:   &addedAt,
+			}},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "com.acme.Pricing", got.Java[0].ClassName)
+	require.Equal(t, notes, got.Java[0].Notes)
+	require.Equal(t, apirules.CustomProbeCategorySecurity, got.Java[0].Category)
+	require.Equal(t, addedAt, got.Java[0].AddedAt)
+	require.Equal(t, signature, got.Cpp[0].Signature)
+	require.Equal(t, apirules.CustomProbeCategorySecurity, got.Cpp[0].Category)
+
+	out := convertCustomInstrumentations(got)
+	require.Equal(t, &notes, out.Java[0].Notes)
+	require.Equal(t, &category, out.Java[0].Category)
+	require.Equal(t, &addedAt, out.Java[0].AddedAt)
+	require.Equal(t, &signature, out.Cpp[0].Signature)
+	require.Equal(t, &category, out.Cpp[0].Category)
 }
