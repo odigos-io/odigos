@@ -1444,6 +1444,12 @@ type ComplexityRoot struct {
 		UpdateID         func(childComplexity int) int
 	}
 
+	InterrogationSource struct {
+		ContainerName    func(childComplexity int) int
+		ID               func(childComplexity int) int
+		TransactionCount func(childComplexity int) int
+	}
+
 	InterrogationTransaction struct {
 		CallTrie    func(childComplexity int) int
 		Functions   func(childComplexity int) int
@@ -2150,6 +2156,7 @@ type ComplexityRoot struct {
 		InstrumentationRuleTypes          func(childComplexity int) int
 		InterrogationAPIKey               func(childComplexity int) int
 		InterrogationSettingsStatus       func(childComplexity int) int
+		InterrogationSources              func(childComplexity int) int
 		K8sManifest                       func(childComplexity int, namespace string, kind model.K8sResourceKind, name string) int
 		Namespaces                        func(childComplexity int) int
 		OdigletDaemonSetInfo              func(childComplexity int) int
@@ -2634,6 +2641,7 @@ type QueryResolver interface {
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error)
 	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
+	InterrogationSources(ctx context.Context) ([]*model.InterrogationSource, error)
 }
 type SamplingResolver interface {
 	Rules(ctx context.Context, obj *model.Sampling) ([]*model.SamplingRules, error)
@@ -9168,6 +9176,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InterrogationSettingsStatus.UpdateID(childComplexity), true
 
+	case "InterrogationSource.containerName":
+		if e.complexity.InterrogationSource.ContainerName == nil {
+			break
+		}
+
+		return e.complexity.InterrogationSource.ContainerName(childComplexity), true
+
+	case "InterrogationSource.id":
+		if e.complexity.InterrogationSource.ID == nil {
+			break
+		}
+
+		return e.complexity.InterrogationSource.ID(childComplexity), true
+
+	case "InterrogationSource.transactionCount":
+		if e.complexity.InterrogationSource.TransactionCount == nil {
+			break
+		}
+
+		return e.complexity.InterrogationSource.TransactionCount(childComplexity), true
+
 	case "InterrogationTransaction.callTrie":
 		if e.complexity.InterrogationTransaction.CallTrie == nil {
 			break
@@ -12671,6 +12700,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.InterrogationSettingsStatus(childComplexity), true
+
+	case "Query.interrogationSources":
+		if e.complexity.Query.InterrogationSources == nil {
+			break
+		}
+
+		return e.complexity.Query.InterrogationSources(childComplexity), true
 
 	case "Query.k8sManifest":
 		if e.complexity.Query.K8sManifest == nil {
@@ -60691,6 +60727,146 @@ func (ec *executionContext) fieldContext_InterrogationSettingsStatus_apiKeySourc
 	return fc, nil
 }
 
+func (ec *executionContext) _InterrogationSource_id(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InterrogationSource_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadID)
+	fc.Result = res
+	return ec.marshalNK8sWorkloadId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InterrogationSource_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InterrogationSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_K8sWorkloadId_namespace(ctx, field)
+			case "kind":
+				return ec.fieldContext_K8sWorkloadId_kind(ctx, field)
+			case "name":
+				return ec.fieldContext_K8sWorkloadId_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadId", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InterrogationSource_containerName(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InterrogationSource_containerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InterrogationSource_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InterrogationSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InterrogationSource_transactionCount(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InterrogationSource_transactionCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InterrogationSource_transactionCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InterrogationSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InterrogationTransaction_id(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationTransaction) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InterrogationTransaction_id(ctx, field)
 	if err != nil {
@@ -83828,6 +84004,58 @@ func (ec *executionContext) fieldContext_Query_namespaces(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_interrogationSources(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_interrogationSources(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().InterrogationSources(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InterrogationSource)
+	fc.Result = res
+	return ec.marshalNInterrogationSource2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationSourceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_interrogationSources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InterrogationSource_id(ctx, field)
+			case "containerName":
+				return ec.fieldContext_InterrogationSource_containerName(ctx, field)
+			case "transactionCount":
+				return ec.fieldContext_InterrogationSource_transactionCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InterrogationSource", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -106528,6 +106756,55 @@ func (ec *executionContext) _InterrogationSettingsStatus(ctx context.Context, se
 	return out
 }
 
+var interrogationSourceImplementors = []string{"InterrogationSource"}
+
+func (ec *executionContext) _InterrogationSource(ctx context.Context, sel ast.SelectionSet, obj *model.InterrogationSource) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, interrogationSourceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InterrogationSource")
+		case "id":
+			out.Values[i] = ec._InterrogationSource_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "containerName":
+			out.Values[i] = ec._InterrogationSource_containerName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transactionCount":
+			out.Values[i] = ec._InterrogationSource_transactionCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var interrogationTransactionImplementors = []string{"InterrogationTransaction"}
 
 func (ec *executionContext) _InterrogationTransaction(ctx context.Context, sel ast.SelectionSet, obj *model.InterrogationTransaction) graphql.Marshaler {
@@ -112860,6 +113137,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_namespaces(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "interrogationSources":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_interrogationSources(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -120216,6 +120515,60 @@ func (ec *executionContext) marshalNInterrogationSettingsStatus2ᚖgithubᚗcom�
 		return graphql.Null
 	}
 	return ec._InterrogationSettingsStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInterrogationSource2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationSourceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InterrogationSource) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInterrogationSource2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationSource(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInterrogationSource2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationSource(ctx context.Context, sel ast.SelectionSet, v *model.InterrogationSource) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InterrogationSource(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNInterrogationTransaction2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationTransactionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InterrogationTransaction) graphql.Marshaler {

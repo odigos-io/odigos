@@ -757,8 +757,25 @@ type K8sNamespace {
   workloads: [K8sWorkload!]!
 }
 
+"""
+A workload container that has stored interrogation transactions.
+"""
+type InterrogationSource {
+  id: K8sWorkloadId!
+  containerName: String!
+  """
+  Distinct transactions stored for this container.
+  """
+  transactionCount: Int!
+}
+
 extend type Query {
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
   workloadsByIds(ids: [K8sWorkloadIdInput!]!): [K8sWorkload!]!
   namespaces: [K8sNamespace!]!
+  """
+  Workload containers with stored interrogation transactions, read with a single
+  ClickHouse query. Empty when interrogation is disabled.
+  """
+  interrogationSources: [InterrogationSource!]!
 }

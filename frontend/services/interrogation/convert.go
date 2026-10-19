@@ -24,6 +24,25 @@ func TransactionsToModel(txs []Transaction) []*model.InterrogationTransaction {
 	return out
 }
 
+// SourcesToModel converts per-container transaction counts to GraphQL models.
+// Rows whose workload kind is not a known K8sResourceKind are dropped, since the
+// enum could not be serialized.
+func SourcesToModel(sources []SourceTransactions) []*model.InterrogationSource {
+	out := make([]*model.InterrogationSource, 0, len(sources))
+	for _, s := range sources {
+		kind := model.K8sResourceKind(s.Kind)
+		if !kind.IsValid() {
+			continue
+		}
+		out = append(out, &model.InterrogationSource{
+			ID:               &model.K8sWorkloadID{Namespace: s.Namespace, Kind: kind, Name: s.Name},
+			ContainerName:    s.ContainerName,
+			TransactionCount: int(s.TransactionCount),
+		})
+	}
+	return out
+}
+
 // CallTrieToModel converts flat call-path trie nodes to GraphQL models.
 func CallTrieToModel(nodes []CallTrieNode) []*model.InterrogationCallTrieNode {
 	out := make([]*model.InterrogationCallTrieNode, 0, len(nodes))

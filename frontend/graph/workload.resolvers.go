@@ -1142,6 +1142,23 @@ func (r *queryResolver) Namespaces(ctx context.Context) ([]*model.K8sNamespace, 
 	return gqlNss, nil
 }
 
+// InterrogationSources is the resolver for the interrogationSources field.
+func (r *queryResolver) InterrogationSources(ctx context.Context) ([]*model.InterrogationSource, error) {
+	enabled, err := interrogation.IsEnabled(ctx, r.K8sCacheClient)
+	if err != nil {
+		return nil, fmt.Errorf("reading effective config for interrogation: %w", err)
+	}
+	if !enabled || r.InterrogationClient == nil {
+		return []*model.InterrogationSource{}, nil
+	}
+
+	sources, err := r.InterrogationClient.ListSources(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return interrogation.SourcesToModel(sources), nil
+}
+
 // InterrogationTransaction returns InterrogationTransactionResolver implementation.
 func (r *Resolver) InterrogationTransaction() InterrogationTransactionResolver {
 	return &interrogationTransactionResolver{r}
