@@ -87,11 +87,6 @@ func (in *InterrogationConfiguration) DeepCopyInto(out *InterrogationConfigurati
 		*out = new(bool)
 		**out = **in
 	}
-	if in.AnalysisEnabled != nil {
-		in, out := &in.AnalysisEnabled, &out.AnalysisEnabled
-		*out = new(bool)
-		**out = **in
-	}
 	if in.Model != nil {
 		in, out := &in.Model, &out.Model
 		*out = new(InterrogationModelConfiguration)

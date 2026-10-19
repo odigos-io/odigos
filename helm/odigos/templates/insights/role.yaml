@@ -12,11 +12,7 @@ rules:
   # applies its suggested probes as InstrumentationRules.
   - apiGroups: [""]
     resources: ["configmaps"]
-    verbs: ["get", "list", "watch", "create"]
-  - apiGroups: [""]
-    resources: ["configmaps"]
-    resourceNames: ["odigos-interrogation-status"]
-    verbs: ["update", "patch"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: ["odigos.io"]
     resources: ["instrumentationrules"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

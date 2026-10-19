@@ -91,7 +91,6 @@ import {
   GET_DESTINATIONS,
   GET_DESTINATION_CATEGORIES,
   GET_EFFECTIVE_CONFIG,
-  GET_INTERROGATION_SETTINGS_STATUS,
   GET_INTERROGATION_API_KEY,
   GET_INSTRUMENTATION_RULES,
   GET_INSTRUMENTATION_RULE_TYPES,
@@ -358,10 +357,6 @@ const operations: OdigosApiOperations = {
     },
   },
   GET_CONFIG_YAMLS: { document: GET_CONFIG_YAMLS },
-  GET_INTERROGATION_SETTINGS_STATUS: {
-    document: GET_INTERROGATION_SETTINGS_STATUS,
-    transformResult: (raw) => (raw as { interrogationSettingsStatus?: unknown } | undefined)?.interrogationSettingsStatus,
-  },
   GET_INTERROGATION_API_KEY: {
     document: GET_INTERROGATION_API_KEY,
     noCache: true,

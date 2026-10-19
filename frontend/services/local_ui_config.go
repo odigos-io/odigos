@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
@@ -30,10 +29,6 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 	if input.Interrogation != nil {
 		if err := validateInterrogationInput(ctx, c, input.Interrogation); err != nil {
 			return err
-		}
-		if input.Interrogation.UpdateID == nil || *input.Interrogation.UpdateID == "" {
-			id := uuid.NewString()
-			input.Interrogation.UpdateID = &id
 		}
 		var err error
 		stagedCredential, err = stageInterrogationCredential(ctx, c, input.Interrogation)
@@ -109,7 +104,7 @@ func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, inp
 	return c.Create(ctx, &newCm)
 }
 
-func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client, updateIDs ...string) error {
+func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) error {
 	ns := env.GetCurrentNamespace()
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -117,31 +112,19 @@ func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client, u
 		err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosLocalUiConfigName}, &cm)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				if len(updateIDs) > 0 && updateIDs[0] != "" {
-					id := updateIDs[0]
-					return UpdateLocalUIConfig(ctx, c, model.LocalUIConfigInput{Interrogation: &model.InterrogationConfigInput{UpdateID: &id}})
-				}
 				return nil
 			}
 			return err
 		}
 
 		emptyCfg := common.OdigosConfiguration{}
-		updateID := uuid.NewString()
-		if len(updateIDs) > 0 && updateIDs[0] != "" {
-			updateID = updateIDs[0]
-		}
-		if len(updateID) > 128 {
-			return fmt.Errorf("AI settings update identifier is too long")
-		}
 		// Retain the previous credential revision for rollback, without activating it.
 		var old common.OdigosConfiguration
 		if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &old); err != nil {
 			return err
 		}
-		emptyCfg.Interrogation = &common.InterrogationConfiguration{UpdateID: updateID}
-		if old.Interrogation != nil {
-			emptyCfg.Interrogation.PreviousCredentialSecretName = old.Interrogation.CredentialSecretName
+		if old.Interrogation != nil && old.Interrogation.CredentialSecretName != "" {
+			emptyCfg.Interrogation = &common.InterrogationConfiguration{PreviousCredentialSecretName: old.Interrogation.CredentialSecretName}
 		}
 
 		data, err := yaml.Marshal(emptyCfg)
@@ -245,8 +228,6 @@ func applyInterrogationInput(cfg *common.OdigosConfiguration, input *model.Inter
 	}
 	for _, path := range input.ResetPaths {
 		switch path {
-		case "interrogation.analysisEnabled":
-			current.AnalysisEnabled = nil
 		case "interrogation.model.provider":
 			current.Model.Provider = nil
 		case "interrogation.model.name":
@@ -257,12 +238,6 @@ func applyInterrogationInput(cfg *common.OdigosConfiguration, input *model.Inter
 			current.PreviousCredentialSecretName = current.CredentialSecretName
 			current.CredentialSecretName = ""
 		}
-	}
-	if input.AnalysisEnabled != nil {
-		current.AnalysisEnabled = input.AnalysisEnabled
-	}
-	if input.UpdateID != nil {
-		current.UpdateID = *input.UpdateID
 	}
 	if input.Model != nil {
 		if input.Model.Provider != nil {
