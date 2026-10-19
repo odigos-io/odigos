@@ -2,7 +2,7 @@ import { ROUTES } from '../constants';
 import { SVG } from '@odigos/ui-kit/types';
 import { NavbarProps } from '@odigos/ui-kit/components';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { CodeIcon, InsightsIcon, OverviewIcon, PipelineCollectorIcon, SamplingIcon, ServiceMapIcon, SettingsIcon, UrlTemplatizationIcon } from '@odigos/ui-kit/icons';
+import { CodeIcon, InsightsIcon, OverviewIcon, PipelineCollectorIcon, SamplingIcon, ServiceMapIcon, SettingsIcon, SparkleIcon, UrlTemplatizationIcon } from '@odigos/ui-kit/icons';
 
 const getPayloadForIcon = (router: AppRouterInstance, currentPath: string, targetPath: string, label: string, icon: SVG): NavbarProps['icons'][number] => {
   return {
@@ -14,7 +14,7 @@ const getPayloadForIcon = (router: AppRouterInstance, currentPath: string, targe
   };
 };
 
-export const getNavbarIcons = (router: AppRouterInstance, currentPath: string, insightsEnabled?: boolean) => {
+export const getNavbarIcons = (router: AppRouterInstance, currentPath: string, insightsEnabled?: boolean, interrogationEnabled?: boolean) => {
   const navIcons: NavbarProps['icons'] = [];
 
   navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.OVERVIEW, 'Overview', OverviewIcon));
@@ -23,6 +23,10 @@ export const getNavbarIcons = (router: AppRouterInstance, currentPath: string, i
   // effective config, so the entry stays hidden until the feature is actually there.
   if (insightsEnabled) {
     navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.INSIGHTS, 'Insights', InsightsIcon));
+  }
+
+  if (interrogationEnabled) {
+    navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.INTERROGATIONS, 'Interrogations', SparkleIcon));
   }
 
   navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.SERVICE_MAP, 'Service Map', ServiceMapIcon));
