@@ -16,6 +16,7 @@ type Config {
   clusterName: String
   isCentralProxyRunning: Boolean
   insightsEnabled: Boolean!
+  interrogationEnabled: Boolean!
 }
 
 # Effective configuration, reflects the actual values applied to the cluster
