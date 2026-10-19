@@ -58,13 +58,12 @@ export KUBE_CONTEXT=<your-kubernetes-context>
 helm --kube-context "$KUBE_CONTEXT" upgrade odigos ./helm/odigos \
   --namespace odigos-system --reuse-values \
   --set insights.interrogation.litellm.bootstrapConfig=true
-kubectl --context "$KUBE_CONTEXT" -n odigos-system get configmap odigos-interrogation-status \
-  -o jsonpath='{.data.proxy}'
-kubectl --context "$KUBE_CONTEXT" -n odigos-system get deployment odigos-litellm \
-  -o jsonpath='{.spec.template.metadata.annotations.odigos\.io/ai-settings-revision}'
+kubectl --context "$KUBE_CONTEXT" -n odigos-system rollout status deployment/odigos-litellm
+kubectl --context "$KUBE_CONTEXT" -n odigos-system get configmap odigos-litellm \
+  --show-managed-fields -o jsonpath='{.metadata.managedFields[*].manager}'
 ```
 
-Wait for the proxy status to report `READY` and verify its revision matches the `odigos.io/ai-settings-revision` annotation on the LiteLLM Deployment. Then remove the temporary Helm template; the keep annotation prevents Helm from deleting the ConfigMap while the Instrumentor remains its owner:
+Wait for the LiteLLM rollout to complete and verify that `instrumentor-litellm` is listed among the ConfigMap's field managers, which confirms the Instrumentor has applied the proxy config. Then remove the temporary Helm template; the keep annotation prevents Helm from deleting the ConfigMap while the Instrumentor remains its owner:
 
 ```sh
 helm --kube-context "$KUBE_CONTEXT" upgrade odigos ./helm/odigos \
