@@ -327,7 +327,7 @@ userInstrumentationEnvs:
       # additionalProperties: true
       # @schema
       env: {}
-    nodejs:
+    javascript:
       enabled: false
       # @schema
       # additionalProperties: true
