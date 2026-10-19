@@ -201,7 +201,7 @@ func TestListContainerTransactionsPage(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assert.Contains(t, conn.query, "ORDER BY sumIf(Count, Parent = 'root' AND SampleType = 'samples') DESC, TransactionId ASC")
+	assert.Contains(t, conn.query, "ORDER BY countIf(Parent = 'root' AND SampleType = 'samples') DESC, TransactionId ASC")
 	assert.Contains(t, conn.query, "LIMIT ? OFFSET ?")
 	assert.Equal(t, strings.Count(conn.query, "?"), len(conn.args))
 	assert.Equal(t, []any{
