@@ -76,8 +76,10 @@ func utcIC(namespace, workloadName string, containerNames ...string) *odigosv1.I
 	for _, containerName := range containerNames {
 		ic.Spec.WorkloadCollectorConfig = append(ic.Spec.WorkloadCollectorConfig, commonapi.ContainerCollectorConfig{
 			ContainerName: containerName,
-			UrlTemplatization: &actionsapi.UrlTemplatizationConfig{
-				Templates: []string{utcTemplate(namespace, workloadName, containerName)},
+			BaseCollectorConfig: commonapi.BaseCollectorConfig{
+				UrlTemplatization: &actionsapi.UrlTemplatizationConfig{
+					Templates: []string{utcTemplate(namespace, workloadName, containerName)},
+				},
 			},
 		})
 	}

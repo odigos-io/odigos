@@ -455,8 +455,10 @@ func TestExtension_PerSourceConfig(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	proc.provider = &stubOdigosConfigExtension{
 		cfg: &commonapi.ContainerCollectorConfig{
-			InferDbAttributes:     &actions.InferDbAttributesConfig{},
-			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{TemplatizeLiterals: true},
+			BaseCollectorConfig: commonapi.BaseCollectorConfig{
+				InferDbAttributes:     &actions.InferDbAttributesConfig{},
+				DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{TemplatizeLiterals: true},
+			},
 		},
 	}
 
@@ -502,9 +504,11 @@ func TestRemovePostgresCastOperator_WithRedactLiterals(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	proc.provider = &stubOdigosConfigExtension{
 		cfg: &commonapi.ContainerCollectorConfig{
-			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
-				TemplatizeLiterals:         true,
-				RemovePostgresCastOperator: true,
+			BaseCollectorConfig: commonapi.BaseCollectorConfig{
+				DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
+					TemplatizeLiterals:         true,
+					RemovePostgresCastOperator: true,
+				},
 			},
 		},
 	}
@@ -527,8 +531,10 @@ func TestRemovePostgresCastOperator_Only(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	proc.provider = &stubOdigosConfigExtension{
 		cfg: &commonapi.ContainerCollectorConfig{
-			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
-				RemovePostgresCastOperator: true,
+			BaseCollectorConfig: commonapi.BaseCollectorConfig{
+				DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
+					RemovePostgresCastOperator: true,
+				},
 			},
 		},
 	}
@@ -551,9 +557,11 @@ func TestRemovePostgresCastOperator_SkippedForMySQL(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	proc.provider = &stubOdigosConfigExtension{
 		cfg: &commonapi.ContainerCollectorConfig{
-			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
-				TemplatizeLiterals:         true,
-				RemovePostgresCastOperator: true,
+			BaseCollectorConfig: commonapi.BaseCollectorConfig{
+				DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
+					TemplatizeLiterals:         true,
+					RemovePostgresCastOperator: true,
+				},
 			},
 		},
 	}
