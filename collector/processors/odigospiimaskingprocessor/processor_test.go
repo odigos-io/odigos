@@ -308,10 +308,10 @@ func TestConfigValidate(t *testing.T) {
 
 type stubOdigosConfigExtension struct {
 	key string
-	cfg *commonapi.ContainerCollectorConfig
+	cfg *commonapi.SourceCollectorConfig
 }
 
-func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.SourceCollectorConfig, bool) {
 	if s.cfg == nil {
 		return nil, false
 	}
@@ -356,7 +356,7 @@ func TestExtension_PerSourceConfig(t *testing.T) {
 
 	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
 	proc.provider = ext
-	proc.OnSet(ext.key, &commonapi.ContainerCollectorConfig{
+	proc.OnSet(ext.key, &commonapi.SourceCollectorConfig{
 		PiiMasking: &actions.PiiMaskingConfig{
 			PiiCategories: []actions.PiiCategory{actions.EmailMasking},
 		},
@@ -380,7 +380,7 @@ func TestExtension_CustomFormatMaskingMasksWholeValue(t *testing.T) {
 
 	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
 	proc.provider = ext
-	proc.OnSet(ext.key, &commonapi.ContainerCollectorConfig{
+	proc.OnSet(ext.key, &commonapi.SourceCollectorConfig{
 		PiiMasking: &actions.PiiMaskingConfig{
 			CustomFormatMaskings: []actions.CustomFormatMasking{
 				{LookupKey: "full_name", DataFormat: actions.FormatJSON},
