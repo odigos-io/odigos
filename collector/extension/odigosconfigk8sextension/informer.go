@@ -165,7 +165,7 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 // containerEntry is a single container's cache key and config for the desired state.
 type containerEntry struct {
 	key string
-	cfg *commonapi.ContainerCollectorConfig
+	cfg *commonapi.CollectorConfig
 }
 
 // parseWorkloadCollectorConfig turns the IC's workloadCollectorConfig slice into a list of containerEntry.
@@ -188,7 +188,7 @@ func (o *OdigosWorkloadConfig) parseWorkloadCollectorConfig(workloadKey workload
 			continue
 		}
 		key := k8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, c.ContainerName)
-		out = append(out, containerEntry{key: key, cfg: &c})
+		out = append(out, containerEntry{key: key, cfg: &c.CollectorConfig})
 	}
 	return out
 }

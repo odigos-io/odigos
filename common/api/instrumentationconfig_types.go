@@ -11,12 +11,12 @@ type ContainerCollectorConfig struct {
 	// The name of the container to which this configuration applies.
 	ContainerName string `json:"containerName"`
 
-	BaseCollectorConfig `json:",inline"`
+	CollectorConfig `json:",inline"`
 }
 
-// BaseCollectorConfig is the collector configuration that is not tied to a container.
+// CollectorConfig is the collector configuration that is not tied to a container.
 // +kubebuilder:object:generate=true
-type BaseCollectorConfig struct {
+type CollectorConfig struct {
 	// The sampling configuration that relevant for the collector (tailsampling).
 	TailSampling *sampling.TailSamplingSourceConfig `json:"samplingCollectorConfig,omitempty"`
 

@@ -308,10 +308,10 @@ func TestConfigValidate(t *testing.T) {
 
 type stubOdigosConfigExtension struct {
 	key string
-	cfg *commonapi.ContainerCollectorConfig
+	cfg *commonapi.CollectorConfig
 }
 
-func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.CollectorConfig, bool) {
 	if s.cfg == nil {
 		return nil, false
 	}
@@ -356,11 +356,9 @@ func TestExtension_PerSourceConfig(t *testing.T) {
 
 	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
 	proc.provider = ext
-	proc.OnSet(ext.key, &commonapi.ContainerCollectorConfig{
-		BaseCollectorConfig: commonapi.BaseCollectorConfig{
-			PiiMasking: &actions.PiiMaskingConfig{
-				PiiCategories: []actions.PiiCategory{actions.EmailMasking},
-			},
+	proc.OnSet(ext.key, &commonapi.CollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{
+			PiiCategories: []actions.PiiCategory{actions.EmailMasking},
 		},
 	})
 
@@ -382,13 +380,11 @@ func TestExtension_CustomFormatMaskingMasksWholeValue(t *testing.T) {
 
 	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
 	proc.provider = ext
-	proc.OnSet(ext.key, &commonapi.ContainerCollectorConfig{
-		BaseCollectorConfig: commonapi.BaseCollectorConfig{
-			PiiMasking: &actions.PiiMaskingConfig{
-				CustomFormatMaskings: []actions.CustomFormatMasking{
-					{LookupKey: "full_name", DataFormat: actions.FormatJSON},
-					{LookupKey: "address", DataFormat: actions.FormatSQL},
-				},
+	proc.OnSet(ext.key, &commonapi.CollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{
+			CustomFormatMaskings: []actions.CustomFormatMasking{
+				{LookupKey: "full_name", DataFormat: actions.FormatJSON},
+				{LookupKey: "address", DataFormat: actions.FormatSQL},
 			},
 		},
 	})

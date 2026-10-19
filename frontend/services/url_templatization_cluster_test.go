@@ -77,7 +77,7 @@ func utzCollectorConfig(containerName string, templates ...string) func(*odigosv
 	return func(ic *odigosv1.InstrumentationConfig) {
 		ic.Spec.WorkloadCollectorConfig = append(ic.Spec.WorkloadCollectorConfig, commonapi.ContainerCollectorConfig{
 			ContainerName: containerName,
-			BaseCollectorConfig: commonapi.BaseCollectorConfig{
+			CollectorConfig: commonapi.CollectorConfig{
 				UrlTemplatization: &actionsapi.UrlTemplatizationConfig{Templates: templates},
 			},
 		})

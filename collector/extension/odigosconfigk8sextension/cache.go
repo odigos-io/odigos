@@ -38,7 +38,7 @@ func keyPrefixFromKey(key string) string {
 // workloadKeysIndex maps workload key prefix (e.g. "ns/kind/name/") to the workload entry.
 type cache struct {
 	mu                sync.RWMutex
-	data              map[string]*commonapi.ContainerCollectorConfig
+	data              map[string]*commonapi.CollectorConfig
 	callbacks         []collector.WorkloadConfigCacheCallback
 	workloadKeysIndex map[string]*workloadEntry
 }
@@ -46,7 +46,7 @@ type cache struct {
 // newCache creates a new empty cache.
 func newCache() *cache {
 	return &cache{
-		data:              make(map[string]*commonapi.ContainerCollectorConfig),
+		data:              make(map[string]*commonapi.CollectorConfig),
 		workloadKeysIndex: make(map[string]*workloadEntry),
 	}
 }
@@ -76,13 +76,13 @@ func (c *cache) removeCallback(cb collector.WorkloadConfigCacheCallback) {
 func (c *cache) clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.data = make(map[string]*commonapi.ContainerCollectorConfig)
+	c.data = make(map[string]*commonapi.CollectorConfig)
 	c.workloadKeysIndex = make(map[string]*workloadEntry)
 	c.callbacks = nil
 }
 
 // Get returns the WorkloadSamplingConfig for the given workload key, and true if found.
-func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
+func (c *cache) Get(key string) (*commonapi.CollectorConfig, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	val, found := c.data[key]
@@ -111,7 +111,7 @@ func (c *cache) removeWorkloadEntry(workloadKeyPrefix string) {
 // Set stores the required config for the given workload key, updates the workload keys index, then invokes all registered callbacks.
 // We snapshot the callback list under the lock (so we never read c.callbacks after unlock, avoiding
 // a race with addCallback), then unlock and invoke each callback.
-func (c *cache) Set(key string, cfg *commonapi.ContainerCollectorConfig) {
+func (c *cache) Set(key string, cfg *commonapi.CollectorConfig) {
 	c.mu.Lock()
 	c.data[key] = cfg
 	workloadKey := keyPrefixFromKey(key)
@@ -133,7 +133,7 @@ func (c *cache) Set(key string, cfg *commonapi.ContainerCollectorConfig) {
 }
 
 // Range calls f for each key and config in the cache. Caller must not modify the cache from f.
-func (c *cache) Range(f func(key string, cfg *commonapi.ContainerCollectorConfig)) {
+func (c *cache) Range(f func(key string, cfg *commonapi.CollectorConfig)) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	for k, v := range c.data {

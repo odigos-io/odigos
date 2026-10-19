@@ -124,7 +124,7 @@ func (p *piiMaskingProcessor) Shutdown(context.Context) error {
 }
 
 // OnSet implements collector.WorkloadConfigCacheCallback.
-func (p *piiMaskingProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
+func (p *piiMaskingProcessor) OnSet(key string, cfg *commonapi.CollectorConfig) {
 	if cfg.PiiMasking == nil {
 		p.maskersCache.delete(key)
 		return
