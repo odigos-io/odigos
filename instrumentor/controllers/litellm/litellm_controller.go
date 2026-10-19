@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -27,7 +25,6 @@ import (
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 )
 
@@ -39,17 +36,6 @@ const (
 	// modelAlias is the model name the insights service requests from LiteLLM.
 	modelAlias = "interrogation"
 )
-
-type proxyStatus struct {
-	UpdateID         string `json:"updateId"`
-	Revision         string `json:"revision"`
-	ModelHash        string `json:"modelHash"`
-	APIKeyConfigured bool   `json:"apiKeyConfigured"`
-	APIKeySource     string `json:"apiKeySource"`
-	State            string `json:"state"`
-	Error            string `json:"error"`
-	ObservedAt       string `json:"observedAt"`
-}
 
 type liteLLMConfig struct {
 	ModelList       []liteLLMModel         `json:"model_list"`
@@ -95,90 +81,49 @@ func (r *liteLLMController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 	cfg := odigosConfiguration.Interrogation
-	modelHash := common.InterrogationModelHash(cfg.Model)
-	apiKeySource := "NONE"
-	apiKeyConfigured := false
-	reportFailure := func(stage, revision string, cause error) (ctrl.Result, error) {
-		// Kubernetes errors may include object bodies, so the status contains only
-		// a fixed stage description. The original error remains in controller logs.
-		if statusErr := r.writeProxyStatus(ctx, odigosNs, cfg.UpdateID, revision, modelHash, apiKeyConfigured, apiKeySource, "ERROR", stage); statusErr != nil {
-			return ctrl.Result{}, fmt.Errorf("%s: %w; write proxy status: %v", stage, cause, statusErr)
-		}
-		return ctrl.Result{}, fmt.Errorf("%s: %w", stage, cause)
-	}
 
 	// LiteLLM is only deployed with an enterprise token, so there is nothing to configure without it.
 	deployment := appsv1.Deployment{}
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: k8sconsts.OdigosLiteLLMName}, &deployment)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return reportFailure("proxy Deployment is unavailable", "", err)
-		}
-		return reportFailure("read proxy Deployment", "", err)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	configYaml, err := renderLiteLLMConfig(cfg.Model)
 	if err != nil {
-		return reportFailure("invalid model configuration", "", err)
+		return ctrl.Result{}, err
 	}
 
 	upstreamApiKey, err := r.upstreamAPIKey(ctx, odigosNs, cfg)
 	if err != nil {
-		return reportFailure("read selected credential", "", err)
-	}
-	apiKeyConfigured = len(upstreamApiKey) > 0
-	if apiKeyConfigured {
-		if cfg.CredentialSecretName != "" {
-			apiKeySource = "LOCAL_UI"
-		} else {
-			apiKeySource = "HELM"
-		}
+		return ctrl.Result{}, err
 	}
 
 	configHash := sha256.Sum256(append(append([]byte(configYaml), 0), upstreamApiKey...))
 	fingerprint := fmt.Sprintf("%x", configHash)
-	revision, changed, err := r.selectRevision(ctx, odigosNs, upstreamApiKey, fingerprint, configYaml)
-	if err != nil {
-		return reportFailure("read runtime credential", "", err)
-	}
-	if changed || deployment.Spec.Template.Annotations[k8sconsts.OdigosAISettingsRevisionAnnotation] != revision {
-		if err := r.writeProxyStatus(ctx, odigosNs, cfg.UpdateID, revision, modelHash, apiKeyConfigured, apiKeySource, "APPLYING", ""); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-	if err := r.applyRuntimeSecret(ctx, odigosNs, upstreamApiKey, fingerprint, revision); err != nil {
-		return reportFailure("apply runtime credential", revision, err)
+	if err := r.applyRuntimeSecret(ctx, odigosNs, upstreamApiKey, fingerprint); err != nil {
+		return ctrl.Result{}, err
 	}
 
-	if err := r.applyConfigMap(ctx, odigosNs, configYaml, revision); err != nil {
-		return reportFailure("apply proxy ConfigMap", revision, err)
+	if err := r.applyConfigMap(ctx, odigosNs, configYaml); err != nil {
+		return ctrl.Result{}, err
 	}
 
-	if deployment.Spec.Template.Annotations[k8sconsts.OdigosAISettingsRevisionAnnotation] != revision {
+	if deployment.Spec.Template.Annotations[k8sconsts.OdigosLiteLLMConfigHashAnnotation] != fingerprint {
 		patch := client.MergeFrom(deployment.DeepCopy())
 		if deployment.Spec.Template.Annotations == nil {
 			deployment.Spec.Template.Annotations = make(map[string]string)
 		}
-		deployment.Spec.Template.Annotations[k8sconsts.OdigosAISettingsRevisionAnnotation] = revision
+		deployment.Spec.Template.Annotations[k8sconsts.OdigosLiteLLMConfigHashAnnotation] = fingerprint
 		if err := r.Client.Patch(ctx, &deployment, patch); err != nil {
-			return reportFailure("update proxy Deployment", revision, err)
+			return ctrl.Result{}, err
 		}
-		logger.Info("Rolled out LiteLLM with updated configuration", "revision", revision)
+		logger.Info("Rolled out LiteLLM with updated configuration")
 		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	if err := r.cleanupOldCredentials(ctx, odigosNs, cfg); err != nil {
-		return reportFailure("cleanup old credentials", revision, err)
-	}
-	state := "APPLYING"
-	if deploymentRolledOut(&deployment) {
-		state = "READY"
-	}
-	if err := r.writeProxyStatus(ctx, odigosNs, cfg.UpdateID, revision, modelHash, apiKeyConfigured, apiKeySource, state, ""); err != nil {
 		return ctrl.Result{}, err
-	}
-	if state == "APPLYING" {
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 	return ctrl.Result{RequeueAfter: credentialRetention}, nil
 }
@@ -226,7 +171,7 @@ func renderLiteLLMConfig(model *common.InterrogationModelConfiguration) (string,
 	return string(configYaml), nil
 }
 
-func (r *liteLLMController) applyConfigMap(ctx context.Context, odigosNs string, configYaml string, revision string) error {
+func (r *liteLLMController) applyConfigMap(ctx context.Context, odigosNs string, configYaml string) error {
 	owner := corev1.ConfigMap{}
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: consts.OdigosConfigurationName}, &owner)
 	if err != nil {
@@ -241,7 +186,7 @@ func (r *liteLLMController) applyConfigMap(ctx context.Context, odigosNs string,
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   odigosNs,
 			Name:        k8sconsts.OdigosLiteLLMName,
-			Annotations: map[string]string{k8sconsts.OdigosAISettingsRevisionAnnotation: revision},
+			Annotations: map[string]string{},
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       k8sconsts.OdigosLiteLLMName,
 				k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
@@ -304,34 +249,7 @@ func (r *liteLLMController) upstreamAPIKey(ctx context.Context, ns string, cfg *
 	return baseline.Data[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey], nil
 }
 
-func (r *liteLLMController) selectRevision(ctx context.Context, ns string, key []byte, fingerprint, configYaml string) (string, bool, error) {
-	var runtime corev1.Secret
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: k8sconsts.OdigosLiteLLMRuntimeSecretName}, &runtime)
-	if apierrors.IsNotFound(err) {
-		return uuid.NewString(), true, nil
-	}
-	if err != nil {
-		return "", false, err
-	}
-	revision := runtime.Annotations[k8sconsts.OdigosAISettingsRevisionAnnotation]
-	if runtime.Annotations[credentialFingerprintAnnotation] == fingerprint &&
-		revision != "" && bytes.Equal(runtime.Data[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey], key) {
-		var proxyCM corev1.ConfigMap
-		if err := r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: k8sconsts.OdigosLiteLLMName}, &proxyCM); err != nil {
-			if apierrors.IsNotFound(err) {
-				return uuid.NewString(), true, nil
-			}
-			return "", false, err
-		}
-		if proxyCM.Annotations[k8sconsts.OdigosAISettingsRevisionAnnotation] == revision &&
-			proxyCM.Data[k8sconsts.OdigosLiteLLMConfigFileName] == configYaml {
-			return revision, false, nil
-		}
-	}
-	return uuid.NewString(), true, nil
-}
-
-func (r *liteLLMController) applyRuntimeSecret(ctx context.Context, ns string, key []byte, fingerprint, revision string) error {
+func (r *liteLLMController) applyRuntimeSecret(ctx context.Context, ns string, key []byte, fingerprint string) error {
 	var owner corev1.ConfigMap
 	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosConfigurationName}, &owner); err != nil {
 		return err
@@ -349,8 +267,7 @@ func (r *liteLLMController) applyRuntimeSecret(ctx context.Context, ns string, k
 						k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
 					},
 					Annotations: map[string]string{
-						credentialFingerprintAnnotation:              fingerprint,
-						k8sconsts.OdigosAISettingsRevisionAnnotation: revision,
+						credentialFingerprintAnnotation: fingerprint,
 					},
 				},
 				Type: corev1.SecretTypeOpaque,
@@ -365,7 +282,6 @@ func (r *liteLLMController) applyRuntimeSecret(ctx context.Context, ns string, k
 			return err
 		}
 		if runtime.Annotations[credentialFingerprintAnnotation] == fingerprint &&
-			runtime.Annotations[k8sconsts.OdigosAISettingsRevisionAnnotation] == revision &&
 			bytes.Equal(runtime.Data[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey], key) {
 			return nil
 		}
@@ -373,84 +289,11 @@ func (r *liteLLMController) applyRuntimeSecret(ctx context.Context, ns string, k
 			runtime.Annotations = map[string]string{}
 		}
 		runtime.Annotations[credentialFingerprintAnnotation] = fingerprint
-		runtime.Annotations[k8sconsts.OdigosAISettingsRevisionAnnotation] = revision
 		if runtime.Data == nil {
 			runtime.Data = map[string][]byte{}
 		}
 		runtime.Data[k8sconsts.OdigosLiteLLMUpstreamApiKeySecretKey] = append([]byte{}, key...)
 		return r.Client.Update(ctx, &runtime)
-	})
-}
-
-func deploymentRolledOut(deployment *appsv1.Deployment) bool {
-	wanted := int32(1)
-	if deployment.Spec.Replicas != nil {
-		wanted = *deployment.Spec.Replicas
-	}
-	return wanted > 0 && deployment.Status.ObservedGeneration >= deployment.Generation &&
-		deployment.Status.Replicas == wanted &&
-		deployment.Status.UpdatedReplicas == wanted &&
-		deployment.Status.ReadyReplicas == wanted &&
-		deployment.Status.AvailableReplicas == wanted &&
-		deployment.Status.UnavailableReplicas == 0
-}
-
-func (r *liteLLMController) writeProxyStatus(ctx context.Context, ns, updateID, revision, modelHash string, apiKeyConfigured bool, apiKeySource, state, message string) error {
-	var owner corev1.ConfigMap
-	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosConfigurationName}, &owner); err != nil {
-		return err
-	}
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		var statusCM corev1.ConfigMap
-		getErr := r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: k8sconsts.OdigosInterrogationStatusConfigMapName}, &statusCM)
-		if getErr != nil && !apierrors.IsNotFound(getErr) {
-			return getErr
-		}
-		var current proxyStatus
-		if statusCM.Data != nil {
-			_ = json.Unmarshal([]byte(statusCM.Data["proxy"]), &current)
-		}
-		ownerRefExists := false
-		for _, ref := range statusCM.OwnerReferences {
-			if ref.UID == owner.UID && ref.Name == owner.Name && ref.Kind == "ConfigMap" {
-				ownerRefExists = true
-				break
-			}
-		}
-		if !apierrors.IsNotFound(getErr) {
-			if err := controllerutil.SetOwnerReference(&owner, &statusCM, r.Scheme); err != nil {
-				return err
-			}
-		}
-		if current.UpdateID == updateID && current.Revision == revision && current.ModelHash == modelHash &&
-			current.APIKeyConfigured == apiKeyConfigured && current.APIKeySource == apiKeySource &&
-			current.State == state && current.Error == message && ownerRefExists {
-			return nil
-		}
-		payload, err := json.Marshal(proxyStatus{
-			UpdateID: updateID, Revision: revision, ModelHash: modelHash,
-			APIKeyConfigured: apiKeyConfigured, APIKeySource: apiKeySource,
-			State: state, Error: message,
-			ObservedAt: time.Now().UTC().Format(time.RFC3339Nano),
-		})
-		if err != nil {
-			return err
-		}
-		if apierrors.IsNotFound(getErr) {
-			statusCM = corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-				Namespace: ns, Name: k8sconsts.OdigosInterrogationStatusConfigMapName,
-				Labels: map[string]string{k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue},
-			}, Data: map[string]string{"proxy": string(payload)}}
-			if err := ctrl.SetControllerReference(&owner, &statusCM, r.Scheme); err != nil {
-				return err
-			}
-			return r.Client.Create(ctx, &statusCM)
-		}
-		if statusCM.Data == nil {
-			statusCM.Data = make(map[string]string)
-		}
-		statusCM.Data["proxy"] = string(payload)
-		return r.Client.Update(ctx, &statusCM)
 	})
 }
 
