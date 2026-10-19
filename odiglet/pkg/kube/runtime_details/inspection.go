@@ -464,6 +464,15 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		updated = true
 	}
 
+	// 7. Update LibCType once an inspection resolved it.
+	// The libc type is only inspected for a known language, so the unknown -> known
+	// upgrade in step 5 always arrives on a container whose status has no libc type yet.
+	// A nil value means this pass did not resolve one, which must not clear a recorded value.
+	if new.LibCType != nil && (existing.LibCType == nil || *new.LibCType != *existing.LibCType) {
+		existing.LibCType = new.LibCType
+		updated = true
+	}
+
 	return updated
 }
 
