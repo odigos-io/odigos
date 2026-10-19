@@ -2,17 +2,14 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/stretchr/testify/require"
-	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -65,13 +62,12 @@ func TestInterrogationPartialEditPreservesInheritanceAndExplicitClear(t *testing
 func TestInterrogationCredentialOverrideIsAtomicAndHelmIndependent(t *testing.T) {
 	ctx := context.Background()
 	baseline := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "odigos-litellm", Namespace: env.GetCurrentNamespace()}, Data: map[string][]byte{"master-key": []byte("master-original"), "upstream-api-key": []byte("helm-original")}}
-	paused := aiConfigMap(consts.OdigosLocalUiConfigName, "interrogation:\n  analysisEnabled: false\n")
-	c := aiTestClient(baseline, paused)
+	c := aiTestClient(baseline)
 	input := interrogationModelInput(model.InterrogationModelConfigInput{Name: StringPtr("gpt-4.1"), APIKey: StringPtr("  test-new-key  ")})
 	require.NoError(t, UpdateLocalUIConfig(ctx, c, input))
 	cfg, err := GetLocalUIConfig(ctx, c)
 	require.NoError(t, err)
-	require.False(t, *cfg.Interrogation.AnalysisEnabled)
+	require.Equal(t, "gpt-4.1", *cfg.Interrogation.Model.Name)
 	require.NotEmpty(t, cfg.Interrogation.CredentialSecretName)
 	selected := &corev1.Secret{}
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: cfg.Interrogation.CredentialSecretName}, selected))
@@ -83,20 +79,16 @@ func TestInterrogationCredentialOverrideIsAtomicAndHelmIndependent(t *testing.T)
 	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(baseline), baseline))
 	require.Equal(t, "helm-original", string(baseline.Data["upstream-api-key"]))
 	require.Equal(t, "master-original", string(baseline.Data["master-key"]))
-	status, err := GetInterrogationSettingsStatus(ctx, c)
-	require.NoError(t, err)
-	require.Equal(t, "APPLYING", status.State)
 	oldName := cfg.Interrogation.CredentialSecretName
 	require.NoError(t, UpdateLocalUIConfig(ctx, c, interrogationModelInput(model.InterrogationModelConfigInput{APIKey: StringPtr(" ")})))
 	cfg, err = GetLocalUIConfig(ctx, c)
 	require.NoError(t, err)
 	require.Equal(t, oldName, cfg.Interrogation.CredentialSecretName)
 	require.NoError(t, UpdateLocalUIConfig(ctx, c, model.LocalUIConfigInput{Interrogation: &model.InterrogationConfigInput{ResetPaths: []string{"interrogation.model.apiKey"}}}))
-	status, err = GetInterrogationSettingsStatus(ctx, c)
-	require.NoError(t, err)
 	cfg, err = GetLocalUIConfig(ctx, c)
 	require.NoError(t, err)
 	require.Empty(t, cfg.Interrogation.CredentialSecretName)
+	require.Equal(t, oldName, cfg.Interrogation.PreviousCredentialSecretName)
 }
 
 type failingAIConfigClient struct{ client.Client }
@@ -144,90 +136,46 @@ func TestInterrogationValidationPrecedesWrites(t *testing.T) {
 		})
 	}
 	c := fake.NewClientBuilder().WithObjects(aiConfigMap(consts.OdigosConfigurationName, "{}")).Build()
-	enabled := true
-	require.ErrorContains(t, UpdateLocalUIConfig(context.Background(), c, model.LocalUIConfigInput{Interrogation: &model.InterrogationConfigInput{AnalysisEnabled: &enabled}}), "Helm provisioning")
+	require.ErrorContains(t, UpdateLocalUIConfig(context.Background(), c, interrogationModelInput(model.InterrogationModelConfigInput{Name: StringPtr("gpt-4.1")})), "Helm provisioning")
 }
 
-func TestInterrogationGlobalResetClearsCredentialAndAcknowledgesRevision(t *testing.T) {
+func TestInterrogationGlobalResetClearsCredentialAndRetainsPrevious(t *testing.T) {
 	ctx := context.Background()
 	c := aiTestClient()
 	require.NoError(t, UpdateLocalUIConfig(ctx, c, interrogationModelInput(model.InterrogationModelConfigInput{APIKey: StringPtr("local-key")})))
 	cfg, err := GetLocalUIConfig(ctx, c)
 	require.NoError(t, err)
 	old := cfg.Interrogation.CredentialSecretName
-	require.NoError(t, ResetLocalUiConfigToFactoryDefaults(ctx, c, "reset-request"))
+	require.NoError(t, ResetLocalUiConfigToFactoryDefaults(ctx, c))
 	cfg, err = GetLocalUIConfig(ctx, c)
 	require.NoError(t, err)
-	require.Equal(t, "reset-request", cfg.Interrogation.UpdateID)
 	require.Empty(t, cfg.Interrogation.CredentialSecretName)
 	require.Equal(t, old, cfg.Interrogation.PreviousCredentialSecretName)
 	require.Nil(t, cfg.Interrogation.Model)
 }
 
-func TestInterrogationStatusRejectsFormerLeaderAndWrongRevision(t *testing.T) {
+func TestInterrogationAPIKeyProvenanceTracksLocalCredentialOnly(t *testing.T) {
 	ctx := context.Background()
-	identity := "current-leader"
-	duration := int32(15)
-	renew := metav1.NewMicroTime(time.Now())
-	lease := &coordinationv1.Lease{ObjectMeta: metav1.ObjectMeta{Name: "odigos-insights-leader", Namespace: env.GetCurrentNamespace()}, Spec: coordinationv1.LeaseSpec{HolderIdentity: &identity, LeaseDurationSeconds: &duration, RenewTime: &renew}}
-	encode := func(a interrogationAcknowledgement) string {
-		raw, err := json.Marshal(a)
-		require.NoError(t, err)
-		return string(raw)
-	}
-	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: interrogationStatusName, Namespace: env.GetCurrentNamespace()}, Data: map[string]string{
-		"proxy":    encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: "READY", ModelHash: common.InterrogationModelHash(&common.InterrogationModelConfiguration{Provider: StringPtr("openai"), Name: StringPtr("gpt-4o-mini"), ApiBase: StringPtr("https://proxy.example.com/v1")})}),
-		"analysis": encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: "PAUSED", HolderIdentity: "former-leader"}),
-	}}
-	c := aiTestClient(lease, cm, aiConfigMap(consts.OdigosEffectiveConfigName, interrogationEffectiveConfig+"  analysisEnabled: false\n"), aiConfigMap(consts.OdigosLocalUiConfigName, "interrogation:\n  updateId: request\n"))
-	status, err := GetInterrogationSettingsStatus(ctx, c)
-	require.NoError(t, err)
-	require.Equal(t, "APPLYING", status.State)
-	cm.Data["analysis"] = encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: "PAUSED", HolderIdentity: identity})
-	require.NoError(t, c.Update(ctx, cm))
-	status, err = GetInterrogationSettingsStatus(ctx, c)
-	require.NoError(t, err)
-	require.Equal(t, "PAUSED", status.State)
-	require.Equal(t, "request", status.ObservedUpdateID)
-	cm.Data["analysis"] = encode(interrogationAcknowledgement{UpdateID: "request", Revision: "older-revision", State: "RUNNING", HolderIdentity: identity})
-	require.NoError(t, c.Update(ctx, cm))
-	status, err = GetInterrogationSettingsStatus(ctx, c)
-	require.NoError(t, err)
-	require.Equal(t, "APPLYING", status.State)
-}
-
-func TestInterrogationStatusErrorsAndExpiredAcknowledgements(t *testing.T) {
+	effective := &common.OdigosConfiguration{}
+	remote := aiConfigMap(consts.OdigosRemoteConfigName, "interrogation:\n  credentialSecretName: odigos-local-ui-ai-forged\n")
 	for _, test := range []struct {
-		name, proxyState, analysisState, want string
-		renewAge, observedAge                 time.Duration
+		name, local, want string
 	}{
-		{name: "proxy error", proxyState: "ERROR", want: "ERROR"},
-		{name: "analysis error", proxyState: "READY", analysisState: "ERROR", want: "ERROR"},
-		{name: "expired leader", proxyState: "READY", analysisState: "PAUSED", renewAge: time.Minute, want: "APPLYING"},
-		{name: "stale acknowledgement", proxyState: "READY", analysisState: "PAUSED", observedAge: 2 * time.Minute, want: "APPLYING"},
+		{name: "Helm credential", local: "interrogation:\n  model:\n    name: gpt-4.1\n"},
+		{name: "no local config"},
+		{name: "local credential", local: "interrogation:\n  credentialSecretName: odigos-local-ui-ai-test\n", want: consts.OdigosLocalUiConfigName},
+		{name: "previous credential only", local: "interrogation:\n  previousCredentialSecretName: odigos-local-ui-ai-old\n"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			identity, duration := "current-leader", int32(15)
-			renew := metav1.NewMicroTime(time.Now().Add(-test.renewAge))
-			lease := &coordinationv1.Lease{ObjectMeta: metav1.ObjectMeta{Name: "odigos-insights-leader", Namespace: env.GetCurrentNamespace()}, Spec: coordinationv1.LeaseSpec{HolderIdentity: &identity, LeaseDurationSeconds: &duration, RenewTime: &renew}}
-			encode := func(a interrogationAcknowledgement) string {
-				raw, err := json.Marshal(a)
-				require.NoError(t, err)
-				return string(raw)
+			objects := []client.Object{remote}
+			if test.local != "" {
+				objects = append(objects, aiConfigMap(consts.OdigosLocalUiConfigName, test.local))
 			}
-			cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: interrogationStatusName, Namespace: env.GetCurrentNamespace()}, Data: map[string]string{
-				"proxy":    encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: test.proxyState, ModelHash: common.InterrogationModelHash(&common.InterrogationModelConfiguration{Provider: StringPtr("openai"), Name: StringPtr("gpt-4o-mini"), ApiBase: StringPtr("https://proxy.example.com/v1")})}),
-				"analysis": encode(interrogationAcknowledgement{UpdateID: "request", Revision: "revision", State: test.analysisState, HolderIdentity: identity, ObservedAt: time.Now().Add(-test.observedAge).UTC().Format(time.RFC3339Nano)}),
-			}}
-			c := aiTestClient(lease, cm, aiConfigMap(consts.OdigosEffectiveConfigName, interrogationEffectiveConfig+"  analysisEnabled: false\n"), aiConfigMap(consts.OdigosLocalUiConfigName, "interrogation:\n  updateId: request\n"))
-			status, err := GetInterrogationSettingsStatus(context.Background(), c)
+			provenance, err := ComputeProvenance(ctx, aiTestClient(objects...), effective)
 			require.NoError(t, err)
-			require.Equal(t, test.want, status.State)
-			require.Equal(t, "request", status.UpdateID)
-			require.Empty(t, status.ObservedUpdateID)
-			if test.want == "ERROR" {
-				require.NotNil(t, status.Error)
-			}
+			got, ok := provenance[InterrogationAPIKeyProvenancePath]
+			require.Equal(t, test.want != "", ok)
+			require.Equal(t, test.want, got)
 		})
 	}
 }

@@ -189,7 +189,6 @@ type InterrogationModelConfig {
 }
 
 type InterrogationConfig {
-  analysisEnabled: Boolean
   enabled: Boolean
   model: InterrogationModelConfig
 }
@@ -419,8 +418,6 @@ input InterrogationModelConfigInput {
 }
 
 input InterrogationConfigInput {
-  analysisEnabled: Boolean
-  updateId: String
   resetPaths: [String!]
   model: InterrogationModelConfigInput
 }
@@ -443,16 +440,6 @@ input LocalUiConfigInput {
   interrogation: InterrogationConfigInput
 }
 
-type InterrogationSettingsStatus {
-  provisioned: Boolean!
-  updateId: String!
-  observedUpdateId: String!
-  state: String!
-  error: String
-  apiKeyConfigured: Boolean!
-  apiKeySource: String!
-}
-
 type ConfigYamlField {
   displayName: String!
   componentType: FieldType!
@@ -473,7 +460,6 @@ type ConfigYaml {
 
 extend type Query {
   interrogationAPIKey: String
-  interrogationSettingsStatus: InterrogationSettingsStatus!
   # key information about the cluster and the installation (self-defined config for UI control and usage)
   config: Config
   # odigos-remote-config ConfigMap managed by central-backend (deprecated, will be removed in the future)
@@ -491,5 +477,5 @@ extend type Mutation {
     level: OdigosLogLevel!
   ): Boolean!
   updateLocalUiConfig(config: LocalUiConfigInput!): Boolean!
-  resetLocalUiConfigToFactoryDefaults(updateId: String): Boolean!
+  resetLocalUiConfigToFactoryDefaults: Boolean!
 }

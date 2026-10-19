@@ -5,13 +5,12 @@ metadata:
   displayName: AI Interrogation
 spec:
   fields:
-    - displayName: AI analysis
+    - displayName: Enabled
       componentType: toggle
-      isHelmOnly: false
+      isHelmOnly: true
       isEnterpriseOnly: true
-      description: Pause or resume AI analysis. Pausing stops LLM requests and new AI-generated rule changes while evidence collection continues.
-      helmValuePath: interrogation.analysisEnabled
-      renderCondition: ["interrogation.enabled", "==", "true"]
+      description: Set with Helm `insights.interrogation.enabled` (requires insights).
+      helmValuePath: interrogation.enabled
     - displayName: Provider
       componentType: dropdown
       isHelmOnly: false
