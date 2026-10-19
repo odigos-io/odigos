@@ -390,8 +390,27 @@ type K8sWorkloadContainer {
   Trace interrogation: transactions and detected stack functions for this
   container, read from interrogation ClickHouse (tx_call_trie). Empty when
   interrogation is disabled or nothing has been stored yet.
+  Ordered by seenCount desc, then id. Select callTrie only with a narrow page
+  (ids or limit): it costs one ClickHouse query per returned transaction.
   """
-  interrogationTransactions: [InterrogationTransaction!]!
+  interrogationTransactions(
+    """
+    Only return these transaction ids. An empty list returns nothing.
+    """
+    ids: [String!]
+    """
+    Case-insensitive substring match on the transaction id.
+    """
+    search: String
+    """
+    Max transactions to return (must be positive). Omit to return all matches.
+    """
+    limit: Int
+    """
+    Number of matching transactions to skip (in result order), for paging.
+    """
+    offset: Int
+  ): [InterrogationTransaction!]!
 }
 
 """

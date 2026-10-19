@@ -2187,6 +2187,8 @@ type K8sWorkloadContainer struct {
 	// Trace interrogation: transactions and detected stack functions for this
 	// container, read from interrogation ClickHouse (tx_call_trie). Empty when
 	// interrogation is disabled or nothing has been stored yet.
+	// Ordered by seenCount desc, then id. Select callTrie only with a narrow page
+	// (ids or limit): it costs one ClickHouse query per returned transaction.
 	InterrogationTransactions []*InterrogationTransaction `json:"interrogationTransactions"`
 }
 

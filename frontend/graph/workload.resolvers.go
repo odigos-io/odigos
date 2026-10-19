@@ -878,7 +878,7 @@ func (r *k8sWorkloadContainerResolver) URLTemplatization(ctx context.Context, ob
 }
 
 // InterrogationTransactions is the resolver for the interrogationTransactions field.
-func (r *k8sWorkloadContainerResolver) InterrogationTransactions(ctx context.Context, obj *model.K8sWorkloadContainer) ([]*model.InterrogationTransaction, error) {
+func (r *k8sWorkloadContainerResolver) InterrogationTransactions(ctx context.Context, obj *model.K8sWorkloadContainer, ids []string, search *string, limit *int, offset *int) ([]*model.InterrogationTransaction, error) {
 	if obj == nil || obj.ContainerName == "" {
 		return []*model.InterrogationTransaction{}, nil
 	}
@@ -899,12 +899,27 @@ func (r *k8sWorkloadContainerResolver) InterrogationTransactions(ctx context.Con
 		return nil, err
 	}
 
+	filter := interrogation.TransactionsFilter{IDs: ids}
+	if search != nil {
+		filter.Search = *search
+	}
+	if limit != nil {
+		if *limit < 1 {
+			return nil, fmt.Errorf("limit must be positive")
+		}
+		filter.Limit = *limit
+	}
+	if offset != nil {
+		filter.Offset = *offset
+	}
+
 	got, err := r.InterrogationClient.ListContainerTransactions(
 		ctx,
 		workloadID.Namespace,
 		string(workloadID.Kind),
 		workloadID.Name,
 		obj.ContainerName,
+		filter,
 	)
 	if err != nil {
 		return nil, err

@@ -1580,7 +1580,7 @@ type ComplexityRoot struct {
 		CollectorConfig           func(childComplexity int) int
 		ContainerName             func(childComplexity int) int
 		Instrumentations          func(childComplexity int) int
-		InterrogationTransactions func(childComplexity int) int
+		InterrogationTransactions func(childComplexity int, ids []string, search *string, limit *int, offset *int) int
 		Overrides                 func(childComplexity int) int
 		RuntimeInfo               func(childComplexity int) int
 		URLTemplatization         func(childComplexity int) int
@@ -2511,7 +2511,7 @@ type K8sWorkloadResolver interface {
 }
 type K8sWorkloadContainerResolver interface {
 	URLTemplatization(ctx context.Context, obj *model.K8sWorkloadContainer) (*model.K8sWorkloadContainerURLTemplatization, error)
-	InterrogationTransactions(ctx context.Context, obj *model.K8sWorkloadContainer) ([]*model.InterrogationTransaction, error)
+	InterrogationTransactions(ctx context.Context, obj *model.K8sWorkloadContainer, ids []string, search *string, limit *int, offset *int) ([]*model.InterrogationTransaction, error)
 }
 type K8sWorkloadContainerUrlTemplatizationResolver interface {
 	LiveTrafficLearning(ctx context.Context, obj *model.K8sWorkloadContainerURLTemplatization) (*model.K8sWorkloadContainerLiveTrafficLearning, error)
@@ -9782,7 +9782,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.K8sWorkloadContainer.InterrogationTransactions(childComplexity), true
+		args, err := ec.field_K8sWorkloadContainer_interrogationTransactions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.K8sWorkloadContainer.InterrogationTransactions(childComplexity, args["ids"].([]string), args["search"].(*string), args["limit"].(*int), args["offset"].(*int)), true
 
 	case "K8sWorkloadContainer.overrides":
 		if e.complexity.K8sWorkloadContainer.Overrides == nil {
@@ -15075,6 +15080,103 @@ func (ec *executionContext) field_Insights_transactions_argsWindowHours(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("windowHours"))
 	if tmp, ok := rawArgs["windowHours"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_K8sWorkloadContainer_interrogationTransactions_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_K8sWorkloadContainer_interrogationTransactions_argsIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ids"] = arg0
+	arg1, err := ec.field_K8sWorkloadContainer_interrogationTransactions_argsSearch(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["search"] = arg1
+	arg2, err := ec.field_K8sWorkloadContainer_interrogationTransactions_argsLimit(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := ec.field_K8sWorkloadContainer_interrogationTransactions_argsOffset(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	return args, nil
+}
+func (ec *executionContext) field_K8sWorkloadContainer_interrogationTransactions_argsIds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["ids"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
+	if tmp, ok := rawArgs["ids"]; ok {
+		return ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_K8sWorkloadContainer_interrogationTransactions_argsSearch(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["search"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("search"))
+	if tmp, ok := rawArgs["search"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_K8sWorkloadContainer_interrogationTransactions_argsLimit(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["limit"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_K8sWorkloadContainer_interrogationTransactions_argsOffset(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["offset"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+	if tmp, ok := rawArgs["offset"]; ok {
 		return ec.unmarshalOInt2ᚖint(ctx, tmp)
 	}
 
@@ -64978,7 +65080,7 @@ func (ec *executionContext) _K8sWorkloadContainer_interrogationTransactions(ctx 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.K8sWorkloadContainer().InterrogationTransactions(rctx, obj)
+		return ec.resolvers.K8sWorkloadContainer().InterrogationTransactions(rctx, obj, fc.Args["ids"].([]string), fc.Args["search"].(*string), fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -64995,7 +65097,7 @@ func (ec *executionContext) _K8sWorkloadContainer_interrogationTransactions(ctx 
 	return ec.marshalNInterrogationTransaction2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationTransactionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadContainer_interrogationTransactions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadContainer_interrogationTransactions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadContainer",
 		Field:      field,
@@ -65016,6 +65118,17 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_interrogationTrans
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InterrogationTransaction", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_K8sWorkloadContainer_interrogationTransactions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
