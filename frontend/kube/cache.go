@@ -13,7 +13,6 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -138,8 +137,8 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		Scheme: scheme,
 		Cache: &client.CacheOptions{
 			Reader: k8sCache,
-			// Read credentials and lease ownership directly without creating informers.
-			DisableFor: []client.Object{&coordinationv1.Lease{}, &corev1.Secret{}},
+			// Read credentials directly without creating informers.
+			DisableFor: []client.Object{&corev1.Secret{}},
 		},
 	})
 	if err != nil {

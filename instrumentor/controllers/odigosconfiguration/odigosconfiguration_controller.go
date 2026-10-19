@@ -82,7 +82,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		if localUiConfig.Interrogation != nil && odigosConfiguration.InterrogationEnabled() {
 			odigosConfiguration.Interrogation.CredentialSecretName = localUiConfig.Interrogation.CredentialSecretName
 			odigosConfiguration.Interrogation.PreviousCredentialSecretName = localUiConfig.Interrogation.PreviousCredentialSecretName
-			odigosConfiguration.Interrogation.UpdateID = localUiConfig.Interrogation.UpdateID
 		}
 		logger.Debug("Merged local UI config into effective config")
 	}

@@ -260,15 +260,13 @@ func TestMergeConfigs_InterrogationEnabledIsHelmOnly(t *testing.T) {
 
 func stringPtr(s string) *string { return &s }
 
-func TestMergeConfigs_InterrogationFieldPresenceAndAnalysis(t *testing.T) {
+func TestMergeConfigs_InterrogationFieldPresence(t *testing.T) {
 	base := interrogationModelConfig(boolPtr(true), &common.InterrogationModelConfiguration{
 		Provider: stringPtr("openai"), Name: stringPtr("gpt-4o-mini"), ApiBase: stringPtr("https://old.example/v1"),
 	})
 	remote := interrogationModelConfig(nil, &common.InterrogationModelConfiguration{Name: stringPtr("gpt-4.1")})
-	remote.Interrogation.AnalysisEnabled = boolPtr(false)
 	remote.Interrogation.CredentialSecretName = "odigos-local-ui-ai-forged"
 	local := interrogationModelConfig(nil, &common.InterrogationModelConfiguration{ApiBase: stringPtr("")})
-	local.Interrogation.AnalysisEnabled = boolPtr(true)
 	mergeConfigs(base, remote)
 	mergeConfigs(base, local)
 
@@ -280,9 +278,6 @@ func TestMergeConfigs_InterrogationFieldPresenceAndAnalysis(t *testing.T) {
 	}
 	if got := *base.Interrogation.Model.ApiBase; got != "" {
 		t.Errorf("apiBase = %q, want local clear", got)
-	}
-	if !base.InterrogationAnalysisEnabled() {
-		t.Error("local analysis resume should win")
 	}
 	if base.Interrogation.CredentialSecretName != "" {
 		t.Error("remote credential reference must not merge")

@@ -1416,9 +1416,8 @@ type ComplexityRoot struct {
 	}
 
 	InterrogationConfig struct {
-		AnalysisEnabled func(childComplexity int) int
-		Enabled         func(childComplexity int) int
-		Model           func(childComplexity int) int
+		Enabled func(childComplexity int) int
+		Model   func(childComplexity int) int
 	}
 
 	InterrogationFunction struct {
@@ -1432,16 +1431,6 @@ type ComplexityRoot struct {
 		APIBase  func(childComplexity int) int
 		Name     func(childComplexity int) int
 		Provider func(childComplexity int) int
-	}
-
-	InterrogationSettingsStatus struct {
-		APIKeyConfigured func(childComplexity int) int
-		APIKeySource     func(childComplexity int) int
-		Error            func(childComplexity int) int
-		ObservedUpdateID func(childComplexity int) int
-		Provisioned      func(childComplexity int) int
-		State            func(childComplexity int) int
-		UpdateID         func(childComplexity int) int
 	}
 
 	InterrogationSource struct {
@@ -1945,7 +1934,7 @@ type ComplexityRoot struct {
 		ReopenInsightsGuardrailViolation    func(childComplexity int, action model.InsightsViolationActionInput) int
 		ResetInsightsBaselineClass          func(childComplexity int, transactionID string, class model.InsightsDeviationClass) int
 		ResetInsightsTransactionBaselines   func(childComplexity int, transactionID string) int
-		ResetLocalUIConfigToFactoryDefaults func(childComplexity int, updateID *string) int
+		ResetLocalUIConfigToFactoryDefaults func(childComplexity int) int
 		ResolveInsightsAnomaly              func(childComplexity int, transactionID string, signature string, resolution model.InsightsAnomalyResolution) int
 		RestartPod                          func(childComplexity int, namespace string, name string) int
 		RestartWorkloads                    func(childComplexity int, sourceIds []*model.K8sSourceID) int
@@ -2155,7 +2144,6 @@ type ComplexityRoot struct {
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
 		InstrumentationRuleTypes          func(childComplexity int) int
 		InterrogationAPIKey               func(childComplexity int) int
-		InterrogationSettingsStatus       func(childComplexity int) int
 		InterrogationSources              func(childComplexity int) int
 		K8sManifest                       func(childComplexity int, namespace string, kind model.K8sResourceKind, name string) int
 		Namespaces                        func(childComplexity int) int
@@ -2541,7 +2529,7 @@ type MutationResolver interface {
 	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (bool, error)
 	SetComponentLogLevel(ctx context.Context, component *model.OdigosComponent, level model.OdigosLogLevel) (bool, error)
 	UpdateLocalUIConfig(ctx context.Context, config model.LocalUIConfigInput) (bool, error)
-	ResetLocalUIConfigToFactoryDefaults(ctx context.Context, updateID *string) (bool, error)
+	ResetLocalUIConfigToFactoryDefaults(ctx context.Context) (bool, error)
 	UpdateDataStream(ctx context.Context, id string, dataStream model.DataStreamInput) (*model.DataStream, error)
 	DeleteDataStream(ctx context.Context, id string) (bool, error)
 	CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error)
@@ -2615,7 +2603,6 @@ type QueryResolver interface {
 	OdigletPods(ctx context.Context) ([]*model.PodInfo, error)
 	CollectorPod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
 	InterrogationAPIKey(ctx context.Context) (*string, error)
-	InterrogationSettingsStatus(ctx context.Context) (*model.InterrogationSettingsStatus, error)
 	Config(ctx context.Context) (*model.Config, error)
 	RemoteConfig(ctx context.Context) (*model.RemoteConfig, error)
 	EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error)
@@ -9057,13 +9044,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InterrogationCallTrieNode.SeenCount(childComplexity), true
 
-	case "InterrogationConfig.analysisEnabled":
-		if e.complexity.InterrogationConfig.AnalysisEnabled == nil {
-			break
-		}
-
-		return e.complexity.InterrogationConfig.AnalysisEnabled(childComplexity), true
-
 	case "InterrogationConfig.enabled":
 		if e.complexity.InterrogationConfig.Enabled == nil {
 			break
@@ -9126,55 +9106,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InterrogationModelConfig.Provider(childComplexity), true
-
-	case "InterrogationSettingsStatus.apiKeyConfigured":
-		if e.complexity.InterrogationSettingsStatus.APIKeyConfigured == nil {
-			break
-		}
-
-		return e.complexity.InterrogationSettingsStatus.APIKeyConfigured(childComplexity), true
-
-	case "InterrogationSettingsStatus.apiKeySource":
-		if e.complexity.InterrogationSettingsStatus.APIKeySource == nil {
-			break
-		}
-
-		return e.complexity.InterrogationSettingsStatus.APIKeySource(childComplexity), true
-
-	case "InterrogationSettingsStatus.error":
-		if e.complexity.InterrogationSettingsStatus.Error == nil {
-			break
-		}
-
-		return e.complexity.InterrogationSettingsStatus.Error(childComplexity), true
-
-	case "InterrogationSettingsStatus.observedUpdateId":
-		if e.complexity.InterrogationSettingsStatus.ObservedUpdateID == nil {
-			break
-		}
-
-		return e.complexity.InterrogationSettingsStatus.ObservedUpdateID(childComplexity), true
-
-	case "InterrogationSettingsStatus.provisioned":
-		if e.complexity.InterrogationSettingsStatus.Provisioned == nil {
-			break
-		}
-
-		return e.complexity.InterrogationSettingsStatus.Provisioned(childComplexity), true
-
-	case "InterrogationSettingsStatus.state":
-		if e.complexity.InterrogationSettingsStatus.State == nil {
-			break
-		}
-
-		return e.complexity.InterrogationSettingsStatus.State(childComplexity), true
-
-	case "InterrogationSettingsStatus.updateId":
-		if e.complexity.InterrogationSettingsStatus.UpdateID == nil {
-			break
-		}
-
-		return e.complexity.InterrogationSettingsStatus.UpdateID(childComplexity), true
 
 	case "InterrogationSource.containerName":
 		if e.complexity.InterrogationSource.ContainerName == nil {
@@ -11557,12 +11488,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_resetLocalUiConfigToFactoryDefaults_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.ResetLocalUIConfigToFactoryDefaults(childComplexity, args["updateId"].(*string)), true
+		return e.complexity.Mutation.ResetLocalUIConfigToFactoryDefaults(childComplexity), true
 
 	case "Mutation.resolveInsightsAnomaly":
 		if e.complexity.Mutation.ResolveInsightsAnomaly == nil {
@@ -12693,13 +12619,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.InterrogationAPIKey(childComplexity), true
-
-	case "Query.interrogationSettingsStatus":
-		if e.complexity.Query.InterrogationSettingsStatus == nil {
-			break
-		}
-
-		return e.complexity.Query.InterrogationSettingsStatus(childComplexity), true
 
 	case "Query.interrogationSources":
 		if e.complexity.Query.InterrogationSources == nil {
@@ -17111,34 +17030,6 @@ func (ec *executionContext) field_Mutation_resetInsightsTransactionBaselines_arg
 	}
 
 	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_resetLocalUiConfigToFactoryDefaults_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Mutation_resetLocalUiConfigToFactoryDefaults_argsUpdateID(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["updateId"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_Mutation_resetLocalUiConfigToFactoryDefaults_argsUpdateID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*string, error) {
-	if _, ok := rawArgs["updateId"]; !ok {
-		var zeroVal *string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("updateId"))
-	if tmp, ok := rawArgs["updateId"]; ok {
-		return ec.unmarshalOString2ᚖstring(ctx, tmp)
-	}
-
-	var zeroVal *string
 	return zeroVal, nil
 }
 
@@ -32273,8 +32164,6 @@ func (ec *executionContext) fieldContext_EffectiveConfig_interrogation(_ context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "analysisEnabled":
-				return ec.fieldContext_InterrogationConfig_analysisEnabled(ctx, field)
 			case "enabled":
 				return ec.fieldContext_InterrogationConfig_enabled(ctx, field)
 			case "model":
@@ -59992,47 +59881,6 @@ func (ec *executionContext) fieldContext_InterrogationCallTrieNode_seenCount(_ c
 	return fc, nil
 }
 
-func (ec *executionContext) _InterrogationConfig_analysisEnabled(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationConfig_analysisEnabled(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AnalysisEnabled, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationConfig_analysisEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _InterrogationConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InterrogationConfig_enabled(ctx, field)
 	if err != nil {
@@ -60412,311 +60260,6 @@ func (ec *executionContext) _InterrogationModelConfig_apiBase(ctx context.Contex
 func (ec *executionContext) fieldContext_InterrogationModelConfig_apiBase(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InterrogationModelConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InterrogationSettingsStatus_provisioned(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSettingsStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationSettingsStatus_provisioned(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Provisioned, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationSettingsStatus_provisioned(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationSettingsStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InterrogationSettingsStatus_updateId(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSettingsStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationSettingsStatus_updateId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdateID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationSettingsStatus_updateId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationSettingsStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InterrogationSettingsStatus_observedUpdateId(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSettingsStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationSettingsStatus_observedUpdateId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ObservedUpdateID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationSettingsStatus_observedUpdateId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationSettingsStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InterrogationSettingsStatus_state(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSettingsStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationSettingsStatus_state(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.State, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationSettingsStatus_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationSettingsStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InterrogationSettingsStatus_error(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSettingsStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationSettingsStatus_error(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Error, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationSettingsStatus_error(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationSettingsStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InterrogationSettingsStatus_apiKeyConfigured(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSettingsStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationSettingsStatus_apiKeyConfigured(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.APIKeyConfigured, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationSettingsStatus_apiKeyConfigured(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationSettingsStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InterrogationSettingsStatus_apiKeySource(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationSettingsStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationSettingsStatus_apiKeySource(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.APIKeySource, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationSettingsStatus_apiKeySource(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationSettingsStatus",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -73454,7 +72997,7 @@ func (ec *executionContext) _Mutation_resetLocalUiConfigToFactoryDefaults(ctx co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ResetLocalUIConfigToFactoryDefaults(rctx, fc.Args["updateId"].(*string))
+		return ec.resolvers.Mutation().ResetLocalUIConfigToFactoryDefaults(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -73471,7 +73014,7 @@ func (ec *executionContext) _Mutation_resetLocalUiConfigToFactoryDefaults(ctx co
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_resetLocalUiConfigToFactoryDefaults(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_resetLocalUiConfigToFactoryDefaults(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -73480,17 +73023,6 @@ func (ec *executionContext) fieldContext_Mutation_resetLocalUiConfigToFactoryDef
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_resetLocalUiConfigToFactoryDefaults_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -82324,66 +81856,6 @@ func (ec *executionContext) fieldContext_Query_interrogationAPIKey(_ context.Con
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_interrogationSettingsStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_interrogationSettingsStatus(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().InterrogationSettingsStatus(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.InterrogationSettingsStatus)
-	fc.Result = res
-	return ec.marshalNInterrogationSettingsStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationSettingsStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_interrogationSettingsStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "provisioned":
-				return ec.fieldContext_InterrogationSettingsStatus_provisioned(ctx, field)
-			case "updateId":
-				return ec.fieldContext_InterrogationSettingsStatus_updateId(ctx, field)
-			case "observedUpdateId":
-				return ec.fieldContext_InterrogationSettingsStatus_observedUpdateId(ctx, field)
-			case "state":
-				return ec.fieldContext_InterrogationSettingsStatus_state(ctx, field)
-			case "error":
-				return ec.fieldContext_InterrogationSettingsStatus_error(ctx, field)
-			case "apiKeyConfigured":
-				return ec.fieldContext_InterrogationSettingsStatus_apiKeyConfigured(ctx, field)
-			case "apiKeySource":
-				return ec.fieldContext_InterrogationSettingsStatus_apiKeySource(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type InterrogationSettingsStatus", field.Name)
 		},
 	}
 	return fc, nil
@@ -94940,27 +94412,13 @@ func (ec *executionContext) unmarshalInputInterrogationConfigInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"analysisEnabled", "updateId", "resetPaths", "model"}
+	fieldsInOrder := [...]string{"resetPaths", "model"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "analysisEnabled":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("analysisEnabled"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AnalysisEnabled = data
-		case "updateId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updateId"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UpdateID = data
 		case "resetPaths":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("resetPaths"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -106567,8 +106025,6 @@ func (ec *executionContext) _InterrogationConfig(ctx context.Context, sel ast.Se
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("InterrogationConfig")
-		case "analysisEnabled":
-			out.Values[i] = ec._InterrogationConfig_analysisEnabled(ctx, field, obj)
 		case "enabled":
 			out.Values[i] = ec._InterrogationConfig_enabled(ctx, field, obj)
 		case "model":
@@ -106667,72 +106123,6 @@ func (ec *executionContext) _InterrogationModelConfig(ctx context.Context, sel a
 			out.Values[i] = ec._InterrogationModelConfig_name(ctx, field, obj)
 		case "apiBase":
 			out.Values[i] = ec._InterrogationModelConfig_apiBase(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var interrogationSettingsStatusImplementors = []string{"InterrogationSettingsStatus"}
-
-func (ec *executionContext) _InterrogationSettingsStatus(ctx context.Context, sel ast.SelectionSet, obj *model.InterrogationSettingsStatus) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, interrogationSettingsStatusImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("InterrogationSettingsStatus")
-		case "provisioned":
-			out.Values[i] = ec._InterrogationSettingsStatus_provisioned(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "updateId":
-			out.Values[i] = ec._InterrogationSettingsStatus_updateId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "observedUpdateId":
-			out.Values[i] = ec._InterrogationSettingsStatus_observedUpdateId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "state":
-			out.Values[i] = ec._InterrogationSettingsStatus_state(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "error":
-			out.Values[i] = ec._InterrogationSettingsStatus_error(ctx, field, obj)
-		case "apiKeyConfigured":
-			out.Values[i] = ec._InterrogationSettingsStatus_apiKeyConfigured(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "apiKeySource":
-			out.Values[i] = ec._InterrogationSettingsStatus_apiKeySource(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -112589,28 +111979,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_interrogationAPIKey(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "interrogationSettingsStatus":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_interrogationSettingsStatus(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -120501,20 +119869,6 @@ func (ec *executionContext) marshalNInterrogationFunction2ᚖgithubᚗcomᚋodig
 		return graphql.Null
 	}
 	return ec._InterrogationFunction(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNInterrogationSettingsStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationSettingsStatus(ctx context.Context, sel ast.SelectionSet, v model.InterrogationSettingsStatus) graphql.Marshaler {
-	return ec._InterrogationSettingsStatus(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNInterrogationSettingsStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationSettingsStatus(ctx context.Context, sel ast.SelectionSet, v *model.InterrogationSettingsStatus) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._InterrogationSettingsStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNInterrogationSource2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationSourceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InterrogationSource) graphql.Marshaler {
