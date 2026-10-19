@@ -1946,16 +1946,13 @@ type InterrogationCallTrieNode struct {
 }
 
 type InterrogationConfig struct {
-	AnalysisEnabled *bool                     `json:"analysisEnabled,omitempty"`
-	Enabled         *bool                     `json:"enabled,omitempty"`
-	Model           *InterrogationModelConfig `json:"model,omitempty"`
+	Enabled *bool                     `json:"enabled,omitempty"`
+	Model   *InterrogationModelConfig `json:"model,omitempty"`
 }
 
 type InterrogationConfigInput struct {
-	AnalysisEnabled *bool                          `json:"analysisEnabled,omitempty"`
-	UpdateID        *string                        `json:"updateId,omitempty"`
-	ResetPaths      []string                       `json:"resetPaths,omitempty"`
-	Model           *InterrogationModelConfigInput `json:"model,omitempty"`
+	ResetPaths []string                       `json:"resetPaths,omitempty"`
+	Model      *InterrogationModelConfigInput `json:"model,omitempty"`
 }
 
 // One detected function from a profile sample linked to a transaction.
@@ -1980,16 +1977,6 @@ type InterrogationModelConfigInput struct {
 	Name     *string `json:"name,omitempty"`
 	APIBase  *string `json:"apiBase,omitempty"`
 	APIKey   *string `json:"apiKey,omitempty"`
-}
-
-type InterrogationSettingsStatus struct {
-	Provisioned      bool    `json:"provisioned"`
-	UpdateID         string  `json:"updateId"`
-	ObservedUpdateID string  `json:"observedUpdateId"`
-	State            string  `json:"state"`
-	Error            *string `json:"error,omitempty"`
-	APIKeyConfigured bool    `json:"apiKeyConfigured"`
-	APIKeySource     string  `json:"apiKeySource"`
 }
 
 // One transaction observed for a workload container, with ClickHouse-stored functions.

@@ -47,23 +47,14 @@ func (r *mutationResolver) UpdateLocalUIConfig(ctx context.Context, config model
 }
 
 // ResetLocalUIConfigToFactoryDefaults is the resolver for the resetLocalUiConfigToFactoryDefaults field.
-func (r *mutationResolver) ResetLocalUIConfigToFactoryDefaults(ctx context.Context, updateID *string) (bool, error) {
-	id := ""
-	if updateID != nil {
-		id = *updateID
-	}
-	err := services.ResetLocalUiConfigToFactoryDefaults(ctx, r.K8sCacheClient, id)
+func (r *mutationResolver) ResetLocalUIConfigToFactoryDefaults(ctx context.Context) (bool, error) {
+	err := services.ResetLocalUiConfigToFactoryDefaults(ctx, r.K8sCacheClient)
 	return err == nil, err
 }
 
 // InterrogationAPIKey is the resolver for the interrogationAPIKey field.
 func (r *queryResolver) InterrogationAPIKey(ctx context.Context) (*string, error) {
 	return services.GetInterrogationAPIKey(ctx, r.K8sCacheClient)
-}
-
-// InterrogationSettingsStatus is the resolver for the interrogationSettingsStatus field.
-func (r *queryResolver) InterrogationSettingsStatus(ctx context.Context) (*model.InterrogationSettingsStatus, error) {
-	return services.GetInterrogationSettingsStatus(ctx, r.K8sCacheClient)
 }
 
 // Config is the resolver for the config field.
