@@ -7,7 +7,7 @@ import (
 )
 
 // assembleTransactions groups flat call-trie edges into transactions with
-// aggregated functions. SeenCount is the sum of sample-type root edge counts.
+// aggregated functions. SeenCount is the sum of sample-type root edge row counts.
 func assembleTransactions(edges []callTrieEdgeRow) []Transaction {
 	type txAcc struct {
 		seen int64
