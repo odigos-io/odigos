@@ -107,9 +107,9 @@ func (p *sqlQueryProcessor) processTraces(_ context.Context, traces ptrace.Trace
 
 // resolveSourceConfig returns per-source collector config from the extension when attached,
 // otherwise a config derived from the legacy static Config fields.
-func (p *sqlQueryProcessor) resolveSourceConfig(resource pcommon.Resource) (*commonapi.CollectorConfig, bool) {
+func (p *sqlQueryProcessor) resolveSourceConfig(resource pcommon.Resource) (*commonapi.SourceCollectorConfig, bool) {
 	if p.provider == nil {
-		cfg := &commonapi.CollectorConfig{}
+		cfg := &commonapi.SourceCollectorConfig{}
 		if p.config.InferAttributes {
 			cfg.InferDbAttributes = &actions.InferDbAttributesConfig{}
 		}

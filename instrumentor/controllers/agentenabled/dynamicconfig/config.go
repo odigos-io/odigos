@@ -63,7 +63,7 @@ func calculateTracesConfig(
 			agentConfig.UrlTemplatization = urlTemplatizationConfig
 		} else {
 			collectorConfig = &commonapi.ContainerCollectorConfig{
-				CollectorConfig: commonapi.CollectorConfig{
+				SourceCollectorConfig: commonapi.SourceCollectorConfig{
 					UrlTemplatization: urlTemplatizationConfig,
 				},
 			}

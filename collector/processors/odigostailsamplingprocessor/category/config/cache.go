@@ -79,7 +79,7 @@ func (c *ConfigCache) Attached() bool {
 }
 
 // OnSet implements collector.WorkloadConfigCacheCallback.
-func (c *ConfigCache) OnSet(key string, cfg *commonapi.CollectorConfig) {
+func (c *ConfigCache) OnSet(key string, cfg *commonapi.SourceCollectorConfig) {
 
 	if cfg == nil || cfg.TailSampling == nil {
 		c.delete(key)

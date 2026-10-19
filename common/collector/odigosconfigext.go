@@ -15,7 +15,7 @@ import (
 // The extension applies new state first (OnSet for each current container), then calls OnDeleteKey for any key that was
 // removed so the consumer never sees a gap where the workload is briefly empty.
 type WorkloadConfigCacheCallback interface {
-	OnSet(key string, cfg *commonapi.CollectorConfig)
+	OnSet(key string, cfg *commonapi.SourceCollectorConfig)
 	OnDeleteKey(key string)
 }
 
@@ -23,7 +23,7 @@ type WorkloadConfigCacheCallback interface {
 // Every platform (k8s, vm) can implement this interface to provide it's own processor extension to fetch the config from where it is stored.
 type OdigosConfigExtension interface {
 	// GetFromResource returns the collector config for the given resource if it exists.
-	GetFromResource(res pcommon.Resource) (*commonapi.CollectorConfig, bool)
+	GetFromResource(res pcommon.Resource) (*commonapi.SourceCollectorConfig, bool)
 
 	// IsActiveSource reports whether the workload identified on the resource (namespace/kind/name)
 	// is an active Odigos Source i.e. the extension currently holds an InstrumentationConfig for it
