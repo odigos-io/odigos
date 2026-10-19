@@ -54,14 +54,29 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
           functionName
           receiverName
           receiverMethodName
+          notes
+          category
+          addedAt
         }
         java {
           methodName
           className
+          notes
+          category
+          addedAt
         }
         php {
           className
           functionName
+          notes
+          category
+          addedAt
+        }
+        cpp {
+          signature
+          notes
+          category
+          addedAt
         }
       }
       networkMetrics
@@ -123,14 +138,29 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
           functionName
           receiverName
           receiverMethodName
+          notes
+          category
+          addedAt
         }
         java {
           methodName
           className
+          notes
+          category
+          addedAt
         }
         php {
           className
           functionName
+          notes
+          category
+          addedAt
+        }
+        cpp {
+          signature
+          notes
+          category
+          addedAt
         }
       }
       networkMetrics
