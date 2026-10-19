@@ -2,6 +2,7 @@ package destinations
 
 import (
 	"embed"
+	"io/fs"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -29,12 +30,12 @@ func GetDestinationByType(destType string) (Destination, bool) {
 	return dest, ok
 }
 
-func load(fs embed.FS) error {
+func load(fsys fs.FS) error {
 	var dests []Destination
 	var destsByTypeMap = make(map[string]Destination)
 
 	// load all files in the data directory
-	files, err := fs.ReadDir("data")
+	files, err := fs.ReadDir(fsys, "data")
 	if err != nil {
 		return err
 	}
@@ -48,7 +49,7 @@ func load(fs embed.FS) error {
 		}
 
 		// load each file
-		bytesData, err := fs.ReadFile("data/" + file.Name())
+		bytesData, err := fs.ReadFile(fsys, "data/"+file.Name())
 		if err != nil {
 			return err
 		}

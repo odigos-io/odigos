@@ -81,14 +81,29 @@ export const GET_INSTRUMENTATION_RULES = gql`
             functionName
             receiverName
             receiverMethodName
+            notes
+            category
+            addedAt
           }
           java {
             methodName
             className
+            notes
+            category
+            addedAt
           }
           php {
             className
             functionName
+            notes
+            category
+            addedAt
+          }
+          cpp {
+            signature
+            notes
+            category
+            addedAt
           }
         }
         networkMetrics
