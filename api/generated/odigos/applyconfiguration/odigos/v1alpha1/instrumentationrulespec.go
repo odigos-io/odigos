@@ -49,7 +49,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	// Configure the tracing configuration for the library.
 	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
 	// Add custom instrumentation probes
-	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+	CustomInstrumentations *instrumentationrules.CustomInstrumentationsWithMetadata `json:"customInstrumentations,omitempty"`
 	// Configure general fraction of traces to record if none of the rules evaluate to true.
 	// this can help in reducing very noisy and heavy traffic services.
 	// note that traces will be dropped regardless of thier attributes/errors/importance.
@@ -168,7 +168,7 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceConfig(value instru
 // WithCustomInstrumentations sets the CustomInstrumentations field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CustomInstrumentations field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentations) *InstrumentationRuleSpecApplyConfiguration {
+func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentationsWithMetadata) *InstrumentationRuleSpecApplyConfiguration {
 	b.CustomInstrumentations = &value
 	return b
 }

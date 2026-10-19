@@ -468,3 +468,15 @@ jobs:
         working-directory: ./procdiscovery
         run: |
           go test -v ./...
+
+  test-destinations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.6"
+      - name: Test destinations module
+        working-directory: ./destinations
+        run: |
+          go test -v ./...
