@@ -240,3 +240,67 @@ func TestListContainerTransactionsNegativePage(t *testing.T) {
 	_, err = c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{Offset: -1})
 	assert.Error(t, err)
 }
+
+func TestListSourcesUnavailable(t *testing.T) {
+	c := NewClient("", "")
+	_, err := c.ListSources(context.Background())
+	assert.ErrorIs(t, err, ErrUnavailable)
+}
+
+type fakeSourcesConn struct {
+	driver.Conn
+	query string
+	rows  []SourceTransactions
+}
+
+func (c *fakeSourcesConn) Query(_ context.Context, query string, _ ...any) (driver.Rows, error) {
+	c.query = query
+	return &fakeSourceRows{rows: c.rows, next: -1}, nil
+}
+
+type fakeSourceRows struct {
+	driver.Rows
+	rows []SourceTransactions
+	next int
+}
+
+func (r *fakeSourceRows) Next() bool {
+	r.next++
+	return r.next < len(r.rows)
+}
+
+func (r *fakeSourceRows) Scan(dest ...any) error {
+	row := r.rows[r.next]
+	*dest[0].(*string) = row.Namespace
+	*dest[1].(*string) = row.Kind
+	*dest[2].(*string) = row.Name
+	*dest[3].(*string) = row.ContainerName
+	*dest[4].(*uint64) = row.TransactionCount
+	return nil
+}
+
+func (r *fakeSourceRows) Err() error   { return nil }
+func (r *fakeSourceRows) Close() error { return nil }
+
+func TestListSources(t *testing.T) {
+	conn := &fakeSourcesConn{rows: []SourceTransactions{
+		{Namespace: "shop", Kind: "Deployment", Name: "checkout", ContainerName: "app", TransactionCount: 3},
+	}}
+	c := NewClientWithConn(conn)
+
+	got, err := c.ListSources(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, conn.rows, got)
+	assert.Contains(t, conn.query, "uniqExact(TransactionId)")
+	assert.Contains(t, conn.query, "GROUP BY Namespace, WorkloadKind, WorkloadName, ContainerName")
+}
+
+func TestSourcesToModelDropsUnknownKinds(t *testing.T) {
+	got := SourcesToModel([]SourceTransactions{
+		{Namespace: "shop", Kind: "Deployment", Name: "checkout", ContainerName: "app", TransactionCount: 3},
+		{Namespace: "shop", Kind: "NotAKind", Name: "odd", ContainerName: "app", TransactionCount: 1},
+	})
+	require.Len(t, got, 1)
+	assert.Equal(t, "checkout", got[0].ID.Name)
+	assert.Equal(t, 3, got[0].TransactionCount)
+}

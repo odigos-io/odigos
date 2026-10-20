@@ -442,3 +442,18 @@ export const GET_INTERROGATION_TRANSACTIONS = gql`
     }
   }
 `;
+
+// Workload containers that have interrogation transactions, so the page can skip sources without any.
+export const GET_INTERROGATION_SOURCES = gql`
+  query GetInterrogationSources {
+    interrogationSources {
+      id {
+        namespace
+        kind
+        name
+      }
+      containerName
+      transactionCount
+    }
+  }
+`;

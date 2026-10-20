@@ -68,6 +68,15 @@ type CallTrieNode struct {
 }
 
 // ContainerTransactions is the result for one workload container.
+// SourceTransactions counts the transactions stored for one workload container.
+type SourceTransactions struct {
+	Namespace        string
+	Kind             string
+	Name             string
+	ContainerName    string
+	TransactionCount uint64
+}
+
 type ContainerTransactions struct {
 	Namespace     string
 	Kind          string
@@ -106,6 +115,7 @@ type Client struct {
 	callTrieFQN    string
 	callTrieSQL    string
 	sampleTraceSQL string
+	sourcesSQL     string
 }
 
 // NewClient builds a ClickHouse client for the interrogation database.
@@ -159,6 +169,17 @@ WHERE Namespace = ?
 	AND ContainerName = ?
 	AND TransactionId = ?
 GROUP BY TransactionId, NodeId, Parent, FunctionName, FrameType, SampleType
+`, fqn),
+		sourcesSQL: fmt.Sprintf(`
+SELECT
+	Namespace,
+	WorkloadKind,
+	WorkloadName,
+	ContainerName,
+	uniqExact(TransactionId) AS Transactions
+FROM %s
+GROUP BY Namespace, WorkloadKind, WorkloadName, ContainerName
+ORDER BY Namespace, WorkloadName, WorkloadKind, ContainerName
 `, fqn),
 		sampleTraceSQL: fmt.Sprintf(`
 SELECT SampleTrace
@@ -223,6 +244,33 @@ func EnabledFromOdigosConfig(cfg *common.OdigosConfiguration) bool {
 // ListContainerTransactions returns the transactions of the workload container
 // that match filter, with aggregated functions from tx_call_trie_structure, ordered by
 // seenCount desc, then id.
+// ListSources returns every workload container that has stored transactions, in
+// a single query, so callers can find interrogated sources without probing each one.
+func (c *Client) ListSources(ctx context.Context) ([]SourceTransactions, error) {
+	if c == nil || c.db == nil {
+		return nil, ErrUnavailable
+	}
+
+	rows, err := c.db.Query(ctx, c.sourcesSQL)
+	if err != nil {
+		return nil, fmt.Errorf("%w: query sources: %v", ErrUnavailable, err)
+	}
+	defer rows.Close()
+
+	out := []SourceTransactions{}
+	for rows.Next() {
+		var s SourceTransactions
+		if err := rows.Scan(&s.Namespace, &s.Kind, &s.Name, &s.ContainerName, &s.TransactionCount); err != nil {
+			return nil, fmt.Errorf("%w: scan sources: %v", ErrUnavailable, err)
+		}
+		out = append(out, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: scan sources: %v", ErrUnavailable, err)
+	}
+	return out, nil
+}
+
 func (c *Client) ListContainerTransactions(ctx context.Context, namespace, kind, name, containerName string, filter TransactionsFilter) (*ContainerTransactions, error) {
 	if c == nil || c.db == nil {
 		return nil, ErrUnavailable

@@ -1990,6 +1990,14 @@ type InterrogationModelConfig struct {
 	APIBase  *string `json:"apiBase,omitempty"`
 }
 
+// A workload container that has stored interrogation transactions.
+type InterrogationSource struct {
+	ID            *K8sWorkloadID `json:"id"`
+	ContainerName string         `json:"containerName"`
+	// Distinct transactions stored for this container.
+	TransactionCount int `json:"transactionCount"`
+}
+
 // One transaction observed for a workload container, with ClickHouse-stored functions.
 type InterrogationTransaction struct {
 	// Transaction id as stored in tx_call_trie_structure.TransactionId.
