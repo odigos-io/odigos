@@ -5,7 +5,6 @@ import (
 )
 
 func dedupeStatusCodes(codes []int) []int {
-
 	// short circuit if there are no or only one code
 	if len(codes) <= 1 {
 		return codes
@@ -42,7 +41,7 @@ func dedupeAndSortTemplates(templates []string) []string {
 	return result
 }
 
-func mergeDefaultTemplatizationSkipPolicyConfigs(c1 *DefaultTemplatizationSkipPolicyConfig, c2 *DefaultTemplatizationSkipPolicyConfig) *DefaultTemplatizationSkipPolicyConfig {
+func mergeDefaultTemplatizationSkipPolicyConfigs(c1, c2 *DefaultTemplatizationSkipPolicyConfig) *DefaultTemplatizationSkipPolicyConfig {
 	if c1 == nil {
 		return c2
 	}
@@ -66,7 +65,7 @@ func mergeDefaultTemplatizationSkipPolicyConfigs(c1 *DefaultTemplatizationSkipPo
 
 // MergeDefaultTemplatizationConfigs combines the default templatization configs of two actions.
 // Disabled wins over any other config, and skip policies are merged.
-func MergeDefaultTemplatizationConfigs(c1 *DefaultTemplatizationConfig, c2 *DefaultTemplatizationConfig) *DefaultTemplatizationConfig {
+func MergeDefaultTemplatizationConfigs(c1, c2 *DefaultTemplatizationConfig) *DefaultTemplatizationConfig {
 	if c1 == nil {
 		return c2
 	}
