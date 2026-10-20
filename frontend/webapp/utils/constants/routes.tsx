@@ -9,6 +9,7 @@ export const ROUTES = {
   SAMPLING: '/sampling',
   URL_TEMPLATIZATION: '/url-templatization',
   INSTRUMENTATION_AGENTS: '/instrumentation-agents',
+  INTERROGATIONS: '/interrogations',
 
   // legacy routes
   CHOOSE_STREAM: '/choose-stream',
