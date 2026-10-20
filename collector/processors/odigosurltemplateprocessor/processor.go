@@ -135,7 +135,7 @@ func (p *urlTemplateProcessor) Shutdown(context.Context) error {
 
 // OnSet implements collector.WorkloadConfigCacheCallback; called when the extension cache adds/updates an entry.
 // Empty or nil rules: store entry with parsedRules=nil so the workload gets default heuristic templatization (same as when extension is disabled).
-func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
+func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.SourceCollectorConfig) {
 
 	if cfg.UrlTemplatization == nil {
 		p.parsedRulesCache.delete(key)

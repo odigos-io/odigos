@@ -419,10 +419,10 @@ func TestSkipNonSQL_MongoDB(t *testing.T) {
 }
 
 type stubOdigosConfigExtension struct {
-	cfg *commonapi.ContainerCollectorConfig
+	cfg *commonapi.SourceCollectorConfig
 }
 
-func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.SourceCollectorConfig, bool) {
 	if s.cfg == nil {
 		return nil, false
 	}
@@ -454,7 +454,7 @@ func (s *stubOdigosConfigExtension) GetDataStreamsForWorkload(pcommon.Resource) 
 func TestExtension_PerSourceConfig(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	proc.provider = &stubOdigosConfigExtension{
-		cfg: &commonapi.ContainerCollectorConfig{
+		cfg: &commonapi.SourceCollectorConfig{
 			InferDbAttributes:     &actions.InferDbAttributesConfig{},
 			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{TemplatizeLiterals: true},
 		},
@@ -501,7 +501,7 @@ func TestExtension_SkipsWhenNoConfig(t *testing.T) {
 func TestRemovePostgresCastOperator_WithRedactLiterals(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	proc.provider = &stubOdigosConfigExtension{
-		cfg: &commonapi.ContainerCollectorConfig{
+		cfg: &commonapi.SourceCollectorConfig{
 			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
 				TemplatizeLiterals:         true,
 				RemovePostgresCastOperator: true,
@@ -526,7 +526,7 @@ func TestRemovePostgresCastOperator_WithRedactLiterals(t *testing.T) {
 func TestRemovePostgresCastOperator_Only(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	proc.provider = &stubOdigosConfigExtension{
-		cfg: &commonapi.ContainerCollectorConfig{
+		cfg: &commonapi.SourceCollectorConfig{
 			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
 				RemovePostgresCastOperator: true,
 			},
@@ -550,7 +550,7 @@ func TestRemovePostgresCastOperator_Only(t *testing.T) {
 func TestRemovePostgresCastOperator_SkippedForMySQL(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	proc.provider = &stubOdigosConfigExtension{
-		cfg: &commonapi.ContainerCollectorConfig{
+		cfg: &commonapi.SourceCollectorConfig{
 			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
 				TemplatizeLiterals:         true,
 				RemovePostgresCastOperator: true,
