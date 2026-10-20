@@ -29,8 +29,9 @@ To install the Odigos VM Agent, configure your package manager or obtain the RPM
     name=Odigos Packages
     baseurl=https://yum.odigos.io/projects/odigos-cloud/odigos-rpm
     enabled=1
-    gpgcheck=0
+    gpgcheck=1
     repo_gpgcheck=0
+    gpgkey=https://raw.githubusercontent.com/odigos-io/odigos/main/docs/keys/odigos-package-signing-keys.asc
     EOF
 
     sudo dnf makecache
