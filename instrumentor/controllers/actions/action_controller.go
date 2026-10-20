@@ -14,6 +14,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonactions "github.com/odigos-io/odigos/common/api/actions"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	actionutil "github.com/odigos-io/odigos/k8sutils/pkg/action"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
@@ -43,7 +44,7 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.DeleteAttribute != nil {
-		config, err := deleteAttributeConfig(action.Spec.DeleteAttribute.AttributeNamesToDelete, action.Spec.Signals)
+		config, err := commonactions.BuildDeleteAttributeProcessorConfig(action.Spec.DeleteAttribute.AttributeNamesToDelete, action.Spec.Signals)
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +52,7 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.RenameAttribute != nil {
-		config, err := renameAttributeConfig(action.Spec.RenameAttribute.Renames, action.Spec.Signals)
+		config, err := commonactions.BuildRenameAttributeProcessorConfig(action.Spec.RenameAttribute.Renames, action.Spec.Signals)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +60,7 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.ExtractAttribute != nil {
-		config, err := extractAttributeConfig(action.Spec.ExtractAttribute)
+		config, err := commonactions.BuildExtractAttributeProcessorConfig(&action.Spec.ExtractAttribute.ExtractAttributeConfig)
 		if err != nil {
 			return nil, err
 		}

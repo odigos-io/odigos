@@ -18,22 +18,35 @@ package actions
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/odigos-io/odigos/common"
 )
 
-func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
+func BuildRenameAttributeProcessorConfig(cfg map[string]string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
 	config := TransformProcessorConfig{
-		ErrorMode: "propagate", // deleting attributes is a security sensitive operation, so we should propagate errors
+		ErrorMode: "ignore",
 	}
 
 	if signals == nil {
-		return config, fmt.Errorf("Signals must be set")
+		return TransformProcessorConfig{}, fmt.Errorf("Signals must be set")
 	}
 
-	ottlDeleteKeyStatements := make([]string, len(cfg))
-	for i, attr := range cfg {
-		ottlDeleteKeyStatements[i] = fmt.Sprintf("delete_key(attributes, \"%s\")", attr)
+	// Sort keys so Processor Spec is stable across reconciles. Ranging a map is
+	// non-deterministic and would keep SSA-patching the owned Processor forever.
+	keys := make([]string, 0, len(cfg))
+	for from := range cfg {
+		keys = append(keys, from)
+	}
+	slices.Sort(keys)
+
+	ottlStatements := make([]string, 0, 2*len(cfg))
+	for _, from := range keys {
+		to := cfg[from]
+		ottlStatements = append(ottlStatements,
+			fmt.Sprintf("set(attributes[\"%s\"], attributes[\"%s\"])", to, from),
+			fmt.Sprintf("delete_key(attributes, \"%s\")", from),
+		)
 	}
 
 	for _, signal := range signals {
@@ -43,15 +56,15 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 			config.LogStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "scope",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "log",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 			}
 
@@ -59,15 +72,15 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 			config.MetricStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "scope",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "datapoint",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 			}
 
@@ -75,19 +88,19 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 			config.TraceStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "scope",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "span",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "spanevent",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 			}
 
@@ -96,15 +109,15 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 			config.ProfileStatements = []OttlStatementConfig{
 				{
 					Context:    "resource",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "scope",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 				{
 					Context:    "profile",
-					Statements: ottlDeleteKeyStatements,
+					Statements: ottlStatements,
 				},
 			}
 		}
