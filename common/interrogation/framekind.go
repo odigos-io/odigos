@@ -27,54 +27,11 @@ var libraryPrefixes = []string{
 	"reactor.", "io.netty.", "io.micrometer.",
 	"org.springframework.", "org.hibernate.", "org.apache.", "org.postgresql.", "org.h2.",
 	"org.slf4j.", "ch.qos.logback.", "com.zaxxer.",
-	// Libraries covered by default OTel instrumentation (see instrumentedLibraries).
+	// Common servers, clients and drivers.
 	"org.eclipse.jetty.", "io.undertow.", "com.mysql.", "org.mariadb.jdbc.", "oracle.jdbc.",
 	"com.microsoft.sqlserver.jdbc.", "redis.clients.jedis.", "io.lettuce.core.", "com.mongodb.",
 	"io.grpc.", "okhttp3.", "software.amazon.awssdk.", "com.amazonaws.", "org.elasticsearch.client.",
 	"com.rabbitmq.client.", "com.datastax.oss.driver.",
-}
-
-// instrumentedLibraries maps library package prefixes to the OTel Java agent
-// instrumentation that covers them by default. The longest matching prefix wins.
-var instrumentedLibraries = map[string]string{
-	"org.springframework.web.servlet.":  "spring-webmvc",
-	"org.springframework.web.reactive.": "spring-webflux",
-	"org.springframework.web.client.":   "spring-web",
-	"org.springframework.kafka.":        "spring-kafka",
-	"org.springframework.jms.":          "spring-jms",
-	"org.springframework.amqp.rabbit.":  "spring-rabbit",
-	"org.springframework.scheduling.":   "spring-scheduling",
-	"org.springframework.data.":         "spring-data",
-	"org.apache.catalina.":              "tomcat",
-	"org.apache.coyote.":                "tomcat",
-	"org.eclipse.jetty.server.":         "jetty",
-	"org.eclipse.jetty.client.":         "jetty-httpclient",
-	"io.undertow.":                      "undertow",
-	"io.netty.":                         "netty",
-	"reactor.netty.":                    "reactor-netty",
-	"org.postgresql.":                   "jdbc",
-	"com.mysql.":                        "jdbc",
-	"org.mariadb.jdbc.":                 "jdbc",
-	"org.h2.":                           "jdbc",
-	"oracle.jdbc.":                      "jdbc",
-	"com.microsoft.sqlserver.jdbc.":     "jdbc",
-	"com.zaxxer.hikari.":                "hikaricp",
-	"org.hibernate.":                    "hibernate",
-	"org.apache.kafka.clients.":         "kafka-clients",
-	"redis.clients.jedis.":              "jedis",
-	"io.lettuce.core.":                  "lettuce",
-	"com.mongodb.":                      "mongo",
-	"io.grpc.":                          "grpc",
-	"okhttp3.":                          "okhttp",
-	"org.apache.http.":                  "apache-httpclient",
-	"org.apache.hc.client5.":            "apache-httpclient",
-	"software.amazon.awssdk.":           "aws-sdk",
-	"com.amazonaws.":                    "aws-sdk",
-	"org.elasticsearch.client.":         "elasticsearch-rest",
-	"com.rabbitmq.client.":              "rabbitmq",
-	"com.datastax.oss.driver.":          "cassandra",
-	"org.apache.logging.log4j.":         "log4j",
-	"ch.qos.logback.classic.":           "logback",
 }
 
 // ClassifyFrame reports which FrameKind a JVM frame label belongs to.
@@ -108,22 +65,6 @@ func IsApplicationFrame(name string) bool {
 // IsRuntimeFrame is true when the frame should be dropped at ingest.
 func IsRuntimeFrame(name string) bool {
 	return ClassifyFrame(name) == FrameKindRuntime
-}
-
-// InstrumentationLibrary names the OTel Java agent instrumentation that covers name's
-// library by default, or "" when it is not a library frame or no default covers it.
-func InstrumentationLibrary(name string) string {
-	if ClassifyFrame(name) != FrameKindLibrary {
-		return ""
-	}
-	class := ClassFromFrameName(strings.TrimSpace(name))
-	best, library := "", ""
-	for prefix, lib := range instrumentedLibraries {
-		if len(prefix) > len(best) && strings.HasPrefix(class, prefix) {
-			best, library = prefix, lib
-		}
-	}
-	return library
 }
 
 // ClassFromFrameName extracts the qualified class/method prefix from a JVM frame label.

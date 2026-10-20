@@ -427,7 +427,6 @@ export const GET_INTERROGATION_TRANSACTIONS = gql`
             name
             frameType
             frameKind
-            instrumentationLibrary
             sampleType
             seenCount
           }
@@ -437,7 +436,6 @@ export const GET_INTERROGATION_TRANSACTIONS = gql`
             name
             frameType
             frameKind
-            instrumentationLibrary
             sampleType
             seenCount
           }

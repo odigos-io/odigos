@@ -442,11 +442,6 @@ type InterrogationFunction {
   frameType: String!
   frameKind: InterrogationFrameKind!
   """
-  OTel Java agent instrumentation that covers this library frame by default (e.g.
-  spring-webmvc, jdbc, kafka-clients), or null when none does.
-  """
-  instrumentationLibrary: String
-  """
   Profile sample type: events (probe) or samples (periodic CPU).
   """
   sampleType: String!
@@ -472,11 +467,6 @@ type InterrogationCallTrieNode {
   name: String!
   frameType: String!
   frameKind: InterrogationFrameKind!
-  """
-  OTel Java agent instrumentation that covers this library frame by default (e.g.
-  spring-webmvc, jdbc, kafka-clients), or null when none does.
-  """
-  instrumentationLibrary: String
   sampleType: String!
   """
   Call-trie rows stored for this node (relative heat, not a sample count).

@@ -1418,14 +1418,13 @@ type ComplexityRoot struct {
 	}
 
 	InterrogationCallTrieNode struct {
-		FrameKind              func(childComplexity int) int
-		FrameType              func(childComplexity int) int
-		ID                     func(childComplexity int) int
-		InstrumentationLibrary func(childComplexity int) int
-		Name                   func(childComplexity int) int
-		ParentID               func(childComplexity int) int
-		SampleType             func(childComplexity int) int
-		SeenCount              func(childComplexity int) int
+		FrameKind  func(childComplexity int) int
+		FrameType  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Name       func(childComplexity int) int
+		ParentID   func(childComplexity int) int
+		SampleType func(childComplexity int) int
+		SeenCount  func(childComplexity int) int
 	}
 
 	InterrogationConfig struct {
@@ -1435,12 +1434,11 @@ type ComplexityRoot struct {
 	}
 
 	InterrogationFunction struct {
-		FrameKind              func(childComplexity int) int
-		FrameType              func(childComplexity int) int
-		InstrumentationLibrary func(childComplexity int) int
-		Name                   func(childComplexity int) int
-		SampleType             func(childComplexity int) int
-		SeenCount              func(childComplexity int) int
+		FrameKind  func(childComplexity int) int
+		FrameType  func(childComplexity int) int
+		Name       func(childComplexity int) int
+		SampleType func(childComplexity int) int
+		SeenCount  func(childComplexity int) int
 	}
 
 	InterrogationModelConfig struct {
@@ -9099,13 +9097,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InterrogationCallTrieNode.ID(childComplexity), true
 
-	case "InterrogationCallTrieNode.instrumentationLibrary":
-		if e.complexity.InterrogationCallTrieNode.InstrumentationLibrary == nil {
-			break
-		}
-
-		return e.complexity.InterrogationCallTrieNode.InstrumentationLibrary(childComplexity), true
-
 	case "InterrogationCallTrieNode.name":
 		if e.complexity.InterrogationCallTrieNode.Name == nil {
 			break
@@ -9168,13 +9159,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InterrogationFunction.FrameType(childComplexity), true
-
-	case "InterrogationFunction.instrumentationLibrary":
-		if e.complexity.InterrogationFunction.InstrumentationLibrary == nil {
-			break
-		}
-
-		return e.complexity.InterrogationFunction.InstrumentationLibrary(childComplexity), true
 
 	case "InterrogationFunction.name":
 		if e.complexity.InterrogationFunction.Name == nil {
@@ -60343,47 +60327,6 @@ func (ec *executionContext) fieldContext_InterrogationCallTrieNode_frameKind(_ c
 	return fc, nil
 }
 
-func (ec *executionContext) _InterrogationCallTrieNode_instrumentationLibrary(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationCallTrieNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationCallTrieNode_instrumentationLibrary(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InstrumentationLibrary, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationCallTrieNode_instrumentationLibrary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationCallTrieNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _InterrogationCallTrieNode_sampleType(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationCallTrieNode) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InterrogationCallTrieNode_sampleType(ctx, field)
 	if err != nil {
@@ -60730,47 +60673,6 @@ func (ec *executionContext) fieldContext_InterrogationFunction_frameKind(_ conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type InterrogationFrameKind does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InterrogationFunction_instrumentationLibrary(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationFunction) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InterrogationFunction_instrumentationLibrary(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InstrumentationLibrary, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InterrogationFunction_instrumentationLibrary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InterrogationFunction",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -61260,8 +61162,6 @@ func (ec *executionContext) fieldContext_InterrogationTransaction_functions(_ co
 				return ec.fieldContext_InterrogationFunction_frameType(ctx, field)
 			case "frameKind":
 				return ec.fieldContext_InterrogationFunction_frameKind(ctx, field)
-			case "instrumentationLibrary":
-				return ec.fieldContext_InterrogationFunction_instrumentationLibrary(ctx, field)
 			case "sampleType":
 				return ec.fieldContext_InterrogationFunction_sampleType(ctx, field)
 			case "seenCount":
@@ -61360,8 +61260,6 @@ func (ec *executionContext) fieldContext_InterrogationTransaction_callTrie(_ con
 				return ec.fieldContext_InterrogationCallTrieNode_frameType(ctx, field)
 			case "frameKind":
 				return ec.fieldContext_InterrogationCallTrieNode_frameKind(ctx, field)
-			case "instrumentationLibrary":
-				return ec.fieldContext_InterrogationCallTrieNode_instrumentationLibrary(ctx, field)
 			case "sampleType":
 				return ec.fieldContext_InterrogationCallTrieNode_sampleType(ctx, field)
 			case "seenCount":
@@ -107036,8 +106934,6 @@ func (ec *executionContext) _InterrogationCallTrieNode(ctx context.Context, sel 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "instrumentationLibrary":
-			out.Values[i] = ec._InterrogationCallTrieNode_instrumentationLibrary(ctx, field, obj)
 		case "sampleType":
 			out.Values[i] = ec._InterrogationCallTrieNode_sampleType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -107137,8 +107033,6 @@ func (ec *executionContext) _InterrogationFunction(ctx context.Context, sel ast.
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "instrumentationLibrary":
-			out.Values[i] = ec._InterrogationFunction_instrumentationLibrary(ctx, field, obj)
 		case "sampleType":
 			out.Values[i] = ec._InterrogationFunction_sampleType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

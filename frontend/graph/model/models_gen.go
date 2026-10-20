@@ -1959,14 +1959,11 @@ type InterrogationCallTrieNode struct {
 	// Stable node id for this call-path frame (sha1 of parent + frame identity).
 	ID string `json:"id"`
 	// Parent node id, or null for roots (children of the ClickHouse Parent "root").
-	ParentID  *string                `json:"parentId,omitempty"`
-	Name      string                 `json:"name"`
-	FrameType string                 `json:"frameType"`
-	FrameKind InterrogationFrameKind `json:"frameKind"`
-	// OTel Java agent instrumentation that covers this library frame by default (e.g.
-	// spring-webmvc, jdbc, kafka-clients), or null when none does.
-	InstrumentationLibrary *string `json:"instrumentationLibrary,omitempty"`
-	SampleType             string  `json:"sampleType"`
+	ParentID   *string                `json:"parentId,omitempty"`
+	Name       string                 `json:"name"`
+	FrameType  string                 `json:"frameType"`
+	FrameKind  InterrogationFrameKind `json:"frameKind"`
+	SampleType string                 `json:"sampleType"`
 	// Call-trie rows stored for this node (relative heat, not a sample count).
 	SeenCount int `json:"seenCount"`
 }
@@ -1983,9 +1980,6 @@ type InterrogationFunction struct {
 	// profile.frame.type (e.g. jvm, hotspot).
 	FrameType string                 `json:"frameType"`
 	FrameKind InterrogationFrameKind `json:"frameKind"`
-	// OTel Java agent instrumentation that covers this library frame by default (e.g.
-	// spring-webmvc, jdbc, kafka-clients), or null when none does.
-	InstrumentationLibrary *string `json:"instrumentationLibrary,omitempty"`
 	// Profile sample type: events (probe) or samples (periodic CPU).
 	SampleType string `json:"sampleType"`
 	// Call-trie rows stored for this function in the transaction (relative heat, not

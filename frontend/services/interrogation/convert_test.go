@@ -19,20 +19,15 @@ func TestCallTrieToModelClassifiesFrames(t *testing.T) {
 	require.Len(t, nodes, 5)
 
 	assert.Equal(t, model.InterrogationFrameKindApp, nodes[0].FrameKind)
-	assert.Nil(t, nodes[0].InstrumentationLibrary)
 
 	assert.Equal(t, model.InterrogationFrameKindLibrary, nodes[1].FrameKind)
-	require.NotNil(t, nodes[1].InstrumentationLibrary)
-	assert.Equal(t, "spring-kafka", *nodes[1].InstrumentationLibrary)
 
 	assert.Equal(t, model.InterrogationFrameKindLibrary, nodes[2].FrameKind)
-	assert.Nil(t, nodes[2].InstrumentationLibrary)
 
 	assert.Equal(t, model.InterrogationFrameKindApp, nodes[3].FrameKind)
 
 	// Non-JVM frames are not classified.
 	assert.Equal(t, model.InterrogationFrameKindApp, nodes[4].FrameKind)
-	assert.Nil(t, nodes[4].InstrumentationLibrary)
 }
 
 func TestTransactionsToModelClassifiesFunctions(t *testing.T) {
@@ -47,7 +42,5 @@ func TestTransactionsToModelClassifiesFunctions(t *testing.T) {
 	fns := txs[0].Functions
 	require.Len(t, fns, 2)
 	assert.Equal(t, model.InterrogationFrameKindLibrary, fns[0].FrameKind)
-	require.NotNil(t, fns[0].InstrumentationLibrary)
-	assert.Equal(t, "jdbc", *fns[0].InstrumentationLibrary)
 	assert.Equal(t, model.InterrogationFrameKindApp, fns[1].FrameKind)
 }
