@@ -14,7 +14,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/clustercollector"
 	"github.com/odigos-io/odigos/instrumentor/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentednodes"
-	"github.com/odigos-io/odigos/instrumentor/controllers/litellm"
 	"github.com/odigos-io/odigos/instrumentor/controllers/loglevel"
 	"github.com/odigos-io/odigos/instrumentor/controllers/metricshandler"
 	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector"
@@ -269,10 +268,6 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 
 	if err = recommendations.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to create recommendations controller: %w", err)
-	}
-
-	if err = litellm.SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to create litellm controller: %w", err)
 	}
 
 	return nil

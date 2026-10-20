@@ -615,28 +615,21 @@ type TransactionIdentityConfiguration struct {
 type InterrogationConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 
-	// Model selects the LLM that the bundled LiteLLM proxy routes interrogation
-	// requests to. The upstream API key is kept in a Kubernetes Secret.
+	// Model is the upstream LLM configured through Helm.
 	Model *InterrogationModelConfiguration `json:"model,omitempty" yaml:"model,omitempty"`
-	// CredentialSecretName and PreviousCredentialSecretName are internal references
-	// to UI-owned credential revisions; remote configuration cannot set them.
-	CredentialSecretName         string `json:"credentialSecretName,omitempty" yaml:"credentialSecretName,omitempty"`
-	PreviousCredentialSecretName string `json:"previousCredentialSecretName,omitempty" yaml:"previousCredentialSecretName,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
-// InterrogationModelConfiguration is the upstream model served behind the
-// LiteLLM "interrogation" alias.
+// InterrogationModelConfiguration is the upstream LLM that interrogation uses.
 type InterrogationModelConfiguration struct {
-	// Provider is the LiteLLM provider prefix, such as openai, anthropic,
-	// gemini or hosted_vllm.
-	Provider *string `json:"provider,omitempty" yaml:"provider,omitempty"`
+	// Provider is the LiteLLM provider, such as openai or hosted_vllm.
+	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
 
 	// Name is the provider's model name, such as gpt-4o-mini.
-	Name *string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 
-	// ApiBase is an optional OpenAI-compatible base URL for the provider.
-	ApiBase *string `json:"apiBase,omitempty" yaml:"apiBase,omitempty"`
+	// ApiBase is an optional OpenAI-compatible base URL.
+	ApiBase string `json:"apiBase,omitempty" yaml:"apiBase,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -841,27 +834,6 @@ func InterrogationActive(c *InterrogationConfiguration) bool {
 // this configuration.
 func (o *OdigosConfiguration) InterrogationEnabled() bool {
 	return o != nil && InterrogationActive(o.Interrogation)
-}
-
-// MergeInterrogationSettings applies fields that can be changed without
-// provisioning workloads. It intentionally ignores Enabled and credential
-// references, whose ownership is handled separately.
-func MergeInterrogationSettings(base, overlay *InterrogationConfiguration) {
-	if base == nil || overlay == nil || overlay.Model == nil {
-		return
-	}
-	if base.Model == nil {
-		base.Model = &InterrogationModelConfiguration{}
-	}
-	if overlay.Model.Provider != nil {
-		base.Model.Provider = overlay.Model.Provider
-	}
-	if overlay.Model.Name != nil {
-		base.Model.Name = overlay.Model.Name
-	}
-	if overlay.Model.ApiBase != nil {
-		base.Model.ApiBase = overlay.Model.ApiBase
-	}
 }
 
 // UrlTemplatizationLiveTrafficLearningActive reports whether traffic-based URL

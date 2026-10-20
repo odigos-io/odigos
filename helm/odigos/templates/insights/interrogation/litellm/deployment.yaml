@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: odigos-litellm
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/insights/interrogation/litellm/configmap.yaml") . | sha256sum }}
     spec:
       {{- if .Values.insights.interrogation.litellm.nodeSelector }}
       nodeSelector:
@@ -49,8 +51,9 @@ spec:
             - name: LITELLM_UPSTREAM_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: odigos-litellm-runtime
+                  name: odigos-litellm
                   key: upstream-api-key
+                  optional: true
           volumeMounts:
             - name: config
               mountPath: /app/config.yaml
