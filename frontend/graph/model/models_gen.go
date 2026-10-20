@@ -1963,7 +1963,7 @@ type InterrogationCallTrieNode struct {
 	Name       string  `json:"name"`
 	FrameType  string  `json:"frameType"`
 	SampleType string  `json:"sampleType"`
-	// Times this call-path node was observed.
+	// Call-trie rows stored for this node (relative heat, not a sample count).
 	SeenCount int `json:"seenCount"`
 }
 
@@ -1979,7 +1979,8 @@ type InterrogationFunction struct {
 	FrameType string `json:"frameType"`
 	// Profile sample type: events (probe) or samples (periodic CPU).
 	SampleType string `json:"sampleType"`
-	// Times this function was observed while the transaction ran.
+	// Call-trie rows stored for this function in the transaction (relative heat, not
+	// a sample count).
 	SeenCount int `json:"seenCount"`
 }
 
@@ -1991,9 +1992,10 @@ type InterrogationModelConfig struct {
 
 // One transaction observed for a workload container, with ClickHouse-stored functions.
 type InterrogationTransaction struct {
-	// Transaction id as stored in tx_call_trie.TransactionId.
+	// Transaction id as stored in tx_call_trie_structure.TransactionId.
 	ID string `json:"id"`
-	// Times this transaction was observed.
+	// Call-trie rows stored for this transaction's sample-type roots (relative heat,
+	// not a sample count).
 	SeenCount int                      `json:"seenCount"`
 	Functions []*InterrogationFunction `json:"functions"`
 	// OTLP JSON traces sample for this transaction (service-invocation spans only),
@@ -2188,7 +2190,7 @@ type K8sWorkloadContainer struct {
 	Instrumentations  []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
 	URLTemplatization *K8sWorkloadContainerURLTemplatization           `json:"urlTemplatization,omitempty"`
 	// Trace interrogation: transactions and detected stack functions for this
-	// container, read from interrogation ClickHouse (tx_call_trie). Empty when
+	// container, read from interrogation ClickHouse (tx_call_trie_structure). Empty when
 	// interrogation is disabled or nothing has been stored yet.
 	// Ordered by seenCount desc, then id. Select callTrie only with a narrow page
 	// (ids or limit): it costs one ClickHouse query per returned transaction.

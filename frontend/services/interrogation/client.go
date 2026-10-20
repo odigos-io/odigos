@@ -24,7 +24,7 @@ import (
 const (
 	clickhouseUser     = "odigos_insights"
 	clickhouseDatabase = "interrogation"
-	callTrieTable      = "tx_call_trie"
+	callTrieTable      = "tx_call_trie_structure"
 	transactionsTable  = "tx_transactions"
 	trieRootParent     = "root"
 
@@ -44,14 +44,14 @@ type Function struct {
 	Name       string
 	FrameType  string
 	SampleType string
-	// SeenCount is how many times this function was observed for the transaction.
+	// SeenCount is how many trie rows insights flushed for this function.
 	SeenCount int64
 }
 
 // Transaction is one transaction id with its aggregated function set.
 type Transaction struct {
 	ID string
-	// SeenCount is how many times this transaction was observed (sample-root sum).
+	// SeenCount is how many sample-root rows insights flushed for this transaction.
 	SeenCount int64
 	Functions []Function
 }
@@ -151,7 +151,7 @@ SELECT
 	FunctionName,
 	FrameType,
 	SampleType,
-	sum(Count) AS Count
+	count() AS Count
 FROM %s
 WHERE Namespace = ?
 	AND WorkloadKind = ?
@@ -221,7 +221,7 @@ func EnabledFromOdigosConfig(cfg *common.OdigosConfiguration) bool {
 }
 
 // ListContainerTransactions returns the transactions of the workload container
-// that match filter, with aggregated functions from tx_call_trie, ordered by
+// that match filter, with aggregated functions from tx_call_trie_structure, ordered by
 // seenCount desc, then id.
 func (c *Client) ListContainerTransactions(ctx context.Context, namespace, kind, name, containerName string, filter TransactionsFilter) (*ContainerTransactions, error) {
 	if c == nil || c.db == nil {
@@ -301,7 +301,7 @@ func buildListEdgesQuery(table, namespace, kind, name, containerName string, fil
 		FROM %s
 		WHERE %s
 		GROUP BY TransactionId
-		ORDER BY sumIf(Count, Parent = '%s' AND SampleType = 'samples') DESC, TransactionId ASC
+		ORDER BY countIf(Parent = '%s' AND SampleType = 'samples') DESC, TransactionId ASC
 		LIMIT ? OFFSET ?
 	)`, table, where, trieRootParent)
 		args = append(args, pageArgs...)
@@ -315,7 +315,7 @@ SELECT
 	FunctionName,
 	FrameType,
 	SampleType,
-	sum(Count) AS Count
+	count() AS Count
 FROM %s
 WHERE %s
 GROUP BY TransactionId, NodeId, Parent, FunctionName, FrameType, SampleType

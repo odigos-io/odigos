@@ -388,7 +388,7 @@ type K8sWorkloadContainer {
 
   """
   Trace interrogation: transactions and detected stack functions for this
-  container, read from interrogation ClickHouse (tx_call_trie). Empty when
+  container, read from interrogation ClickHouse (tx_call_trie_structure). Empty when
   interrogation is disabled or nothing has been stored yet.
   Ordered by seenCount desc, then id. Select callTrie only with a narrow page
   (ids or limit): it costs one ClickHouse query per returned transaction.
@@ -427,7 +427,8 @@ type InterrogationFunction {
   """
   sampleType: String!
   """
-  Times this function was observed while the transaction ran.
+  Call-trie rows stored for this function in the transaction (relative heat, not
+  a sample count).
   """
   seenCount: Int!
 }
@@ -448,7 +449,7 @@ type InterrogationCallTrieNode {
   frameType: String!
   sampleType: String!
   """
-  Times this call-path node was observed.
+  Call-trie rows stored for this node (relative heat, not a sample count).
   """
   seenCount: Int!
 }
@@ -458,11 +459,12 @@ One transaction observed for a workload container, with ClickHouse-stored functi
 """
 type InterrogationTransaction {
   """
-  Transaction id as stored in tx_call_trie.TransactionId.
+  Transaction id as stored in tx_call_trie_structure.TransactionId.
   """
   id: String!
   """
-  Times this transaction was observed.
+  Call-trie rows stored for this transaction's sample-type roots (relative heat,
+  not a sample count).
   """
   seenCount: Int!
   functions: [InterrogationFunction!]!
