@@ -18,14 +18,16 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 | `aws.lambda` | Workload | Yes | Yes (OpenTelemetry Lambda layer; [choose a distro](/cloud-connectors/aws/workloads/lambda/distros)) |
 | `aws.fargate-task` | Workload | Yes | Yes (agent-staging sidecar in the task definition) |
 | `aws.fargate-collector` | Collector | Observes a Collector you deploy (manual mode) | Installs and manages the [regional Collector](/cloud-connectors/aws/regional-collector) (automatic mode). Shown as "Odigos Collector (ECS Fargate)". |
-| `aws.ecs-cluster` | Compute platform | Yes | Coming soon |
+| `aws.ecs-cluster` | Compute platform | Yes | n/a — ECS on EC2 uses the [Odigos ECS Agent](/vmagent/ecs/overview) |
 | `aws.fargate-cluster` | Compute platform | Yes | n/a (coverage only) |
 
 <Info>
   `aws.ecs-cluster` and `aws.fargate-cluster` are compute platforms, reported for
-  coverage only; Odigos does not install an agent onto them. They are not offered
+  coverage only; the connector does not install an agent onto them. They are not offered
   by any access level in the Create Cloud Connector UI. `aws.fargate-task` — an
-  individual Fargate **service** — is the ECS resource Odigos instruments directly.
+  individual Fargate **service** — is the ECS resource the connector instruments directly.
+  To instrument ECS tasks running on **EC2** container instances, deploy the
+  [Odigos ECS Agent](/vmagent/ecs/overview).
 </Info>
 
 aws.lambda and aws.fargate-task support two instrumentation approaches:

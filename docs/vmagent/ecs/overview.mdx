@@ -186,7 +186,8 @@ The proxy is unprivileged: no host PID, no Docker socket, no host mounts.
 The ECS Agent requires the **EC2 launch type**. It needs host PID access, the
 instance's Docker socket, and the ability to load eBPF programs — none of which
 exist on Fargate, where AWS controls the host. There is no Fargate deployment
-mode.
+mode. To instrument Fargate services and Lambda functions, use the
+[AWS Cloud Connector](/cloud-connectors/aws/overview) instead.
 
 ## Next steps
 

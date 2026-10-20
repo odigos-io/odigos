@@ -58,7 +58,7 @@ access level in the Create Cloud Connector UI:
 | --------------------- | ---------------- | --------- | ------------------------------------ |
 | `aws.lambda`          | Workload         | Yes       | Yes — Odigos-managed or self-managed |
 | `aws.fargate-task`    | Workload         | Yes       | Yes — Odigos-managed or self-managed |
-| `aws.ecs-cluster`     | Compute platform | Yes       | Coming soon (agent install)          |
+| `aws.ecs-cluster`     | Compute platform | Yes       | n/a (use the [Odigos ECS Agent](/vmagent/ecs/overview) for EC2) |
 | `aws.fargate-cluster` | Compute platform | Yes       | n/a (coverage only)                  |
 | `aws.fargate-collector` | Collector        | Observes a Collector you deploy (manual mode) | Installs and manages it (automatic mode) — see [Regional Collector](/cloud-connectors/aws/regional-collector) |
 
@@ -75,8 +75,18 @@ access level in the Create Cloud Connector UI:
 Everything on this page and in the AWS Connector section covers **Fargate**-launch-type ECS. EC2-launch-type
 ECS clusters are discovered as `aws.ecs-cluster` compute platforms, but Fargate forbids the privileged
 containers eBPF instrumentation needs, so EC2-backed clusters are covered by a different, cluster-wide agent
-rather than the per-service sidecar described here. That agent's automatic deployment is not yet available —
-today `aws.ecs-cluster` gives you discovery and coverage only.
+rather than the per-service sidecar described here: the **Odigos ECS Agent**, which is the
+[VM Agent](/vmagent/overview) packaged as an ECS daemon service. It instruments tasks in place with eBPF — no
+task restarts and no task-definition changes — and reports to Odigos Central. See
+[Odigos on Amazon ECS](/vmagent/ecs/overview) for requirements and installation. The AWS connector does not
+deploy it, so `aws.ecs-cluster` gives you discovery and coverage only.
+
+<Info>
+  The two cover different launch types, so they don't overlap. The ECS Agent is only for ECS clusters on **EC2**
+  container instances. **Fargate** services, and Lambda functions, are instrumented through the connector.
+  On EC2 the agent uses eBPF, which gives deeper coverage than the per-language agents Fargate can run,
+  including Go and other eBPF-only languages.
+</Info>
 
 ## Odigos-managed vs. self-managed
 
@@ -104,6 +114,13 @@ account first if your organization requires that.
 | ---------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Lambda (`aws.lambda`)        | Java, Python, Node.js, Ruby            | OTLP gRPC and HTTP destinations for every language. Choose a distro per function; Java, Node.js, and Python can also run AWS ADOT. See [Lambda distros](/cloud-connectors/aws/workloads/lambda/distros). Other runtimes (Go, .NET) are discovered but not instrumented. |
 | Fargate (`aws.fargate-task`) | Java, Python, Node.js, .NET, PHP, Ruby | PHP and Ruby: OTLP HTTP destinations only. .NET requires a glibc (not musl/Alpine) base image. Go and any other eBPF-based language cannot be instrumented on Fargate at all. |
+
+<Info>
+  **Fargate has no distro choice.** Each language has exactly one Odigos agent (Java, Python, Node.js, .NET, PHP,
+  Ruby), staged into the task by the `odigos-agent` container. Lambda is different: Java, Node.js, and Python
+  functions can switch between several distros. See [Lambda distros](/cloud-connectors/aws/workloads/lambda/distros).
+  Go and other eBPF-only languages can't be instrumented on Fargate at all.
+</Info>
 
 **If a task runs more than one container** — for example, an nginx or Envoy proxy sitting in front of your
 application — Odigos has to pick which one is the actual application to instrument. It does this by looking
