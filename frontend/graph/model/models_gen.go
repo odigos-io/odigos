@@ -1971,11 +1971,6 @@ type InterrogationConfig struct {
 	Model   *InterrogationModelConfig `json:"model,omitempty"`
 }
 
-type InterrogationConfigInput struct {
-	ResetPaths []string                       `json:"resetPaths,omitempty"`
-	Model      *InterrogationModelConfigInput `json:"model,omitempty"`
-}
-
 // One detected function from a profile sample linked to a transaction.
 type InterrogationFunction struct {
 	Name string `json:"name"`
@@ -1991,13 +1986,6 @@ type InterrogationModelConfig struct {
 	Provider *string `json:"provider,omitempty"`
 	Name     *string `json:"name,omitempty"`
 	APIBase  *string `json:"apiBase,omitempty"`
-}
-
-type InterrogationModelConfigInput struct {
-	Provider *string `json:"provider,omitempty"`
-	Name     *string `json:"name,omitempty"`
-	APIBase  *string `json:"apiBase,omitempty"`
-	APIKey   *string `json:"apiKey,omitempty"`
 }
 
 // One transaction observed for a workload container, with ClickHouse-stored functions.
@@ -2496,7 +2484,6 @@ type LocalUIConfigInput struct {
 	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
 	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
 	CardinalityControl    *LocalUIConfigCardinalityControlInput    `json:"cardinalityControl,omitempty"`
-	Interrogation         *InterrogationConfigInput                `json:"interrogation,omitempty"`
 }
 
 type LocalUIConfigInstrumentorInput struct {

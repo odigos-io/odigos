@@ -137,8 +137,6 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		Scheme: scheme,
 		Cache: &client.CacheOptions{
 			Reader: k8sCache,
-			// Read credentials directly without creating informers.
-			DisableFor: []client.Object{&corev1.Secret{}},
 		},
 	})
 	if err != nil {

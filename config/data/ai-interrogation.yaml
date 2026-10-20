@@ -12,41 +12,23 @@ spec:
       description: Set with Helm `insights.interrogation.enabled` (requires insights).
       helmValuePath: interrogation.enabled
     - displayName: Provider
-      componentType: dropdown
-      isHelmOnly: false
+      componentType: input
+      isHelmOnly: true
       isEnterpriseOnly: true
-      description: The LiteLLM provider prefix used to route requests to the model. The bundled vLLM uses hosted_vllm.
+      description: LiteLLM provider prefix used to route requests to the model. Set with Helm `insights.interrogation.model.provider`.
       helmValuePath: interrogation.model.provider
       renderCondition: ["interrogation.enabled", "==", "true"]
-      componentProps:
-        options:
-          - openai
-          - anthropic
-          - gemini
-          - azure
-          - bedrock
-          - vertex_ai
-          - hosted_vllm
     - displayName: Model
       componentType: input
-      isHelmOnly: false
+      isHelmOnly: true
       isEnterpriseOnly: true
-      description: The provider's model name, without the provider prefix (for example gpt-4o-mini).
+      description: Provider model name, without the provider prefix. Set with Helm `insights.interrogation.model.name`.
       helmValuePath: interrogation.model.name
       renderCondition: ["interrogation.enabled", "==", "true"]
     - displayName: API Base URL
       componentType: input
-      isHelmOnly: false
+      isHelmOnly: true
       isEnterpriseOnly: true
-      description: Optional base URL of an OpenAI-compatible endpoint for the provider. Leave empty to use the provider's default endpoint.
+      description: Optional OpenAI-compatible endpoint for the provider. Set with Helm `insights.interrogation.model.apiBase`. The API key is set with Helm `insights.interrogation.model.apiKey`.
       helmValuePath: interrogation.model.apiBase
       renderCondition: ["interrogation.enabled", "==", "true"]
-    - displayName: API Key
-      componentType: input
-      isHelmOnly: false
-      isEnterpriseOnly: true
-      description: The provider API key. Stored as a separate UI credential override. The current key can be revealed when UI read-only mode is off. Leave empty to keep the current key; reset to inherit the Helm credential.
-      helmValuePath: interrogation.model.apiKey
-      renderCondition: ["interrogation.enabled", "==", "true"]
-      componentProps:
-        type: password

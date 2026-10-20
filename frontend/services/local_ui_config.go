@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
@@ -24,25 +23,12 @@ import (
 func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.LocalUIConfigInput) error {
 	ns := env.GetCurrentNamespace()
 
-	var effectiveConfig *common.OdigosConfiguration
-	var stagedCredential string
-	if input.Interrogation != nil {
-		if err := validateInterrogationInput(ctx, c, input.Interrogation); err != nil {
-			return err
-		}
-		var err error
-		stagedCredential, err = stageInterrogationCredential(ctx, c, input.Interrogation)
-		if err != nil {
-			return err
-		}
-	}
-
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		var cm v1.ConfigMap
 		err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosLocalUiConfigName}, &cm)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				return createLocalUiConfigMap(ctx, c, ns, input, effectiveConfig, stagedCredential)
+				return createLocalUiConfigMap(ctx, c, ns, input)
 			}
 			return err
 		}
@@ -54,11 +40,7 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 			}
 		}
 
-		applyLocalUiConfigInput(&cfg, input, effectiveConfig)
-		applyStagedCredential(&cfg, stagedCredential)
-		if err := validateResolvedInterrogation(ctx, c, &cfg, input.Interrogation); err != nil {
-			return err
-		}
+		applyLocalUiConfigInput(&cfg, input)
 
 		data, err := yaml.Marshal(cfg)
 		if err != nil {
@@ -72,18 +54,14 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 	})
 }
 
-func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, input model.LocalUIConfigInput, effectiveConfig *common.OdigosConfiguration, stagedCredential string) error {
+func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, input model.LocalUIConfigInput) error {
 	ownerCm := v1.ConfigMap{}
 	if err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosConfigurationName}, &ownerCm); err != nil {
 		return fmt.Errorf("failed to get odigos-configuration for owner reference: %w", err)
 	}
 
 	cfg := common.OdigosConfiguration{}
-	applyLocalUiConfigInput(&cfg, input, effectiveConfig)
-	applyStagedCredential(&cfg, stagedCredential)
-	if err := validateResolvedInterrogation(ctx, c, &cfg, input.Interrogation); err != nil {
-		return err
-	}
+	applyLocalUiConfigInput(&cfg, input)
 
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
@@ -118,15 +96,6 @@ func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) e
 		}
 
 		emptyCfg := common.OdigosConfiguration{}
-		// Retain the previous credential revision for rollback, without activating it.
-		var old common.OdigosConfiguration
-		if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &old); err != nil {
-			return err
-		}
-		if old.Interrogation != nil && old.Interrogation.CredentialSecretName != "" {
-			emptyCfg.Interrogation = &common.InterrogationConfiguration{PreviousCredentialSecretName: old.Interrogation.CredentialSecretName}
-		}
-
 		data, err := yaml.Marshal(emptyCfg)
 		if err != nil {
 			return err
@@ -139,9 +108,7 @@ func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) e
 	})
 }
 
-// effectiveConfig is only consulted for input that cannot be applied field by field,
-// such as the interrogation model, and may be nil otherwise.
-func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalUIConfigInput, effectiveConfig *common.OdigosConfiguration) {
+func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalUIConfigInput) {
 	if input.TelemetryEnabled != nil {
 		cfg.TelemetryEnabled = *input.TelemetryEnabled
 	}
@@ -212,46 +179,6 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 	}
 	if input.CardinalityControl != nil {
 		applyCardinalityControlInput(cfg, input.CardinalityControl)
-	}
-	if input.Interrogation != nil {
-		applyInterrogationInput(cfg, input.Interrogation, effectiveConfig)
-	}
-}
-
-func applyInterrogationInput(cfg *common.OdigosConfiguration, input *model.InterrogationConfigInput, _ *common.OdigosConfiguration) {
-	if cfg.Interrogation == nil {
-		cfg.Interrogation = &common.InterrogationConfiguration{}
-	}
-	current := cfg.Interrogation
-	if current.Model == nil {
-		current.Model = &common.InterrogationModelConfiguration{}
-	}
-	for _, path := range input.ResetPaths {
-		switch path {
-		case "interrogation.model.provider":
-			current.Model.Provider = nil
-		case "interrogation.model.name":
-			current.Model.Name = nil
-		case "interrogation.model.apiBase":
-			current.Model.ApiBase = nil
-		case "interrogation.model.apiKey":
-			current.PreviousCredentialSecretName = current.CredentialSecretName
-			current.CredentialSecretName = ""
-		}
-	}
-	if input.Model != nil {
-		if input.Model.Provider != nil {
-			value := strings.TrimSpace(*input.Model.Provider)
-			current.Model.Provider = &value
-		}
-		if input.Model.Name != nil {
-			value := strings.TrimSpace(*input.Model.Name)
-			current.Model.Name = &value
-		}
-		if input.Model.APIBase != nil {
-			value := strings.TrimSpace(*input.Model.APIBase)
-			current.Model.ApiBase = &value
-		}
 	}
 }
 

@@ -52,11 +52,6 @@ func (r *mutationResolver) ResetLocalUIConfigToFactoryDefaults(ctx context.Conte
 	return err == nil, err
 }
 
-// InterrogationAPIKey is the resolver for the interrogationAPIKey field.
-func (r *queryResolver) InterrogationAPIKey(ctx context.Context) (*string, error) {
-	return services.GetInterrogationAPIKey(ctx, r.K8sCacheClient)
-}
-
 // Config is the resolver for the config field.
 func (r *queryResolver) Config(ctx context.Context) (*model.Config, error) {
 	config := services.GetConfig(ctx)

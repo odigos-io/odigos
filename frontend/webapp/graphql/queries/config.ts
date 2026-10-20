@@ -243,9 +243,3 @@ export const GET_CONFIG_YAMLS = gql`
     }
   }
 `;
-
-export const GET_INTERROGATION_API_KEY = gql`
-  query GetInterrogationAPIKey {
-    interrogationAPIKey
-  }
-`;
