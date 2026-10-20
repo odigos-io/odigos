@@ -156,7 +156,7 @@ hosted_vllm
 
 {{/*
   LiteLLM upstream model name.
-  Bundled vLLM: <servedModelName> (weights baked into odigos-enterprise-vllm).
+  Bundled vLLM: servedModelName (weights baked into odigos-enterprise-vllm).
   Otherwise: model.name (e.g. gpt-4o-mini).
 */}}
 {{- define "odigos.interrogationModelName" -}}
@@ -165,6 +165,13 @@ hosted_vllm
 {{- else -}}
 {{- .Values.insights.interrogation.model.name | default "gpt-4o-mini" -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+  LiteLLM upstream model id: <provider>/<name> (e.g. openai/gpt-4o-mini).
+*/}}
+{{- define "odigos.interrogationUpstreamModel" -}}
+{{- printf "%s/%s" (include "odigos.interrogationModelProvider" .) (include "odigos.interrogationModelName" .) -}}
 {{- end -}}
 
 {{/*

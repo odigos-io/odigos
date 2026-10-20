@@ -925,12 +925,6 @@
                   "title": "affinity",
                   "type": "object"
                 },
-                "bootstrapConfig": {
-                  "default": "false",
-                  "description": "Temporary compatibility mode for upgrading an existing interrogation install.\nRender the legacy proxy ConfigMap with Helm's keep policy for the first\nupgrade, then turn this off after the new controller reports READY.",
-                  "required": [],
-                  "title": "bootstrapConfig"
-                },
                 "image": {
                   "additionalProperties": false,
                   "description": "LiteLLM proxy image (third-party).",
