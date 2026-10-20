@@ -1,6 +1,34 @@
 package interrogation
 
-import "github.com/odigos-io/odigos/frontend/graph/model"
+import (
+	"github.com/odigos-io/odigos/common/interrogation"
+	"github.com/odigos-io/odigos/frontend/graph/model"
+)
+
+// Only JVM frames carry Java package names the classifier understands.
+const (
+	frameTypeJVM     = "jvm"
+	frameTypeHotspot = "hotspot"
+)
+
+var frameKindToModel = map[interrogation.FrameKind]model.InterrogationFrameKind{
+	interrogation.FrameKindApp:     model.InterrogationFrameKindApp,
+	interrogation.FrameKindLibrary: model.InterrogationFrameKindLibrary,
+	interrogation.FrameKindRuntime: model.InterrogationFrameKindRuntime,
+}
+
+// classifyFrame returns the frame's kind and its default OTel instrumentation, if any.
+// Non-JVM frames are treated as application code, as they were before classification.
+func classifyFrame(name, frameType string) (model.InterrogationFrameKind, *string) {
+	if frameType != frameTypeJVM && frameType != frameTypeHotspot {
+		return model.InterrogationFrameKindApp, nil
+	}
+	kind := frameKindToModel[interrogation.ClassifyFrame(name)]
+	if lib := interrogation.InstrumentationLibrary(name); lib != "" {
+		return kind, &lib
+	}
+	return kind, nil
+}
 
 // TransactionsToModel converts ClickHouse-backed transactions to GraphQL models.
 func TransactionsToModel(txs []Transaction) []*model.InterrogationTransaction {
@@ -8,11 +36,14 @@ func TransactionsToModel(txs []Transaction) []*model.InterrogationTransaction {
 	for _, tx := range txs {
 		fns := make([]*model.InterrogationFunction, 0, len(tx.Functions))
 		for _, fn := range tx.Functions {
+			kind, lib := classifyFrame(fn.Name, fn.FrameType)
 			fns = append(fns, &model.InterrogationFunction{
-				Name:       fn.Name,
-				FrameType:  fn.FrameType,
-				SampleType: fn.SampleType,
-				SeenCount:  int(fn.SeenCount),
+				Name:                   fn.Name,
+				FrameType:              fn.FrameType,
+				FrameKind:              kind,
+				InstrumentationLibrary: lib,
+				SampleType:             fn.SampleType,
+				SeenCount:              int(fn.SeenCount),
 			})
 		}
 		out = append(out, &model.InterrogationTransaction{
@@ -51,13 +82,16 @@ func CallTrieToModel(nodes []CallTrieNode) []*model.InterrogationCallTrieNode {
 		if n.ParentID != "" {
 			parentID = &n.ParentID
 		}
+		kind, lib := classifyFrame(n.Name, n.FrameType)
 		out = append(out, &model.InterrogationCallTrieNode{
-			ID:         n.ID,
-			ParentID:   parentID,
-			Name:       n.Name,
-			FrameType:  n.FrameType,
-			SampleType: n.SampleType,
-			SeenCount:  int(n.SeenCount),
+			ID:                     n.ID,
+			ParentID:               parentID,
+			Name:                   n.Name,
+			FrameType:              n.FrameType,
+			FrameKind:              kind,
+			InstrumentationLibrary: lib,
+			SampleType:             n.SampleType,
+			SeenCount:              int(n.SeenCount),
 		})
 	}
 	return out
