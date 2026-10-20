@@ -3014,7 +3014,7 @@
               "title": "java",
               "type": "object"
             },
-            "nodejs": {
+            "javascript": {
               "additionalProperties": false,
               "properties": {
                 "enabled": {
@@ -3029,7 +3029,7 @@
                 }
               },
               "required": [],
-              "title": "nodejs",
+              "title": "javascript",
               "type": "object"
             },
             "php": {
