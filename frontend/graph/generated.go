@@ -2154,7 +2154,6 @@ type ComplexityRoot struct {
 		InstrumentationAgents             func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
 		InstrumentationRuleTypes          func(childComplexity int) int
-		InterrogationAPIKey               func(childComplexity int) int
 		K8sManifest                       func(childComplexity int, namespace string, kind model.K8sResourceKind, name string) int
 		Namespaces                        func(childComplexity int) int
 		OdigletDaemonSetInfo              func(childComplexity int) int
@@ -2612,7 +2611,6 @@ type QueryResolver interface {
 	GatewayPods(ctx context.Context) ([]*model.PodInfo, error)
 	OdigletPods(ctx context.Context) ([]*model.PodInfo, error)
 	CollectorPod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
-	InterrogationAPIKey(ctx context.Context) (*string, error)
 	Config(ctx context.Context) (*model.Config, error)
 	RemoteConfig(ctx context.Context) (*model.RemoteConfig, error)
 	EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error)
@@ -12694,13 +12692,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.InstrumentationRuleTypes(childComplexity), true
 
-	case "Query.interrogationAPIKey":
-		if e.complexity.Query.InterrogationAPIKey == nil {
-			break
-		}
-
-		return e.complexity.Query.InterrogationAPIKey(childComplexity), true
-
 	case "Query.k8sManifest":
 		if e.complexity.Query.K8sManifest == nil {
 			break
@@ -13887,8 +13878,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputInstrumentationLibraryGlobalIdInput,
 		ec.unmarshalInputInstrumentationRuleInput,
 		ec.unmarshalInputInstrumentationRuleSourcesScopeInput,
-		ec.unmarshalInputInterrogationConfigInput,
-		ec.unmarshalInputInterrogationModelConfigInput,
 		ec.unmarshalInputJavaCustomProbeInput,
 		ec.unmarshalInputK8sAnnotationAttributeInput,
 		ec.unmarshalInputK8sDesiredNamespaceInput,
@@ -82251,47 +82240,6 @@ func (ec *executionContext) fieldContext_Query_collectorPod(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_interrogationAPIKey(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_interrogationAPIKey(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().InterrogationAPIKey(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_interrogationAPIKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_config(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_config(ctx, field)
 	if err != nil {
@@ -94860,88 +94808,6 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleSourcesScopeInput(c
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputInterrogationConfigInput(ctx context.Context, obj any) (model.InterrogationConfigInput, error) {
-	var it model.InterrogationConfigInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"resetPaths", "model"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "resetPaths":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("resetPaths"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ResetPaths = data
-		case "model":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("model"))
-			data, err := ec.unmarshalOInterrogationModelConfigInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationModelConfigInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Model = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputInterrogationModelConfigInput(ctx context.Context, obj any) (model.InterrogationModelConfigInput, error) {
-	var it model.InterrogationModelConfigInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"provider", "name", "apiBase", "apiKey"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "provider":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Provider = data
-		case "name":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Name = data
-		case "apiBase":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiBase"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIBase = data
-		case "apiKey":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKey"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKey = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputJavaCustomProbeInput(ctx context.Context, obj any) (model.JavaCustomProbeInput, error) {
 	var it model.JavaCustomProbeInput
 	asMap := map[string]any{}
@@ -95475,7 +95341,7 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "cardinalityControl", "interrogation"}
+	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "cardinalityControl"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -95580,13 +95446,6 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 				return it, err
 			}
 			it.CardinalityControl = data
-		case "interrogation":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interrogation"))
-			data, err := ec.unmarshalOInterrogationConfigInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationConfigInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Interrogation = data
 		}
 	}
 
@@ -112479,25 +112338,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "interrogationAPIKey":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_interrogationAPIKey(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "config":
 			field := field
 
@@ -124980,27 +124820,11 @@ func (ec *executionContext) marshalOInterrogationConfig2ᚖgithubᚗcomᚋodigos
 	return ec._InterrogationConfig(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOInterrogationConfigInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationConfigInput(ctx context.Context, v any) (*model.InterrogationConfigInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputInterrogationConfigInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalOInterrogationModelConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationModelConfig(ctx context.Context, sel ast.SelectionSet, v *model.InterrogationModelConfig) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._InterrogationModelConfig(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOInterrogationModelConfigInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationModelConfigInput(ctx context.Context, v any) (*model.InterrogationModelConfigInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputInterrogationModelConfigInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOJavaCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbe(ctx context.Context, sel ast.SelectionSet, v []*model.JavaCustomProbe) graphql.Marshaler {

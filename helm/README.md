@@ -49,30 +49,6 @@ Make sure to replace `$CUSTOM_DOCKER_REGISTRY` with the URL of your Docker regis
 
 For more details on configuring a custom Docker registry, refer to the [Docker Registry Setup Documentation](https://docs.odigos.io/setup/docker-registry).
 
-### Upgrade an existing Interrogation proxy
-
-Existing installations may have a Helm-managed `odigos-litellm` ConfigMap. Upgrade in two phases with compatible Instrumentor and Insights images so the new controller can take over that ConfigMap without interrupting the proxy:
-
-```sh
-export KUBE_CONTEXT=<your-kubernetes-context>
-helm --kube-context "$KUBE_CONTEXT" upgrade odigos ./helm/odigos \
-  --namespace odigos-system --reuse-values \
-  --set insights.interrogation.litellm.bootstrapConfig=true
-kubectl --context "$KUBE_CONTEXT" -n odigos-system rollout status deployment/odigos-litellm
-kubectl --context "$KUBE_CONTEXT" -n odigos-system get configmap odigos-litellm \
-  --show-managed-fields -o jsonpath='{.metadata.managedFields[*].manager}'
-```
-
-Wait for the LiteLLM rollout to complete and verify that `instrumentor-litellm` is listed among the ConfigMap's field managers, which confirms the Instrumentor has applied the proxy config. Then remove the temporary Helm template; the keep annotation prevents Helm from deleting the ConfigMap while the Instrumentor remains its owner:
-
-```sh
-helm --kube-context "$KUBE_CONTEXT" upgrade odigos ./helm/odigos \
-  --namespace odigos-system --reuse-values \
-  --set insights.interrogation.litellm.bootstrapConfig=false
-```
-
-If the first upgrade must be rolled back, use `helm --kube-context "$KUBE_CONTEXT" rollback odigos <previous-revision> --namespace odigos-system`. The previous chart resumes rendering the proxy ConfigMap and using the Helm-managed upstream credential. With Helm 4 server-side apply, append `--force-conflicts` to transfer the ConfigMap fields back from the controller; otherwise rollback reports a field ownership conflict. Keep compatible Instrumentor and Insights images when rolling back only the bootstrap/ownership transition.
-
 ### Uninstall Odigos
 
 ```sh
