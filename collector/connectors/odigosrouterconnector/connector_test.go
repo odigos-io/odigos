@@ -36,7 +36,7 @@ type fakeConfigExtension struct {
 	streamsByService map[string][]string
 }
 
-func (f *fakeConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+func (f *fakeConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.SourceCollectorConfig, bool) {
 	return nil, false
 }
 
