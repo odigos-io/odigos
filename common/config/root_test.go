@@ -164,6 +164,45 @@ func TestCalculateSignalFxTracesDestinationEnablesTheTracesPipeline(t *testing.T
 	assert.Contains(t, cfg.Service.Pipelines, "traces/signalfx-signalfx-traces")
 }
 
+// A Honeycomb destination created for metrics and logs only, both declared supported in
+// honeycomb.yaml, used to be rejected by the configurer for not having traces. With nothing else
+// in the cluster that left the gateway with no pipelines and no advertised signals at all.
+func TestCalculateHoneycombMetricsAndLogsDestinationEnablesBothPipelines(t *testing.T) {
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace: "odigos-system",
+	}
+
+	honeycomb := rawDataDestination{
+		ID:   "honeycomb-no-traces",
+		Type: common.HoneycombDestinationType,
+		Data: map[string]string{"HONEYCOMB_ENDPOINT": "api.eu1.honeycomb.io"},
+		Signals: []common.ObservabilitySignal{
+			common.MetricsObservabilitySignal,
+			common.LogsObservabilitySignal,
+		},
+	}
+
+	cfg, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{honeycomb},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	assert.NoError(t, statuses.Destination["honeycomb-no-traces"])
+
+	assert.ElementsMatch(t, []common.ObservabilitySignal{
+		common.MetricsObservabilitySignal,
+		common.LogsObservabilitySignal,
+	}, signals)
+	assert.Contains(t, cfg.Service.Pipelines, pipelinegen.GetTelemetryRootPipelineName(common.MetricsObservabilitySignal))
+	assert.Contains(t, cfg.Service.Pipelines, pipelinegen.GetTelemetryRootPipelineName(common.LogsObservabilitySignal))
+	assert.NotContains(t, cfg.Service.Pipelines, pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal))
+	assert.Contains(t, cfg.Service.Pipelines, "metrics/honeycomb-honeycomb-no-traces")
+	assert.Contains(t, cfg.Service.Pipelines, "logs/honeycomb-honeycomb-no-traces")
+}
+
 func openTestData(t *testing.T, path string) string {
 	want, err := os.ReadFile(path)
 	if err != nil {

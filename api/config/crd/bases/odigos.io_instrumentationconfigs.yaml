@@ -559,6 +559,40 @@ spec:
                               - sourceId
                               type: object
                           type: object
+                        kernelTraces:
+                          description: kernel areas to trace for this container, and
+                            their options.
+                          minProperties: 1
+                          properties:
+                            cpuDelay:
+                              description: |-
+                                Adds a span when a thread of the application was ready to run but waited for a CPU while handling
+                                a traced request. The span is named "cpu throttling" when the CPU limit of its container or pod
+                                caused the wait, or "cpu contention" when other work on the node was using the CPUs.
+                                Only waits of 1 ms or more are reported. This minimum may become configurable in the future.
+                                By default, a span is only added as a child of the span the thread was handling, never as the
+                                start of a new trace.
+                              type: object
+                            filesystem:
+                              description: |-
+                                Adds a span for each file the application opens or changes the permissions of.
+                                By default, a span will be emitted even if it is not a child of a span in progress, starting a new trace.
+                                This behavior may become configurable in the future.
+                              type: object
+                            subprocesses:
+                              description: |-
+                                Adds a span for each process the application starts, like curl or a script.
+                                Sub processes and chain of processes are supported, and the spans are children of the span in progress when the process was started.
+                                By default, a span will be emitted even if it is not a child of a span in progress, starting a new trace.
+                                This behavior may become configurable in the future.
+                              properties:
+                                recordCommandArgs:
+                                  description: |-
+                                    Records the command line arguments of each process.
+                                    Off by default, since arguments can hold secrets like passwords or tokens.
+                                  type: boolean
+                              type: object
+                          type: object
                         payloadCollection:
                           description: configuration for payload collection for this
                             container.
