@@ -110,3 +110,19 @@ func TestIntegrationTestPropagatesUpstreamFailure(t *testing.T) {
 	assert.ErrorIs(t, err, ErrValidation)
 	assert.Contains(t, err.Error(), "Slack returned HTTP 403")
 }
+
+func TestIntegrationTimestampsMapZeroTimeToEmpty(t *testing.T) {
+	const zero = "0001-01-01T00:00:00Z"
+	const setAt = "2026-10-11T09:30:15Z"
+
+	health := IntegrationHealthToModel(IntegrationHealth{LastSuccessAt: zero, LastFailureAt: setAt})
+	assert.Equal(t, "", health.LastSuccessAt)
+	assert.Equal(t, setAt, health.LastFailureAt)
+
+	delivery := DeliveryToModel(Delivery{NextAttemptAt: setAt, SentAt: zero})
+	assert.Equal(t, setAt, delivery.NextAttemptAt)
+	assert.Equal(t, "", delivery.SentAt)
+
+	assert.Equal(t, "", IntegrationHealthToModel(IntegrationHealth{}).LastSuccessAt)
+	assert.Equal(t, "", DeliveryToModel(Delivery{}).SentAt)
+}

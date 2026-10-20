@@ -60,10 +60,19 @@ func IntegrationFiltersToModel(value IntegrationFilters) *model.InsightsIntegrat
 	}
 }
 
+// emptyIfZeroTimestamp maps the engine's Go zero time to "" for the non-null
+// GraphQL String fields, so clients can tell "never happened" from a real date.
+func emptyIfZeroTimestamp(timestamp string) string {
+	if isZeroTimestamp(timestamp) {
+		return ""
+	}
+	return timestamp
+}
+
 func IntegrationHealthToModel(value IntegrationHealth) *model.InsightsIntegrationHealth {
 	return &model.InsightsIntegrationHealth{
-		LastSuccessAt:       value.LastSuccessAt,
-		LastFailureAt:       value.LastFailureAt,
+		LastSuccessAt:       emptyIfZeroTimestamp(value.LastSuccessAt),
+		LastFailureAt:       emptyIfZeroTimestamp(value.LastFailureAt),
 		LastError:           value.LastError,
 		ConsecutiveFailures: value.ConsecutiveFailures,
 		Pending:             value.Pending,
@@ -93,9 +102,9 @@ func DeliveryToModel(value Delivery) *model.InsightsDelivery {
 		LastAction:        model.InsightsDeliveryAction(value.LastAction),
 		State:             model.InsightsDeliveryState(value.State),
 		Attempts:          value.Attempts,
-		NextAttemptAt:     value.NextAttemptAt,
+		NextAttemptAt:     emptyIfZeroTimestamp(value.NextAttemptAt),
 		LastError:         value.LastError,
-		SentAt:            value.SentAt,
+		SentAt:            emptyIfZeroTimestamp(value.SentAt),
 		OccurrencesAtSend: value.OccurrencesAtSend,
 		SeverityAtSend:    value.SeverityAtSend,
 		StatusAtSend:      value.StatusAtSend,
