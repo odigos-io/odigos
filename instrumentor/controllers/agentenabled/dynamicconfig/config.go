@@ -63,7 +63,9 @@ func calculateTracesConfig(
 			agentConfig.UrlTemplatization = urlTemplatizationConfig
 		} else {
 			collectorConfig = &commonapi.ContainerCollectorConfig{
-				UrlTemplatization: urlTemplatizationConfig,
+				SourceCollectorConfig: commonapi.SourceCollectorConfig{
+					UrlTemplatization: urlTemplatizationConfig,
+				},
 			}
 		}
 	}
@@ -161,6 +163,9 @@ func calculateTracesConfig(
 
 	// Custom Instrumentations - Agent only (not applicable to collector)
 	agentConfig.CustomInstrumentations = traces.CalculateCustomInstrumentationsConfig(d, irls)
+
+	// Kernel Traces - Agent only (not applicable to collector)
+	agentConfig.KernelTraces = traces.CalculateKernelTracesConfig(irls)
 
 	return agentConfig, collectorConfig, nil
 }
