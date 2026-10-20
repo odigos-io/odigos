@@ -75,9 +75,16 @@ data:
       {{- end }}
     {{- end }}
     {{- if include "odigos.interrogationEnabled" . }}
+    {{- $apiBase := include "odigos.interrogationApiBase" . }}
     interrogation:
       enabled: true
       mode: {{ .Values.insights.interrogation.mode | default "auto" | quote }}
+      model:
+        provider: {{ include "odigos.interrogationModelProvider" . | quote }}
+        name: {{ include "odigos.interrogationModelName" . | quote }}
+        {{- if $apiBase }}
+        apiBase: {{ $apiBase | quote }}
+        {{- end }}
     {{- end }}
     {{- /*
     Enterprise-only. Gated on odigos.secretExists like insights: without a token the

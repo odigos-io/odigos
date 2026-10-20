@@ -2,8 +2,12 @@ package interrogation
 
 import (
 	"context"
+	"math"
+	"strings"
 	"testing"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,7 +96,7 @@ func TestGetTransactionSampleTraceUnavailable(t *testing.T) {
 
 func TestListContainerTransactionsUnavailable(t *testing.T) {
 	c := NewClient("", "")
-	_, err := c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app")
+	_, err := c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{})
 	assert.ErrorIs(t, err, ErrUnavailable)
 }
 
@@ -108,4 +112,195 @@ func TestNewClientEmptyConfig(t *testing.T) {
 	assert.Nil(t, c.db)
 	c = NewClient("tcp://localhost:9000", "")
 	assert.Nil(t, c.db)
+}
+
+type fakeConn struct {
+	driver.Conn
+	query string
+	args  []any
+	rows  []callTrieEdgeRow
+}
+
+func (c *fakeConn) Query(_ context.Context, query string, args ...any) (driver.Rows, error) {
+	c.query = query
+	c.args = args
+	return &fakeRows{rows: c.rows, next: -1}, nil
+}
+
+type fakeRows struct {
+	driver.Rows
+	rows []callTrieEdgeRow
+	next int
+}
+
+func (r *fakeRows) Next() bool {
+	r.next++
+	return r.next < len(r.rows)
+}
+
+func (r *fakeRows) Scan(dest ...any) error {
+	row := r.rows[r.next]
+	*dest[0].(*string) = row.TransactionID
+	*dest[1].(*string) = row.NodeID
+	*dest[2].(*string) = row.Parent
+	*dest[3].(*string) = row.FunctionName
+	*dest[4].(*string) = row.FrameType
+	*dest[5].(*string) = row.SampleType
+	*dest[6].(*uint64) = row.Count
+	return nil
+}
+
+func (r *fakeRows) Err() error   { return nil }
+func (r *fakeRows) Close() error { return nil }
+
+func TestListContainerTransactionsNoFilter(t *testing.T) {
+	conn := &fakeConn{rows: []callTrieEdgeRow{
+		{TransactionID: "tx-a", NodeID: "n1", Parent: "root", FunctionName: "Pay", FrameType: "jvm", SampleType: "samples", Count: 2},
+	}}
+	c := NewClientWithConn(conn)
+
+	got, err := c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{})
+	require.NoError(t, err)
+	require.Len(t, got.Transactions, 1)
+	assert.Equal(t, "tx-a", got.Transactions[0].ID)
+
+	assert.Equal(t, []any{"default", "Deployment", "checkout", "app"}, conn.args)
+	assert.NotContains(t, conn.query, "TransactionId IN")
+	assert.NotContains(t, conn.query, "positionCaseInsensitiveUTF8")
+	assert.NotContains(t, conn.query, "LIMIT")
+}
+
+func TestListContainerTransactionsFilters(t *testing.T) {
+	conn := &fakeConn{}
+	c := NewClientWithConn(conn)
+
+	_, err := c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{
+		IDs:    []string{"tx-a", "tx-b"},
+		Search: " Pay ",
+	})
+	require.NoError(t, err)
+
+	assert.Contains(t, conn.query, "AND TransactionId IN ?")
+	assert.Contains(t, conn.query, "AND positionCaseInsensitiveUTF8(TransactionId, ?) > 0")
+	assert.NotContains(t, conn.query, "LIMIT")
+	assert.Equal(t, []any{
+		"default", "Deployment", "checkout", "app",
+		clickhouse.GroupSet{Value: []any{"tx-a", "tx-b"}},
+		"Pay",
+	}, conn.args)
+}
+
+func TestListContainerTransactionsPage(t *testing.T) {
+	conn := &fakeConn{}
+	c := NewClientWithConn(conn)
+
+	_, err := c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{
+		Search: "pay",
+		Limit:  25,
+		Offset: 50,
+	})
+	require.NoError(t, err)
+
+	assert.Contains(t, conn.query, "ORDER BY countIf(Parent = 'root' AND SampleType = 'samples') DESC, TransactionId ASC")
+	assert.Contains(t, conn.query, "LIMIT ? OFFSET ?")
+	assert.Equal(t, strings.Count(conn.query, "?"), len(conn.args))
+	assert.Equal(t, []any{
+		"default", "Deployment", "checkout", "app", "pay",
+		"default", "Deployment", "checkout", "app", "pay",
+		uint64(25), uint64(50),
+	}, conn.args)
+}
+
+func TestListContainerTransactionsOffsetWithoutLimit(t *testing.T) {
+	conn := &fakeConn{}
+	c := NewClientWithConn(conn)
+
+	_, err := c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{Offset: 10})
+	require.NoError(t, err)
+
+	require.GreaterOrEqual(t, len(conn.args), 2)
+	assert.Equal(t, []any{uint64(math.MaxUint64), uint64(10)}, conn.args[len(conn.args)-2:])
+}
+
+func TestListContainerTransactionsEmptyIDs(t *testing.T) {
+	conn := &fakeConn{}
+	c := NewClientWithConn(conn)
+
+	got, err := c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{IDs: []string{}})
+	require.NoError(t, err)
+	assert.Empty(t, got.Transactions)
+	assert.Empty(t, conn.query)
+}
+
+func TestListContainerTransactionsNegativePage(t *testing.T) {
+	c := NewClientWithConn(&fakeConn{})
+
+	_, err := c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{Limit: -1})
+	assert.Error(t, err)
+	_, err = c.ListContainerTransactions(context.Background(), "default", "Deployment", "checkout", "app", TransactionsFilter{Offset: -1})
+	assert.Error(t, err)
+}
+
+func TestListSourcesUnavailable(t *testing.T) {
+	c := NewClient("", "")
+	_, err := c.ListSources(context.Background())
+	assert.ErrorIs(t, err, ErrUnavailable)
+}
+
+type fakeSourcesConn struct {
+	driver.Conn
+	query string
+	rows  []SourceTransactions
+}
+
+func (c *fakeSourcesConn) Query(_ context.Context, query string, _ ...any) (driver.Rows, error) {
+	c.query = query
+	return &fakeSourceRows{rows: c.rows, next: -1}, nil
+}
+
+type fakeSourceRows struct {
+	driver.Rows
+	rows []SourceTransactions
+	next int
+}
+
+func (r *fakeSourceRows) Next() bool {
+	r.next++
+	return r.next < len(r.rows)
+}
+
+func (r *fakeSourceRows) Scan(dest ...any) error {
+	row := r.rows[r.next]
+	*dest[0].(*string) = row.Namespace
+	*dest[1].(*string) = row.Kind
+	*dest[2].(*string) = row.Name
+	*dest[3].(*string) = row.ContainerName
+	*dest[4].(*uint64) = row.TransactionCount
+	return nil
+}
+
+func (r *fakeSourceRows) Err() error   { return nil }
+func (r *fakeSourceRows) Close() error { return nil }
+
+func TestListSources(t *testing.T) {
+	conn := &fakeSourcesConn{rows: []SourceTransactions{
+		{Namespace: "shop", Kind: "Deployment", Name: "checkout", ContainerName: "app", TransactionCount: 3},
+	}}
+	c := NewClientWithConn(conn)
+
+	got, err := c.ListSources(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, conn.rows, got)
+	assert.Contains(t, conn.query, "uniqExact(TransactionId)")
+	assert.Contains(t, conn.query, "GROUP BY Namespace, WorkloadKind, WorkloadName, ContainerName")
+}
+
+func TestSourcesToModelDropsUnknownKinds(t *testing.T) {
+	got := SourcesToModel([]SourceTransactions{
+		{Namespace: "shop", Kind: "Deployment", Name: "checkout", ContainerName: "app", TransactionCount: 3},
+		{Namespace: "shop", Kind: "NotAKind", Name: "odd", ContainerName: "app", TransactionCount: 1},
+	})
+	require.Len(t, got, 1)
+	assert.Equal(t, "checkout", got[0].ID.Name)
+	assert.Equal(t, 3, got[0].TransactionCount)
 }

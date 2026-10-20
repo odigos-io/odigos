@@ -408,3 +408,52 @@ export const GET_NAMESPACES_WITH_WORKLOADS = gql`
     }
   }
 `;
+
+// Interrogation transactions with their call tries, for the Interrogations page.
+export const GET_INTERROGATION_TRANSACTIONS = gql`
+  query GetInterrogationTransactions($ids: [K8sWorkloadIdInput!]!) {
+    workloadsByIds(ids: $ids) {
+      id {
+        namespace
+        kind
+        name
+      }
+      containers {
+        containerName
+        interrogationTransactions {
+          id
+          seenCount
+          functions {
+            name
+            frameType
+            sampleType
+            seenCount
+          }
+          callTrie {
+            id
+            parentId
+            name
+            frameType
+            sampleType
+            seenCount
+          }
+        }
+      }
+    }
+  }
+`;
+
+// Workload containers that have interrogation transactions, so the page can skip sources without any.
+export const GET_INTERROGATION_SOURCES = gql`
+  query GetInterrogationSources {
+    interrogationSources {
+      id {
+        namespace
+        kind
+        name
+      }
+      containerName
+      transactionCount
+    }
+  }
+`;

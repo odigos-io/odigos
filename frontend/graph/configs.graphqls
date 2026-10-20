@@ -16,6 +16,7 @@ type Config {
   clusterName: String
   isCentralProxyRunning: Boolean
   insightsEnabled: Boolean!
+  interrogationEnabled: Boolean!
 }
 
 # Effective configuration, reflects the actual values applied to the cluster
@@ -161,11 +162,6 @@ enum InterrogationMode {
   auto
 }
 
-type InterrogationConfig {
-  enabled: Boolean
-  mode: InterrogationMode
-}
-
 type LiveTrafficLearningAutomaticRulesConfig {
   enabled: Boolean
 }
@@ -190,6 +186,18 @@ type UrlTemplatizationCardinalityControlConfig {
 
 type CardinalityControlConfig {
   urlTemplatization: UrlTemplatizationCardinalityControlConfig
+}
+
+type InterrogationModelConfig {
+  provider: String
+  name: String
+  apiBase: String
+}
+
+type InterrogationConfig {
+  enabled: Boolean
+  mode: InterrogationMode
+  model: InterrogationModelConfig
 }
 
 type KarpenterConfig {
@@ -312,8 +320,8 @@ type EffectiveConfig {
   componentLogLevels: ComponentLogLevelsConfig
   sampling: SamplingConfig
   profiling: ProfilingConfig
-  interrogation: InterrogationConfig
   cardinalityControl: CardinalityControlConfig
+  interrogation: InterrogationConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
 }

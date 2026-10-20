@@ -878,7 +878,7 @@ func (r *k8sWorkloadContainerResolver) URLTemplatization(ctx context.Context, ob
 }
 
 // InterrogationTransactions is the resolver for the interrogationTransactions field.
-func (r *k8sWorkloadContainerResolver) InterrogationTransactions(ctx context.Context, obj *model.K8sWorkloadContainer) ([]*model.InterrogationTransaction, error) {
+func (r *k8sWorkloadContainerResolver) InterrogationTransactions(ctx context.Context, obj *model.K8sWorkloadContainer, ids []string, search *string, limit *int, offset *int) ([]*model.InterrogationTransaction, error) {
 	if obj == nil || obj.ContainerName == "" {
 		return []*model.InterrogationTransaction{}, nil
 	}
@@ -899,12 +899,27 @@ func (r *k8sWorkloadContainerResolver) InterrogationTransactions(ctx context.Con
 		return nil, err
 	}
 
+	filter := interrogation.TransactionsFilter{IDs: ids}
+	if search != nil {
+		filter.Search = *search
+	}
+	if limit != nil {
+		if *limit < 1 {
+			return nil, fmt.Errorf("limit must be positive")
+		}
+		filter.Limit = *limit
+	}
+	if offset != nil {
+		filter.Offset = *offset
+	}
+
 	got, err := r.InterrogationClient.ListContainerTransactions(
 		ctx,
 		workloadID.Namespace,
 		string(workloadID.Kind),
 		workloadID.Name,
 		obj.ContainerName,
+		filter,
 	)
 	if err != nil {
 		return nil, err
@@ -1125,6 +1140,23 @@ func (r *queryResolver) Namespaces(ctx context.Context) ([]*model.K8sNamespace, 
 		})
 	}
 	return gqlNss, nil
+}
+
+// InterrogationSources is the resolver for the interrogationSources field.
+func (r *queryResolver) InterrogationSources(ctx context.Context) ([]*model.InterrogationSource, error) {
+	enabled, err := interrogation.IsEnabled(ctx, r.K8sCacheClient)
+	if err != nil {
+		return nil, fmt.Errorf("reading effective config for interrogation: %w", err)
+	}
+	if !enabled || r.InterrogationClient == nil {
+		return []*model.InterrogationSource{}, nil
+	}
+
+	sources, err := r.InterrogationClient.ListSources(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return interrogation.SourcesToModel(sources), nil
 }
 
 // InterrogationTransaction returns InterrogationTransactionResolver implementation.

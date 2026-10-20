@@ -21,3 +21,24 @@ spec:
         options:
           - off
           - auto
+    - displayName: Provider
+      componentType: input
+      isHelmOnly: true
+      isEnterpriseOnly: true
+      description: LiteLLM provider prefix used to route requests to the model. Set with Helm `insights.interrogation.model.provider`.
+      helmValuePath: interrogation.model.provider
+      renderCondition: ["interrogation.enabled", "==", "true"]
+    - displayName: Model
+      componentType: input
+      isHelmOnly: true
+      isEnterpriseOnly: true
+      description: Provider model name, without the provider prefix. Set with Helm `insights.interrogation.model.name`.
+      helmValuePath: interrogation.model.name
+      renderCondition: ["interrogation.enabled", "==", "true"]
+    - displayName: API Base URL
+      componentType: input
+      isHelmOnly: true
+      isEnterpriseOnly: true
+      description: Optional OpenAI-compatible endpoint for the provider. Set with Helm `insights.interrogation.model.apiBase`. The API key is set with Helm `insights.interrogation.model.apiKey`.
+      helmValuePath: interrogation.model.apiBase
+      renderCondition: ["interrogation.enabled", "==", "true"]

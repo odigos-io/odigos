@@ -12,6 +12,7 @@ export const GET_CONFIG = gql`
       clusterName
       isCentralProxyRunning
       insightsEnabled
+      interrogationEnabled
     }
   }
 `;
@@ -190,10 +191,6 @@ export const GET_EFFECTIVE_CONFIG = gql`
       profiling {
         enabled
       }
-      interrogation {
-        enabled
-        mode
-      }
       cardinalityControl {
         urlTemplatization {
           liveTrafficLearning {
@@ -209,6 +206,15 @@ export const GET_EFFECTIVE_CONFIG = gql`
               enabled
             }
           }
+        }
+      }
+      interrogation {
+        enabled
+        mode
+        model {
+          provider
+          name
+          apiBase
         }
       }
       provenance {
