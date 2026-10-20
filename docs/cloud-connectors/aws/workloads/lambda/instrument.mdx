@@ -40,7 +40,8 @@ However you apply it, self-managed Lambda instrumentation adds the same things t
    | `odigos:collector-layer` | The exact collector layer ARN (ADOT distros only) |
 
    Without the tags, Odigos has no way to tell an instrumented function from one you haven't touched yet. It
-   keeps reporting the function as **Not Instrumented / Waiting for you**, even if everything else is in place.
+   keeps reporting the function as **Waiting for you to apply the instrumentation**, even if everything else is
+   in place.
 
 Those two environment variables are the only ones Odigos adds. Your own environment variables are left
 untouched.
@@ -61,7 +62,7 @@ key names and needs layers **v0.0.19 or newer**.
 | `headers` | No | Map of headers sent to the destination, for example `{"x-api-key":"..."}`. Must match the headers configured on the destination. |
 | `applicationSignals` | No | `true` for the ADOT + Application Signals preset. Requires both `"traces"` and `"metrics"` in `signals`. See [Distros](/cloud-connectors/aws/workloads/lambda/distros#adot-with-application-signals). |
 | `functionLogs` | No | `true` to collect the function's stdout and stderr as logs. Set it **exactly when** the destination enables logs **and** the function is in handler mode **and** runs Ruby or a lightweight Java wrapper. Leave it out otherwise — Odigos checks it. |
-| `debug` | No | `true` for debug logging (`OTEL_LOG_LEVEL=debug`). Handler mode only. Set it only when debug telemetry is enabled for the connector. |
+| `debug` | No | `true` for debug logging (`OTEL_LOG_LEVEL=debug`). Handler mode only. Set it exactly when debug telemetry is enabled for the connector — Odigos checks it. |
 | `webWrapper` | Web Adapter | The function's original `AWS_LAMBDA_EXEC_WRAPPER`, for functions behind the AWS Lambda Web Adapter. Use `""` when there is none. |
 
 <Tabs>
@@ -90,8 +91,9 @@ key names and needs layers **v0.0.19 or newer**.
 </Warning>
 
 <Warning>
-  A version 2 configuration on a layer older than **v0.0.19** also fails to start. The older launcher only
-  understands the short-key version 1 format. Upgrade the layers together with the configuration.
+  A version 2 configuration on a **v0.0.18** layer also fails to start: that launcher only understands the
+  short-key version 1 format. Layers older than v0.0.18 don't read `ODIGOS_LAMBDA_CONFIG` at all. Upgrade the
+  layers together with the configuration.
 </Warning>
 
 <Warning>
@@ -152,7 +154,7 @@ new OdigosLambdaInstrumentation(this, 'Odigos', {
   },
   serviceName: 'my-api',   // set explicitly if your stack doesn't name the function directly
   distro: 'java-lambda-otel-agent',   // optional; defaults to the language default
-  functions: [apiFn, workerFn],
+  functions: [apiFn],   // serviceName applies to every listed function, so use one construct per function
 });
 ```
 
@@ -162,7 +164,7 @@ you list. Set `distro` to the same ID you selected in Central.
 <Warning>
   Don't also enable a CDK-instrumented function as an Odigos-managed source. Every
   `cdk deploy` would reassert the CDK's configuration, every connector reconcile
-  would reassert its own, and you'd get a new function version on every round trip.
+  would reassert its own, and the function's configuration would be rewritten on every round trip.
 </Warning>
 
 <Card title="Full CDK reference" icon="code" href="/cloud-connectors/aws/cdk/lambda">
@@ -326,7 +328,7 @@ full agent, the upstream Node.js distro, and the upstream Python distro. Ruby an
   <Accordion title="The tags are not optional">
     The `odigos:iac` tag is how Odigos knows the function is instrumented at all, and the recorded layer ARNs
     are what future checks compare against, so a version you deliberately pinned is respected. Without them the
-    function stays at **Waiting for you**. The identity that deploys your function needs
+    function stays at **Waiting for you to apply the instrumentation**. The identity that deploys your function needs
     `lambda:TagResource`.
   </Accordion>
 
@@ -339,7 +341,8 @@ full agent, the upstream Node.js distro, and the upstream Python distro. Ruby an
   <Accordion title="The configuration must match the destination exactly">
     Odigos compares `ODIGOS_LAMBDA_CONFIG` with the connector's destination and Source: `service` with the Source's
     service name, `signals` with the destination's enabled signals, and `endpoint`, `http`, `insecure`, and
-    `headers` with the destination's endpoint, protocol, TLS setting, and headers. A missing signal and an extra signal are both drift, and the
+    `headers` with the destination's endpoint, protocol, TLS setting, and headers. `applicationSignals`,
+    `functionLogs`, `debug`, and `webWrapper` must also be set exactly as the reference above describes. A missing signal and an extra signal are both drift, and the
     source shows **Instrumentation does not match**. To turn off a signal, turn it off on the destination first,
     then remove it from `signals`.
   </Accordion>

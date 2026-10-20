@@ -35,8 +35,8 @@ Pick Odigos-managed when you'd rather not touch your infrastructure code at all.
   Don't do both to the same workload. If a function or service is instrumented by
   your CDK app **and** also enabled as an Odigos-managed source, each side keeps
   reasserting its own configuration — every deploy fights every reconcile, and each
-  round trip creates a new Lambda version or ECS task revision. Pick one per
-  workload.
+  round trip rewrites the Lambda function's configuration or registers a new ECS task
+  definition revision. Pick one per workload.
 </Warning>
 
 ## Install
@@ -47,8 +47,7 @@ npm install @odigos/aws-cdk
 
 <Info>
   **TypeScript and JavaScript only, for now.** A Python distribution
-  (`odigos-aws-cdk`) is built but not yet published — it's waiting on package-index
-  approval. Until it's out, Python CDK apps should use the
+  (`odigos-aws-cdk`) is built but not yet published. Until it's out, Python CDK apps should use the
   [CloudFormation instructions](/cloud-connectors/aws/workloads/lambda/instrument#using-cloudformation-directly)
   instead.
 </Info>
@@ -94,7 +93,7 @@ what with." The marker differs by service:
 | What it records | `odigos:iac=v1`, `odigos:sdk-layer` (the exact SDK layer ARN), and `odigos:collector-layer` (ADOT only) | The package version, the language, and the agents image |
 
 <Warning>
-  Without that marker, Odigos reports the workload as **awaiting your deployment** —
+  Without that marker, Odigos reports the workload as **Waiting for you to apply the instrumentation** —
   no matter how completely everything else was applied. The constructs write it for
   you, so there's nothing to switch on; it matters mainly because you'll see it in
   a `cdk diff`, and because hand-written instrumentation has to include it too.

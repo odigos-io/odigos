@@ -51,7 +51,8 @@ This page is the map. For hands-on tasks, see:
 ## Resource types
 
 The connector splits AWS resources into two domains — **workloads**, which it can instrument directly, and
-**compute platforms**, which it can only discover today:
+**compute platforms**, which are reported for coverage only. Compute-platform discovery is not offered by any
+access level in the Create Cloud Connector UI:
 
 | Type                  | Domain           | Discovery | Instrumentation                      |
 | --------------------- | ---------------- | --------- | ------------------------------------ |
@@ -88,7 +89,7 @@ specifically:
 | Mode                   | Lambda                                                                                                                         | Fargate                                                                                                                                                  |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Odigos-managed**     | The connector attaches the distro's layer(s), sets `AWS_LAMBDA_EXEC_WRAPPER` and `ODIGOS_LAMBDA_CONFIG`, and tags the function, then keeps it that way. | The connector injects an `odigos-agent` sidecar into the service's task definition and rolls the service to the new revision, then keeps reconciling it. |
-| **Self-managed (IaC)** | You attach the layer(s), environment, and tags yourself via CloudFormation, the Odigos CDK construct, Terraform, or the AWS CLI. | You add the sidecar and environment yourself via CloudFormation or the Odigos CDK construct (`@odigos/aws-cdk`).                                          |
+| **Self-managed (IaC)** | You attach the layer(s), environment, and tags yourself via CloudFormation, the Odigos CDK construct, Terraform, or the AWS CLI. | You add the sidecar and environment yourself via CloudFormation, Terraform, or the Odigos CDK construct (`@odigos/aws-cdk`).                               |
 
 Self-managed is the default the moment you enable discovery without instrumentation for a type — nothing
 extra to configure. See [Instrument Lambda](/cloud-connectors/aws/workloads/lambda/instrument) and

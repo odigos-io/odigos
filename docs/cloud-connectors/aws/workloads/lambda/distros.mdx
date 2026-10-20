@@ -197,7 +197,8 @@ Prerequisites depend on how the function is instrumented:
     />
   </Step>
   <Step title="Pick the distro and save">
-    Choose from **Instrumentation / handler type** (Java) or **OpenTelemetry distro name** (other languages).
+    Choose from **Instrumentation / handler type** (Java handler functions) or **OpenTelemetry distro name**
+    (other languages, and Java functions behind the Web Adapter).
     The description under the field explains the selected option. Click the check button to save.
 
     <img
@@ -273,11 +274,11 @@ Odigos exports the signals your destination enables, as far as each distro can p
 | Distro | Traces | Metrics | Logs |
 | --- | --- | --- | --- |
 | Java full agent, Java ADOT | Yes | Yes | Yes |
-| Java lightweight wrappers | Yes | Only metrics your code records | Function output (stdout/stderr) |
+| Java lightweight wrappers | Yes | Exported when enabled | Function output (stdout/stderr) |
 | Node.js, Python (default and ADOT) | Yes | Yes | Yes |
 | Ruby | Yes | No | Function output (stdout/stderr) |
 
-"Function output" means logs are collected from the function's stdout and stderr through the Lambda
+"Yes" and "Exported when enabled" mean the signal is exported to your destination when you enable it there. What the SDK emits depends on its instrumentations and on what your code records, so a signal you enable can still be empty. "Function output" means logs are collected from the function's stdout and stderr through the Lambda
 Telemetry API, because those SDKs can't bridge your logging framework. For the other distros, application
 logs come from supported logging libraries (for example Logback or Log4j, Python `logging`, or Pino, Winston,
 and Bunyan) — a function that never logs produces no log records. No Lambda distro produces profiles.

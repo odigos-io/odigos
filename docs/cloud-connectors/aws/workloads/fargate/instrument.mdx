@@ -395,9 +395,10 @@ Merge these properties into your task definition. Only the exact agent path, act
 
 <AccordionGroup>
   <Accordion title="ODIGOS_IAC is per container">
-    It's the only thing marking a container as instrumented, and its mere presence is what counts. Odigos reads two
-    fields from it. `lang` is checked against the language Odigos detects for the container; leave it out and that
-    check is skipped. `image` records the agents image you staged from — Odigos holds the
+    It's the only thing marking a container as instrumented: its presence, with a valid JSON value, is what counts.
+    Odigos reads two fields from it. `lang` names the agent you staged, and Odigos uses it as the container's language;
+    a runtime override on the Source takes precedence, and a `lang` that disagrees with it is reported as drift. Leave
+    `lang` out and Odigos detects the language from the container itself. `image` records the agents image you staged from — Odigos holds the
     task to *that* image, so pinning or mirroring the image isn't reported as out of date; leave it out and the
     `odigos-agent` container is checked for being present, non-essential, and staging the right agents, whatever its tag.
     `v` is the schema version (`1`). All marked containers in one task definition must record the same `image`. Use
@@ -464,7 +465,7 @@ Merge these properties into your task definition. Only the exact agent path, act
   </Accordion>
 
   <Accordion title="Registry reachability">
-    The image is pulled by the task's execution role at every task start. If your task's subnet can't reach
+    The image is pulled at every task start. If your task's subnet can't reach
     `registry.odigos.io`, mirror the image into a registry it can — see
     [Preload artifacts](/cloud-connectors/aws/workloads/fargate/preload).
   </Accordion>

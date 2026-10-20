@@ -8,17 +8,15 @@ Use this page to operate connectors after they are online — health, immutable 
 
 ## Connector status
 
-The connectors list and detail views show installation and runtime health. The connector phase is one of:
+The Central UI shows each connector's health as a status indicator. The underlying phase, shown in the **Phase** column of `kubectl get odigoscloudconnectors -n odigos-central`, is one of:
 
 | Status | Meaning |
 | --- | --- |
-| **Pending** | The connector resource exists but has not started yet |
 | **Starting** | The connector workload is deploying, or the runtime has not finished registering, authenticating, and completing a successful discovery cycle |
 | **Connected** | The runtime is healthy: authenticated to the cloud account and discovery is succeeding |
 | **Degraded** | The runtime is up but not fully healthy (for example discovery failures, or heartbeats that have gone stale) |
 | **Error** | A hard failure that blocks a healthy runtime (for example the connector image cannot be resolved, or `spec.provider` was changed after create) |
 | **Disabled** | The connector runtime reported itself as disabled |
-| **Deleting** | The connector is being removed (including instrumentation cleanup when the deletion policy is `cleanup`) |
 
 <AccordionGroup>
   <Accordion title="Common causes of Degraded or Error">

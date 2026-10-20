@@ -66,7 +66,8 @@ A workload can reach the Collector when **all** of the following hold:
     [outbound path](#install-a-collector-automatic) you choose.
   </Step>
   <Step title="An ECS task execution role">
-    The role that ECS uses to start the Collector tasks. **You create it, once per account.** Odigos never
+    The role that ECS uses to start the Collector tasks. **You create it, once per connector in each AWS
+    account.** Odigos never
     creates IAM roles. The install wizard gives you a CloudFormation template for it; see step 1 of
     [Install a Collector (automatic)](#install-a-collector-automatic).
   </Step>
@@ -76,7 +77,7 @@ A workload can reach the Collector when **all** of the following hold:
     what the connector needs. See
     [IAM permissions](/cloud-connectors/add-connectors/add-aws-connector#iam-permissions).
 
-    In addition, scope `iam:PassRole` to the **ARN of your Collector execution role**, with the condition
+    In automatic mode, the connector's policy also needs `iam:PassRole` for the **ARN of your Collector execution role** (in addition to the `iam:PassRole` that Fargate instrumentation uses), with the condition
     `iam:PassedToService` equal to `ecs-tasks.amazonaws.com`.
 
     <Warning>
@@ -99,7 +100,7 @@ The Collector mode is set **per connector**.
 | --- | --- | --- | --- |
 | **Off** | Nothing. | Nothing. Workloads export directly. | Create or read Collector infrastructure. |
 | **Manual (customer IaC)** | Deploy the Collector yourself from generated IaC. | Finds the Collector by its tags, observes it, pushes its configuration over OpAMP, and routes workloads to it once it is ready. | Create, repair, or delete any of your infrastructure. |
-| **Automatic** | Create the execution role once, then run the install wizard. | Everything in Manual, plus creates and keeps in sync the ECS service, task definition, internal NLB, listeners, target groups, security group, log group, two Secrets Manager secrets (the OpAMP credential and the license), and autoscaling. | Create your ECS cluster, VPC, or execution role. |
+| **Automatic** | Create the execution role once, then run the install wizard. | Everything in Manual, plus creates and keeps in sync the ECS service, task definition, internal NLB, listeners, target groups, security group, log group, Secrets Manager secrets (the OpAMP credential, the license, and, when needed, a startup configuration), and autoscaling when it is enabled. | Create your ECS cluster, VPC, or execution role. |
 
 Both modes need an `ACTIVE` ECS cluster and an ECS task execution role that you provide.
 
@@ -152,8 +153,8 @@ method switch lets you view each step as an **Overview**, as **AWS CLI** command
 
     - Set the **`ConnectorName`** parameter to the **exact name of this connector**. The permissions in the
       role are scoped by that name.
-    - Deploy the stack **once per account**. IAM roles are account-wide, so a role you already created for
-      one region works for the others.
+    - Deploy the stack **once per connector in each AWS account**. IAM roles are account-wide, so a role you
+      already created for one region works for the others.
     - The role can be assumed by `ecs-tasks.amazonaws.com`, restricted to your account. It can write to the
       Collector's log group and read the Collector's secrets, and nothing else.
     - If you pull the Collector image from a **private ECR** repository, the role also needs
@@ -162,7 +163,7 @@ method switch lets you view each step as an **Overview**, as **AWS CLI** command
     - If your secrets are encrypted with a **customer-managed KMS key**, the role also needs `kms:Decrypt`
       on that key.
 
-    Remember to scope the connector's `iam:PassRole` to this role's ARN. See
+    Remember to allow the connector's `iam:PassRole` for this role's ARN (automatic mode). See
     [Prerequisites](#prerequisites).
   </Step>
   <Step title="Select the Collector region">
@@ -175,7 +176,7 @@ method switch lets you view each step as an **Overview**, as **AWS CLI** command
   </Step>
   <Step title="Choose the VPC">
     Enter the VPC ID. Odigos picks the subnets itself: subnets with free IP addresses and a usable outbound
-    route, preferably spread over two Availability Zones. You can see the choice later on the Collector's
+    route, preferably spread over at least two Availability Zones. You can see the choice later on the Collector's
     overview.
   </Step>
   <Step title="Choose the outbound path">
@@ -208,15 +209,16 @@ method switch lets you view each step as an **Overview**, as **AWS CLI** command
     By default the service runs **2 tasks** and keeps Collector logs for **7 days**.
   </Step>
   <Step title="Prepare automatic scaling">
-    ECS autoscaling needs the Application Auto Scaling service-linked role for ECS. If your account doesn't
-    have it yet, the wizard shows the command to create it:
+    ECS autoscaling needs the Application Auto Scaling service-linked role for ECS. The wizard shows the
+    command that creates it if your account doesn't have it yet:
 
     ```bash
     aws iam create-service-linked-role \
       --aws-service-name ecs.application-autoscaling.amazonaws.com
     ```
 
-    This step applies only when automatic scaling is selected.
+    You only need this role if the Collector uses automatic scaling. By default it runs a fixed number of
+    tasks, so you can skip the command.
   </Step>
   <Step title="Review and install">
     Review the summary, then click **Install Collector**. This is the step that creates resources in your
@@ -234,8 +236,10 @@ method switch lets you view each step as an **Overview**, as **AWS CLI** command
 </Steps>
 
 <Info>
-  By default the Collector gets its own security group. It admits traffic from the VPC the Collector runs
-  in, and from the security groups of the enabled Fargate services and VPC-attached Lambda functions. When
+  By default the Collector gets its own security group. It admits OTLP traffic from the security groups of
+  the enabled Fargate services and VPC-attached Lambda functions that can reach it. Only if Odigos can't
+  resolve those security groups does it fall back to admitting the Collector VPC's CIDR range, and it
+  reports the Collector as degraded while that fallback is in effect. When
   Odigos has to choose, it prefers subnets with private egress, at most one per Availability Zone, across up
   to three zones. If only one Availability Zone is usable, the Collector runs with reduced availability.
 </Info>
@@ -248,12 +252,13 @@ connects. It never creates, repairs, or deletes your resources.
 
 <Steps>
   <Step title="Open the install wizard">
-    On **Collectors**, click **Install collector**. Choose the region, ECS cluster, and VPC as in the
+    On **Collectors**, click **Install new collector** (or **Install collector** from an empty state).
+    Choose the region, ECS cluster, and VPC as in the
     automatic flow, and pre-create the [execution role](#install-a-collector-automatic).
   </Step>
   <Step title="Enter your subnets and security group">
     Fill in **Collector subnet IDs** and **Collector security group ID**. Create the security group and the
-    CloudWatch log group yourself first.
+    CloudWatch log group (`/odigos/collector/<connector>`) yourself first.
 
     <Warning>
       On the Collector security group, allow inbound **TCP 4317 and 4318** from your workloads' security
@@ -303,7 +308,7 @@ Tag the resources you create so Odigos can find them:
 | `odigos-connector` | The connector name |
 | `odigos-connector-id` | The connector ID |
 | `odigos-region` | The Collector's region |
-| `odigos-network` | The network the Collector runs in |
+| `odigos-network` | The ID of the VPC the Collector runs in |
 | `odigos-iac` | `customer` |
 
 The rendered IaC includes these tags, so keep them as generated.
@@ -347,9 +352,10 @@ A workload goes through the Collector only when **all** of these are true:
   <Tab title="With a global destination">
     The cutover is gradual, so one bad rollout doesn't hit everything at once.
 
-    - Odigos announces a **one-minute warning window** when the Collector is ready. Nothing moves until it
-      ends.
-    - Workloads then move in **batches of 10** per pass, Fargate services and Lambda functions together.
+    - Once the Collector is ready and there are eligible instrumented workloads, Odigos announces a
+      **one-minute warning window**. Nothing moves until it ends.
+    - Workloads then move in **batches of up to 10** per pass by default, shared between Fargate services
+      and Lambda functions.
     - Each moved workload gets a **new revision**: a new task definition revision for a Fargate service, or an
       updated configuration for a Lambda function.
     - Failed cutovers are retried, oldest first. At most half of each batch is retries, so workloads that
@@ -407,7 +413,7 @@ The region's overview shows:
 | --- | --- |
 | Gauges | **CPU** and **Queue depth** |
 | **Throughput** | Accepted spans, dropped spans, uptime |
-| **Resources** | The Collector's resource usage |
+| **Resources** | CPU and memory size, memory in use, and whether the Collector is enabled |
 | **Placement** | Execution role, ECS cluster, VPC, public task IP, and subnets (**Selected by Odigos** or **Pinned**) |
 | **Runtime** | gRPC and HTTP endpoints, tasks, config, first ready time |
 | **Destinations** | The Collector's downstream destinations |
@@ -422,14 +428,16 @@ When a workload exports directly instead of through the Collector, its status sh
 | Note | Meaning |
 | --- | --- |
 | `Defaulting to the global OTLP destination: the Odigos Managed Regional Collector has not reported ready yet.` | The Collector hasn't been ready yet. The workload moves once it is. |
-| `Defaulting to the global OTLP destination: this workload is not attached to a VPC and cannot reach the Odigos Managed Regional Collector.` | A Lambda function without a VPC. This is permanent by design. |
+| `Defaulting to the global OTLP destination: the Odigos Managed Regional Collector has no ingress endpoint yet.` | The Collector exists, but its load balancer endpoint isn't published yet. |
+| `Defaulting to the global OTLP destination: this Lambda has no VPC configuration, so it cannot reach the Odigos Managed Regional Collector. Odigos will not attach the function to a VPC or change its VpcConfig.` | A Lambda function without a VPC. This is permanent by design. |
 | `Defaulting to the global OTLP destination: no Odigos Managed Regional Collector is set up in this region.` | The routing destination exists, but this region has no Collector. |
-| `Defaulting to the global OTLP destination: the Odigos Managed Regional Collector is not known to be reachable from this workload's network.` | Different VPC without peering, overlapping CIDRs, missing routes, or a Collector security group that doesn't admit the workload. See [Which workloads use it](#which-workloads-use-it). |
+| `Defaulting to the global OTLP destination: the Odigos Managed Regional Collector is not known to be reachable from this workload's network.` | A Fargate service in a different VPC without peering, with overlapping CIDRs or missing routes, or one the Collector security group doesn't admit. For a Fargate service, the note starts with the workload's VPC ID and what to fix. See [Which workloads use it](#which-workloads-use-it). |
+| `Defaulting to the global OTLP destination: this VPC-attached Lambda cannot currently reach the Odigos Managed Regional Collector. ...` | The same for a VPC-attached Lambda function. The note goes on to list what to fix. |
 | `Continuing to use the global OTLP destination until this workload is admitted to the regional Collector rollout.` | The workload is eligible but waiting for its batch. |
 | `Cannot export telemetry through the Odigos Managed Regional Collector: <cause>, and no global OTLP destination is configured for fallback.` | There is no global destination, so the workload can't export at all. Fix the cause or add a global destination. |
 
-During a cutover, the Collector reports `N workload cutover(s) in <region> failed and will be retried.` when
-some workloads couldn't be moved yet. The one-minute warning shows as:
+During a cutover, the Collector reports `N workload cutover(s) in <region> failed and will be retried. Examples: <workloads>.`
+when some workloads couldn't be moved yet. The one-minute warning shows as:
 
 > The regional Collector is ready. New workload cutovers are announced and will begin after the one-minute warning window, in bounded batches.
 
@@ -437,9 +445,12 @@ some workloads couldn't be moved yet. The one-minute warning shows as:
 
 <Tabs>
   <Tab title="Automatic">
-    On the region's overview, click **Uninstall**. Odigos deletes the ECS service, the load balancer, and the
-    security group, and retries the security group while network interfaces release. **Deleting** can last up
-    to 30 minutes. After that it moves to **Error** and Odigos keeps retrying.
+    On the region's overview, click **Uninstall**. Odigos revokes the Collector's credentials, then deletes
+    the resources it created: the ECS service and its tasks, any autoscaling target and policies, the load
+    balancer and its listeners, the target groups, the security group, the Collector's secrets, and its log
+    group. It retries the security group while network interfaces release. **Deleting** can last up to 30
+    minutes. After that it moves to **Error** and Odigos keeps retrying. Task definition revisions, the
+    execution role, the cluster, and the VPC stay in your account.
   </Tab>
   <Tab title="Manual">
     Click **Remove from Odigos**. Odigos revokes the Collector's credential and removes its declaration. **The

@@ -53,7 +53,7 @@ Provider-specific permission lists are covered on the corresponding Add connecto
 Connectors organize resources into two domains:
 
 - **Workloads** — resources Odigos discovers and can instrument directly (for example AWS Lambda functions or ECS Fargate services).
-- **Compute platforms** — managed environments such as Amazon ECS clusters. These can be discovered today; installing a separate Odigos agent onto them expands coverage over time.
+- **Compute platforms** — managed environments such as Amazon ECS clusters. These are reported for coverage only; Odigos does not install an agent onto them yet, and they are not offered by the access levels in the Create Cloud Connector UI.
 
 You choose which resource types to discover and instrument when you add a connector (per-type capabilities).
 
@@ -76,7 +76,7 @@ Rather than using a dedicated mode toggle, Odigos controls access through per-ty
   applied and kept up to date without changing your IaC.
 </Tip>
 
-A self-managed workload shows as **Not Instrumented / Waiting for you** until Odigos observes that you've applied its instrumentation, then it flips to **Instrumented** on its own — there is nothing to click on the Odigos side. If a self-managed workload is later disabled as a Source or its Source is deleted while your instrumentation is still applied, it reports an error rather than silently going dark — Odigos never removes instrumentation it did not apply, so taking it back out is yours to do.
+A self-managed workload shows as **Waiting for you to apply the instrumentation** until Odigos observes that you've applied its instrumentation, then it flips to **Instrumented** on its own — there is nothing to click on the Odigos side. If a self-managed workload is later disabled as a Source or its Source is deleted while your instrumentation is still applied, it reports an error rather than silently going dark — Odigos never removes instrumentation it did not apply, so taking it back out is yours to do.
 
 <Warning>
   Instrument a given workload **one way, not both**. A function or service you
@@ -96,7 +96,7 @@ Current coverage includes the following providers and resource types. Additional
 | --- | --- | --- |
 | AWS Lambda (`aws.lambda`) | Yes | Yes — Odigos-managed or self-managed |
 | Amazon ECS Fargate tasks (`aws.fargate-task`) | Yes | Yes — Odigos-managed or self-managed |
-| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | n/a (coverage/grouping only; agent install coming soon) |
+| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | n/a (coverage/grouping only; agent install for `aws.ecs-cluster` coming soon) |
 | Odigos Collector on ECS Fargate (`aws.fargate-collector`) | Observes a Collector you deploy | Installs and manages it for you (optional); see [Regional Collector](/cloud-connectors/aws/regional-collector) |
 | GCP Cloud Run (`gcp.cloud-run`) | Yes | Yes |
 | GKE (`gcp.gke`) / Compute Engine (`gcp.gce`) | Yes | Coming soon |

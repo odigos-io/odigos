@@ -256,7 +256,7 @@ registry — the construct defaults to `registry.odigos.io/odigos-fargate-agents
 release ships (multi-arch: Intel and ARM/Graviton).
 
 <Warning>
-  **This image is pulled by your task's execution role every time a task starts.** A
+  **This image is pulled every time a task starts.** A
   task in a private subnet with no NAT gateway and no registry endpoint can't reach
   the default public registry, and the pull failure will block your application
   container from starting.
@@ -289,8 +289,8 @@ Whichever image you use is recorded in the `ODIGOS_IAC` marker, and Odigos holds
 rather than to whatever the connector's own build happens to use. Two useful consequences:
 
 - Your mirror is judged against itself, not flagged for differing from the default.
-- Upgrading this package ahead of the connector isn't drift either — the service stays conformant until you
-  redeploy.
+- Upgrading this package ahead of the connector isn't drift either, and neither is upgrading the connector
+  ahead of this package — each service is held to the image its own deployment recorded.
 
 <Note>
   What *is* reported: two containers in the same task definition recording different

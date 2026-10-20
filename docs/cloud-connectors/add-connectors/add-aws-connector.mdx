@@ -19,11 +19,12 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 | `aws.fargate-task` | Workload | Yes | Yes (agent-staging sidecar in the task definition) |
 | `aws.fargate-collector` | Collector | Observes a Collector you deploy (manual mode) | Installs and manages the [regional Collector](/cloud-connectors/aws/regional-collector) (automatic mode). Shown as "Odigos Collector (ECS Fargate)". |
 | `aws.ecs-cluster` | Compute platform | Yes | Coming soon |
-| `aws.fargate-cluster` | Compute platform | Yes | Coming soon |
+| `aws.fargate-cluster` | Compute platform | Yes | n/a (coverage only) |
 
 <Info>
-  `aws.ecs-cluster` and `aws.fargate-cluster` are discovered for coverage today;
-  Odigos does not yet install a separate agent onto them. `aws.fargate-task` — an
+  `aws.ecs-cluster` and `aws.fargate-cluster` are compute platforms, reported for
+  coverage only; Odigos does not install an agent onto them. They are not offered
+  by any access level in the Create Cloud Connector UI. `aws.fargate-task` — an
   individual Fargate **service** — is the ECS resource Odigos instruments directly.
 </Info>
 
@@ -45,12 +46,12 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
 ## Add the connector
 
 <Steps>
-  <Step title="Open Add connector and choose AWS">
-    In the Central UI, open Connections / Connectors and start **Add connector**. Choose **AWS**.
+  <Step title="Open Create Cloud Connector and choose AWS">
+    In the Central UI, open **Connections**, click **Create new**, and choose **Cloud Connector**. In the **Create Cloud Connector** drawer, choose **AWS**.
   </Step>
 
   <Step title="Choose access level">
-    Choose how much access this connector should have. The UI shows an **example IAM permissions policy** for the level you pick. You will attach that policy when you create the IAM role or user in the next step.
+    Choose how much access this connector should have. The UI shows a **Policy preview** of the IAM policy for the level you pick. You will attach that policy when you create the IAM role or user in the next step.
 
     <img
       src="/images/cloud-connectors/aws-access-level.png"
@@ -68,7 +69,7 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       <Tab title="Discovery + instrumentation">
         The connector can discover resources and instrument supported workloads. Prefer this for a full setup in one step.
 
-        Includes all discovery actions, plus Odigos-managed instrumentation for Lambda and Fargate. The policy also includes the actions and `Deny` statements used by the ADOT + Application Signals Lambda distro; see [IAM permissions](#iam-permissions).
+        Includes all discovery actions, plus Odigos-managed instrumentation for Lambda and Fargate, including the actions used by the ADOT + Application Signals Lambda distro; see [IAM permissions](#iam-permissions).
 
         Odigos-managed instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online.
       </Tab>
@@ -78,9 +79,9 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
         Includes everything in **Discovery + instrumentation**, plus the permissions Odigos needs to deploy and manage the [regional Collector](/cloud-connectors/aws/regional-collector). The regional Collector also requires [Managed Collectors](/cloud-connectors/enable#managed-collectors) to be enabled on Central.
       </Tab>
       <Tab title="Custom">
-        Pick which resource types may be discovered and which may be instrumented or managed. The UI updates the **policy preview** to match your selections so the IAM policy stays aligned with what verification will validate.
+        Pick which resource types may be discovered and which may be instrumented, and whether Odigos manages or installs the regional Collector. The UI updates the **Policy preview** to match your selections.
 
-        Use Custom when you need a narrower or broader mix than the presets (e.g. discover ECS clusters but only instrument Lambda).
+        Use Custom when you need a different mix than the presets (e.g. discover Fargate services but only instrument Lambda).
 
         <img
           src="/images/cloud-connectors/aws-custom-access.png"
@@ -91,15 +92,15 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
 
         | Column | Meaning |
         | --- | --- |
-        | **Enabled** | Whether Odigos may instrument this resource type |
-        | **Instrumentation mode** | The toggle chooses between Odigos-managed instrumentation (the connector applies and maintains the changes) and **Self-managed (IaC)** (you apply the instrumentation through your own pipeline) |
+        | **Enabled** | Whether Odigos discovers this resource type |
+        | **Instrumentation mode** | **Managed by Odigos** (Odigos applies instrumentation automatically) or **Self-managed (IaC)** (you apply the instrumentation through your own pipeline; Odigos does not modify these workloads). Turning on **Managed by Odigos** also turns on **Enabled** |
 
         The **Collector** table has a row for **Odigos Collector (ECS Fargate)**:
 
         | Column | Meaning |
         | --- | --- |
-        | **Management** | Odigos configures and observes a regional Collector that you deploy yourself from generated IaC |
-        | **Installation** | Odigos deploys and maintains the regional Collector in your account |
+        | **Management** | On: Odigos owns the Collector configuration, pushes it over OpAMP, and reports its health. Off: Odigos does not manage a Collector in this account |
+        | **Installation** | **Automatic** (Odigos creates and updates the Collector resources in your account) or **Self-managed (IaC)** (you deploy them yourself from the templates Odigos generates). **Automatic** also turns on **Management** |
       </Tab>
     </Tabs>
 
@@ -132,9 +133,9 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
 
     <Tabs>
       <Tab title="Assume IAM role">
-        The default. Odigos assumes a scoped IAM role in your account after establishing base credentials via workload identity or static access keys. Prefer this for production: you attach the permissions policy to the role, and Odigos does not rely on long-lived admin credentials in the connector.
+        The default. Odigos assumes a scoped IAM role in your account. Prefer this for production: you attach the permissions policy to the role, and Odigos does not rely on long-lived admin credentials in the connector.
 
-        The base credentials only need permission to call `sts:AssumeRole` on that role.
+        You enter only the Role ARN and External ID. The connector pod's own identity provides the base credentials, which only need permission to call `sts:AssumeRole` on that role.
       </Tab>
       <Tab title="Access keys">
         Odigos uses IAM user access keys that already have the permissions policy from the access level step attached. There is no role to create.
@@ -158,7 +159,7 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
     <Tabs>
       <Tab title="CloudFormation">
         1. Set the **External ID** in the UI before you copy the template, so the template and the connector use the same value.
-        2. Save the template from the UI as `odigos-connector.yaml`. It creates a role named `OdigosConnectorRole` and takes an `OdigosExternalId` parameter (default `odigos-connector`).
+        2. Save the template from the UI as `odigos-connector.yaml`. It creates a role named `OdigosConnectorRole` and takes an `OdigosExternalId` parameter, pre-filled with the External ID you entered (`odigos-connector` if you left it blank).
         3. Deploy it in the target AWS account:
 
            ```bash
@@ -185,9 +186,9 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       <Tab title="Manual">
         1. Open the AWS Console → IAM → Roles → Create role.
         2. Select **Custom trust policy**.
-        3. Paste the trust policy from the UI (includes the External ID condition when present).
+        3. Paste the trust policy from the UI (it requires the External ID).
         4. Attach the **permissions policy from the access level step**.
-        5. Name the role and create it.
+        5. Name the role `OdigosConnectorRole` and create it.
         6. Open the role summary and copy the **Role ARN**.
       </Tab>
       <Tab title="IAM user (access keys)">
@@ -213,17 +214,19 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       Must match the External ID in the role trust policy (e.g. `odigos-connector`). Strongly recommended: set it before copying the setup snippet, since a role created with a blank external ID cannot be assumed.
     </ParamField>
     <ParamField path="Access Key ID" type="string">
-      For the access keys method, or as base credentials for assuming a role. Leave empty when you use pod / workload identity (IRSA).
+      Shown only for the **Access keys** method.
     </ParamField>
     <ParamField path="Secret Access Key" type="string">
-      Secret access key for that identity. Leave empty when you use pod / workload identity (IRSA).
+      Secret access key for that identity. Shown only for the **Access keys** method.
     </ParamField>
+
+    With **Pod / workload identity** there are no credentials to enter.
 
     Credentials are stored in a Kubernetes Secret in the Central cluster — never in the connector spec.
 
     ### Bootstrap region (advanced)
 
-    Select **Show advanced fields** to reveal **Bootstrap region** (default `us-east-1`) and **Session Token** (required only for temporary access keys).
+    Select **Show advanced fields** to reveal **Bootstrap region** (default `us-east-1`) and, for the **Access keys** method, **Session Token** (required only for temporary access keys).
 
     <img
       src="/images/cloud-connectors/aws-bootstrap-region.png"
@@ -252,10 +255,12 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
     Click **Verify & Create Connector**. Central runs connection checks, then creates the credentials Secret and `OdigosCloudConnector` resource when verification succeeds.
 
     <Info>
-      Verification covers authentication and discovery permissions for the access
-      level you selected. For **Discovery + instrumentation**, also ensure the
-      instrumentation actions from the policy preview are on the role before you
-      create Sources.
+      Verification checks authentication, that the credentials belong to the AWS
+      Account ID you entered, region enumeration (`ec2:DescribeRegions`), and
+      Lambda and ECS list access (`lambda:ListFunctions`, `ecs:ListClusters`) in
+      every enabled region. It does not check instrumentation permissions, so for
+      **Discovery + instrumentation**, also ensure the instrumentation actions from
+      the policy preview are on the role before you create Sources.
 
       The connection test does not validate Collector permissions. If you chose a
       level that includes the Collector, confirm the Collector actions from the
@@ -308,15 +313,16 @@ Adds Odigos-managed instrumentation for Lambda and Fargate:
 | Set up CloudWatch Application Signals (ADOT + Application Signals distros only) | `iam:GetPolicy`, `iam:ListAttachedRolePolicies`, `iam:AttachRolePolicy`, `iam:GetRole`, `application-signals:StartDiscovery`, `iam:CreateServiceLinkedRole`, `cloudtrail:CreateServiceLinkedChannel` |
 
 <Warning>
-  Scope `iam:PassRole` with the condition `iam:PassedToService=ecs-tasks.amazonaws.com`
-  so the connector can only pass roles to ECS tasks.
+  The generated policy grants `iam:PassRole` on all resources (`*`). Scope it yourself
+  with the condition `iam:PassedToService=ecs-tasks.amazonaws.com` so the connector can
+  only pass roles to ECS tasks.
 </Warning>
 
 #### Application Signals actions
 
 The Application Signals actions are only exercised when a Lambda source uses the [ADOT with Application Signals](/cloud-connectors/aws/workloads/lambda/distros#adot-with-application-signals) distro. In that case the connector attaches the AWS-managed `CloudWatchLambdaApplicationSignalsExecutionRolePolicy` policy to the function's execution role and enables Application Signals discovery for the account. It never creates or edits IAM policies.
 
-The generated policy (the UI preview, CloudFormation and Terraform) also contains two `Deny` statements that limit these actions to that managed policy and to the Application Signals service-linked role:
+The generated policy (the UI preview, CloudFormation and Terraform) contains two `Deny` statements at every access level that limit these actions to that managed policy and to the Application Signals service-linked role:
 
 ```json
 {
@@ -344,13 +350,13 @@ The generated policy (the UI preview, CloudFormation and Terraform) also contain
 
 <Note>
   If you build the policy yourself, keep both `Deny` statements. If you already
-  have a connector role, update it with these actions before you enable the
-  preset in automatic mode.
+  have a connector role, update it with these actions before you select the ADOT
+  with Application Signals distro on an Odigos-managed Lambda function.
 </Note>
 
 ### Collector management (read-only)
 
-Added when Odigos manages a [regional Collector](/cloud-connectors/aws/regional-collector) that you deploy yourself. Odigos only reads your infrastructure.
+Added when Odigos manages a [regional Collector](/cloud-connectors/aws/regional-collector), whether you deploy it yourself (Custom, with **Management** on) or Odigos installs it. These actions only read your infrastructure.
 
 | Purpose | Actions |
 | --- | --- |
@@ -360,7 +366,7 @@ Added when Odigos manages a [regional Collector](/cloud-connectors/aws/regional-
 
 ### Collector deployment
 
-Added when Odigos installs the regional Collector in your account.
+Added when Odigos installs the regional Collector in your account (**Discovery + instrumentation + collector**, or Custom with **Installation** set to **Automatic**).
 
 | Purpose | Actions |
 | --- | --- |

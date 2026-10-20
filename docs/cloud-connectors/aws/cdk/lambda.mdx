@@ -75,8 +75,8 @@ low-traffic function doesn't lose its telemetry.)
 <Warning>
   `ODIGOS_LAMBDA_CONFIG` must stay valid JSON in the format the layer expects (version 2, which needs layers
   `v0.0.19` or newer; an older layer can't read it and the function fails to start). If it doesn't parse, or its
-  version, signals, or endpoint are invalid, the layer prints `odigos-lambda-startup: invalid Odigos Lambda
-  configuration` followed by the reason, and the function **fails to initialize**. Let the construct write it rather than editing it by hand.
+  version, signals, or endpoint are invalid, the layer prints an error starting with `odigos-lambda-startup:`
+  (for example `odigos-lambda-startup: invalid Odigos Lambda configuration JSON`), and the function **fails to initialize**. Let the construct write it rather than editing it by hand.
 </Warning>
 
 ## Where the layer comes from
@@ -306,7 +306,7 @@ new OdigosLambdaInstrumentation(this, 'Odigos', {
 <ParamField path="existingLoaderValue" type="string">
   Only used in `WEB_SERVER` mode. If the function already sets its language's startup variable —
   `NODE_OPTIONS`, `JAVA_TOOL_OPTIONS`, or `PYTHONPATH` — you can pass its value here. The construct writes it back as **your value, unchanged**; Odigos
-  appends its own part at runtime, so you never add Odigos flags yourself.
+  adds its own part at runtime, so you never add Odigos flags yourself.
 
   If you've already set the variable in the function's own `environment`, you can leave this out: the
   construct then writes nothing for that variable and your value stays as defined.
@@ -393,9 +393,9 @@ reference to the function itself, and a function referring to its own generated 
 configuration is a circular dependency that CloudFormation refuses to deploy.
 
 <Warning>
-  Odigos compares this against the function's real AWS name. **If your function's
-  name is auto-generated, set `serviceName` explicitly** — otherwise Odigos reports
-  it as drifted. Note that `serviceName` applies to *every* function in a single
+  Odigos compares this against the source's service name, which is the function's real AWS name unless you
+  override it in Odigos. **If your function's name is auto-generated, set `serviceName` explicitly** —
+  otherwise Odigos reports it as drifted. Note that `serviceName` applies to *every* function in a single
   construct, so use one construct per function when you need different names.
 </Warning>
 
