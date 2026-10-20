@@ -410,19 +410,6 @@ input LocalUiConfigCardinalityControlInput {
   urlTemplatization: LocalUiConfigUrlTemplatizationCardinalityControlInput
 }
 
-input InterrogationModelConfigInput {
-  provider: String
-  name: String
-  apiBase: String
-  # write-only: stored in the odigos-litellm Secret, never in the config
-  apiKey: String
-}
-
-input InterrogationConfigInput {
-  resetPaths: [String!]
-  model: InterrogationModelConfigInput
-}
-
 input LocalUiConfigInput {
   telemetryEnabled: Boolean
   ignoredNamespaces: [String!]
@@ -438,7 +425,6 @@ input LocalUiConfigInput {
   sampling: LocalUiConfigSamplingInput
   componentLogLevels: LocalUiConfigComponentLogLevelsInput
   cardinalityControl: LocalUiConfigCardinalityControlInput
-  interrogation: InterrogationConfigInput
 }
 
 type ConfigYamlField {
@@ -460,7 +446,6 @@ type ConfigYaml {
 }
 
 extend type Query {
-  interrogationAPIKey: String
   # key information about the cluster and the installation (self-defined config for UI control and usage)
   config: Config
   # odigos-remote-config ConfigMap managed by central-backend (deprecated, will be removed in the future)

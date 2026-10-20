@@ -1515,13 +1515,6 @@ insights:
     # @schema
     litellm:
       # @schema
-      # description: |-
-      #   Temporary compatibility mode for upgrading an existing interrogation install.
-      #   Render the legacy proxy ConfigMap with Helm's keep policy for the first
-      #   upgrade, then turn this off after the new controller reports READY.
-      # @schema
-      bootstrapConfig: false
-      # @schema
       # description: LiteLLM proxy image (third-party).
       # @schema
       image:

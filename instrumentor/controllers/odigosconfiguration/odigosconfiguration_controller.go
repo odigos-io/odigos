@@ -77,12 +77,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		logger.Error(err, "Failed to get local UI config, using only helm-managed config")
 	} else if localUiConfig != nil {
 		mergeConfigs(&odigosConfiguration, localUiConfig)
-		// Credential references are accepted only from the local UI ConfigMap.
-		// Remote configuration cannot point the proxy at an arbitrary Secret.
-		if localUiConfig.Interrogation != nil && odigosConfiguration.InterrogationEnabled() {
-			odigosConfiguration.Interrogation.CredentialSecretName = localUiConfig.Interrogation.CredentialSecretName
-			odigosConfiguration.Interrogation.PreviousCredentialSecretName = localUiConfig.Interrogation.PreviousCredentialSecretName
-		}
 		logger.Debug("Merged local UI config into effective config")
 	}
 
@@ -428,12 +422,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 				dst.AutomaticRules.Enabled = overlay.AutomaticRules.Enabled
 			}
 		}
-	}
-
-	// Helm alone provisions interrogation. Model fields and the runtime analysis
-	// switch may be overridden only after the feature is provisioned.
-	if baseConfig.InterrogationEnabled() && addtionalConfig.Interrogation != nil {
-		common.MergeInterrogationSettings(baseConfig.Interrogation, addtionalConfig.Interrogation)
 	}
 
 	// Future fields can be added here following the same pattern:
