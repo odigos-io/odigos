@@ -1,12 +1,10 @@
-{{- if and (include "odigos.litellmEnabled" .) (include "odigos.secretExists" .) .Values.insights.interrogation.litellm.bootstrapConfig }}
+{{- if and (include "odigos.litellmEnabled" .) (include "odigos.secretExists" .) }}
 {{- $apiBase := include "odigos.interrogationApiBase" . }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-litellm
   namespace: {{ .Release.Namespace }}
-  annotations:
-    helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/name: odigos-litellm
     odigos.io/system-object: "true"
@@ -15,7 +13,7 @@ data:
     model_list:
       - model_name: interrogation
         litellm_params:
-          model: {{ printf "%s/%s" (include "odigos.interrogationModelProvider" .) (include "odigos.interrogationModelName" .) | quote }}
+          model: {{ include "odigos.interrogationUpstreamModel" . | quote }}
           api_key: os.environ/LITELLM_UPSTREAM_API_KEY
           {{- if $apiBase }}
           api_base: {{ $apiBase | quote }}

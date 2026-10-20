@@ -74,7 +74,7 @@ data:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     {{- end }}
-    {{- if and (include "odigos.interrogationEnabled" .) (include "odigos.secretExists" .) }}
+    {{- if include "odigos.interrogationEnabled" . }}
     {{- $apiBase := include "odigos.interrogationApiBase" . }}
     interrogation:
       enabled: true
