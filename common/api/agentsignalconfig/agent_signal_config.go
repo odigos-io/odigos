@@ -76,6 +76,9 @@ type AgentTracesConfig struct {
 
 	// custom instrumentation probes for this container.
 	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+
+	// kernel areas to trace for this container, and their options.
+	KernelTraces *instrumentationrules.KernelTraces `json:"kernelTraces,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.

@@ -49,7 +49,7 @@ func (o *OdigosWorkloadConfig) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (o *OdigosWorkloadConfig) GetFromResource(res pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+func (o *OdigosWorkloadConfig) GetFromResource(res pcommon.Resource) (*commonapi.SourceCollectorConfig, bool) {
 	key, err := workloadKeyFromResourceAttributes(res.Attributes())
 	if err != nil {
 		return nil, false
@@ -93,7 +93,7 @@ func (o *OdigosWorkloadConfig) RegisterWorkloadConfigCacheCallback(cb collector.
 	o.cache.addCallback(cb)
 	o.logger.Debug("workload config cache callback registered")
 	backfillCount := 0
-	o.cache.Range(func(key string, cfg *commonapi.ContainerCollectorConfig) {
+	o.cache.Range(func(key string, cfg *commonapi.SourceCollectorConfig) {
 		cb.OnSet(key, cfg)
 		backfillCount++
 	})
