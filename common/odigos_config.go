@@ -614,6 +614,22 @@ type TransactionIdentityConfiguration struct {
 // I/O correlations.
 type InterrogationConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	// Model is the upstream LLM configured through Helm.
+	Model *InterrogationModelConfiguration `json:"model,omitempty" yaml:"model,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// InterrogationModelConfiguration is the upstream LLM that interrogation uses.
+type InterrogationModelConfiguration struct {
+	// Provider is the LiteLLM provider, such as openai or hosted_vllm.
+	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
+
+	// Name is the provider's model name, such as gpt-4o-mini.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+
+	// ApiBase is an optional OpenAI-compatible base URL.
+	ApiBase string `json:"apiBase,omitempty" yaml:"apiBase,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

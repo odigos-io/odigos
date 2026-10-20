@@ -143,18 +143,35 @@ true
 {{- end -}}
 
 {{/*
-  LiteLLM upstream model id.
-  Bundled vLLM: hosted_vllm/<servedModelName> (weights baked into odigos-enterprise-vllm).
-  Otherwise: provider/name (e.g. openai/gpt-4o-mini).
+  LiteLLM upstream model provider.
+  Bundled vLLM: hosted_vllm. Otherwise: model.provider (e.g. openai).
+*/}}
+{{- define "odigos.interrogationModelProvider" -}}
+{{- if (include "odigos.vllmEnabled" .) -}}
+hosted_vllm
+{{- else -}}
+{{- .Values.insights.interrogation.model.provider | default "openai" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+  LiteLLM upstream model name.
+  Bundled vLLM: servedModelName (weights baked into odigos-enterprise-vllm).
+  Otherwise: model.name (e.g. gpt-4o-mini).
+*/}}
+{{- define "odigos.interrogationModelName" -}}
+{{- if (include "odigos.vllmEnabled" .) -}}
+{{- .Values.insights.interrogation.vllm.servedModelName | default "interrogation" -}}
+{{- else -}}
+{{- .Values.insights.interrogation.model.name | default "gpt-4o-mini" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+  LiteLLM upstream model id: <provider>/<name> (e.g. openai/gpt-4o-mini).
 */}}
 {{- define "odigos.interrogationUpstreamModel" -}}
-{{- if (include "odigos.vllmEnabled" .) -}}
-{{- printf "hosted_vllm/%s" (.Values.insights.interrogation.vllm.servedModelName | default "interrogation") -}}
-{{- else -}}
-{{- $provider := .Values.insights.interrogation.model.provider | default "openai" -}}
-{{- $name := .Values.insights.interrogation.model.name | default "gpt-4o-mini" -}}
-{{- printf "%s/%s" $provider $name -}}
-{{- end -}}
+{{- printf "%s/%s" (include "odigos.interrogationModelProvider" .) (include "odigos.interrogationModelName" .) -}}
 {{- end -}}
 
 {{/*
