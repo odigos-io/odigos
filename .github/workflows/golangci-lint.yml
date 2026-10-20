@@ -22,3 +22,6 @@ jobs:
         with:
           version: v2.10.1
           working-directory: ${{ matrix.modules }}
+          # `config verify` downloads the JSON schema from golangci-lint.run on every
+          # run and intermittently times out; `golangci-lint run` still rejects bad config.
+          verify: false
