@@ -499,6 +499,20 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		}
 	}
 
+	if config.Interrogation != nil {
+		ic := &model.InterrogationConfig{
+			Enabled: config.Interrogation.Enabled,
+		}
+		if config.Interrogation.Enabled != nil {
+			pc.record("interrogation.enabled")
+		}
+		if mode := model.InterrogationMode(config.Interrogation.Mode); mode.IsValid() {
+			ic.Mode = &mode
+			pc.record("interrogation.mode")
+		}
+		result.Interrogation = ic
+	}
+
 	return nil
 }
 

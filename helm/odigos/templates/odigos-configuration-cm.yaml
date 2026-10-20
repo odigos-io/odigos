@@ -77,6 +77,7 @@ data:
     {{- if include "odigos.interrogationEnabled" . }}
     interrogation:
       enabled: true
+      mode: {{ .Values.insights.interrogation.mode | default "auto" | quote }}
     {{- end }}
     {{- /*
     Enterprise-only. Gated on odigos.secretExists like insights: without a token the

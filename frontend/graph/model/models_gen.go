@@ -547,6 +547,7 @@ type EffectiveConfig struct {
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
 	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
 	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
+	Interrogation                    *InterrogationConfig                `json:"interrogation,omitempty"`
 	CardinalityControl               *CardinalityControlConfig           `json:"cardinalityControl,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
@@ -1965,6 +1966,11 @@ type InterrogationCallTrieNode struct {
 	SeenCount int `json:"seenCount"`
 }
 
+type InterrogationConfig struct {
+	Enabled *bool              `json:"enabled,omitempty"`
+	Mode    *InterrogationMode `json:"mode,omitempty"`
+}
+
 // One detected function from a profile sample linked to a transaction.
 type InterrogationFunction struct {
 	Name string `json:"name"`
@@ -2472,11 +2478,17 @@ type LocalUIConfigInput struct {
 	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
 	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
 	CardinalityControl    *LocalUIConfigCardinalityControlInput    `json:"cardinalityControl,omitempty"`
+	Interrogation         *LocalUIConfigInterrogationInput         `json:"interrogation,omitempty"`
 }
 
 type LocalUIConfigInstrumentorInput struct {
 	AgentEnvVarsInjectionMethod      *EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
 	CheckDeviceHealthBeforeInjection *bool               `json:"checkDeviceHealthBeforeInjection,omitempty"`
+}
+
+type LocalUIConfigInterrogationInput struct {
+	Mode       *InterrogationMode `json:"mode,omitempty"`
+	ResetPaths []string           `json:"resetPaths,omitempty"`
 }
 
 type LocalUIConfigLiveTrafficLearningAutomaticRulesInput struct {
@@ -4693,6 +4705,47 @@ func (e *InstrumentationRuleType) UnmarshalGQL(v any) error {
 }
 
 func (e InstrumentationRuleType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InterrogationMode string
+
+const (
+	InterrogationModeOff  InterrogationMode = "off"
+	InterrogationModeAuto InterrogationMode = "auto"
+)
+
+var AllInterrogationMode = []InterrogationMode{
+	InterrogationModeOff,
+	InterrogationModeAuto,
+}
+
+func (e InterrogationMode) IsValid() bool {
+	switch e {
+	case InterrogationModeOff, InterrogationModeAuto:
+		return true
+	}
+	return false
+}
+
+func (e InterrogationMode) String() string {
+	return string(e)
+}
+
+func (e *InterrogationMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InterrogationMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InterrogationMode", str)
+	}
+	return nil
+}
+
+func (e InterrogationMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

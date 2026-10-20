@@ -606,6 +606,14 @@ type TransactionIdentityConfiguration struct {
 	Dimensions []string `json:"dimensions,omitempty" yaml:"dimensions,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=off;auto
+type InterrogationMode string
+
+const (
+	InterrogationModeOff  InterrogationMode = "off"
+	InterrogationModeAuto InterrogationMode = "auto"
+)
+
 // +kubebuilder:object:generate=true
 // InterrogationConfiguration toggles the interrogation loop that correlates
 // traces and profiles via a bounding join. Disabled unless Enabled is set.
@@ -614,6 +622,10 @@ type TransactionIdentityConfiguration struct {
 // I/O correlations.
 type InterrogationConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	// Mode selects how the loop runs once Enabled is true.
+	// "off" does not analyze transactions. "auto" analyzes them.
+	// Empty means unset; Helm writes "auto" when interrogation is enabled.
+	Mode InterrogationMode `json:"mode,omitempty" yaml:"mode,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

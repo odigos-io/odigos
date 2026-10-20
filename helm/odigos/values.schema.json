@@ -1003,6 +1003,16 @@
               "required": [],
               "title": "litellm"
             },
+            "mode": {
+              "default": "auto",
+              "description": "Interrogation loop mode. Applies only when enabled is true, and can also\nbe changed from the UI. off does not analyze transactions. auto analyzes\nthem. This does not install or remove interrogation.",
+              "enum": [
+                "off",
+                "auto"
+              ],
+              "required": [],
+              "title": "mode"
+            },
             "model": {
               "additionalProperties": false,
               "description": "User-facing LLM config (provider credentials and upstream model id for LiteLLM).\nThe worker always calls in-cluster odigos-litellm with the fixed alias\n\"interrogation\" (see enterprise interrogation model client).\nWhen vllm.enabled is true, LiteLLM ignores provider/name/apiKey and\nroutes to the bundled odigos-vllm Service instead.",

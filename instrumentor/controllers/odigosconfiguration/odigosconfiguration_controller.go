@@ -424,6 +424,16 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
+	// interrogation.enabled is Helm-only: turning it on deploys odigos-litellm and
+	// the gateway exporters, which an overlay cannot create. Mode is a runtime
+	// switch and may be set from the UI.
+	if addtionalConfig.Interrogation != nil && addtionalConfig.Interrogation.Mode != "" {
+		if baseConfig.Interrogation == nil {
+			baseConfig.Interrogation = &common.InterrogationConfiguration{}
+		}
+		baseConfig.Interrogation.Mode = addtionalConfig.Interrogation.Mode
+	}
+
 	// Future fields can be added here following the same pattern:
 	// - ignoredNamespaces, ignoredContainers
 	// - profiles

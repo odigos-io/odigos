@@ -185,6 +185,10 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 			}
 		}
 	}
+
+	if config.Interrogation != nil && config.Interrogation.Mode != "" {
+		provenance["interrogation.mode"] = sourceName
+	}
 }
 
 // detectProfileProvenance identifies fields modified by profile application.

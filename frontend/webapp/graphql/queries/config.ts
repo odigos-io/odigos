@@ -190,6 +190,10 @@ export const GET_EFFECTIVE_CONFIG = gql`
       profiling {
         enabled
       }
+      interrogation {
+        enabled
+        mode
+      }
       cardinalityControl {
         urlTemplatization {
           liveTrafficLearning {

@@ -201,3 +201,50 @@ func TestMergeConfigs_NoCardinalityControlOverlayLeavesBaseUntouched(t *testing.
 		t.Errorf("CardinalityControl = %+v, want nil when the overlay sets none", base.CardinalityControl)
 	}
 }
+
+func TestMergeConfigs_InterrogationMode(t *testing.T) {
+	enabled := true
+	base := &common.OdigosConfiguration{
+		Interrogation: &common.InterrogationConfiguration{
+			Enabled: &enabled,
+			Mode:    common.InterrogationModeAuto,
+		},
+	}
+	overlay := &common.OdigosConfiguration{
+		Interrogation: &common.InterrogationConfiguration{
+			Mode: common.InterrogationModeOff,
+		},
+	}
+
+	mergeConfigs(base, overlay)
+
+	if base.Interrogation == nil || base.Interrogation.Enabled == nil || !*base.Interrogation.Enabled {
+		t.Fatalf("helm enabled was dropped: %+v", base.Interrogation)
+	}
+	if base.Interrogation.Mode != common.InterrogationModeOff {
+		t.Errorf("Mode = %q, want %q", base.Interrogation.Mode, common.InterrogationModeOff)
+	}
+}
+
+func TestMergeConfigs_InterrogationEnabledIsHelmOnly(t *testing.T) {
+	enabled := true
+	base := &common.OdigosConfiguration{}
+	overlay := &common.OdigosConfiguration{
+		Interrogation: &common.InterrogationConfiguration{
+			Enabled: &enabled,
+			Mode:    common.InterrogationModeOff,
+		},
+	}
+
+	mergeConfigs(base, overlay)
+
+	if base.Interrogation == nil {
+		t.Fatal("overlay mode was dropped")
+	}
+	if base.Interrogation.Enabled != nil {
+		t.Errorf("Enabled = %v, want nil: an overlay must not turn interrogation on", *base.Interrogation.Enabled)
+	}
+	if base.Interrogation.Mode != common.InterrogationModeOff {
+		t.Errorf("Mode = %q, want %q", base.Interrogation.Mode, common.InterrogationModeOff)
+	}
+}

@@ -475,6 +475,7 @@ type ComplexityRoot struct {
 		ImagePrefix                      func(childComplexity int) int
 		ImagePullSecrets                 func(childComplexity int) int
 		Instrumentor                     func(childComplexity int) int
+		Interrogation                    func(childComplexity int) int
 		Karpenter                        func(childComplexity int) int
 		ManifestYaml                     func(childComplexity int) int
 		MetricsSources                   func(childComplexity int) int
@@ -1422,6 +1423,11 @@ type ComplexityRoot struct {
 		ParentID   func(childComplexity int) int
 		SampleType func(childComplexity int) int
 		SeenCount  func(childComplexity int) int
+	}
+
+	InterrogationConfig struct {
+		Enabled func(childComplexity int) int
+		Mode    func(childComplexity int) int
 	}
 
 	InterrogationFunction struct {
@@ -4606,6 +4612,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.Instrumentor(childComplexity), true
+
+	case "EffectiveConfig.interrogation":
+		if e.complexity.EffectiveConfig.Interrogation == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.Interrogation(childComplexity), true
 
 	case "EffectiveConfig.karpenter":
 		if e.complexity.EffectiveConfig.Karpenter == nil {
@@ -9079,6 +9092,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InterrogationCallTrieNode.SeenCount(childComplexity), true
+
+	case "InterrogationConfig.enabled":
+		if e.complexity.InterrogationConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.InterrogationConfig.Enabled(childComplexity), true
+
+	case "InterrogationConfig.mode":
+		if e.complexity.InterrogationConfig.Mode == nil {
+			break
+		}
+
+		return e.complexity.InterrogationConfig.Mode(childComplexity), true
 
 	case "InterrogationFunction.frameType":
 		if e.complexity.InterrogationFunction.FrameType == nil {
@@ -13831,6 +13858,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLocalUiConfigComponentLogLevelsInput,
 		ec.unmarshalInputLocalUiConfigInput,
 		ec.unmarshalInputLocalUiConfigInstrumentorInput,
+		ec.unmarshalInputLocalUiConfigInterrogationInput,
 		ec.unmarshalInputLocalUiConfigLiveTrafficLearningAutomaticRulesInput,
 		ec.unmarshalInputLocalUiConfigLiveTrafficLearningInput,
 		ec.unmarshalInputLocalUiConfigLiveTrafficLearningRuleComputationInput,
@@ -32172,6 +32200,53 @@ func (ec *executionContext) fieldContext_EffectiveConfig_profiling(_ context.Con
 				return ec.fieldContext_ProfilingConfig_enabled(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProfilingConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_interrogation(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_interrogation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interrogation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InterrogationConfig)
+	fc.Result = res
+	return ec.marshalOInterrogationConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_interrogation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_InterrogationConfig_enabled(ctx, field)
+			case "mode":
+				return ec.fieldContext_InterrogationConfig_mode(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InterrogationConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -60053,6 +60128,88 @@ func (ec *executionContext) fieldContext_InterrogationCallTrieNode_seenCount(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _InterrogationConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InterrogationConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InterrogationConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InterrogationConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InterrogationConfig_mode(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InterrogationConfig_mode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InterrogationMode)
+	fc.Result = res
+	return ec.marshalOInterrogationMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InterrogationConfig_mode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InterrogationConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InterrogationMode does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InterrogationFunction_name(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationFunction) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InterrogationFunction_name(ctx, field)
 	if err != nil {
@@ -82098,6 +82255,8 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_sampling(ctx, field)
 			case "profiling":
 				return ec.fieldContext_EffectiveConfig_profiling(ctx, field)
+			case "interrogation":
+				return ec.fieldContext_EffectiveConfig_interrogation(ctx, field)
 			case "cardinalityControl":
 				return ec.fieldContext_EffectiveConfig_cardinalityControl(ctx, field)
 			case "provenance":
@@ -94971,7 +95130,7 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "cardinalityControl"}
+	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "cardinalityControl", "interrogation"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -95076,6 +95235,13 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 				return it, err
 			}
 			it.CardinalityControl = data
+		case "interrogation":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interrogation"))
+			data, err := ec.unmarshalOLocalUiConfigInterrogationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInterrogationInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Interrogation = data
 		}
 	}
 
@@ -95110,6 +95276,40 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInstrumentorInput(ctx con
 				return it, err
 			}
 			it.CheckDeviceHealthBeforeInjection = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigInterrogationInput(ctx context.Context, obj any) (model.LocalUIConfigInterrogationInput, error) {
+	var it model.LocalUIConfigInterrogationInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"mode", "resetPaths"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "mode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mode"))
+			data, err := ec.unmarshalOInterrogationMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationMode(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Mode = data
+		case "resetPaths":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("resetPaths"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ResetPaths = data
 		}
 	}
 
@@ -99223,6 +99423,8 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_sampling(ctx, field, obj)
 		case "profiling":
 			out.Values[i] = ec._EffectiveConfig_profiling(ctx, field, obj)
+		case "interrogation":
+			out.Values[i] = ec._EffectiveConfig_interrogation(ctx, field, obj)
 		case "cardinalityControl":
 			out.Values[i] = ec._EffectiveConfig_cardinalityControl(ctx, field, obj)
 		case "provenance":
@@ -106020,6 +106222,44 @@ func (ec *executionContext) _InterrogationCallTrieNode(ctx context.Context, sel 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var interrogationConfigImplementors = []string{"InterrogationConfig"}
+
+func (ec *executionContext) _InterrogationConfig(ctx context.Context, sel ast.SelectionSet, obj *model.InterrogationConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, interrogationConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InterrogationConfig")
+		case "enabled":
+			out.Values[i] = ec._InterrogationConfig_enabled(ctx, field, obj)
+		case "mode":
+			out.Values[i] = ec._InterrogationConfig_mode(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -124358,6 +124598,29 @@ func (ec *executionContext) marshalOInterrogationCallTrieNode2ᚕᚖgithubᚗcom
 	return ret
 }
 
+func (ec *executionContext) marshalOInterrogationConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationConfig(ctx context.Context, sel ast.SelectionSet, v *model.InterrogationConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InterrogationConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInterrogationMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationMode(ctx context.Context, v any) (*model.InterrogationMode, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.InterrogationMode)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInterrogationMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationMode(ctx context.Context, sel ast.SelectionSet, v *model.InterrogationMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) marshalOJavaCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbe(ctx context.Context, sel ast.SelectionSet, v []*model.JavaCustomProbe) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -125446,6 +125709,14 @@ func (ec *executionContext) unmarshalOLocalUiConfigInstrumentorInput2ᚖgithub�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputLocalUiConfigInstrumentorInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigInterrogationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInterrogationInput(ctx context.Context, v any) (*model.LocalUIConfigInterrogationInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigInterrogationInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

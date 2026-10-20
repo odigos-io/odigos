@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Configuration
+metadata:
+  name: ai-interrogation
+  displayName: AI Interrogation
+spec:
+  fields:
+    - displayName: Enabled
+      componentType: toggle
+      isHelmOnly: true
+      isEnterpriseOnly: true
+      description: Whether interrogation is installed. Set insights.enabled and insights.interrogation.enabled in the Helm values. Installing it deploys the interrogation pipeline and odigos-litellm.
+      helmValuePath: interrogation.enabled
+    - displayName: Mode
+      componentType: dropdown
+      isHelmOnly: false
+      isEnterpriseOnly: true
+      description: How the interrogation loop runs when interrogation is installed. off does not analyze transactions. auto analyzes them. This does not install or remove interrogation.
+      helmValuePath: interrogation.mode
+      componentProps:
+        options:
+          - off
+          - auto

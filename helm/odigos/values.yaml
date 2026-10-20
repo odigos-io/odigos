@@ -1478,6 +1478,15 @@ insights:
     enabled: false
 
     # @schema
+    # enum: [off, auto]
+    # description: |-
+    #   Interrogation loop mode. Applies only when enabled is true, and can also
+    #   be changed from the UI. off does not analyze transactions. auto analyzes
+    #   them. This does not install or remove interrogation.
+    # @schema
+    mode: auto
+
+    # @schema
     # description: |-
     #   User-facing LLM config (provider credentials and upstream model id for LiteLLM).
     #   The worker always calls in-cluster odigos-litellm with the fixed alias
