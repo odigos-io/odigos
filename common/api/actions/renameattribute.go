@@ -44,14 +44,13 @@ func BuildRenameAttributeProcessorConfig(cfg map[string]string, signals []common
 	for _, from := range keys {
 		to := cfg[from]
 		ottlStatements = append(ottlStatements,
-			fmt.Sprintf("set(attributes[\"%s\"], attributes[\"%s\"])", to, from),
-			fmt.Sprintf("delete_key(attributes, \"%s\")", from),
+			fmt.Sprintf("set(attributes[%q], attributes[%q])", to, from),
+			fmt.Sprintf("delete_key(attributes, %q)", from),
 		)
 	}
 
 	for _, signal := range signals {
 		switch signal {
-
 		case common.LogsObservabilitySignal:
 			config.LogStatements = []OttlStatementConfig{
 				{

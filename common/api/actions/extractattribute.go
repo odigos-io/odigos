@@ -31,8 +31,8 @@ type ExtractAttributeProcessorRule struct {
 	Regex               string `json:"regex,omitempty"`
 }
 
-// BuildExtractAttributeProcessorConfig translates the API-level ExtractAttributeConfig into the processor-level config and validates cross-field invariants
-// that the CRD schema cannot express on its own (LookupKey+DataFormat vs. Regex).
+// BuildExtractAttributeProcessorConfig translates the API-level ExtractAttributeConfig into the processor-level config
+// and validates cross-field invariants that the CRD schema cannot express on its own (LookupKey+DataFormat vs. Regex).
 func BuildExtractAttributeProcessorConfig(cfg *ExtractAttributeConfig) (ExtractAttributeProcessorConfig, error) {
 	if cfg == nil {
 		return ExtractAttributeProcessorConfig{}, fmt.Errorf("extractAttribute config is nil")
@@ -50,7 +50,8 @@ func BuildExtractAttributeProcessorConfig(cfg *ExtractAttributeConfig) (ExtractA
 			return config, fmt.Errorf("extractions[%d]: targetAttributeName is required", i)
 		}
 		if prev, dup := seenNames[extraction.TargetAttributeName]; dup {
-			return config, fmt.Errorf("extractions[%d]: duplicate targetAttributeName %q (also used by extractions[%d])", i, extraction.TargetAttributeName, prev)
+			return config, fmt.Errorf("extractions[%d]: duplicate targetAttributeName %q (also used by extractions[%d])",
+				i, extraction.TargetAttributeName, prev)
 		}
 		seenNames[extraction.TargetAttributeName] = i
 

@@ -33,12 +33,11 @@ func BuildDeleteAttributeProcessorConfig(cfg []string, signals []common.Observab
 
 	ottlDeleteKeyStatements := make([]string, len(cfg))
 	for i, attr := range cfg {
-		ottlDeleteKeyStatements[i] = fmt.Sprintf("delete_key(attributes, \"%s\")", attr)
+		ottlDeleteKeyStatements[i] = fmt.Sprintf("delete_key(attributes, %q)", attr)
 	}
 
 	for _, signal := range signals {
 		switch signal {
-
 		case common.LogsObservabilitySignal:
 			config.LogStatements = []OttlStatementConfig{
 				{
