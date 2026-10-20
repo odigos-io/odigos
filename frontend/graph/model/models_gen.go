@@ -548,6 +548,7 @@ type EffectiveConfig struct {
 	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
 	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
 	CardinalityControl               *CardinalityControlConfig           `json:"cardinalityControl,omitempty"`
+	Interrogation                    *InterrogationConfig                `json:"interrogation,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
@@ -1965,6 +1966,11 @@ type InterrogationCallTrieNode struct {
 	SeenCount int `json:"seenCount"`
 }
 
+type InterrogationConfig struct {
+	Enabled *bool                     `json:"enabled,omitempty"`
+	Model   *InterrogationModelConfig `json:"model,omitempty"`
+}
+
 // One detected function from a profile sample linked to a transaction.
 type InterrogationFunction struct {
 	Name string `json:"name"`
@@ -1974,6 +1980,12 @@ type InterrogationFunction struct {
 	SampleType string `json:"sampleType"`
 	// Times this function was observed while the transaction ran.
 	SeenCount int `json:"seenCount"`
+}
+
+type InterrogationModelConfig struct {
+	Provider *string `json:"provider,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	APIBase  *string `json:"apiBase,omitempty"`
 }
 
 // One transaction observed for a workload container, with ClickHouse-stored functions.

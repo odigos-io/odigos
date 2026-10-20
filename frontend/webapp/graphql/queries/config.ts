@@ -207,6 +207,14 @@ export const GET_EFFECTIVE_CONFIG = gql`
           }
         }
       }
+      interrogation {
+        enabled
+        model {
+          provider
+          name
+          apiBase
+        }
+      }
       provenance {
         helmPath
         reconciledFrom

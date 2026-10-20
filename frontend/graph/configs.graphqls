@@ -182,6 +182,17 @@ type CardinalityControlConfig {
   urlTemplatization: UrlTemplatizationCardinalityControlConfig
 }
 
+type InterrogationModelConfig {
+  provider: String
+  name: String
+  apiBase: String
+}
+
+type InterrogationConfig {
+  enabled: Boolean
+  model: InterrogationModelConfig
+}
+
 type KarpenterConfig {
   enabled: Boolean
 }
@@ -303,6 +314,7 @@ type EffectiveConfig {
   sampling: SamplingConfig
   profiling: ProfilingConfig
   cardinalityControl: CardinalityControlConfig
+  interrogation: InterrogationConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
 }
