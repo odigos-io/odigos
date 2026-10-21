@@ -4,6 +4,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"text/template"
 
@@ -134,9 +135,7 @@ func NewProvider(defaulter Defaulter, getters ...*Getter) (*Provider, error) {
 
 	distros := make(map[string]*distro.OtelDistro)
 	for _, g := range getters {
-		for k, v := range g.distrosByName {
-			distros[k] = v
-		}
+		maps.Copy(distros, g.distrosByName)
 	}
 
 	// make sure the default distributions are provided by at least one of the getters

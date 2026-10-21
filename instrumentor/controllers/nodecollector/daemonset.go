@@ -61,7 +61,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 			}
 		}()
 
-		for i := 0; i < retries; i++ {
+		for range retries {
 			err = syncCollectorGroup(ctx, collection, c)
 			if err == nil {
 				return

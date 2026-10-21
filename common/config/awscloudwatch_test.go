@@ -1,6 +1,7 @@
 package config
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/odigos-io/odigos/common"
@@ -22,9 +23,7 @@ func newAWSCloudWatchDestination(extraConfig map[string]string) *mockDestination
 		AWS_CLOUDWATCH_LOG_GROUP_NAME:  "odigos",
 		AWS_CLOUDWATCH_LOG_STREAM_NAME: "odigos-stream",
 	}
-	for key, value := range extraConfig {
-		destConfig[key] = value
-	}
+	maps.Copy(destConfig, extraConfig)
 	return &mockDestination{
 		id:      "test-id",
 		config:  destConfig,

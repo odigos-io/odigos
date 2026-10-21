@@ -2,6 +2,7 @@ package collectorconfig
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -166,9 +167,7 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, opts TracesConfigOptions) co
 		},
 	}
 	if len(additionalPipeline) > 0 {
-		for pipelineName, pipeline := range additionalPipeline {
-			tracePipeline[pipelineName] = pipeline
-		}
+		maps.Copy(tracePipeline, additionalPipeline)
 	}
 
 	return config.Config{

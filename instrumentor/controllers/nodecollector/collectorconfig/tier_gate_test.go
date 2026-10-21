@@ -1,6 +1,7 @@
 package collectorconfig
 
 import (
+	"slices"
 	"testing"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -72,12 +73,7 @@ func TestMetricsConfig_EbpfReceiverNotInMetricsPipelines(t *testing.T) {
 }
 
 func contains(haystack []string, needle string) bool {
-	for _, s := range haystack {
-		if s == needle {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(haystack, needle)
 }
 
 func TestCommonConfig_AuthExtensionGatedByTier(t *testing.T) {

@@ -10,7 +10,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -55,7 +54,7 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 				{
 					Name:        "otlp",
 					Protocol:    "TCP",
-					AppProtocol: ptr.To("grpc"),
+					AppProtocol: new("grpc"),
 					Port:        4317,
 					TargetPort:  intstr.FromInt(4317),
 				},

@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -73,7 +72,7 @@ func updateGatewaySvc(svc *v1.Service, collectorsGroup *odigosv1.CollectorsGroup
 		{
 			Name:        "otlp",
 			Protocol:    "TCP",
-			AppProtocol: ptr.To("grpc"),
+			AppProtocol: new("grpc"),
 			Port:        4317,
 			TargetPort:  intstr.FromInt(4317),
 		},

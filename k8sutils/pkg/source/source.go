@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,14 +86,10 @@ func CalculateDataStreamsLabels(workloadSources *odigosv1.WorkloadSources) map[s
 	mergedLabels := make(map[string]string)
 
 	// Start from namespace labels (if any)
-	for k, v := range namespaceLabels {
-		mergedLabels[k] = v
-	}
+	maps.Copy(mergedLabels, namespaceLabels)
 
 	// Add any workload, override namespace labels
-	for k, v := range workloadLabels {
-		mergedLabels[k] = v
-	}
+	maps.Copy(mergedLabels, workloadLabels)
 
 	return mergedLabels
 }

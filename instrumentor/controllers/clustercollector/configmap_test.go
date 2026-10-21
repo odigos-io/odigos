@@ -18,15 +18,15 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 		{
 			name: "no pipeline",
 			cfg: &config.Config{
-				Exporters: map[string]interface{}{},
-				Receivers: map[string]interface{}{},
+				Exporters: map[string]any{},
+				Receivers: map[string]any{},
 			},
 			err: errNoPipelineConfigured,
 		},
 		{
 			name: "no receivers",
 			cfg: &config.Config{
-				Exporters: map[string]interface{}{},
+				Exporters: map[string]any{},
 				Service: config.Service{
 					Pipelines: map[string]config.Pipeline{},
 				},
@@ -36,7 +36,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 		{
 			name: "no exporters",
 			cfg: &config.Config{
-				Receivers: map[string]interface{}{},
+				Receivers: map[string]any{},
 				Service: config.Service{
 					Pipelines: map[string]config.Pipeline{},
 				},
@@ -46,8 +46,8 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 		{
 			name: "minimal config",
 			cfg: &config.Config{
-				Receivers: map[string]interface{}{},
-				Exporters: map[string]interface{}{},
+				Receivers: map[string]any{},
+				Exporters: map[string]any{},
 				Service: config.Service{
 					Pipelines: map[string]config.Pipeline{},
 				},

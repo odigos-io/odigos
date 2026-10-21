@@ -87,9 +87,9 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	allProfiles = append(allProfiles, odigosConfiguration.Profiles...)
 
 	if tokenProfilesString, ok := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]; ok {
-		tokenProfiles := strings.Split(tokenProfilesString, ", ")
+		tokenProfiles := strings.SplitSeq(tokenProfilesString, ", ")
 		// cast tokenProfiles to common.ProfileName
-		for _, p := range tokenProfiles {
+		for p := range tokenProfiles {
 			allProfiles = append(allProfiles, common.ProfileName(p))
 		}
 	}

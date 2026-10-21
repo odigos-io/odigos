@@ -342,7 +342,8 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 	assert.Equal(t, signals, []common.ObservabilitySignal{common.LogsObservabilitySignal})
 }
 
-func strPtr(b bool) *bool { return &b }
+//go:fix inline
+func strPtr(b bool) *bool { return new(b) }
 
 func selfMetricsReceiver() func(c *config.Config, _ []string, _ []string) error {
 	return func(c *config.Config, _ []string, _ []string) error {
@@ -379,7 +380,7 @@ func TestServiceGraphOptions(t *testing.T) {
 		},
 		{
 			name:          "disabled",
-			opts:          common.ServiceGraphOptions{Disabled: strPtr(true)},
+			opts:          common.ServiceGraphOptions{Disabled: new(true)},
 			wantConnector: false,
 		},
 		{

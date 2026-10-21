@@ -1,6 +1,8 @@
 package pipeline
 
 import (
+	"maps"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -48,9 +50,7 @@ func cloneGenericMap(m config.GenericMap) config.GenericMap {
 		return config.GenericMap{}
 	}
 	out := make(config.GenericMap, len(m))
-	for k, v := range m {
-		out[k] = v
-	}
+	maps.Copy(out, m)
 	return out
 }
 

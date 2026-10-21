@@ -107,7 +107,7 @@ func (m *AWSXRay) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 // **Helper Functions**
 
 // setNestedMapValue sets a nested field in a map using dot notation.
-func setNestedMapValue(m GenericMap, field string, value interface{}) {
+func setNestedMapValue(m GenericMap, field string, value any) {
 	parts := splitField(field)
 	subMap := m
 

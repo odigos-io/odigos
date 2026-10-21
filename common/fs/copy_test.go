@@ -10,7 +10,7 @@ import (
 func createTestFiles(tempDir string, num int) ([]string, error) {
 	dirs := []string{"dir1", "dir1/dir2", "dir1/dir2/dir3"}
 	var files []string
-	for i := 0; i < num; i++ {
+	for i := range num {
 		file := fmt.Sprintf("dir1/dir2/dir3/file%d", i)
 		files = append(files, file)
 	}

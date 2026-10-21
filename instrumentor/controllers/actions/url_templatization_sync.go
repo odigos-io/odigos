@@ -50,7 +50,7 @@ func hasAnyUrlTemplatizationAction(ctx context.Context, c client.Client, namespa
 
 func buildUrlTemplatizationProcessor(namespace string, spanMetricsEnabled bool) (*odigosv1.Processor, error) {
 	cfg := actions.URLTemplatizationConfig{}
-	configJSON, err := json.Marshal(map[string]interface{}{
+	configJSON, err := json.Marshal(map[string]any{
 		"odigos_config_extension": k8sconsts.OdigosConfigK8sExtensionType,
 	})
 	if err != nil {

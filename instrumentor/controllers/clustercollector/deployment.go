@@ -197,7 +197,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 			Labels:    ClusterCollectorGateway,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: intPtr(gatewayReplicas),
+			Replicas: new(gatewayReplicas),
 			Selector: &v1.LabelSelector{
 				MatchLabels: ClusterCollectorGateway,
 			},
@@ -212,10 +212,10 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 					NodeSelector:       *nodeSelector,
 					ServiceAccountName: k8sconsts.OdigosClusterCollectorServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: boolPtr(true),
-						RunAsUser:    int64Ptr(65534), // nobody user
-						RunAsGroup:   int64Ptr(65534), // nobody group
-						FSGroup:      int64Ptr(65534),
+						RunAsNonRoot: new(true),
+						RunAsUser:    new(int64(65534)), // nobody user
+						RunAsGroup:   new(int64(65534)), // nobody group
+						FSGroup:      new(int64(65534)),
 					},
 					Containers: []corev1.Container{
 						{
@@ -269,7 +269,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 								},
 							}, extraEnvVars...),
 							SecurityContext: &corev1.SecurityContext{
-								AllowPrivilegeEscalation: boolPtr(false),
+								AllowPrivilegeEscalation: new(false),
 							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -394,14 +394,12 @@ func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSou
 	return result
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
+//go:fix inline
 func intPtr(n int32) *int32 {
-	return &n
+	return new(n)
 }
 
+//go:fix inline
 func int64Ptr(n int64) *int64 {
-	return &n
+	return new(n)
 }

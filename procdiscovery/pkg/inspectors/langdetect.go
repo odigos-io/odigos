@@ -109,8 +109,7 @@ func detectLanguageInContext(procContext *process.ProcessContext, logger *common
 		return inspector.QuickScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
 		if err != nil {
-			var conflict ErrLanguageDetectionConflict
-			if errors.As(err, &conflict) {
+			if conflict, ok := errors.AsType[ErrLanguageDetectionConflict](err); ok {
 				// If one of the languages is C++, prefer the other language and log a warning
 				if l, ok := resolveNonCpp(conflict.languages); ok {
 					logger.Warn("language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
@@ -132,8 +131,7 @@ func detectLanguageInContext(procContext *process.ProcessContext, logger *common
 		return inspector.DeepScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
 		if err != nil {
-			var conflict ErrLanguageDetectionConflict
-			if errors.As(err, &conflict) {
+			if conflict, ok := errors.AsType[ErrLanguageDetectionConflict](err); ok {
 				if l, ok := resolveNonCpp(conflict.languages); ok {
 					logger.Warn("language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
 					resolved := common.ProgramLanguageDetails{Language: l}

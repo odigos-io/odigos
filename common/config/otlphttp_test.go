@@ -360,8 +360,8 @@ func TestOAuth2Configuration(t *testing.T) {
 
 			// Create initial config
 			config := &Config{
-				Extensions: make(map[string]interface{}),
-				Exporters:  make(map[string]interface{}),
+				Extensions: make(map[string]any),
+				Exporters:  make(map[string]any),
 				Service: Service{
 					Extensions: []string{},
 					Pipelines:  make(map[string]Pipeline),

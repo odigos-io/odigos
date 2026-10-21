@@ -115,7 +115,7 @@ func getProfilesString(claims jwt.MapClaims) (string, bool, error) {
 		return "", false, nil
 	}
 
-	profilesSlice, ok := profiles.([]interface{})
+	profilesSlice, ok := profiles.([]any)
 	if !ok {
 		return "", false, fmt.Errorf("error: failed to parse JWT token profiles")
 	}

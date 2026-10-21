@@ -84,7 +84,7 @@ func TestRenameAttributeConfig_StableStatementOrder(t *testing.T) {
 
 	first, err := BuildRenameAttributeProcessorConfig(renames, signals)
 	require.NoError(t, err)
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		next, err := BuildRenameAttributeProcessorConfig(renames, signals)
 		require.NoError(t, err)
 		require.True(t, reflect.DeepEqual(first, next), "rename OTTL statements must be deterministic across calls")

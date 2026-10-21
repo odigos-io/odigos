@@ -30,10 +30,10 @@ const (
 )
 
 var (
-	defaultMinReplicas                  = intPtr(1)
+	defaultMinReplicas                  = new(int32(1))
 	defaultMaxReplicas                  = int32(10)
-	ScaleDownStabilizationWindowSeconds = intPtr(900) // 15 minutes cooldown period for scaling down
-	ScaleUpStabilizationWindowSeconds   = intPtr(0)   // no cooldown period for scaling up
+	ScaleDownStabilizationWindowSeconds = new(int32(900)) // 15 minutes cooldown period for scaling down
+	ScaleUpStabilizationWindowSeconds   = new(int32(0))   // no cooldown period for scaling up
 )
 
 // syncHPA dynamically creates or updates the HorizontalPodAutoscaler (HPA)
@@ -89,7 +89,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 
 	minReplicas := defaultMinReplicas
 	if gateway.Spec.ResourcesSettings.MinReplicas != nil && *gateway.Spec.ResourcesSettings.MinReplicas > 0 {
-		minReplicas = intPtr(int32(*gateway.Spec.ResourcesSettings.MinReplicas))
+		minReplicas = new(int32(*gateway.Spec.ResourcesSettings.MinReplicas))
 	}
 
 	maxReplicas := defaultMaxReplicas

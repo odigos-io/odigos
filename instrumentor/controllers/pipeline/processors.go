@@ -40,7 +40,7 @@ func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, coll
 }
 
 func GetGenericBatchProcessor() odigosv1.Processor {
-	emptyConfig, _ := json.Marshal(make(map[string]interface{}))
+	emptyConfig, _ := json.Marshal(make(map[string]any))
 
 	return odigosv1.Processor{
 		ObjectMeta: metav1.ObjectMeta{

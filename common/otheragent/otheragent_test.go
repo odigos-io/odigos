@@ -2,6 +2,7 @@ package otheragent
 
 import (
 	"io"
+	"maps"
 	"strings"
 	"testing"
 
@@ -30,12 +31,8 @@ func (f fakeProcess) MapsReader() (io.Reader, error) {
 // not distinguish them), matching how the real Process implementations behave.
 func ctx(cmdline string, detailed, overwrite map[string]string) fakeProcess {
 	envs := map[string]string{}
-	for k, v := range detailed {
-		envs[k] = v
-	}
-	for k, v := range overwrite {
-		envs[k] = v
-	}
+	maps.Copy(envs, detailed)
+	maps.Copy(envs, overwrite)
 	return fakeProcess{cmdline: cmdline, envs: envs}
 }
 

@@ -146,21 +146,21 @@ func (c *ContextLogger) Logr() logr.Logger {
 }
 
 // Info logs at info level.
-func (c *ContextLogger) Info(msg string, keysAndValues ...interface{}) {
+func (c *ContextLogger) Info(msg string, keysAndValues ...any) {
 	if c != nil {
 		c.Logger.Info(msg, keysAndValues...)
 	}
 }
 
 // Error logs at error level (logr-style: error first, then message).
-func (c *ContextLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+func (c *ContextLogger) Error(err error, msg string, keysAndValues ...any) {
 	if c != nil {
 		c.Logger.Error(err, msg, keysAndValues...)
 	}
 }
 
 // Debug logs at debug level. Only emitted when log level is debug.
-func (c *ContextLogger) Debug(msg string, keysAndValues ...interface{}) {
+func (c *ContextLogger) Debug(msg string, keysAndValues ...any) {
 	if c != nil {
 		c.Logger.V(1).Info(msg, keysAndValues...)
 	}
@@ -175,7 +175,7 @@ func (c *ContextLogger) WithName(name string) *ContextLogger {
 }
 
 // WithValues returns a new ContextLogger with the given key/value pairs.
-func (c *ContextLogger) WithValues(keysAndValues ...interface{}) *ContextLogger {
+func (c *ContextLogger) WithValues(keysAndValues ...any) *ContextLogger {
 	if c == nil {
 		return &ContextLogger{Logger: logr.Discard()}
 	}
@@ -198,32 +198,32 @@ func LoggerCompat() *OdigosLogger {
 	return &OdigosLogger{sugared: zap.NewNop().Sugar()}
 }
 
-func (l *OdigosLogger) With(keysAndValues ...interface{}) *OdigosLogger {
+func (l *OdigosLogger) With(keysAndValues ...any) *OdigosLogger {
 	if l == nil || l.sugared == nil {
 		return LoggerCompat()
 	}
 	return &OdigosLogger{sugared: l.sugared.With(keysAndValues...)}
 }
 
-func (l *OdigosLogger) Info(msg string, keysAndValues ...interface{}) {
+func (l *OdigosLogger) Info(msg string, keysAndValues ...any) {
 	if l != nil && l.sugared != nil {
 		l.sugared.Infow(msg, keysAndValues...)
 	}
 }
 
-func (l *OdigosLogger) Error(msg string, keysAndValues ...interface{}) {
+func (l *OdigosLogger) Error(msg string, keysAndValues ...any) {
 	if l != nil && l.sugared != nil {
 		l.sugared.Errorw(msg, keysAndValues...)
 	}
 }
 
-func (l *OdigosLogger) Warn(msg string, keysAndValues ...interface{}) {
+func (l *OdigosLogger) Warn(msg string, keysAndValues ...any) {
 	if l != nil && l.sugared != nil {
 		l.sugared.Warnw(msg, keysAndValues...)
 	}
 }
 
-func (l *OdigosLogger) Debug(msg string, keysAndValues ...interface{}) {
+func (l *OdigosLogger) Debug(msg string, keysAndValues ...any) {
 	if l != nil && l.sugared != nil {
 		l.sugared.Debugw(msg, keysAndValues...)
 	}

@@ -17,7 +17,7 @@ type ClusterCollectorAnalyze struct {
 	Deployed             *properties.EntityProperty `json:"deployed,omitempty"`
 	DeployedError        *properties.EntityProperty `json:"deployedError,omitempty"`
 	CollectorReady       *properties.EntityProperty `json:"collectorReady,omitempty"`
-	DeploymentCreated    properties.EntityProperty  `json:"deployment,omitempty"`
+	DeploymentCreated    properties.EntityProperty  `json:"deployment"`
 	ExpectedReplicas     *properties.EntityProperty `json:"expectedReplicas,omitempty"`
 	HealthyReplicas      *properties.EntityProperty `json:"healthyReplicas,omitempty"`
 	FailedReplicas       *properties.EntityProperty `json:"failedReplicas,omitempty"`
@@ -30,7 +30,7 @@ type NodeCollectorAnalyze struct {
 	Deployed       *properties.EntityProperty `json:"deployed,omitempty"`
 	DeployedError  *properties.EntityProperty `json:"deployedError,omitempty"`
 	CollectorReady *properties.EntityProperty `json:"collectorReady,omitempty"`
-	DaemonSet      properties.EntityProperty  `json:"daemonSet,omitempty"`
+	DaemonSet      properties.EntityProperty  `json:"daemonSet"`
 	DesiredNodes   *properties.EntityProperty `json:"desiredNodes,omitempty"`
 	CurrentNodes   *properties.EntityProperty `json:"currentNodes,omitempty"`
 	UpdatedNodes   *properties.EntityProperty `json:"updatedNodes,omitempty"`
@@ -38,9 +38,9 @@ type NodeCollectorAnalyze struct {
 }
 
 type OdigosProAnalyze struct {
-	OnpremTokenAud        properties.EntityProperty `json:"onpremTokenAudience,omitempty"`
-	OnpremTokenExpiration properties.EntityProperty `json:"onpremTokenExpiration,omitempty"`
-	OdigosProfiles        properties.EntityProperty `json:"odigosProfiles,omitempty"`
+	OnpremTokenAud        properties.EntityProperty `json:"onpremTokenAudience"`
+	OnpremTokenExpiration properties.EntityProperty `json:"onpremTokenExpiration"`
+	OdigosProfiles        properties.EntityProperty `json:"odigosProfiles"`
 }
 
 type OdigosAnalyze struct {
@@ -74,17 +74,17 @@ func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty, 
 	if deployedCondition == nil {
 		// scheduler created the cg but autoscaler did not reconcile it yet
 		return &properties.EntityProperty{
-				Name:   "Deployed",
-				Value:  false,
-				Status: properties.PropertyStatusTransitioning,
-				Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were " +
-					"created successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
-			}, &properties.EntityProperty{
-				Name:    "Deployed Error",
-				Value:   "waiting for reconciliation",
-				Status:  properties.PropertyStatusTransitioning,
-				Explain: "in case the deployment resources were not able to be calculated or created, this error will show the reason",
-			}
+			Name:   "Deployed",
+			Value:  false,
+			Status: properties.PropertyStatusTransitioning,
+			Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were " +
+				"created successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
+		}, &properties.EntityProperty{
+			Name:    "Deployed Error",
+			Value:   "waiting for reconciliation",
+			Status:  properties.PropertyStatusTransitioning,
+			Explain: "in case the deployment resources were not able to be calculated or created, this error will show the reason",
+		}
 	}
 
 	if deployedCondition.Status == metav1.ConditionTrue {
@@ -99,17 +99,17 @@ func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty, 
 	} else {
 		// had an error during reconciliation to k8s deployment objects
 		return &properties.EntityProperty{
-				Name:   "Deployed",
-				Value:  false,
-				Status: properties.PropertyStatusError,
-				Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were created" +
-					" successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
-			}, &properties.EntityProperty{
-				Name:    "Deployed Error",
-				Value:   deployedCondition.Message,
-				Status:  properties.PropertyStatusError,
-				Explain: "in case the deployment resources were not able to be calculated or created, this error will show the reason",
-			}
+			Name:   "Deployed",
+			Value:  false,
+			Status: properties.PropertyStatusError,
+			Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were created" +
+				" successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
+		}, &properties.EntityProperty{
+			Name:    "Deployed Error",
+			Value:   deployedCondition.Message,
+			Status:  properties.PropertyStatusError,
+			Explain: "in case the deployment resources were not able to be calculated or created, this error will show the reason",
+		}
 	}
 }
 
@@ -171,44 +171,44 @@ func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty, *prope
 	updatedReplicas := int(ds.Status.UpdatedNumberScheduled)
 	availableNodes := int(ds.Status.NumberAvailable)
 	return &properties.EntityProperty{
-			// The total number of nodes that should be running this daemon.
-			// Regardless of what is actually running (0, 1, or more), rollouts, failures, etc.
-			// this number can be less than the number of nodes in the cluster if affinity rules and node selectors are used.
-			Name:    "Desired Nodes",
-			Value:   desiredNodes,
-			Explain: "the number of k8s nodes that should be running the node collector daemonset",
-		}, &properties.EntityProperty{
-			// The number of nodes that are running at least 1
-			// daemon pod and are supposed to run the daemon pod.
-			// if this number is less than the desired number, the daemonset is not fully scheduled.
-			// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
-			// this prevents the daemonset pod from being scheduled.
-			Name:   "Current Nodes",
-			Value:  currentReplicas,
-			Status: properties.GetSuccessOrTransitioning(currentReplicas == desiredNodes),
-			Explain: "the number of k8s nodes that have at least one pod of the node collector daemonset. this number counts " +
-				"the pod objects that were created on this node, regardless of the pod status or revision.",
-		}, &properties.EntityProperty{
-			// The number of nodes that are running pods from the latest version of the daemonset and do not have old pods from previous versions.
-			// if this number is less than the desired number, the daemonset is not fully updated.
-			// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
-			// this prevents the daemonset pod from being updated.
-			// this number does not indicate if the pods are indeed running and healthy, only that the only pods scheduled to them is only the latest.
-			Name:   "Updated Nodes",
-			Value:  updatedReplicas,
-			Status: properties.GetSuccessOrTransitioning(updatedReplicas == desiredNodes),
-			Explain: "the number of k8s nodes that have only the latest version of the node collector daemonset pods. this " +
-				"number counts the pod objects that were created on this node with the latest revision, regardless of the pod status or readiness",
-		}, &properties.EntityProperty{
-			// available nodes are the nodes for which the oldest pod is ready and available.
-			// it can count nodes that are running an old version of the daemonset,
-			// so it alone cannot be used to determine if the daemonset is updated and healthy.
-			Name:   "Available Nodes",
-			Value:  availableNodes,
-			Status: properties.GetSuccessOrTransitioning(availableNodes == desiredNodes),
-			Explain: "the number of k8s nodes that have at least one pod of the node collector daemonset that is ready and " +
-				"available. this number counts the pod objects that were created on this node, regardless of the pod status or revision.",
-		}
+		// The total number of nodes that should be running this daemon.
+		// Regardless of what is actually running (0, 1, or more), rollouts, failures, etc.
+		// this number can be less than the number of nodes in the cluster if affinity rules and node selectors are used.
+		Name:    "Desired Nodes",
+		Value:   desiredNodes,
+		Explain: "the number of k8s nodes that should be running the node collector daemonset",
+	}, &properties.EntityProperty{
+		// The number of nodes that are running at least 1
+		// daemon pod and are supposed to run the daemon pod.
+		// if this number is less than the desired number, the daemonset is not fully scheduled.
+		// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
+		// this prevents the daemonset pod from being scheduled.
+		Name:   "Current Nodes",
+		Value:  currentReplicas,
+		Status: properties.GetSuccessOrTransitioning(currentReplicas == desiredNodes),
+		Explain: "the number of k8s nodes that have at least one pod of the node collector daemonset. this number counts " +
+			"the pod objects that were created on this node, regardless of the pod status or revision.",
+	}, &properties.EntityProperty{
+		// The number of nodes that are running pods from the latest version of the daemonset and do not have old pods from previous versions.
+		// if this number is less than the desired number, the daemonset is not fully updated.
+		// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
+		// this prevents the daemonset pod from being updated.
+		// this number does not indicate if the pods are indeed running and healthy, only that the only pods scheduled to them is only the latest.
+		Name:   "Updated Nodes",
+		Value:  updatedReplicas,
+		Status: properties.GetSuccessOrTransitioning(updatedReplicas == desiredNodes),
+		Explain: "the number of k8s nodes that have only the latest version of the node collector daemonset pods. this " +
+			"number counts the pod objects that were created on this node with the latest revision, regardless of the pod status or readiness",
+	}, &properties.EntityProperty{
+		// available nodes are the nodes for which the oldest pod is ready and available.
+		// it can count nodes that are running an old version of the daemonset,
+		// so it alone cannot be used to determine if the daemonset is updated and healthy.
+		Name:   "Available Nodes",
+		Value:  availableNodes,
+		Status: properties.GetSuccessOrTransitioning(availableNodes == desiredNodes),
+		Explain: "the number of k8s nodes that have at least one pod of the node collector daemonset that is ready and " +
+			"available. this number counts the pod objects that were created on this node, regardless of the pod status or revision.",
+	}
 }
 
 func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.EntityProperty,
