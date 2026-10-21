@@ -1,7 +1,9 @@
 package actions
 
 import (
+	"cmp"
 	"slices"
+	"strings"
 )
 
 func dedupeStatusCodes(codes []int) []int {
@@ -23,22 +25,71 @@ func dedupeStatusCodes(codes []int) []int {
 	return result
 }
 
+type segmentedUrlTemplate struct {
+	template string
+	segments []string
+	ranks    []int
+}
+
 func dedupeAndSortTemplates(templates []string) []string {
 	if len(templates) <= 1 {
 		return templates
 	}
 
 	seen := make(map[string]struct{}, len(templates))
-	result := []string{}
+	segmented := make([]segmentedUrlTemplate, 0, len(templates))
 	for _, template := range templates {
 		if _, ok := seen[template]; ok {
 			continue
 		}
 		seen[template] = struct{}{}
-		result = append(result, template)
+		parts := strings.Split(template, "/")
+		ranks := make([]int, len(parts))
+		for i, part := range parts {
+			ranks[i] = urlTemplateSegmentRank(part)
+		}
+		segmented = append(segmented, segmentedUrlTemplate{
+			template: template,
+			segments: parts,
+			ranks:    ranks,
+		})
 	}
-	slices.Sort(result)
+	slices.SortFunc(segmented, compareUrlTemplates)
+
+	result := make([]string, len(segmented))
+	for i, item := range segmented {
+		result[i] = item.template
+	}
 	return result
+}
+
+// compareUrlTemplates orders rules segment by segment so a more specific rule
+// sorts before a less specific one at the first differing segment: static
+// literals, then "*", then "{...}" templates. Same-kind segments are ordered
+// lexicographically, and a shorter rule sorts before a longer one that extends it.
+func compareUrlTemplates(a, b segmentedUrlTemplate) int {
+	n := min(len(a.segments), len(b.segments))
+	for i := 0; i < n; i++ {
+		if c := cmp.Compare(a.ranks[i], b.ranks[i]); c != 0 {
+			return c
+		}
+		if c := strings.Compare(a.segments[i], b.segments[i]); c != 0 {
+			return c
+		}
+	}
+	return cmp.Compare(len(a.segments), len(b.segments))
+}
+
+// urlTemplateSegmentRank ranks a segment from most to least specific.
+func urlTemplateSegmentRank(segment string) int {
+	switch {
+	case segment == "*":
+		return 1
+	case strings.HasPrefix(segment, "{"):
+		return 2
+	default:
+		return 0
+	}
 }
 
 func mergeDefaultTemplatizationSkipPolicyConfigs(c1, c2 *DefaultTemplatizationSkipPolicyConfig) *DefaultTemplatizationSkipPolicyConfig {
