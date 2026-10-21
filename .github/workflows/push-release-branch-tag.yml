@@ -56,21 +56,12 @@ jobs:
             exit 0
           fi
 
-          REBUILD_VLLM="false"
-          if echo "$COMMIT_MSG" | grep -Eqi 'Rebuild vLLM:\s*true'; then
-            REBUILD_VLLM="true"
-          fi
-
           echo "Found tag from pull request: $TAG"
           echo "TAG=$TAG" >> $GITHUB_ENV
-          echo "rebuild_vllm=$REBUILD_VLLM" >> "$GITHUB_OUTPUT"
 
       - name: Push tag to upstream
         if: env.TAG != ''
-        env:
-          REBUILD_VLLM: ${{ steps.extract_tag.outputs.rebuild_vllm }}
         run: |
-
           TAG="${{ env.TAG }}"
 
           # Check if tag already exists
@@ -79,8 +70,7 @@ jobs:
             exit 0
           fi
 
-          # Annotated so publish-modules can pass rebuild_vllm through to enterprise.
-          git tag -a "$TAG" -m "rebuild_vllm=${REBUILD_VLLM}"
+          git tag "$TAG"
           git push origin "$TAG"
 
       - name: Notify Slack

@@ -634,7 +634,7 @@ type InterrogationConfiguration struct {
 // +kubebuilder:object:generate=true
 // InterrogationModelConfiguration is the upstream LLM that interrogation uses.
 type InterrogationModelConfiguration struct {
-	// Provider is the LiteLLM provider, such as openai or hosted_vllm.
+	// Provider is the LiteLLM provider, such as openai or gemini.
 	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
 
 	// Name is the provider's model name, such as gpt-4o-mini.

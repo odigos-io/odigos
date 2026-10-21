@@ -134,37 +134,17 @@ true
 {{- end -}}
 
 {{/*
-  Bundled vLLM (odigos-vllm) for in-cluster inference. Requires interrogation.
-*/}}
-{{- define "odigos.vllmEnabled" -}}
-{{- if and (include "odigos.interrogationEnabled" .) .Values.insights.interrogation.vllm.enabled -}}
-true
-{{- end -}}
-{{- end -}}
-
-{{/*
-  LiteLLM upstream model provider.
-  Bundled vLLM: hosted_vllm. Otherwise: model.provider (e.g. openai).
+  LiteLLM upstream model provider (e.g. openai, gemini).
 */}}
 {{- define "odigos.interrogationModelProvider" -}}
-{{- if (include "odigos.vllmEnabled" .) -}}
-hosted_vllm
-{{- else -}}
 {{- .Values.insights.interrogation.model.provider | default "openai" -}}
-{{- end -}}
 {{- end -}}
 
 {{/*
-  LiteLLM upstream model name.
-  Bundled vLLM: servedModelName (weights baked into odigos-enterprise-vllm).
-  Otherwise: model.name (e.g. gpt-4o-mini).
+  LiteLLM upstream model name (e.g. gpt-4o-mini).
 */}}
 {{- define "odigos.interrogationModelName" -}}
-{{- if (include "odigos.vllmEnabled" .) -}}
-{{- .Values.insights.interrogation.vllm.servedModelName | default "interrogation" -}}
-{{- else -}}
 {{- .Values.insights.interrogation.model.name | default "gpt-4o-mini" -}}
-{{- end -}}
 {{- end -}}
 
 {{/*
@@ -175,12 +155,10 @@ hosted_vllm
 {{- end -}}
 
 {{/*
-  Optional LiteLLM api_base. Bundled vLLM wins; else model.apiBase (BYO).
+  Optional LiteLLM api_base for BYO inference (model.apiBase).
 */}}
 {{- define "odigos.interrogationApiBase" -}}
-{{- if (include "odigos.vllmEnabled" .) -}}
-http://odigos-vllm:8000/v1
-{{- else if .Values.insights.interrogation.model.apiBase -}}
+{{- if .Values.insights.interrogation.model.apiBase -}}
 {{- .Values.insights.interrogation.model.apiBase | trimSuffix "/" -}}
 {{- end -}}
 {{- end -}}
