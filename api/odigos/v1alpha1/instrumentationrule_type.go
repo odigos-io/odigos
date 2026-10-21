@@ -79,7 +79,7 @@ type InstrumentationRuleSpec struct {
 	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
 
 	// Add custom instrumentation probes
-	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+	CustomInstrumentations *instrumentationrules.CustomInstrumentationsWithMetadata `json:"customInstrumentations,omitempty"`
 
 	// Configure general fraction of traces to record if none of the rules evaluate to true.
 	// this can help in reducing very noisy and heavy traffic services.
@@ -100,6 +100,11 @@ type InstrumentationRuleSpec struct {
 
 	// Configure the agent own logging configuration.
 	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
+
+	// Adds spans for the operating system work of the scoped workloads, from any language, like the
+	// files they open and the processes they start. A span is a child of the span in progress when the
+	// work happens. File and process spans start a trace when there is none.
+	KernelTraces *instrumentationrules.KernelTraces `json:"kernelTraces,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.

@@ -2650,7 +2650,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>customInstrumentations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CustomInstrumentations"><code>common/api/instrumentationrules.CustomInstrumentations</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CustomInstrumentationsWithMetadata"><code>common/api/instrumentationrules.CustomInstrumentationsWithMetadata</code></a>
 </td>
 <td>
    <p>Add custom instrumentation probes</p>
@@ -2714,6 +2714,19 @@ register instrumented processes for eBPF log capture.</p>
 </td>
 <td>
    <p>Configure the agent own logging configuration.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kernelTraces</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#KernelTraces"><code>common/api/instrumentationrules.KernelTraces</code></a>
+</td>
+<td>
+   <p>Adds spans for the operating system work of the scoped workloads, from any language, like the
+files they open and the processes they start. A span is a child of the span in progress when the
+work happens. File and process spans start a trace when there is none.</p>
 </td>
 </tr>
 </tbody>
