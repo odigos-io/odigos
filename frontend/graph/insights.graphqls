@@ -378,6 +378,8 @@ type InsightsObservation {
 # Alert policies / learning policies
 
 type InsightsPolicy {
+  delivery: InsightsDeliverySettings
+
   id: ID!
   name: String!
   enabled: Boolean!
@@ -395,6 +397,8 @@ type InsightsPolicy {
 }
 
 input InsightsPolicyInput {
+  delivery: InsightsDeliverySettingsInput
+
   """
   Server-assigned; omit on create (the policy key is scope + scopeKey).
   """
@@ -759,6 +763,8 @@ type InsightsGuardrailRule {
 }
 
 type InsightsGuardrail {
+  delivery: InsightsDeliverySettings
+
   scope: InsightsPolicyScope!
   """
   `namespace/service` for service scope; numeric transaction id for transaction scope.
@@ -783,6 +789,8 @@ input InsightsGuardrailRuleInput {
 }
 
 input InsightsGuardrailInput {
+  delivery: InsightsDeliverySettingsInput
+
   scope: InsightsPolicyScope!
   scopeKey: String!
   rules: [InsightsGuardrailRuleInput!]!
@@ -1455,6 +1463,13 @@ type InsightsStorageHealth {
 # Root
 
 type Insights {
+  integrationCatalog: [InsightsIntegrationDescriptor!]!
+  integrations: [InsightsIntegration!]!
+  integration(id: ID!): InsightsIntegration
+  integrationDeliveries(integrationId: ID!, state: InsightsDeliveryState, limit: Int): [InsightsDelivery!]!
+  integrationAttempts(integrationId: ID!, limit: Int): [InsightsDeliveryAttempt!]!
+  findingDeliveries(findingKey: String!): [InsightsDelivery!]!
+
   services: [InsightsServiceStat!]!
   """
   Every distinct service name Insights has seen. Cluster-wide candidate set for
@@ -1706,4 +1721,134 @@ extend type Mutation {
     namespace: String
     service: String
   ): Boolean!
+}
+
+
+enum InsightsIntegrationFieldType {
+  string
+  secret
+  url
+  number
+  bool
+  select
+}
+enum InsightsDeliveryState {
+  pending
+  sent
+  failed
+  dead
+}
+enum InsightsDeliveryAction {
+  firing
+  resolved
+}
+enum InsightsDeliveryAttemptOutcome {
+  ok
+  error
+  dead
+}
+type InsightsDeliverySettings {
+  muted: Boolean!
+  excludedIntegrationIds: [ID!]!
+}
+input InsightsDeliverySettingsInput {
+  muted: Boolean!
+  excludedIntegrationIds: [ID!]!
+}
+type InsightsIntegrationFieldSpec {
+  key: String!
+  label: String!
+  type: InsightsIntegrationFieldType!
+  required: Boolean!
+  help: String!
+  placeholder: String!
+  default: String!
+  options: [String!]!
+}
+type InsightsIntegrationCapabilities {
+  needsHeartbeat: Boolean!
+  supportsResolve: Boolean!
+  returnsExternalId: Boolean!
+  maxBatch: Int!
+}
+type InsightsIntegrationDescriptor {
+  type: String!
+  name: String!
+  description: String!
+  docsUrl: String!
+  fields: [InsightsIntegrationFieldSpec!]!
+  capabilities: InsightsIntegrationCapabilities!
+}
+type InsightsIntegrationFilters {
+  minSeverity: InsightsSeverity
+  kinds: [InsightsFindingKind!]!
+  notifyOnResolve: Boolean!
+}
+input InsightsIntegrationFiltersInput {
+  minSeverity: InsightsSeverity
+  kinds: [InsightsFindingKind!]!
+  notifyOnResolve: Boolean!
+}
+type InsightsIntegrationHealth {
+  lastSuccessAt: String!
+  lastFailureAt: String!
+  lastError: String!
+  consecutiveFailures: Int!
+  pending: Int!
+  failed: Int!
+  dead: Int!
+}
+type InsightsIntegration {
+  id: ID!
+  name: String!
+  type: String!
+  enabled: Boolean!
+  config: String!
+  filters: InsightsIntegrationFilters!
+  health: InsightsIntegrationHealth!
+  createdAt: String!
+  updatedAt: String!
+}
+"Config is a JSON object whose value types are defined by the backend catalog."
+input InsightsIntegrationInput {
+  name: String!
+  type: String!
+  enabled: Boolean!
+  config: String!
+  filters: InsightsIntegrationFiltersInput!
+}
+type InsightsDelivery {
+  integrationId: ID!
+  findingKey: String!
+  lastAction: InsightsDeliveryAction!
+  state: InsightsDeliveryState!
+  attempts: Int!
+  nextAttemptAt: String!
+  lastError: String!
+  sentAt: String!
+  occurrencesAtSend: Int!
+  severityAtSend: String!
+  statusAtSend: String!
+  externalId: String!
+  updatedAt: String!
+}
+type InsightsDeliveryAttempt {
+  integrationId: ID!
+  findingKey: String!
+  action: InsightsDeliveryAction!
+  attempt: Int!
+  outcome: InsightsDeliveryAttemptOutcome!
+  httpStatus: Int!
+  error: String!
+  durationMs: Int!
+  eventCount: Int!
+  attemptedAt: String!
+}
+
+extend type Mutation {
+  createInsightsIntegration(integration: InsightsIntegrationInput!): InsightsIntegration!
+  updateInsightsIntegration(id: ID!, integration: InsightsIntegrationInput!): InsightsIntegration!
+  deleteInsightsIntegration(id: ID!): Boolean!
+  testInsightsIntegration(id: ID!): Boolean!
+  retryInsightsIntegrationDeliveries(id: ID!, findingKeys: [String!]): Boolean!
 }

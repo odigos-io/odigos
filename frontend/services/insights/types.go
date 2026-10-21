@@ -254,6 +254,7 @@ type Observation struct {
 }
 
 type Policy struct {
+	Delivery      *DeliverySettings   `json:"delivery,omitempty"`
 	ID            int64               `json:"id"`
 	Name          string              `json:"name"`
 	Enabled       bool                `json:"enabled"`
@@ -460,9 +461,10 @@ type GuardrailRule struct {
 }
 
 type Guardrail struct {
-	Scope    PolicyScope     `json:"scope"`
-	ScopeKey string          `json:"scope_key"`
-	Rules    []GuardrailRule `json:"rules"`
+	Delivery *DeliverySettings `json:"delivery,omitempty"`
+	Scope    PolicyScope       `json:"scope"`
+	ScopeKey string            `json:"scope_key"`
+	Rules    []GuardrailRule   `json:"rules"`
 }
 
 type GuardrailViolation struct {
