@@ -798,7 +798,13 @@ type HTTPPayloadCollectionInput struct {
 }
 
 type Insights struct {
-	Services []*InsightsServiceStat `json:"services"`
+	IntegrationCatalog    []*InsightsIntegrationDescriptor `json:"integrationCatalog"`
+	Integrations          []*InsightsIntegration           `json:"integrations"`
+	Integration           *InsightsIntegration             `json:"integration,omitempty"`
+	IntegrationDeliveries []*InsightsDelivery              `json:"integrationDeliveries"`
+	IntegrationAttempts   []*InsightsDeliveryAttempt       `json:"integrationAttempts"`
+	FindingDeliveries     []*InsightsDelivery              `json:"findingDeliveries"`
+	Services              []*InsightsServiceStat           `json:"services"`
 	// Every distinct service name Insights has seen. Cluster-wide candidate set for
 	// guardrail caller/callee allowlists — fetch once and combine with a service profile.
 	ServiceNames   []string                `json:"serviceNames"`
@@ -1143,6 +1149,45 @@ type InsightsCorrelationSpecInput struct {
 	Why      *string           `json:"why,omitempty"`
 }
 
+type InsightsDelivery struct {
+	IntegrationID     string                 `json:"integrationId"`
+	FindingKey        string                 `json:"findingKey"`
+	LastAction        InsightsDeliveryAction `json:"lastAction"`
+	State             InsightsDeliveryState  `json:"state"`
+	Attempts          int                    `json:"attempts"`
+	NextAttemptAt     string                 `json:"nextAttemptAt"`
+	LastError         string                 `json:"lastError"`
+	SentAt            string                 `json:"sentAt"`
+	OccurrencesAtSend int                    `json:"occurrencesAtSend"`
+	SeverityAtSend    string                 `json:"severityAtSend"`
+	StatusAtSend      string                 `json:"statusAtSend"`
+	ExternalID        string                 `json:"externalId"`
+	UpdatedAt         string                 `json:"updatedAt"`
+}
+
+type InsightsDeliveryAttempt struct {
+	IntegrationID string                         `json:"integrationId"`
+	FindingKey    string                         `json:"findingKey"`
+	Action        InsightsDeliveryAction         `json:"action"`
+	Attempt       int                            `json:"attempt"`
+	Outcome       InsightsDeliveryAttemptOutcome `json:"outcome"`
+	HTTPStatus    int                            `json:"httpStatus"`
+	Error         string                         `json:"error"`
+	DurationMs    int                            `json:"durationMs"`
+	EventCount    int                            `json:"eventCount"`
+	AttemptedAt   string                         `json:"attemptedAt"`
+}
+
+type InsightsDeliverySettings struct {
+	Muted                  bool     `json:"muted"`
+	ExcludedIntegrationIds []string `json:"excludedIntegrationIds"`
+}
+
+type InsightsDeliverySettingsInput struct {
+	Muted                  bool     `json:"muted"`
+	ExcludedIntegrationIds []string `json:"excludedIntegrationIds"`
+}
+
 type InsightsEnricherList struct {
 	Key     string   `json:"key"`
 	Label   string   `json:"label"`
@@ -1188,16 +1233,18 @@ type InsightsFinding struct {
 }
 
 type InsightsGuardrail struct {
-	Scope InsightsPolicyScope `json:"scope"`
+	Delivery *InsightsDeliverySettings `json:"delivery,omitempty"`
+	Scope    InsightsPolicyScope       `json:"scope"`
 	// `namespace/service` for service scope; numeric transaction id for transaction scope.
 	ScopeKey string                   `json:"scopeKey"`
 	Rules    []*InsightsGuardrailRule `json:"rules"`
 }
 
 type InsightsGuardrailInput struct {
-	Scope    InsightsPolicyScope           `json:"scope"`
-	ScopeKey string                        `json:"scopeKey"`
-	Rules    []*InsightsGuardrailRuleInput `json:"rules"`
+	Delivery *InsightsDeliverySettingsInput `json:"delivery,omitempty"`
+	Scope    InsightsPolicyScope            `json:"scope"`
+	ScopeKey string                         `json:"scopeKey"`
+	Rules    []*InsightsGuardrailRuleInput  `json:"rules"`
 }
 
 type InsightsGuardrailRule struct {
@@ -1268,6 +1315,76 @@ type InsightsGuardrailViolationDetail struct {
 	EvidenceTrace *InsightsObservation `json:"evidenceTrace,omitempty"`
 }
 
+type InsightsIntegration struct {
+	ID        string                      `json:"id"`
+	Name      string                      `json:"name"`
+	Type      string                      `json:"type"`
+	Enabled   bool                        `json:"enabled"`
+	Config    string                      `json:"config"`
+	Filters   *InsightsIntegrationFilters `json:"filters"`
+	Health    *InsightsIntegrationHealth  `json:"health"`
+	CreatedAt string                      `json:"createdAt"`
+	UpdatedAt string                      `json:"updatedAt"`
+}
+
+type InsightsIntegrationCapabilities struct {
+	NeedsHeartbeat    bool `json:"needsHeartbeat"`
+	SupportsResolve   bool `json:"supportsResolve"`
+	ReturnsExternalID bool `json:"returnsExternalId"`
+	MaxBatch          int  `json:"maxBatch"`
+}
+
+type InsightsIntegrationDescriptor struct {
+	Type         string                           `json:"type"`
+	Name         string                           `json:"name"`
+	Description  string                           `json:"description"`
+	DocsURL      string                           `json:"docsUrl"`
+	Fields       []*InsightsIntegrationFieldSpec  `json:"fields"`
+	Capabilities *InsightsIntegrationCapabilities `json:"capabilities"`
+}
+
+type InsightsIntegrationFieldSpec struct {
+	Key         string                       `json:"key"`
+	Label       string                       `json:"label"`
+	Type        InsightsIntegrationFieldType `json:"type"`
+	Required    bool                         `json:"required"`
+	Help        string                       `json:"help"`
+	Placeholder string                       `json:"placeholder"`
+	Default     string                       `json:"default"`
+	Options     []string                     `json:"options"`
+}
+
+type InsightsIntegrationFilters struct {
+	MinSeverity     *InsightsSeverity     `json:"minSeverity,omitempty"`
+	Kinds           []InsightsFindingKind `json:"kinds"`
+	NotifyOnResolve bool                  `json:"notifyOnResolve"`
+}
+
+type InsightsIntegrationFiltersInput struct {
+	MinSeverity     *InsightsSeverity     `json:"minSeverity,omitempty"`
+	Kinds           []InsightsFindingKind `json:"kinds"`
+	NotifyOnResolve bool                  `json:"notifyOnResolve"`
+}
+
+type InsightsIntegrationHealth struct {
+	LastSuccessAt       string `json:"lastSuccessAt"`
+	LastFailureAt       string `json:"lastFailureAt"`
+	LastError           string `json:"lastError"`
+	ConsecutiveFailures int    `json:"consecutiveFailures"`
+	Pending             int    `json:"pending"`
+	Failed              int    `json:"failed"`
+	Dead                int    `json:"dead"`
+}
+
+// Config is a JSON object whose value types are defined by the backend catalog.
+type InsightsIntegrationInput struct {
+	Name    string                           `json:"name"`
+	Type    string                           `json:"type"`
+	Enabled bool                             `json:"enabled"`
+	Config  string                           `json:"config"`
+	Filters *InsightsIntegrationFiltersInput `json:"filters"`
+}
+
 type InsightsLearningCondition struct {
 	Type               InsightsLearningConditionType `json:"type"`
 	MinObservations    *int                          `json:"minObservations,omitempty"`
@@ -1321,10 +1438,11 @@ type InsightsObservationSummary struct {
 }
 
 type InsightsPolicy struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Enabled     bool   `json:"enabled"`
-	FireAtScore int    `json:"fireAtScore"`
+	Delivery    *InsightsDeliverySettings `json:"delivery,omitempty"`
+	ID          string                    `json:"id"`
+	Name        string                    `json:"name"`
+	Enabled     bool                      `json:"enabled"`
+	FireAtScore int                       `json:"fireAtScore"`
 	// JSON-encoded map[string]int of per-signal weights.
 	SignalWeights *string `json:"signalWeights,omitempty"`
 	// JSON-encoded map[string][]string of enricher keyword lists.
@@ -1334,6 +1452,7 @@ type InsightsPolicy struct {
 }
 
 type InsightsPolicyInput struct {
+	Delivery *InsightsDeliverySettingsInput `json:"delivery,omitempty"`
 	// Server-assigned; omit on create (the policy key is scope + scopeKey).
 	ID          *string `json:"id,omitempty"`
 	Name        string  `json:"name"`
@@ -3887,6 +4006,135 @@ func (e InsightsCorrelationRelation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type InsightsDeliveryAction string
+
+const (
+	InsightsDeliveryActionFiring   InsightsDeliveryAction = "firing"
+	InsightsDeliveryActionResolved InsightsDeliveryAction = "resolved"
+)
+
+var AllInsightsDeliveryAction = []InsightsDeliveryAction{
+	InsightsDeliveryActionFiring,
+	InsightsDeliveryActionResolved,
+}
+
+func (e InsightsDeliveryAction) IsValid() bool {
+	switch e {
+	case InsightsDeliveryActionFiring, InsightsDeliveryActionResolved:
+		return true
+	}
+	return false
+}
+
+func (e InsightsDeliveryAction) String() string {
+	return string(e)
+}
+
+func (e *InsightsDeliveryAction) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsDeliveryAction(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsDeliveryAction", str)
+	}
+	return nil
+}
+
+func (e InsightsDeliveryAction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsDeliveryAttemptOutcome string
+
+const (
+	InsightsDeliveryAttemptOutcomeOk    InsightsDeliveryAttemptOutcome = "ok"
+	InsightsDeliveryAttemptOutcomeError InsightsDeliveryAttemptOutcome = "error"
+	InsightsDeliveryAttemptOutcomeDead  InsightsDeliveryAttemptOutcome = "dead"
+)
+
+var AllInsightsDeliveryAttemptOutcome = []InsightsDeliveryAttemptOutcome{
+	InsightsDeliveryAttemptOutcomeOk,
+	InsightsDeliveryAttemptOutcomeError,
+	InsightsDeliveryAttemptOutcomeDead,
+}
+
+func (e InsightsDeliveryAttemptOutcome) IsValid() bool {
+	switch e {
+	case InsightsDeliveryAttemptOutcomeOk, InsightsDeliveryAttemptOutcomeError, InsightsDeliveryAttemptOutcomeDead:
+		return true
+	}
+	return false
+}
+
+func (e InsightsDeliveryAttemptOutcome) String() string {
+	return string(e)
+}
+
+func (e *InsightsDeliveryAttemptOutcome) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsDeliveryAttemptOutcome(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsDeliveryAttemptOutcome", str)
+	}
+	return nil
+}
+
+func (e InsightsDeliveryAttemptOutcome) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsDeliveryState string
+
+const (
+	InsightsDeliveryStatePending InsightsDeliveryState = "pending"
+	InsightsDeliveryStateSent    InsightsDeliveryState = "sent"
+	InsightsDeliveryStateFailed  InsightsDeliveryState = "failed"
+	InsightsDeliveryStateDead    InsightsDeliveryState = "dead"
+)
+
+var AllInsightsDeliveryState = []InsightsDeliveryState{
+	InsightsDeliveryStatePending,
+	InsightsDeliveryStateSent,
+	InsightsDeliveryStateFailed,
+	InsightsDeliveryStateDead,
+}
+
+func (e InsightsDeliveryState) IsValid() bool {
+	switch e {
+	case InsightsDeliveryStatePending, InsightsDeliveryStateSent, InsightsDeliveryStateFailed, InsightsDeliveryStateDead:
+		return true
+	}
+	return false
+}
+
+func (e InsightsDeliveryState) String() string {
+	return string(e)
+}
+
+func (e *InsightsDeliveryState) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsDeliveryState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsDeliveryState", str)
+	}
+	return nil
+}
+
+func (e InsightsDeliveryState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type InsightsDeviationClass string
 
 const (
@@ -3976,6 +4224,55 @@ func (e *InsightsFindingKind) UnmarshalGQL(v any) error {
 }
 
 func (e InsightsFindingKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsIntegrationFieldType string
+
+const (
+	InsightsIntegrationFieldTypeString InsightsIntegrationFieldType = "string"
+	InsightsIntegrationFieldTypeSecret InsightsIntegrationFieldType = "secret"
+	InsightsIntegrationFieldTypeURL    InsightsIntegrationFieldType = "url"
+	InsightsIntegrationFieldTypeNumber InsightsIntegrationFieldType = "number"
+	InsightsIntegrationFieldTypeBool   InsightsIntegrationFieldType = "bool"
+	InsightsIntegrationFieldTypeSelect InsightsIntegrationFieldType = "select"
+)
+
+var AllInsightsIntegrationFieldType = []InsightsIntegrationFieldType{
+	InsightsIntegrationFieldTypeString,
+	InsightsIntegrationFieldTypeSecret,
+	InsightsIntegrationFieldTypeURL,
+	InsightsIntegrationFieldTypeNumber,
+	InsightsIntegrationFieldTypeBool,
+	InsightsIntegrationFieldTypeSelect,
+}
+
+func (e InsightsIntegrationFieldType) IsValid() bool {
+	switch e {
+	case InsightsIntegrationFieldTypeString, InsightsIntegrationFieldTypeSecret, InsightsIntegrationFieldTypeURL, InsightsIntegrationFieldTypeNumber, InsightsIntegrationFieldTypeBool, InsightsIntegrationFieldTypeSelect:
+		return true
+	}
+	return false
+}
+
+func (e InsightsIntegrationFieldType) String() string {
+	return string(e)
+}
+
+func (e *InsightsIntegrationFieldType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsIntegrationFieldType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsIntegrationFieldType", str)
+	}
+	return nil
+}
+
+func (e InsightsIntegrationFieldType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
