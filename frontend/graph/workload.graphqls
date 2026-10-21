@@ -414,6 +414,24 @@ type K8sWorkloadContainer {
 }
 
 """
+What a call-map frame belongs to. Classified when read, from the JVM frame name.
+"""
+enum InterrogationFrameKind {
+  """
+  Customer code: probe candidates and AI evidence.
+  """
+  APP
+  """
+  Third-party framework or library code, kept so the map shows app → library → app flows.
+  """
+  LIBRARY
+  """
+  JDK, VM and agent plumbing (normally dropped at ingest).
+  """
+  RUNTIME
+}
+
+"""
 One detected function from a profile sample linked to a transaction.
 """
 type InterrogationFunction {
@@ -422,6 +440,7 @@ type InterrogationFunction {
   profile.frame.type (e.g. jvm, hotspot).
   """
   frameType: String!
+  frameKind: InterrogationFrameKind!
   """
   Profile sample type: events (probe) or samples (periodic CPU).
   """
@@ -447,6 +466,7 @@ type InterrogationCallTrieNode {
   parentId: String
   name: String!
   frameType: String!
+  frameKind: InterrogationFrameKind!
   sampleType: String!
   """
   Call-trie rows stored for this node (relative heat, not a sample count).

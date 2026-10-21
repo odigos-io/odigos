@@ -1,6 +1,30 @@
 package interrogation
 
-import "github.com/odigos-io/odigos/frontend/graph/model"
+import (
+	"github.com/odigos-io/odigos/common/interrogation"
+	"github.com/odigos-io/odigos/frontend/graph/model"
+)
+
+// Only JVM frames carry Java package names the classifier understands.
+const (
+	frameTypeJVM     = "jvm"
+	frameTypeHotspot = "hotspot"
+)
+
+var frameKindToModel = map[interrogation.FrameKind]model.InterrogationFrameKind{
+	interrogation.FrameKindApp:     model.InterrogationFrameKindApp,
+	interrogation.FrameKindLibrary: model.InterrogationFrameKindLibrary,
+	interrogation.FrameKindRuntime: model.InterrogationFrameKindRuntime,
+}
+
+// classifyFrame returns the frame's kind. Non-JVM frames are treated as application
+// code, as they were before classification.
+func classifyFrame(name, frameType string) model.InterrogationFrameKind {
+	if frameType != frameTypeJVM && frameType != frameTypeHotspot {
+		return model.InterrogationFrameKindApp
+	}
+	return frameKindToModel[interrogation.ClassifyFrame(name)]
+}
 
 // TransactionsToModel converts ClickHouse-backed transactions to GraphQL models.
 func TransactionsToModel(txs []Transaction) []*model.InterrogationTransaction {
@@ -11,6 +35,7 @@ func TransactionsToModel(txs []Transaction) []*model.InterrogationTransaction {
 			fns = append(fns, &model.InterrogationFunction{
 				Name:       fn.Name,
 				FrameType:  fn.FrameType,
+				FrameKind:  classifyFrame(fn.Name, fn.FrameType),
 				SampleType: fn.SampleType,
 				SeenCount:  int(fn.SeenCount),
 			})
@@ -56,6 +81,7 @@ func CallTrieToModel(nodes []CallTrieNode) []*model.InterrogationCallTrieNode {
 			ParentID:   parentID,
 			Name:       n.Name,
 			FrameType:  n.FrameType,
+			FrameKind:  classifyFrame(n.Name, n.FrameType),
 			SampleType: n.SampleType,
 			SeenCount:  int(n.SeenCount),
 		})

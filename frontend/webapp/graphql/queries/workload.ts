@@ -426,6 +426,7 @@ export const GET_INTERROGATION_TRANSACTIONS = gql`
           functions {
             name
             frameType
+            frameKind
             sampleType
             seenCount
           }
@@ -434,6 +435,7 @@ export const GET_INTERROGATION_TRANSACTIONS = gql`
             parentId
             name
             frameType
+            frameKind
             sampleType
             seenCount
           }

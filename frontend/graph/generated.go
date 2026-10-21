@@ -1418,6 +1418,7 @@ type ComplexityRoot struct {
 	}
 
 	InterrogationCallTrieNode struct {
+		FrameKind  func(childComplexity int) int
 		FrameType  func(childComplexity int) int
 		ID         func(childComplexity int) int
 		Name       func(childComplexity int) int
@@ -1433,6 +1434,7 @@ type ComplexityRoot struct {
 	}
 
 	InterrogationFunction struct {
+		FrameKind  func(childComplexity int) int
 		FrameType  func(childComplexity int) int
 		Name       func(childComplexity int) int
 		SampleType func(childComplexity int) int
@@ -9074,6 +9076,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentorConfig.MountMethod(childComplexity), true
 
+	case "InterrogationCallTrieNode.frameKind":
+		if e.complexity.InterrogationCallTrieNode.FrameKind == nil {
+			break
+		}
+
+		return e.complexity.InterrogationCallTrieNode.FrameKind(childComplexity), true
+
 	case "InterrogationCallTrieNode.frameType":
 		if e.complexity.InterrogationCallTrieNode.FrameType == nil {
 			break
@@ -9136,6 +9145,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InterrogationConfig.Model(childComplexity), true
+
+	case "InterrogationFunction.frameKind":
+		if e.complexity.InterrogationFunction.FrameKind == nil {
+			break
+		}
+
+		return e.complexity.InterrogationFunction.FrameKind(childComplexity), true
 
 	case "InterrogationFunction.frameType":
 		if e.complexity.InterrogationFunction.FrameType == nil {
@@ -60267,6 +60283,50 @@ func (ec *executionContext) fieldContext_InterrogationCallTrieNode_frameType(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _InterrogationCallTrieNode_frameKind(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationCallTrieNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InterrogationCallTrieNode_frameKind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FrameKind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InterrogationFrameKind)
+	fc.Result = res
+	return ec.marshalNInterrogationFrameKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationFrameKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InterrogationCallTrieNode_frameKind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InterrogationCallTrieNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InterrogationFrameKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InterrogationCallTrieNode_sampleType(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationCallTrieNode) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InterrogationCallTrieNode_sampleType(ctx, field)
 	if err != nil {
@@ -60569,6 +60629,50 @@ func (ec *executionContext) fieldContext_InterrogationFunction_frameType(_ conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InterrogationFunction_frameKind(ctx context.Context, field graphql.CollectedField, obj *model.InterrogationFunction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InterrogationFunction_frameKind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FrameKind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InterrogationFrameKind)
+	fc.Result = res
+	return ec.marshalNInterrogationFrameKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationFrameKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InterrogationFunction_frameKind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InterrogationFunction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InterrogationFrameKind does not have child fields")
 		},
 	}
 	return fc, nil
@@ -61056,6 +61160,8 @@ func (ec *executionContext) fieldContext_InterrogationTransaction_functions(_ co
 				return ec.fieldContext_InterrogationFunction_name(ctx, field)
 			case "frameType":
 				return ec.fieldContext_InterrogationFunction_frameType(ctx, field)
+			case "frameKind":
+				return ec.fieldContext_InterrogationFunction_frameKind(ctx, field)
 			case "sampleType":
 				return ec.fieldContext_InterrogationFunction_sampleType(ctx, field)
 			case "seenCount":
@@ -61152,6 +61258,8 @@ func (ec *executionContext) fieldContext_InterrogationTransaction_callTrie(_ con
 				return ec.fieldContext_InterrogationCallTrieNode_name(ctx, field)
 			case "frameType":
 				return ec.fieldContext_InterrogationCallTrieNode_frameType(ctx, field)
+			case "frameKind":
+				return ec.fieldContext_InterrogationCallTrieNode_frameKind(ctx, field)
 			case "sampleType":
 				return ec.fieldContext_InterrogationCallTrieNode_sampleType(ctx, field)
 			case "seenCount":
@@ -106821,6 +106929,11 @@ func (ec *executionContext) _InterrogationCallTrieNode(ctx context.Context, sel 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "frameKind":
+			out.Values[i] = ec._InterrogationCallTrieNode_frameKind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "sampleType":
 			out.Values[i] = ec._InterrogationCallTrieNode_sampleType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -106912,6 +107025,11 @@ func (ec *executionContext) _InterrogationFunction(ctx context.Context, sel ast.
 			}
 		case "frameType":
 			out.Values[i] = ec._InterrogationFunction_frameType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "frameKind":
+			out.Values[i] = ec._InterrogationFunction_frameKind(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -120650,6 +120768,16 @@ func (ec *executionContext) marshalNInterrogationCallTrieNode2ᚖgithubᚗcomᚋ
 		return graphql.Null
 	}
 	return ec._InterrogationCallTrieNode(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInterrogationFrameKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationFrameKind(ctx context.Context, v any) (model.InterrogationFrameKind, error) {
+	var res model.InterrogationFrameKind
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInterrogationFrameKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationFrameKind(ctx context.Context, sel ast.SelectionSet, v model.InterrogationFrameKind) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNInterrogationFunction2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInterrogationFunctionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InterrogationFunction) graphql.Marshaler {

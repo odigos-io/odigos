@@ -1959,10 +1959,11 @@ type InterrogationCallTrieNode struct {
 	// Stable node id for this call-path frame (sha1 of parent + frame identity).
 	ID string `json:"id"`
 	// Parent node id, or null for roots (children of the ClickHouse Parent "root").
-	ParentID   *string `json:"parentId,omitempty"`
-	Name       string  `json:"name"`
-	FrameType  string  `json:"frameType"`
-	SampleType string  `json:"sampleType"`
+	ParentID   *string                `json:"parentId,omitempty"`
+	Name       string                 `json:"name"`
+	FrameType  string                 `json:"frameType"`
+	FrameKind  InterrogationFrameKind `json:"frameKind"`
+	SampleType string                 `json:"sampleType"`
 	// Call-trie rows stored for this node (relative heat, not a sample count).
 	SeenCount int `json:"seenCount"`
 }
@@ -1977,7 +1978,8 @@ type InterrogationConfig struct {
 type InterrogationFunction struct {
 	Name string `json:"name"`
 	// profile.frame.type (e.g. jvm, hotspot).
-	FrameType string `json:"frameType"`
+	FrameType string                 `json:"frameType"`
+	FrameKind InterrogationFrameKind `json:"frameKind"`
 	// Profile sample type: events (probe) or samples (periodic CPU).
 	SampleType string `json:"sampleType"`
 	// Call-trie rows stored for this function in the transaction (relative heat, not
@@ -4725,6 +4727,53 @@ func (e *InstrumentationRuleType) UnmarshalGQL(v any) error {
 }
 
 func (e InstrumentationRuleType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// What a call-map frame belongs to. Classified when read, from the JVM frame name.
+type InterrogationFrameKind string
+
+const (
+	// Customer code: probe candidates and AI evidence.
+	InterrogationFrameKindApp InterrogationFrameKind = "APP"
+	// Third-party framework or library code, kept so the map shows app → library → app flows.
+	InterrogationFrameKindLibrary InterrogationFrameKind = "LIBRARY"
+	// JDK, VM and agent plumbing (normally dropped at ingest).
+	InterrogationFrameKindRuntime InterrogationFrameKind = "RUNTIME"
+)
+
+var AllInterrogationFrameKind = []InterrogationFrameKind{
+	InterrogationFrameKindApp,
+	InterrogationFrameKindLibrary,
+	InterrogationFrameKindRuntime,
+}
+
+func (e InterrogationFrameKind) IsValid() bool {
+	switch e {
+	case InterrogationFrameKindApp, InterrogationFrameKindLibrary, InterrogationFrameKindRuntime:
+		return true
+	}
+	return false
+}
+
+func (e InterrogationFrameKind) String() string {
+	return string(e)
+}
+
+func (e *InterrogationFrameKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InterrogationFrameKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InterrogationFrameKind", str)
+	}
+	return nil
+}
+
+func (e InterrogationFrameKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
