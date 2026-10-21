@@ -19,3 +19,5 @@ export * from './recommendations';
 export * from './sampling';
 export * from './insights';
 export * from './workload';
+
+export * from './insights-integrations';

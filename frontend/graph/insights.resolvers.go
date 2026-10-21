@@ -14,6 +14,36 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/insights"
 )
 
+// IntegrationCatalog is the resolver for the integrationCatalog field.
+func (r *insightsResolver) IntegrationCatalog(ctx context.Context, obj *model.Insights) ([]*model.InsightsIntegrationDescriptor, error) {
+	return r.resolveIntegrationCatalog(ctx)
+}
+
+// Integrations is the resolver for the integrations field.
+func (r *insightsResolver) Integrations(ctx context.Context, obj *model.Insights) ([]*model.InsightsIntegration, error) {
+	return r.resolveIntegrations(ctx)
+}
+
+// Integration is the resolver for the integration field.
+func (r *insightsResolver) Integration(ctx context.Context, obj *model.Insights, id string) (*model.InsightsIntegration, error) {
+	return r.resolveIntegration(ctx, id)
+}
+
+// IntegrationDeliveries is the resolver for the integrationDeliveries field.
+func (r *insightsResolver) IntegrationDeliveries(ctx context.Context, obj *model.Insights, integrationID string, state *model.InsightsDeliveryState, limit *int) ([]*model.InsightsDelivery, error) {
+	return r.resolveIntegrationDeliveries(ctx, integrationID, state, limit)
+}
+
+// IntegrationAttempts is the resolver for the integrationAttempts field.
+func (r *insightsResolver) IntegrationAttempts(ctx context.Context, obj *model.Insights, integrationID string, limit *int) ([]*model.InsightsDeliveryAttempt, error) {
+	return r.resolveIntegrationAttempts(ctx, integrationID, limit)
+}
+
+// FindingDeliveries is the resolver for the findingDeliveries field.
+func (r *insightsResolver) FindingDeliveries(ctx context.Context, obj *model.Insights, findingKey string) ([]*model.InsightsDelivery, error) {
+	return r.resolveFindingDeliveries(ctx, findingKey)
+}
+
 // Services is the resolver for the services field.
 func (r *insightsResolver) Services(ctx context.Context, obj *model.Insights) ([]*model.InsightsServiceStat, error) {
 	client, err := r.insightsClient(ctx)
@@ -865,6 +895,31 @@ func (r *mutationResolver) RecomputeInsightsRecommendations(ctx context.Context,
 		return false, insights.GraphQLError(ctx, err)
 	}
 	return true, nil
+}
+
+// CreateInsightsIntegration is the resolver for the createInsightsIntegration field.
+func (r *mutationResolver) CreateInsightsIntegration(ctx context.Context, integration model.InsightsIntegrationInput) (*model.InsightsIntegration, error) {
+	return r.resolveCreateInsightsIntegration(ctx, integration)
+}
+
+// UpdateInsightsIntegration is the resolver for the updateInsightsIntegration field.
+func (r *mutationResolver) UpdateInsightsIntegration(ctx context.Context, id string, integration model.InsightsIntegrationInput) (*model.InsightsIntegration, error) {
+	return r.resolveUpdateInsightsIntegration(ctx, id, integration)
+}
+
+// DeleteInsightsIntegration is the resolver for the deleteInsightsIntegration field.
+func (r *mutationResolver) DeleteInsightsIntegration(ctx context.Context, id string) (bool, error) {
+	return r.resolveDeleteInsightsIntegration(ctx, id)
+}
+
+// TestInsightsIntegration is the resolver for the testInsightsIntegration field.
+func (r *mutationResolver) TestInsightsIntegration(ctx context.Context, id string) (bool, error) {
+	return r.resolveTestInsightsIntegration(ctx, id)
+}
+
+// RetryInsightsIntegrationDeliveries is the resolver for the retryInsightsIntegrationDeliveries field.
+func (r *mutationResolver) RetryInsightsIntegrationDeliveries(ctx context.Context, id string, findingKeys []string) (bool, error) {
+	return r.resolveRetryInsightsIntegrationDeliveries(ctx, id, findingKeys)
 }
 
 // Insights is the resolver for the insights field.

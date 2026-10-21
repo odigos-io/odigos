@@ -148,6 +148,29 @@ func TestMergeDefaultTemplatizationConfigs_enabledWithNilSkipPolicy(t *testing.T
 	require.Equal(t, []int{500}, got.SkipPolicy.SkipHttpStatusCodes)
 }
 
+func TestDedupeAndSortTemplates_ordersSegmentsBySpecificity(t *testing.T) {
+	got := dedupeAndSortTemplates([]string{
+		"/foo/{id}",
+		"/foo/*",
+		"/foo/bar",
+		"/bar/{id}",
+		"/foo/bar",
+		"/foo/{name}/extra",
+		"/foo/*/extra",
+		"/foo/baz/extra",
+	})
+
+	require.Equal(t, []string{
+		"/bar/{id}",
+		"/foo/bar",
+		"/foo/baz/extra",
+		"/foo/*",
+		"/foo/*/extra",
+		"/foo/{id}",
+		"/foo/{name}/extra",
+	}, got)
+}
+
 func TestBuildUrlTemplatizationConfig_nilDefaultEnablesDefaultTemplatization(t *testing.T) {
 	got := BuildUrlTemplatizationConfig([]string{"/b/{id}", "/a/{id}", "/b/{id}"}, nil, true)
 

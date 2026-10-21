@@ -260,3 +260,15 @@ models:
         resolver: true
       storageHealth:
         resolver: true
+      integrationCatalog:
+        resolver: true
+      integrations:
+        resolver: true
+      integration:
+        resolver: true
+      integrationDeliveries:
+        resolver: true
+      integrationAttempts:
+        resolver: true
+      findingDeliveries:
+        resolver: true
