@@ -9,11 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//go:fix inline
-func int32Ptr(i int32) *int32 {
-	return new(i)
-}
-
 func TestIsArgoRolloutRolloutDone(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -27,7 +22,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "1",
@@ -46,7 +41,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 2,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "2",
@@ -65,7 +60,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 2,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "2",
@@ -84,7 +79,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 3,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "2", // Older generation
@@ -103,7 +98,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "1",
@@ -122,7 +117,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "1",
@@ -141,7 +136,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "invalid",
@@ -159,7 +154,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "1",
@@ -178,7 +173,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: argorolloutsv1alpha1.RolloutSpec{
-					Replicas: int32Ptr(10),
+					Replicas: new(int32(10)),
 				},
 				Status: argorolloutsv1alpha1.RolloutStatus{
 					ObservedGeneration: "1",
@@ -207,7 +202,7 @@ func TestIsWorkloadRolloutDone(t *testing.T) {
 				Generation: 1,
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: int32Ptr(3),
+				Replicas: new(int32(3)),
 			},
 			Status: appsv1.DeploymentStatus{
 				ObservedGeneration: 1,
@@ -225,7 +220,7 @@ func TestIsWorkloadRolloutDone(t *testing.T) {
 				Generation: 1,
 			},
 			Spec: argorolloutsv1alpha1.RolloutSpec{
-				Replicas: int32Ptr(10),
+				Replicas: new(int32(10)),
 			},
 			Status: argorolloutsv1alpha1.RolloutStatus{
 				ObservedGeneration: "1",

@@ -100,9 +100,6 @@ func templateAnnotations() map[string]string {
 	}
 }
 
-//go:fix inline
-func boolPtr(b bool) *bool { return new(b) }
-
 func assertStrippedContainers(t *testing.T, containers []v1.Container) {
 	t.Helper()
 	assert.Len(t, containers, 2)

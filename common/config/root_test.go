@@ -342,9 +342,6 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 	assert.Equal(t, signals, []common.ObservabilitySignal{common.LogsObservabilitySignal})
 }
 
-//go:fix inline
-func strPtr(b bool) *bool { return new(b) }
-
 func selfMetricsReceiver() func(c *config.Config, _ []string, _ []string) error {
 	return func(c *config.Config, _ []string, _ []string) error {
 		c.Receivers["prometheus/self-metrics"] = config.GenericMap{
