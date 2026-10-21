@@ -27,7 +27,6 @@ type InstrumentationInstanceOption interface {
 
 type updateInstrumentationInstanceStatusOpt func(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
 
-//nolint:all
 func (o updateInstrumentationInstanceStatusOpt) applyInstrumentationInstance(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 	return o(s)
 }
@@ -61,7 +60,6 @@ func WithComponents(components []odigosv1.InstrumentationLibraryStatus) Instrume
 	})
 }
 
-//nolint:all
 func updateInstrumentationInstanceStatus(status odigosv1.InstrumentationInstanceStatus, options ...InstrumentationInstanceOption) odigosv1.InstrumentationInstanceStatus {
 	for _, option := range options {
 		status = option.applyInstrumentationInstance(status)

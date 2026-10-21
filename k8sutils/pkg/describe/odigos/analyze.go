@@ -409,6 +409,7 @@ func summarizeStatus(clusterCollector *ClusterCollectorAnalyze, nodeCollector *N
 			hasErrors = true
 		case properties.PropertyStatusTransitioning:
 			isSettled = false
+		default:
 		}
 	}
 

@@ -64,6 +64,7 @@ func init() {
 			OnPremProfiles = append(OnPremProfiles, p)
 		case common.OnPremOdigosTier:
 			OnPremProfiles = append(OnPremProfiles, p)
+		default:
 		}
 	}
 }

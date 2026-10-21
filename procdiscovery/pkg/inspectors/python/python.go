@@ -72,7 +72,7 @@ func (p *PythonInspector) isLibPythonLinked(pcx *process.ProcessContext) bool {
 	if err != nil {
 		return false
 	}
-	defer elfFile.Close() // nolint:errcheck // we can't do anything if it fails
+	defer elfFile.Close() //nolint:errcheck // we can't do anything if it fails
 
 	dynamicSection, err := elfFile.DynString(elf.DT_NEEDED)
 	if err != nil {

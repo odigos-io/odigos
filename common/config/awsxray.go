@@ -116,10 +116,12 @@ func setNestedMapValue(m GenericMap, field string, value interface{}) {
 		if i == len(parts)-1 {
 			subMap[part] = value
 		} else {
-			if _, exists := subMap[part]; !exists {
-				subMap[part] = make(GenericMap)
+			next, ok := subMap[part].(GenericMap)
+			if !ok {
+				next = make(GenericMap)
+				subMap[part] = next
 			}
-			subMap = subMap[part].(GenericMap)
+			subMap = next
 		}
 	}
 }

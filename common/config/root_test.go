@@ -14,7 +14,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-
 type DummyProcessor struct {
 	ID        string
 	Type      string
