@@ -71,6 +71,11 @@ spec:
                 required:
                 - id
                 type: object
+              bootstrapRegion:
+                description: |-
+                  BootstrapRegion selects the initial provider API region for identity and region enumeration.
+                  Discovery scope is independent of this setting. Empty uses the provider default.
+                type: string
               collectors:
                 description: |-
                   Collectors is the customer's per-type allow-list for Odigos-managed telemetry Collectors running

@@ -32,8 +32,8 @@ import (
 
 // extractAttributeRawConfig mirrors the snake_case shape the autoscaler
 // renders into Processor.Spec.ProcessorConfig.Raw. We re-declare it here
-// (instead of importing the unexported extractAttributeProcessorConfig from
-// the actions package) so the test asserts on the wire format the OTel
+// (instead of importing actionsapi.ExtractAttributeProcessorConfig) so the
+// test asserts on the wire format the OTel
 // collector actually consumes via mapstructure.
 type extractAttributeRawConfig struct {
 	Extractions []extractAttributeRawRule `json:"extractions"`

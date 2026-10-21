@@ -1267,7 +1267,7 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 	}
 	if in.CustomInstrumentations != nil {
 		in, out := &in.CustomInstrumentations, &out.CustomInstrumentations
-		*out = new(instrumentationrules.CustomInstrumentations)
+		*out = new(instrumentationrules.CustomInstrumentationsWithMetadata)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.HeadSamplingFallbackFraction != nil {
@@ -1293,6 +1293,11 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 	if in.AgentDiagnostics != nil {
 		in, out := &in.AgentDiagnostics, &out.AgentDiagnostics
 		*out = new(instrumentationrules.AgentDiagnostics)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.KernelTraces != nil {
+		in, out := &in.KernelTraces, &out.KernelTraces
+		*out = new(instrumentationrules.KernelTraces)
 		(*in).DeepCopyInto(*out)
 	}
 }
