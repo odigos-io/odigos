@@ -22,7 +22,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
+func BuildDeleteAttributeProcessorConfig(cfg []string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
 	config := TransformProcessorConfig{
 		ErrorMode: "propagate", // deleting attributes is a security sensitive operation, so we should propagate errors
 	}
@@ -33,12 +33,11 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 
 	ottlDeleteKeyStatements := make([]string, len(cfg))
 	for i, attr := range cfg {
-		ottlDeleteKeyStatements[i] = fmt.Sprintf("delete_key(attributes, \"%s\")", attr)
+		ottlDeleteKeyStatements[i] = fmt.Sprintf("delete_key(attributes, %q)", attr)
 	}
 
 	for _, signal := range signals {
 		switch signal {
-
 		case common.LogsObservabilitySignal:
 			config.LogStatements = []OttlStatementConfig{
 				{
