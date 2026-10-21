@@ -6080,6 +6080,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.insights.0/helm-chart-odigos-0.0.0-feat.insights.0.tgz
     version: 0.0.0-feat.insights.0
   - apiVersion: v2
+    appVersion: v0.0.0-feat.conn-actions.1
+    created: "2026-10-21T13:37:26.345019869Z"
+    description: Instant Distributed Tracing
+    digest: afb41743621d4aadaa6497a55f32a58075d16229128534cc7ae36e0087a390a5
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.conn-actions.1/helm-chart-odigos-0.0.0-feat.conn-actions.1.tgz
+    version: 0.0.0-feat.conn-actions.1
+  - apiVersion: v2
     appVersion: v0.0.0-feat.amir-testing.4
     created: "2026-08-18T07:05:09.027229125Z"
     description: Instant Distributed Tracing
@@ -9957,6 +9969,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.insights.0/helm-chart-odigos-central-0.0.0-feat.insights.0.tgz
     version: 0.0.0-feat.insights.0
   - apiVersion: v2
+    appVersion: v0.0.0-feat.conn-actions.1
+    created: "2026-10-21T13:37:26.346231718Z"
+    description: Centralized components for Odigos (UI + Backend)
+    digest: f2c349085b4b3eb07483268a81902b00b1bd039a70dfc87677df588a0c9f2a65
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos-central
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.conn-actions.1/helm-chart-odigos-central-0.0.0-feat.conn-actions.1.tgz
+    version: 0.0.0-feat.conn-actions.1
+  - apiVersion: v2
     appVersion: v0.0.0-feat.amir-testing.4
     created: "2026-08-18T07:05:09.028306552Z"
     description: Centralized components for Odigos (UI + Backend)
@@ -9968,4 +9992,4 @@ entries:
     urls:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.amir-testing.4/helm-chart-odigos-central-0.0.0-feat.amir-testing.4.tgz
     version: 0.0.0-feat.amir-testing.4
-generated: "2026-10-21T09:21:18.662379545Z"
+generated: "2026-10-21T13:37:26.341472233Z"
