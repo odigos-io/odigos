@@ -1,4 +1,4 @@
-package api_test
+package agentsignalconfig_test
 
 import (
 	"encoding/json"
@@ -26,6 +26,11 @@ import (
 // Scope is the action configs (common/api/actions) and the fields of the two roots that hold
 // them. The sampling and instrumentationrules subtrees have the same problem and are not pinned
 // here.
+//
+// The file lives in this package rather than next to SourceCollectorConfig in common/api because
+// it needs a yaml decoder: six collector modules import common/api, and a test import there adds
+// gopkg.in/yaml.v2 to each of their go.sum files. Nothing outside this module imports
+// agentsignalconfig, so putting it here keeps them untouched.
 
 const vycActionsPkg = "github.com/odigos-io/odigos/common/api/actions"
 
