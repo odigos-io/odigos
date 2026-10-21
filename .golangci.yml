@@ -44,12 +44,27 @@ linters:
     - gosec
 
     - nolintlint
+    - depguard
 
     # tests
     - testifylint
     - usetesting
 
   settings:
+    depguard:
+      rules:
+        common:
+          list-mode: lax
+          deny:
+            - pkg: github.com/odigos-io/odigos/
+              desc: common is an environment-neutral leaf module and must not import other modules of this repo
+            - pkg: k8s.io/
+              desc: common is environment-neutral (it also runs outside k8s, e.g. on VMs) and must not depend on k8s, move k8s-specific code to k8sutils
+            - pkg: sigs.k8s.io/
+              desc: common is environment-neutral (it also runs outside k8s, e.g. on VMs) and must not depend on k8s, move k8s-specific code to k8sutils
+          allow:
+            - github.com/odigos-io/odigos/common
+
     govet:
       enable-all: true
       disable:
@@ -136,6 +151,10 @@ linters:
       - linters:
           - errcheck
         source: '\.(Close|Shutdown|Discard)\('
+
+      - path-except: ^common/
+        linters:
+          - depguard
 
       - path: _test\.go$
         linters:

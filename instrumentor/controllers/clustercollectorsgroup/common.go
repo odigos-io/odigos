@@ -9,9 +9,9 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -165,7 +165,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 // and either at least one Sampling CR exists or k8s health-probes sampling is enabled
 // (health-probe noisy ops may be applied via collector tail sampling).
 func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *common.OdigosConfiguration) bool {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	if odigosConfig.Sampling != nil &&
 		odigosConfig.Sampling.TailSampling != nil &&
@@ -193,7 +193,7 @@ func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *c
 // resolveTailSamplingConfig returns a fully resolved TailSamplingConfiguration,
 // reading TraceAggregationWaitDuration from odigosConfig if valid, otherwise using the default.
 func resolveTailSamplingConfig(ctx context.Context, odigosConfig *common.OdigosConfiguration, enabled bool) *sampling.TailSamplingConfiguration {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	resolvedDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
 	if odigosConfig.Sampling != nil &&

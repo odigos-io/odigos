@@ -4,8 +4,8 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,7 +17,7 @@ type ProcessorReconciler struct {
 }
 
 func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	logger.Info("Reconciling Processor")
 
 	var processor odigosv1.Processor

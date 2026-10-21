@@ -14,11 +14,11 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	v1 "k8s.io/api/core/v1"
@@ -152,7 +152,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 }
 
 func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, tier odigoscommon.OdigosTier) ([]odigoscommon.ObservabilitySignal, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	dataStreams, err := calculateDataStreams(enabledDests)
 	if err != nil {
@@ -350,7 +350,7 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
 	if reflect.DeepEqual(existing.Data, desired.Data) &&
 		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
-		commonlogger.FromContext(ctx).Info("Gateway config maps already match")
+		k8slogger.FromContext(ctx).Info("Gateway config maps already match")
 		return existing, nil
 	}
 	updated := existing.DeepCopy()

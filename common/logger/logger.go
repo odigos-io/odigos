@@ -1,14 +1,12 @@
 package logger
 
 import (
-	"context"
 	"os"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	rtlog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -26,7 +24,7 @@ var (
 //   - WithConsole(true): human-readable console encoding instead of JSON.
 //
 // For non-Kubernetes binaries (e.g. vm-agent): use Init then LoggerCompat() or ToLogr()/WrapLogr for logging.
-// Do not use FromContext (it requires controller-runtime context); SetLevel still applies to the shared atom.
+// SetLevel still applies to the shared atom.
 func Init(levelStr string, component string, opts ...Option) *zap.Logger {
 	atom.SetLevel(ParseLevel(levelStr))
 
@@ -83,7 +81,7 @@ func Logger() *zap.Logger          { return instance }
 func AtomicLevel() zap.AtomicLevel { return atom }
 
 // SetLevel sets the global log level at runtime. Empty string is a no-op (keeps current level).
-// It updates the shared AtomicLevel, so all existing loggers (FromContext, LoggerCompat, ToLogr)
+// It updates the shared AtomicLevel, so all existing loggers (WrapLogr, LoggerCompat, ToLogr)
 // immediately respect the new level without process restart.
 func SetLevel(lvl string) {
 	if lvl != "" {
@@ -102,7 +100,7 @@ func ToLogr() logr.Logger {
 }
 
 // ContextLogger wraps logr.Logger with a level-based API (Info, Debug, Error).
-// Use FromContext(ctx) in reconcilers so you can call logger.Info/Debug/Error
+// Use k8sutils/pkg/logger.FromContext(ctx) in reconcilers so you can call logger.Info/Debug/Error
 // instead of logr's V(n).Info. Matches the style of LoggerCompat().
 //
 // All ContextLoggers that come from FromContext(ctx) or WrapLogr(l) use the same
@@ -112,21 +110,6 @@ func ToLogr() logr.Logger {
 // in production code.
 type ContextLogger struct {
 	logr.Logger
-}
-
-// FromContext returns a logger from the controller-runtime context. Use in Reconcile:
-//
-//	logger := commonlogger.FromContext(ctx)
-//	logger.Info("reconciling")
-//	logger.Debug("detail", "key", value)
-//	logger.Error(err, "failed")
-//
-// The logger is the one set with ctrl.SetLogger(commonlogger.ToLogr()), so levels are respected.
-// When the process calls SetLevel (e.g. from UI or effective config), this logger reflects the new
-// level immediately because it uses the shared AtomicLevel; no restart is required.
-// For request-scoped identity, add .WithValues("namespace", req.Namespace, "name", req.Name).
-func FromContext(ctx context.Context) *ContextLogger {
-	return &ContextLogger{Logger: rtlog.FromContext(ctx).WithCallDepth(1)}
 }
 
 // WrapLogr wraps a logr.Logger (e.g. ctrl.Log.WithName("...") or mgr.GetLogger().WithName("..."))

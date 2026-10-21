@@ -8,8 +8,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,7 +24,7 @@ type odigossecretController struct {
 }
 
 func (r *odigossecretController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	odigosNs := env.GetCurrentNamespace()
 

@@ -8,9 +8,9 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -24,7 +24,7 @@ var (
 )
 
 func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, odigosVersion string, tier common.OdigosTier) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	odigosNs := env.GetCurrentNamespace()
 	var gatewayCollectorGroup odigosv1.CollectorsGroup
@@ -71,7 +71,7 @@ func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, sch
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, odigosVersion string, tier common.OdigosTier) error {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	logger.Info("Syncing gateway")
 
 	enabledDests := &odigosv1.DestinationList{Items: []odigosv1.Destination{}}

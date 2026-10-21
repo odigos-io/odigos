@@ -8,8 +8,8 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigoscommon "github.com/odigos-io/odigos/common"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,7 +47,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 	// Finish the function execution after the delay
 	time.AfterFunc(delay, func() {
 		var err error
-		logger := commonlogger.FromContext(ctx)
+		logger := k8slogger.FromContext(ctx)
 
 		dm.mu.Lock()
 		defer dm.mu.Unlock()
@@ -68,7 +68,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 			}
 		}
 
-		commonlogger.FromContext(ctx).Error(err, "Failed to sync DaemonSet")
+		k8slogger.FromContext(ctx).Error(err, "Failed to sync DaemonSet")
 	})
 }
 
@@ -77,7 +77,7 @@ func (dm *DelayManager) finishProgress() {
 }
 
 func syncCollectorGroup(ctx context.Context, datacollection *odigosv1.CollectorsGroup, c client.Client) error {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	configMap, err := getConfigMap(ctx, c, datacollection.Namespace)
 	if err != nil {

@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
@@ -43,7 +44,7 @@ type odigosConfigurationController struct {
 }
 
 func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	odigosConfigMap, err := r.getOdigosConfigMap(ctx)
 	if err != nil {
@@ -476,7 +477,7 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 		commonlogger.SetLevel(effectiveConfig.ComponentLogLevels.Resolve("scheduler"))
 	}
 
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	logger.Info("Successfully persisted effective configuration")
 
 	return nil
@@ -620,7 +621,7 @@ func getInitContainerResources(config *common.OdigosConfiguration) *common.Agent
 		defaultAgentsInitContainerRequestMemoryMiB = 300
 		defaultAgentsInitContainerLimitMemoryMiB   = 300
 	)
-	logger := commonlogger.FromContext(context.Background())
+	logger := k8slogger.FromContext(context.Background())
 
 	cpuRequest := defaultAgentsInitContainerRequestCPUm
 	cpuLimit := defaultAgentsInitContainerLimitCPUm

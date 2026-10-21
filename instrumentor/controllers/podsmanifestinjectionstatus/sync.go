@@ -6,7 +6,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/status"
@@ -79,7 +79,7 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 
 		labelSelector := genericWorkload.LabelSelector()
 		if labelSelector == nil {
-			logger := commonlogger.FromContext(ctx)
+			logger := k8slogger.FromContext(ctx)
 			logger.Error(nil, "unexpected nil label selector for workload",
 				"name", pw.Name, "namespace", pw.Namespace, "kind", pw.Kind)
 			return nil
