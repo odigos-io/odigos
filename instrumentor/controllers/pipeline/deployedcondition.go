@@ -27,8 +27,8 @@ func GetCollectorsGroupDeployedConditionsPatch(err error, role odigosv1.Collecto
 		reason = "GatewayDeployedCreationFailed"
 	}
 
-	patch := map[string]interface{}{
-		"status": map[string]interface{}{
+	patch := map[string]any{
+		"status": map[string]any{
 			"conditions": []metav1.Condition{{
 				Type:               "Deployed",
 				Status:             status,
@@ -41,7 +41,7 @@ func GetCollectorsGroupDeployedConditionsPatch(err error, role odigosv1.Collecto
 
 	// This is temporary and should consider different approaches in the future
 	if role == odigosv1.CollectorsGroupRoleNodeCollector {
-		patch["status"].(map[string]interface{})["ready"] = true
+		patch["status"].(map[string]any)["ready"] = true
 	}
 
 	patchData, _ := json.Marshal(patch)

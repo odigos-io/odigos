@@ -5,12 +5,11 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -30,7 +29,7 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 		return nil
 	}
 
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
 	dcService := &v1.Service{
@@ -55,7 +54,7 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 				{
 					Name:        "otlp",
 					Protocol:    "TCP",
-					AppProtocol: ptr.To("grpc"),
+					AppProtocol: new("grpc"),
 					Port:        4317,
 					TargetPort:  intstr.FromInt(4317),
 				},

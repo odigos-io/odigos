@@ -16,8 +16,8 @@ func UpdateCollectorGroupReceiverSignals(ctx context.Context, c client.Client, c
 		signalsStr = append(signalsStr, string(signal))
 	}
 
-	patch := map[string]interface{}{
-		"status": map[string]interface{}{
+	patch := map[string]any{
+		"status": map[string]any{
 			"receiverSignals": signalsStr,
 		},
 	}

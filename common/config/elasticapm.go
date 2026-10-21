@@ -19,12 +19,11 @@ func (e *ElasticAPM) DestType() common.DestinationType {
 }
 
 func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	isTlsDisabled := false
 	if !e.requiredVarsExists(dest) {
 		return nil, errors.New("ElasticAPM config is missing required variables")
 	}
 
-	isTlsDisabled = strings.Contains(dest.GetConfig()[elasticApmServerEndpoint], "http://")
+	isTlsDisabled := strings.Contains(dest.GetConfig()[elasticApmServerEndpoint], "http://")
 
 	elasticApmEndpoint := e.parseEndpoint(dest.GetConfig()[elasticApmServerEndpoint])
 

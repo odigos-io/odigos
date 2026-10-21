@@ -3,7 +3,7 @@ package actions
 import (
 	"context"
 
-	commonlogger "github.com/odigos-io/odigos/common/logger"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -20,7 +20,7 @@ type SharedURLTemplatizationProcessorReconciler struct {
 }
 
 func (r *SharedURLTemplatizationProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	if err := SyncUrlTemplatizationProcessor(ctx, r.Client, URLTemplatizationSyncApplyFull); err != nil {
 		logger.Error(err, "Sync shared URL-templatization processor failed")
 		return ctrl.Result{}, err

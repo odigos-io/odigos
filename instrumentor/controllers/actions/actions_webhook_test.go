@@ -60,7 +60,7 @@ func TestActionsValidator_ValidateCreate(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -154,7 +154,7 @@ func TestActionsValidator_ValidateCreate(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -195,7 +195,7 @@ func TestActionsValidator_ValidateCreate(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -262,7 +262,7 @@ func TestActionsValidator_ValidateUpdate(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("old-cluster"),
+								AttributeStringValue: new("old-cluster"),
 							},
 						},
 					},
@@ -280,7 +280,7 @@ func TestActionsValidator_ValidateUpdate(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("new-cluster"),
+								AttributeStringValue: new("new-cluster"),
 							},
 						},
 					},
@@ -302,7 +302,7 @@ func TestActionsValidator_ValidateUpdate(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -320,7 +320,7 @@ func TestActionsValidator_ValidateUpdate(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -373,7 +373,7 @@ func TestActionsValidator_ValidateAction(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -395,7 +395,7 @@ func TestActionsValidator_ValidateAction(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -438,7 +438,7 @@ func TestActionsValidator_ValidateAction(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -511,7 +511,7 @@ func TestActionsValidator_ValidateAction_AllActionTypes(t *testing.T) {
 						ClusterAttributes: []actionv1.OtelAttributeWithValue{
 							{
 								AttributeName:        "cluster.name",
-								AttributeStringValue: stringPtr("test-cluster"),
+								AttributeStringValue: new("test-cluster"),
 							},
 						},
 					},
@@ -597,6 +597,8 @@ func TestActionsValidator_ValidateAction_AllActionTypes(t *testing.T) {
 }
 
 // Helper function to create string pointers
+//
+//go:fix inline
 func stringPtr(s string) *string {
-	return &s
+	return new(s)
 }

@@ -97,7 +97,7 @@ func EnsureEnterpriseRegistryPullSecret(ctx context.Context, client kubernetes.I
 func odigletRolloutTrigger(ctx context.Context, client kubernetes.Interface, namespace string) error {
 	daemonSet, err := client.AppsV1().DaemonSets(namespace).Get(ctx, "odiglet", metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("\033[31mERROR\033[0m failed to get odiglet DaemonSet in namespace %s: %v", namespace, err)
+		return fmt.Errorf("\033[31mERROR\033[0m failed to get odiglet DaemonSet in namespace %s: %w", namespace, err)
 	}
 
 	// Modify the DaemonSet spec.template to trigger a rollout

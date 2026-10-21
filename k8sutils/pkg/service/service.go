@@ -26,6 +26,7 @@ func LocalTrafficOTLPHttpDataCollectionEndpoint(nodeIP string) string {
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
 		return fmt.Sprintf("http://%s.%s:%d", k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OTLPHttpPort)
 	}
+	//nolint:nosprintfhostport // nodeIP is usually the $(NODE_IP) placeholder, so JoinHostPort can't bracket an IPv6 value here
 	return fmt.Sprintf("http://%s:%d", nodeIP, consts.OTLPHttpPort)
 }
 

@@ -24,10 +24,10 @@ import (
 	"github.com/odigos-io/odigos/common"
 	cfg "github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/instrumentor/k8sconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
@@ -46,7 +46,7 @@ func GetDeploymentName(gatewayCg *odigosv1.CollectorsGroup) string {
 
 func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, odigosVersion string, tier common.OdigosTier) (*appsv1.Deployment, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	instrumentorDeploymentName := env.GetComponentDeploymentNameOrDefault(k8sconsts.InstrumentorDeploymentName)
 	instrumentorDeployment := &appsv1.Deployment{}
@@ -109,7 +109,7 @@ func deleteOldDeployments(ctx context.Context, c client.Client, namespace string
 		return nil
 	}
 
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	for _, deployment := range deployments.Items {
 		if deployment.Name != deploymentName {
 			logger.Info("Deleting old gateway deployment pre odigos cluster collector deployment rename", "deployment", deployment.Name)
@@ -123,7 +123,7 @@ func deleteOldDeployments(ctx context.Context, c client.Client, namespace string
 }
 
 func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ctx context.Context, c client.Client) (*appsv1.Deployment, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	res, err := controllerutil.CreateOrPatch(ctx, c, existing, func() error {
 		existing.Spec.Template = desired.Spec.Template
 		return nil
@@ -197,7 +197,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 			Labels:    ClusterCollectorGateway,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: intPtr(gatewayReplicas),
+			Replicas: new(gatewayReplicas),
 			Selector: &v1.LabelSelector{
 				MatchLabels: ClusterCollectorGateway,
 			},
@@ -212,10 +212,10 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 					NodeSelector:       *nodeSelector,
 					ServiceAccountName: k8sconsts.OdigosClusterCollectorServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: boolPtr(true),
-						RunAsUser:    int64Ptr(65534), // nobody user
-						RunAsGroup:   int64Ptr(65534), // nobody group
-						FSGroup:      int64Ptr(65534),
+						RunAsNonRoot: new(true),
+						RunAsUser:    new(int64(65534)), // nobody user
+						RunAsGroup:   new(int64(65534)), // nobody group
+						FSGroup:      new(int64(65534)),
 					},
 					Containers: []corev1.Container{
 						{
@@ -269,7 +269,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 								},
 							}, extraEnvVars...),
 							SecurityContext: &corev1.SecurityContext{
-								AllowPrivilegeEscalation: boolPtr(false),
+								AllowPrivilegeEscalation: new(false),
 							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -394,14 +394,12 @@ func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSou
 	return result
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
+//go:fix inline
 func intPtr(n int32) *int32 {
-	return &n
+	return new(n)
 }
 
+//go:fix inline
 func int64Ptr(n int64) *int64 {
-	return &n
+	return new(n)
 }

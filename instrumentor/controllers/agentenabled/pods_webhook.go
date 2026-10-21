@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -22,7 +23,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -30,6 +30,7 @@ import (
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -74,7 +75,7 @@ var (
 // If injection fails for any reason, the webhook returns an Allowed response with no changes,
 // ensuring user workloads are never blocked by instrumentation logic.
 func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	var pod corev1.Pod
 	if err := p.Decoder.Decode(req, &pod); err != nil {
@@ -109,7 +110,7 @@ func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admissi
 }
 
 func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req admission.Request) error {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	odigosNamespace := env.GetCurrentNamespace()
 
@@ -251,9 +252,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 }
 
 func mergeMaps[T any](a, b map[string]T) map[string]T {
-	for k, v := range b {
-		a[k] = v
-	}
+	maps.Copy(a, b)
 	return a
 }
 
@@ -281,7 +280,7 @@ func (p *PodsWebhook) podWorkload(pod *corev1.Pod, req admission.Request) (*k8sc
 }
 
 func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]

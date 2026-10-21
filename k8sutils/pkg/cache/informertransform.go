@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -209,7 +210,11 @@ func createListWatchWrapperWithTransform(
 				if err != nil {
 					return nil, err
 				}
-				transformed = append(transformed, t.(runtime.Object))
+				obj, ok := t.(runtime.Object)
+				if !ok {
+					return nil, fmt.Errorf("transform returned %T, expected runtime.Object", t)
+				}
+				transformed = append(transformed, obj)
 			}
 			if err := meta.SetList(list, transformed); err != nil {
 				return nil, err

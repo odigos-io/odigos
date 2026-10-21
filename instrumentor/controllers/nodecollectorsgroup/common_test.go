@@ -19,22 +19,22 @@ func TestCalculateMemoryLimiterHardLimitMiB(t *testing.T) {
 		wantHardLimit int
 	}{
 		// small containers — 85% ratio wins
-		{"64MiB (tiny)", 64, 54},    // max(14, 54) = 54
-		{"128MiB", 128, 108},        // max(78, 108) = 108  (was 78 pre-fix)
-		{"192MiB", 192, 163},        // max(142, 163) = 163
-		{"256MiB", 256, 217},        // max(206, 217) = 217  (was 206 pre-fix)
-		{"320MiB", 320, 272},        // max(270, 272) = 272
+		{"64MiB (tiny)", 64, 54}, // max(14, 54) = 54
+		{"128MiB", 128, 108},     // max(78, 108) = 108  (was 78 pre-fix)
+		{"192MiB", 192, 163},     // max(142, 163) = 163
+		{"256MiB", 256, 217},     // max(206, 217) = 217  (was 206 pre-fix)
+		{"320MiB", 320, 272},     // max(270, 272) = 272
 
 		// crossover region — around 333MiB the two strategies meet
-		{"333MiB", 333, 283},        // max(283, 283) = 283
-		{"334MiB", 334, 284},        // max(284, 283) = 284 (fixed offset wins by 1)
+		{"333MiB", 333, 283}, // max(283, 283) = 283
+		{"334MiB", 334, 284}, // max(284, 283) = 284 (fixed offset wins by 1)
 
 		// larger containers — fixed -50 headroom wins (unchanged from pre-fix behavior)
-		{"384MiB", 384, 334},        // max(334, 326) = 334
+		{"384MiB", 384, 334},                        // max(334, 326) = 334
 		{"512MiB (odigos default limit)", 512, 462}, // max(462, 435) = 462
-		{"768MiB", 768, 718},        // max(718, 652) = 718
-		{"1024MiB", 1024, 974},      // max(974, 870) = 974
-		{"2048MiB", 2048, 1998},     // max(1998, 1740) = 1998
+		{"768MiB", 768, 718},                        // max(718, 652) = 718
+		{"1024MiB", 1024, 974},                      // max(974, 870) = 974
+		{"2048MiB", 2048, 1998},                     // max(1998, 1740) = 1998
 	}
 
 	for _, tt := range tests {
@@ -47,10 +47,9 @@ func TestCalculateMemoryLimiterHardLimitMiB(t *testing.T) {
 			// sanity: hard limit must always leave at least min(50, 15%) headroom —
 			// that is exactly what the max(limit-50, limit*85%) formula guarantees.
 			headroom := tt.containerMiB - got
-			wantMinHeadroom := tt.containerMiB * 15 / 100 // 15% rounded down
-			if wantMinHeadroom > defaultMemoryLimiterLimitDiffMib {
-				wantMinHeadroom = defaultMemoryLimiterLimitDiffMib
-			}
+			wantMinHeadroom := min(
+				// 15% rounded down
+				tt.containerMiB*15/100, defaultMemoryLimiterLimitDiffMib)
 			if headroom < wantMinHeadroom {
 				t.Errorf("hard limit %d leaves only %d MiB headroom in %d MiB container, want at least %d",
 					got, headroom, tt.containerMiB, wantMinHeadroom)
@@ -83,12 +82,12 @@ func TestGetResourceSettings_NodeCollector_Defaults(t *testing.T) {
 // container), leaving no budget for the Go runtime baseline.
 func TestGetResourceSettings_NodeCollector_Sizes(t *testing.T) {
 	tests := []struct {
-		name              string
-		requestMiB        int
-		limitMiB          int
-		wantHardLimit     int
-		wantSpikeLimit    int
-		wantGomemlimit    int
+		name           string
+		requestMiB     int
+		limitMiB       int
+		wantHardLimit  int
+		wantSpikeLimit int
+		wantGomemlimit int
 	}{
 		{
 			// the customer case — tiny container, previously produced 78/15/62.
@@ -159,10 +158,7 @@ func TestGetResourceSettings_NodeCollector_Sizes(t *testing.T) {
 			// - hard limit must leave at least min(50, 15%) headroom in the container,
 			//   matching the max(limit-50, limit*85%) formula.
 			headroom := got.MemoryLimitMiB - got.MemoryLimiterLimitMiB
-			wantMinHeadroom := got.MemoryLimitMiB * 15 / 100
-			if wantMinHeadroom > 50 {
-				wantMinHeadroom = 50
-			}
+			wantMinHeadroom := min(got.MemoryLimitMiB*15/100, 50)
 			if headroom < wantMinHeadroom {
 				t.Errorf("hard limit %d leaves only %d MiB headroom in %d MiB container, want at least %d",
 					got.MemoryLimiterLimitMiB, headroom, got.MemoryLimitMiB, wantMinHeadroom)

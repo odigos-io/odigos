@@ -28,7 +28,7 @@ func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		return nil, errorMissingKey(configurationDataKey)
 	}
 
-	var parsedConfig map[string]interface{}
+	var parsedConfig map[string]any
 	err := yaml.Unmarshal([]byte(dynamicConfData), &parsedConfig)
 	if err != nil {
 		return nil, err

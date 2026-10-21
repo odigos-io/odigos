@@ -6,7 +6,8 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-func boolPtr(b bool) *bool { return &b }
+//go:fix inline
+func boolPtr(b bool) *bool { return new(b) }
 
 // TestMergeConfigs_ProfilingUi verifies that profiling.ui cache limits set via the
 // remote-config overlay (the settings-page path, updateRemoteConfig) propagate into
@@ -15,7 +16,7 @@ func boolPtr(b bool) *bool { return &b }
 func TestMergeConfigs_ProfilingUi(t *testing.T) {
 	base := &common.OdigosConfiguration{
 		Profiling: &common.ProfilingConfiguration{
-			Enabled: boolPtr(true),
+			Enabled: new(true),
 			Ui:      &common.ProfilingUiConfiguration{MaxSlots: 24, SlotMaxBytes: 8 << 20, SlotTTLSeconds: 120},
 		},
 	}
@@ -46,7 +47,7 @@ func TestMergeConfigs_ProfilingUi(t *testing.T) {
 // TestMergeConfigs_ProfilingUi_EmptyBase verifies the overlay creates profiling.ui
 // when the base has none.
 func TestMergeConfigs_ProfilingUi_EmptyBase(t *testing.T) {
-	base := &common.OdigosConfiguration{Profiling: &common.ProfilingConfiguration{Enabled: boolPtr(true)}}
+	base := &common.OdigosConfiguration{Profiling: &common.ProfilingConfiguration{Enabled: new(true)}}
 	overlay := &common.OdigosConfiguration{
 		Profiling: &common.ProfilingConfiguration{Ui: &common.ProfilingUiConfiguration{MaxSlots: 30}},
 	}
@@ -58,7 +59,8 @@ func TestMergeConfigs_ProfilingUi_EmptyBase(t *testing.T) {
 	}
 }
 
-func intPtr(i int) *int { return &i }
+//go:fix inline
+func intPtr(i int) *int { return new(i) }
 
 // intValue keeps assertion failures readable: the fields under test are *int, and printing
 // the pointer shows an address instead of the value that was actually merged.
@@ -92,23 +94,23 @@ func ltlConfig(ltl *common.LiveTrafficLearningConfiguration) *common.OdigosConfi
 // user's value as applied.
 func TestMergeConfigs_LiveTrafficLearningOverlay(t *testing.T) {
 	base := ltlConfig(&common.LiveTrafficLearningConfiguration{
-		Enabled:                    boolPtr(true),
-		MaxExamplePathsPerWorkload: intPtr(5000),
+		Enabled:                    new(true),
+		MaxExamplePathsPerWorkload: new(5000),
 		PathExampleIdleTTL:         "48h",
 		LearningInterval:           "30s",
 		RuleComputation: &common.LiveTrafficLearningRuleComputationConfiguration{
-			MinObservationsForRule:      intPtr(100),
-			MinCardinalityForTemplating: intPtr(20),
+			MinObservationsForRule:      new(100),
+			MinCardinalityForTemplating: new(20),
 		},
 	})
 	overlay := ltlConfig(&common.LiveTrafficLearningConfiguration{
-		MaxExamplePathsPerWorkload: intPtr(20000),
+		MaxExamplePathsPerWorkload: new(20000),
 		PathExampleIdleTTL:         "12h",
 		// LearningInterval left empty => base value must be kept.
 		RuleComputation: &common.LiveTrafficLearningRuleComputationConfiguration{
-			MinObservationsForRule: intPtr(250),
+			MinObservationsForRule: new(250),
 		},
-		AutomaticRules: &common.LiveTrafficLearningAutomaticRulesConfiguration{Enabled: boolPtr(true)},
+		AutomaticRules: &common.LiveTrafficLearningAutomaticRulesConfiguration{Enabled: new(true)},
 	})
 
 	mergeConfigs(base, overlay)
@@ -146,11 +148,11 @@ func TestMergeConfigs_LiveTrafficLearningOverlay(t *testing.T) {
 // The overlay must be able to tune a feature helm turned on even when helm wrote no
 // tunables of its own, which is the default install shape (only `enabled: true` is rendered).
 func TestMergeConfigs_LiveTrafficLearningOverlay_EmptyBase(t *testing.T) {
-	base := ltlConfig(&common.LiveTrafficLearningConfiguration{Enabled: boolPtr(true)})
+	base := ltlConfig(&common.LiveTrafficLearningConfiguration{Enabled: new(true)})
 	overlay := ltlConfig(&common.LiveTrafficLearningConfiguration{
-		MaxExamplePathsPerWorkload: intPtr(20000),
+		MaxExamplePathsPerWorkload: new(20000),
 		RuleComputation: &common.LiveTrafficLearningRuleComputationConfiguration{
-			MinCardinalityForTemplating: intPtr(50),
+			MinCardinalityForTemplating: new(50),
 		},
 	})
 
@@ -171,8 +173,8 @@ func TestMergeConfigs_LiveTrafficLearningOverlay_EmptyBase(t *testing.T) {
 func TestMergeConfigs_LiveTrafficLearningEnabledIsHelmOnly(t *testing.T) {
 	base := &common.OdigosConfiguration{}
 	overlay := ltlConfig(&common.LiveTrafficLearningConfiguration{
-		Enabled:                    boolPtr(true),
-		MaxExamplePathsPerWorkload: intPtr(20000),
+		Enabled:                    new(true),
+		MaxExamplePathsPerWorkload: new(20000),
 	})
 
 	mergeConfigs(base, overlay)

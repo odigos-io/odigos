@@ -1,10 +1,7 @@
 package utils
 
+import "slices"
+
 func IsItemIgnored(item string, ignoredItems []string) bool {
-	for _, ignoredItem := range ignoredItems {
-		if item == ignoredItem {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ignoredItems, item)
 }

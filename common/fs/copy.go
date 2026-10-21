@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
@@ -84,9 +85,9 @@ func CopyDirectories(srcDir, dstDir string, excludes map[string]bool) error {
 		return nil
 	})
 
-	for i := len(toRemove) - 1; i >= 0; i-- {
-		if err := os.RemoveAll(toRemove[i]); err != nil {
-			commonlogger.LoggerCompat().Error("Error removing file", "err", err, "file", toRemove[i])
+	for _, t := range slices.Backward(toRemove) {
+		if err := os.RemoveAll(t); err != nil {
+			commonlogger.LoggerCompat().Error("Error removing file", "err", err, "file", t)
 		}
 	}
 

@@ -17,7 +17,7 @@ type ClusterCollectorAnalyze struct {
 	Deployed             *properties.EntityProperty `json:"deployed,omitempty"`
 	DeployedError        *properties.EntityProperty `json:"deployedError,omitempty"`
 	CollectorReady       *properties.EntityProperty `json:"collectorReady,omitempty"`
-	DeploymentCreated    properties.EntityProperty  `json:"deployment,omitempty"`
+	DeploymentCreated    properties.EntityProperty  `json:"deployment"`
 	ExpectedReplicas     *properties.EntityProperty `json:"expectedReplicas,omitempty"`
 	HealthyReplicas      *properties.EntityProperty `json:"healthyReplicas,omitempty"`
 	FailedReplicas       *properties.EntityProperty `json:"failedReplicas,omitempty"`
@@ -30,7 +30,7 @@ type NodeCollectorAnalyze struct {
 	Deployed       *properties.EntityProperty `json:"deployed,omitempty"`
 	DeployedError  *properties.EntityProperty `json:"deployedError,omitempty"`
 	CollectorReady *properties.EntityProperty `json:"collectorReady,omitempty"`
-	DaemonSet      properties.EntityProperty  `json:"daemonSet,omitempty"`
+	DaemonSet      properties.EntityProperty  `json:"daemonSet"`
 	DesiredNodes   *properties.EntityProperty `json:"desiredNodes,omitempty"`
 	CurrentNodes   *properties.EntityProperty `json:"currentNodes,omitempty"`
 	UpdatedNodes   *properties.EntityProperty `json:"updatedNodes,omitempty"`
@@ -38,9 +38,9 @@ type NodeCollectorAnalyze struct {
 }
 
 type OdigosProAnalyze struct {
-	OnpremTokenAud        properties.EntityProperty `json:"onpremTokenAudience,omitempty"`
-	OnpremTokenExpiration properties.EntityProperty `json:"onpremTokenExpiration,omitempty"`
-	OdigosProfiles        properties.EntityProperty `json:"odigosProfiles,omitempty"`
+	OnpremTokenAud        properties.EntityProperty `json:"onpremTokenAudience"`
+	OnpremTokenExpiration properties.EntityProperty `json:"onpremTokenExpiration"`
+	OdigosProfiles        properties.EntityProperty `json:"odigosProfiles"`
 }
 
 type OdigosAnalyze struct {
@@ -409,6 +409,7 @@ func summarizeStatus(clusterCollector *ClusterCollectorAnalyze, nodeCollector *N
 			hasErrors = true
 		case properties.PropertyStatusTransitioning:
 			isSettled = false
+		default:
 		}
 	}
 

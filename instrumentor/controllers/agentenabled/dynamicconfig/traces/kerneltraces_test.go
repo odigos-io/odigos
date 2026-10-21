@@ -51,16 +51,16 @@ func TestCalculateKernelTracesConfig(t *testing.T) {
 		},
 		{
 			name:  "command args on if any rule turns them on",
-			rules: []odigosv1.InstrumentationRule{kernelRule(subprocesses(boolPtr(false))), kernelRule(subprocesses(boolPtr(true))), kernelRule(subprocesses(nil))},
+			rules: []odigosv1.InstrumentationRule{kernelRule(subprocesses(new(false))), kernelRule(subprocesses(new(true))), kernelRule(subprocesses(nil))},
 			want: &instrumentationrules.KernelTraces{
-				Subprocesses: &instrumentationrules.KernelSubprocessTraces{RecordCommandArgs: boolPtr(true)},
+				Subprocesses: &instrumentationrules.KernelSubprocessTraces{RecordCommandArgs: new(true)},
 			},
 		},
 		{
 			name:  "command args off if set off and never on",
-			rules: []odigosv1.InstrumentationRule{kernelRule(subprocesses(nil)), kernelRule(subprocesses(boolPtr(false)))},
+			rules: []odigosv1.InstrumentationRule{kernelRule(subprocesses(nil)), kernelRule(subprocesses(new(false)))},
 			want: &instrumentationrules.KernelTraces{
-				Subprocesses: &instrumentationrules.KernelSubprocessTraces{RecordCommandArgs: boolPtr(false)},
+				Subprocesses: &instrumentationrules.KernelSubprocessTraces{RecordCommandArgs: new(false)},
 			},
 		},
 	}

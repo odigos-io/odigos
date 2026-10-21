@@ -7,8 +7,8 @@ import (
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
@@ -31,7 +31,7 @@ type startupRuntimeDetection struct {
 var _ manager.Runnable = &startupRuntimeDetection{}
 
 func (s *startupRuntimeDetection) Start(ctx context.Context) error {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	icCount, err := s.scan(ctx)
 	if err != nil {

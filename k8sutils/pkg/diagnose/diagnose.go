@@ -48,9 +48,7 @@ func runStage(
 	onStageComplete chan<- StageResult,
 	fetch func() error,
 ) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := fetch()
 		if err != nil {
 			klog.V(1).ErrorS(err, "Stage failed", "stage", stage)
@@ -58,7 +56,7 @@ func runStage(
 		if onStageComplete != nil {
 			onStageComplete <- StageResult{Stage: stage, Status: err}
 		}
-	}()
+	})
 }
 
 // RunDiagnose collects all diagnostic data based on the provided options.
@@ -96,9 +94,7 @@ func RunDiagnose(
 
 	if opts.IncludeProfiles {
 		profileDir := GetProfileDir(rootDir, opts.OdigosNamespace)
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for _, svcName := range ProfileServiceNames() {
 				err := FetchServiceProfiles(ctx, client, builder, profileDir, opts.OdigosNamespace, svcName)
 				if err != nil {
@@ -108,7 +104,7 @@ func RunDiagnose(
 					onStageComplete <- StageResult{Stage: StageProfileService(svcName), Status: err}
 				}
 			}
-		}()
+		})
 	}
 
 	if opts.IncludeMetrics {
