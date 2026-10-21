@@ -15,7 +15,8 @@ ifeq ($(STAGING_ORG),true)
 endif
 GOLANGCI_LINT_VERSION ?= v2.10.1
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
-GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
+# Keep in sync with .github/workflows/golangci-lint.yml
+LINT_MODULES := common k8sutils profiles destinations procdiscovery
 LINT_CMD = $(GOLANGCI_LINT) run -c ../.golangci.yml
 ifdef FIX_LINT
     LINT_CMD += --fix
@@ -67,7 +68,7 @@ dev_image = $(or $(IMAGE),$(call dev_image_repo,$(1)):$(TAG))
 install-golangci-lint:
 	@if [ ! -x "$(GOLANGCI_LINT)" ] || [ "$$("$(GOLANGCI_LINT)" version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
 		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
+		curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
 	else \
 		echo "golangci-lint $(GOLANGCI_LINT_VERSION) is already installed"; \
 	fi
@@ -86,8 +87,8 @@ ifdef MODULE
 	fi
 	@cd $(MODULE) && $(LINT_CMD) ./...
 else
-	@echo "No MODULE specified, running lint for all Go modules..."
-	@for module in $(GO_MODULES); do \
+	@echo "Running lint for: $(LINT_MODULES)"
+	@for module in $(LINT_MODULES); do \
 		echo "Running lint for $$module"; \
 		(cd $$module && $(LINT_CMD) ./...) || exit 1; \
 	done
