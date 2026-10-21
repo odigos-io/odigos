@@ -5,8 +5,8 @@ package sampling
 type QueryParamMatcher struct {
 
 	// name of the query parameter
-	Name string `json:"name"`
+	Name string `json:"name" yaml:"name"`
 
 	// value of the query parameter, that should be matched exactly.
-	ValueExact *string `json:"valueExact,omitempty"`
+	ValueExact *string `json:"valueExact,omitempty" yaml:"valueExact,omitempty"`
 }
