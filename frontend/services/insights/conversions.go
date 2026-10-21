@@ -585,6 +585,7 @@ func PolicyToModel(policy Policy) (*model.InsightsPolicy, error) {
 		return nil, err
 	}
 	return &model.InsightsPolicy{
+		Delivery:      OptionalDeliverySettingsToModel(policy.Delivery),
 		ID:            FormatID(policy.ID),
 		Name:          policy.Name,
 		Enabled:       policy.Enabled,
@@ -929,6 +930,7 @@ func GuardrailRuleToModel(rule GuardrailRule) *model.InsightsGuardrailRule {
 
 func GuardrailToModel(guardrail Guardrail) *model.InsightsGuardrail {
 	return &model.InsightsGuardrail{
+		Delivery: OptionalDeliverySettingsToModel(guardrail.Delivery),
 		Scope:    PolicyScopeToModel(guardrail.Scope),
 		ScopeKey: guardrail.ScopeKey,
 		Rules:    mapSlice(guardrail.Rules, GuardrailRuleToModel),
@@ -1194,6 +1196,7 @@ func PolicyFromInput(input model.InsightsPolicyInput) (Policy, error) {
 		return Policy{}, err
 	}
 	policy := Policy{
+		Delivery:      DeliverySettingsFromInput(input.Delivery),
 		Name:          input.Name,
 		Enabled:       input.Enabled,
 		FireAtScore:   input.FireAtScore,
@@ -1263,6 +1266,7 @@ func GuardrailFromInput(input model.InsightsGuardrailInput) Guardrail {
 		rules = append(rules, GuardrailRuleFromInput(*rule))
 	}
 	return Guardrail{
+		Delivery: DeliverySettingsFromInput(input.Delivery),
 		Scope:    PolicyScopeFromModel(input.Scope),
 		ScopeKey: input.ScopeKey,
 		Rules:    rules,

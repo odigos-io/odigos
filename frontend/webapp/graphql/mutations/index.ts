@@ -11,3 +11,5 @@ export * from './insights';
 export * from './profiling';
 export * from './recommendation';
 export * from './token';
+
+export * from './insights-integrations';
