@@ -900,18 +900,18 @@
           "title": "clickhouse"
         },
         "enabled": {
-          "default": "false",
-          "description": "When true, deploys the insights service. Default false (off).",
+          "default": "",
+          "description": "When true, deploys the insights service. Unset/empty is off, unless\ninsights.interrogation.enabled is true, which enables insights\nautomatically. Explicit false conflicts with interrogation and fails\nthe install.",
           "required": [],
           "title": "enabled"
         },
         "interrogation": {
           "additionalProperties": false,
-          "description": "Interrogation (off by default): an insights feature that correlates traces\nand profiles in ClickHouse, analyzes per-transaction call tries with an\nLLM, and suggests function probes as InstrumentationRules. Requires\ninsights.enabled. The loop runs inside the insights pods (only the replica\nholding the leader lease analyzes), so it shares insights resources and\nscheduling. When enabled, the gateway taps traces for interrogation and\nthe chart deploys bundled LiteLLM (odigos-litellm) and the shared cache\n(cacheDb; default Burstable 25m/128Mi requests, 100m/500Mi limits when\ncacheDb.resources is unset). Configure a cloud provider under model, or\nset model.apiBase to point LiteLLM at a BYO inference endpoint.",
+          "description": "Interrogation (off by default): an insights feature that correlates traces\nand profiles in ClickHouse, analyzes per-transaction call tries with an\nLLM, and suggests function probes as InstrumentationRules. Enabling it\nalso enables insights, profiling, and the insights profile when those\nvalues are unset. Explicit insights.enabled=false, profiling.enabled=false,\nor a profiles list that omits \"insights\" fails the install. The loop runs\ninside the insights pods (only the replica holding the leader lease\nanalyzes), so it shares insights resources and scheduling. When enabled,\nthe gateway taps traces for interrogation and the chart deploys bundled\nLiteLLM (odigos-litellm) and the shared cache (cacheDb; default Burstable\n25m/128Mi requests, 100m/500Mi limits when cacheDb.resources is unset).\nConfigure a cloud provider under model, or set model.apiBase to point\nLiteLLM at a BYO inference endpoint.",
           "properties": {
             "enabled": {
               "default": "false",
-              "description": "When true (and insights.enabled is true), enables interrogation in the insights service and deploys odigos-litellm.",
+              "description": "When true, enables interrogation in the insights service and deploys\nodigos-litellm. Also enables insights, profiling, and the insights\nprofile when those values are unset. Explicit conflicting values fail\nthe install.",
               "required": [],
               "title": "enabled"
             },
@@ -1740,7 +1740,7 @@
           "properties": {
             "appArmorProfile": {
               "additionalProperties": false,
-              "description": "AppArmor profile for data-collection when gke.enabled and the profiling\npipeline is on (profiling.enabled or insights.interrogation.enabled).\nGKE's default profile denies mkdir /sys/fs/bpf/otel, which the eBPF\nprofiler needs to pin traces_ctx_v1 for profile↔span links.\nIgnored when privileged, or when gke.enabled is false.",
+              "description": "AppArmor profile for data-collection when gke.enabled and the profiling\npipeline is on (profiling.enabled, including when interrogation implies it).\nGKE's default profile denies mkdir /sys/fs/bpf/otel, which the eBPF\nprofiler needs to pin traces_ctx_v1 for profile↔span links.\nIgnored when privileged, or when gke.enabled is false.",
               "properties": {
                 "type": {
                   "default": "Unconfined",
@@ -2296,7 +2296,7 @@
       "title": "pdb"
     },
     "profiles": {
-      "description": "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}",
+      "description": "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] |\n(CLI): --set profiles={PROFILE_NAME}. When insights.interrogation.enabled\nis true and this is empty, the chart adds \"insights\". A non-empty list\nthat omits \"insights\" fails the install.",
       "items": {
         "required": []
       },
@@ -2308,8 +2308,8 @@
       "description": "Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads\nwith an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.\nWhen enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a\npartial override falls back to the chart defaults below.",
       "properties": {
         "enabled": {
-          "default": "false",
-          "description": "When true, enables profiling pipelines on the node collector and cluster gateway.",
+          "default": "",
+          "description": "When true, enables profiling pipelines on the node collector and cluster\ngateway. Unset/empty is off, unless insights.interrogation.enabled is\ntrue, which enables profiling automatically. Explicit false conflicts\nwith interrogation and fails the install.",
           "required": [],
           "title": "enabled"
         },

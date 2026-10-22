@@ -63,9 +63,9 @@ data:
     the gateway force traces on cluster-wide, buffer them in groupbytrace and export to
     a Service that does not exist.
     */}}
-    {{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+    {{- if and (include "odigos.insightsEnabled" .) (include "odigos.secretExists" .) }}
     insights:
-      enabled: {{ .Values.insights.enabled }}
+      enabled: true
     {{- end }}
     {{- if .Values.transactionIdentity }}
     transactionIdentity:
@@ -121,7 +121,7 @@ data:
             enabled: {{ $automaticRules.enabled }}
           {{- end }}
     {{- end }}
-    {{- if .Values.profiling.enabled }}
+    {{- if include "odigos.profilingEnabled" . }}
     {{- $pex := .Values.profiling.exporter | default dict }}
     {{- $pretry := $pex.retryOnFailure | default dict }}
     profiling:
@@ -255,12 +255,10 @@ data:
         {{- end }}
         {{- end }}
     {{- end }}
-    {{- if .Values.profiles }}
-      {{- if not (kindIs "slice" .Values.profiles) }}
-        {{- fail "Invalid 'profiles' value: must be a list. Example (YAML): profiles: [PROFILE_NAME]  |  CLI: --set profiles={PROFILE_NAME}" }}
-      {{- end }}
+    {{- $profiles := include "odigos.profiles" . }}
+    {{- if $profiles }}
     profiles:
-      {{- toYaml .Values.profiles | nindent 6 }}
+      {{- $profiles | nindent 6 }}
     {{- end }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
     openshiftEnabled: {{ .Values.openshift.enabled }}

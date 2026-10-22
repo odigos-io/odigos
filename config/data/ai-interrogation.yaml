@@ -9,7 +9,7 @@ spec:
       componentType: toggle
       isHelmOnly: true
       isEnterpriseOnly: true
-      description: Whether interrogation is installed. Set insights.enabled and insights.interrogation.enabled in the Helm values. Installing it deploys the interrogation pipeline and odigos-litellm.
+      description: Whether interrogation is installed. Set insights.interrogation.enabled in the Helm values; insights, profiling, and the insights profile are enabled automatically. Installing it deploys the interrogation pipeline and odigos-litellm.
       helmValuePath: interrogation.enabled
     - displayName: Mode
       componentType: dropdown

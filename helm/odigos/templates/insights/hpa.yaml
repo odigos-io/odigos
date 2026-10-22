@@ -1,4 +1,4 @@
-{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+{{- if and (include "odigos.insightsEnabled" .) (include "odigos.secretExists" .) }}
 {{- /*
   min/max default to the gateway bounds (unless overridden in values); scale
   behavior is hardcoded to mirror the gateway (fast up, slow down).
