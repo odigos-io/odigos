@@ -101,6 +101,26 @@ func TestSignalFxTracesConfigLoads(t *testing.T) {
 	assert.NoError(t, runCollectorConfig(t, cfg))
 }
 
+func TestBrontoConfigLoads(t *testing.T) {
+	dest := &testconnection.TestConnectionConfig{
+		DestinationType: string(common.BrontoDestinationType), ID: "bronto-test",
+		Config: map[string]string{"BRONTO_REGION": "eu", "BRONTO_COLLECTION": "smoketest"},
+		Signals: []common.ObservabilitySignal{
+			common.TracesObservabilitySignal, common.MetricsObservabilitySignal, common.LogsObservabilitySignal,
+		},
+	}
+	t.Setenv(destinationconfig.SecretEnvVarName("BRONTO_API_KEY", dest.GetID()), "test-key")
+	cfg := newSmoketestConfig()
+	pipelines, err := (&destinationconfig.Bronto{}).ModifyConfig(dest, &cfg)
+	require.NoError(t, err)
+	require.Len(t, pipelines, 3)
+	for _, pipeline := range pipelines {
+		attachOtlpReceiver(&cfg, pipeline)
+	}
+	require.NoError(t, dryRunCollectorConfig(t, cfg))
+	require.NoError(t, runCollectorConfig(t, cfg))
+}
+
 func newSmoketestConfig() destinationconfig.Config {
 	return destinationconfig.Config{
 		Receivers: destinationconfig.GenericMap{"otlp": destinationconfig.GenericMap{"protocols": destinationconfig.GenericMap{"grpc": destinationconfig.GenericMap{"endpoint": "127.0.0.1:0"}}}},
