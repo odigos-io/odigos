@@ -1,0 +1,163 @@
+---
+title: 'Google Cloud Pub/Sub'
+description: 'Configuring the Google Cloud Pub/Sub backend (Managed)'
+sidebarTitle: 'Google Cloud Pub/Sub'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/gcp.svg" alt="googlecloudpubsub" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}Google Cloud Pub/Sub is a broker destination for traces, metrics, and logs. Odigos uses the bundled OpenTelemetry `googlecloudpubsub` exporter to publish OTLP protobuf messages with CloudEvents attributes. Profiles are unsupported. Publishing does not make telemetry queryable in Cloud Monitoring, Cloud Trace, or Cloud Logging: configure a downstream consumer and storage backend separately.
+
+## Google Cloud setup
+
+1. Enable the Pub/Sub API in your Google Cloud project.
+2. Create a topic and a subscription **before** exporting. Use the complete topic name, such as `projects/my-project/topics/odigos-otlp`. Subscriptions created later do not receive earlier messages by default.
+3. Grant the collector identity `roles/pubsub.publisher` on the topic. Grant a separate downstream consumer `roles/pubsub.subscriber` on its subscription.
+4. Prefer Workload Identity / Application Default Credentials on Google Cloud. Outside Google Cloud, provide a Workload Identity Federation configuration or service account JSON file through the optional Application Credentials field.
+
+Odigos mounts the referenced Secret's `GCP_APPLICATION_CREDENTIALS` entry and sets `GOOGLE_APPLICATION_CREDENTIALS` for the gateway. Only one explicit Google credential file can be mounted per gateway, shared by Google destinations. On VMs, configure ADC on the collector host; Kubernetes Secret mounting does not apply.
+
+## Downstream decoding
+
+Use the `ce-type` attribute to select the matching OTLP protobuf `ExportTraceServiceRequest`, `ExportMetricsServiceRequest`, or `ExportLogsServiceRequest` decoder:
+
+- Traces: `org.opentelemetry.otlp.traces.v1`
+- Metrics: `org.opentelemetry.otlp.metrics.v1`
+- Logs: `org.opentelemetry.otlp.logs.v1`
+
+The data is binary protobuf (`content-type: application/protobuf`). If `content-encoding: gzip` is present, decompress first. Preserve all resource and scope groups in each request; a message may contain multiple resources. Other attributes include `ce-specversion: 1.0`, `ce-id`, `ce-source`, and `ce-time`.
+
+The Pub/Sub receiver in an OpenTelemetry Collector can decode these messages and forward them to an observability backend. Alternatively, implement a subscriber using Google's Pub/Sub client and the OTLP protobuf definitions. Acknowledge only after successful decoding and durable processing. The Google Cloud Console subscription Messages tab can inspect the envelope and binary payload, but does not provide trace, metric, or log queries.
+
+## Delivery and limits
+
+- TLS and Google authentication are enabled. Optional regional endpoints use the same credentials.
+- Compression supports `none` and `gzip` only.
+- An optional ordering resource attribute groups messages by its value. Attributes without a value produce unordered messages. Enable ordering at subscription creation and use a regional endpoint for ordered publishing. The resource attribute is retained in the OTLP payload.
+- Pub/Sub limits message data to 10 MB, with a 10 MB publish request limit including overhead. The exporter does not split oversized OTLP payloads. Keep collector batches below the limit, including envelope overhead; gzip may help but cannot guarantee a size bound.
+- The exporter uses its upstream sending queue and retries. Delivery can be duplicated after ambiguous publish failures or subscriber redelivery. Use `ce-id` for redelivery detection, and telemetry identifiers for duplicates across repeated publishing; retries can generate a new `ce-id`.
+- Ordered exports can publish separate messages per resource key. A failure may follow successful publishing of other keys; Pub/Sub has no OTLP partial-success response. Validate downstream completeness and duplicate handling.
+
+See the [pinned exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.159.0/exporter/googlecloudpubsubexporter/README.md), [Google authentication guide](https://cloud.google.com/docs/authentication/provide-credentials-adc), and [Pub/Sub quotas](https://cloud.google.com/pubsub/quotas).
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **GCP_PUBSUB_TOPIC** `string` : Topic. Fully qualified name of a pre-created topic. The collector requires Pub/Sub Publisher permission on this topic.
+  - This field is required
+  - Example: `projects/my-project/topics/odigos-otlp`
+- **GCP_PROJECT_ID** `string` : Project ID. Project used by the Pub/Sub client. Defaults to the project in the topic name.
+  - This field is optional
+  - Example: `my-project`
+- **GCP_APPLICATION_CREDENTIALS** `string` : Application Credentials. Optional Workload Identity Federation configuration or service account JSON key. Leave empty to use Application Default Credentials. Only one explicit Google credential file is supported per gateway.
+  - This field is optional
+- **GCP_PUBSUB_COMPRESSION** `string` : Payload Compression. Gzip compresses each OTLP message. Consumers must decompress when content-encoding is gzip.
+  - This field is optional and defaults to `none`
+- **GCP_PUBSUB_ORDERING_KEY** `string` : Ordering Resource Attribute. Optional resource attribute used as a message ordering key. Missing or empty values publish unordered messages. Enable message ordering when creating the subscription.
+  - This field is optional
+  - Example: `service.name`
+- **GCP_PUBSUB_ENDPOINT** `string` : Regional Endpoint. Optional regional Pub/Sub endpoint. TLS and Google authentication remain enabled.
+  - This field is optional
+  - Example: `us-east1-pubsub.googleapis.com:443`
+- **GCP_TIMEOUT** `string` : Timeout. Positive request timeout duration. Defaults to 12 seconds.
+  - This field is optional
+  - Example: `12s`
+
+<Note>
+  Publishes OTLP protobuf messages to an existing Pub/Sub topic. A subscription consumer must decode the messages; this does not ingest data into Cloud Monitoring or Cloud Trace.
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Google Cloud Pub/Sub` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `googlecloudpubsub.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: googlecloudpubsub-example
+      namespace: odigos-system
+    spec:
+      data:
+        GCP_PUBSUB_TOPIC: <Topic>
+        # Note: The commented fields below are optional.
+        # GCP_PROJECT_ID: <Project ID>
+        # GCP_PUBSUB_COMPRESSION: <Payload Compression (default: none)>
+        # GCP_PUBSUB_ORDERING_KEY: <Ordering Resource Attribute>
+        # GCP_PUBSUB_ENDPOINT: <Regional Endpoint>
+        # GCP_TIMEOUT: <Timeout>
+      destinationName: googlecloudpubsub
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: googlecloudpubsub-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: googlecloudpubsub
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   GCP_APPLICATION_CREDENTIALS: <Base64 Application Credentials>
+    # kind: Secret
+    # metadata:
+    #   name: googlecloudpubsub-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f googlecloudpubsub.yaml
+    ```
+  </Step>
+</Steps>
