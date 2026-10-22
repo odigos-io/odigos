@@ -169,6 +169,7 @@ const RISK_ASSESSMENT_FIELDS = `
 `;
 
 const POLICY_FIELDS = `
+  delivery { muted excludedIntegrationIds }
   id
   name
   enabled
@@ -195,6 +196,7 @@ const LEARNING_POLICY_FIELDS = `
 `;
 
 const GUARDRAIL_FIELDS = `
+  delivery { muted excludedIntegrationIds }
   scope
   scopeKey
   rules {

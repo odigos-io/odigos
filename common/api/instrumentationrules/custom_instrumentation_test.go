@@ -1,8 +1,62 @@
 package instrumentationrules
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 )
+
+func TestCustomProbeCategoryVerify(t *testing.T) {
+	t.Parallel()
+
+	if err := CustomProbeCategory("").Verify(); err != nil {
+		t.Fatalf("empty category: %v", err)
+	}
+	if err := CustomProbeCategoryObservability.Verify(); err != nil {
+		t.Fatalf("observability: %v", err)
+	}
+	if err := CustomProbeCategory("billing").Verify(); err == nil {
+		t.Fatal("expected error for unknown category")
+	}
+}
+
+func TestToConfigDropsMetadata(t *testing.T) {
+	t.Parallel()
+
+	rule := &CustomInstrumentationsWithMetadata{
+		Java: []JavaCustomProbeWithMetadata{{
+			JavaCustomProbe: JavaCustomProbe{ClassName: "com.acme.Pricing", MethodName: "calculate"},
+			CustomProbeMetadata: CustomProbeMetadata{
+				Notes:    "called from checkout",
+				Category: CustomProbeCategoryObservability,
+				AddedAt:  "2026-10-19T09:00:00Z",
+			},
+		}},
+	}
+	if err := rule.Verify(); err != nil {
+		t.Fatalf("Verify() = %v", err)
+	}
+
+	raw, err := json.Marshal(rule)
+	if err != nil {
+		t.Fatalf("marshal rule: %v", err)
+	}
+	if !strings.Contains(string(raw), `"notes"`) || !strings.Contains(string(raw), `"className"`) {
+		t.Fatalf("rule json = %s", raw)
+	}
+
+	cfg := rule.ToConfig()
+	raw, err = json.Marshal(cfg)
+	if err != nil {
+		t.Fatalf("marshal config: %v", err)
+	}
+	if strings.Contains(string(raw), "notes") || strings.Contains(string(raw), "observability") || strings.Contains(string(raw), "addedAt") {
+		t.Fatalf("config json includes metadata: %s", raw)
+	}
+	if cfg.Java[0].ClassName != "com.acme.Pricing" || cfg.Java[0].MethodName != "calculate" {
+		t.Fatalf("probe = %+v", cfg.Java[0])
+	}
+}
 
 func TestPhpCustomProbeVerify(t *testing.T) {
 	t.Parallel()

@@ -1,6 +1,8 @@
 package scope
 
 import (
+	"slices"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 )
@@ -11,12 +13,7 @@ func sourceMatchScopeSources(source k8sconsts.PodWorkload, scopes *k8sconsts.Sou
 	if len(scopes.Sources) == 0 {
 		return true
 	}
-	for _, scope := range scopes.Sources {
-		if scope == source {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(scopes.Sources, source)
 }
 
 // return true if the namespace matches and of the specific namespaces in the scope (OR semantics)
@@ -25,12 +22,7 @@ func sourceMatchScopeNamespaces(namespace string, scopes *k8sconsts.SourcesScope
 	if len(scopes.Namespaces) == 0 {
 		return true
 	}
-	for _, scope := range scopes.Namespaces {
-		if scope == namespace {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(scopes.Namespaces, namespace)
 }
 
 // return true if the language matches and of the specific languages in the scope (OR semantics)
@@ -39,12 +31,7 @@ func sourceMatchScopeLanguages(language common.ProgrammingLanguage, scopes *k8sc
 	if len(scopes.Languages) == 0 {
 		return true
 	}
-	for _, scope := range scopes.Languages {
-		if scope == language {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(scopes.Languages, language)
 }
 
 // SourceScopeMatchesContainer returns true if the scope matches the given workload,

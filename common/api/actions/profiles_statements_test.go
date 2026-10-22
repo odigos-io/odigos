@@ -22,7 +22,7 @@ func contexts(stmts []OttlStatementConfig) []string {
 }
 
 func TestRenameAttributeConfig_Profiles(t *testing.T) {
-	cfg, err := renameAttributeConfig(
+	cfg, err := BuildRenameAttributeProcessorConfig(
 		map[string]string{"old.attr": "new.attr"},
 		[]common.ObservabilitySignal{common.ProfilesObservabilitySignal},
 	)
@@ -45,7 +45,7 @@ func TestRenameAttributeConfig_Profiles(t *testing.T) {
 }
 
 func TestDeleteAttributeConfig_Profiles(t *testing.T) {
-	cfg, err := deleteAttributeConfig(
+	cfg, err := BuildDeleteAttributeProcessorConfig(
 		[]string{"drop.me"},
 		[]common.ObservabilitySignal{common.ProfilesObservabilitySignal},
 	)
@@ -64,7 +64,7 @@ func TestDeleteAttributeConfig_Profiles(t *testing.T) {
 
 // Profiles combines cleanly with the existing signals without cross-populating the other buckets.
 func TestRenameAttributeConfig_ProfilesWithOtherSignals(t *testing.T) {
-	cfg, err := renameAttributeConfig(
+	cfg, err := BuildRenameAttributeProcessorConfig(
 		map[string]string{"a": "b"},
 		[]common.ObservabilitySignal{common.TracesObservabilitySignal, common.ProfilesObservabilitySignal},
 	)
@@ -82,10 +82,10 @@ func TestRenameAttributeConfig_StableStatementOrder(t *testing.T) {
 	}
 	signals := []common.ObservabilitySignal{common.TracesObservabilitySignal}
 
-	first, err := renameAttributeConfig(renames, signals)
+	first, err := BuildRenameAttributeProcessorConfig(renames, signals)
 	require.NoError(t, err)
-	for i := 0; i < 50; i++ {
-		next, err := renameAttributeConfig(renames, signals)
+	for range 50 {
+		next, err := BuildRenameAttributeProcessorConfig(renames, signals)
 		require.NoError(t, err)
 		require.True(t, reflect.DeepEqual(first, next), "rename OTTL statements must be deterministic across calls")
 	}

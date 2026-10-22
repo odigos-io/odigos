@@ -8,8 +8,8 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	recommendationcatalog "github.com/odigos-io/odigos/recommendations"
 )
@@ -35,7 +35,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if !ok {
 			reason = "not found in recommendations catalog"
 		}
-		commonlogger.FromContext(ctx).WithName("recommendations").
+		k8slogger.FromContext(ctx).WithName("recommendations").
 			Info("deleting undesired recommendation", "name", existing.Name, "type", existing.Spec.Type, "reason", reason)
 		return ctrl.Result{}, client.IgnoreNotFound(r.Delete(ctx, existing))
 	}

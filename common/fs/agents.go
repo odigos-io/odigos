@@ -176,7 +176,7 @@ func isDirEmptyOrNotExist(dir string) (bool, error) {
 		}
 	}()
 	_, err = f.Readdirnames(1)
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		return true, nil
 	}
 	return false, err
@@ -214,12 +214,12 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, srcDir st
 		// Compare file hashes
 		dstHash, err := fileHash(dstPath)
 		if err != nil {
-			return nil, fmt.Errorf("error calculating hash for destination file %s: %v", dstPath, err)
+			return nil, fmt.Errorf("error calculating hash for destination file %s: %w", dstPath, err)
 		}
 
 		srcHash, err := fileHash(srcPath)
 		if err != nil {
-			return nil, fmt.Errorf("error calculating hash for source file %s: %v", srcPath, err)
+			return nil, fmt.Errorf("error calculating hash for source file %s: %w", srcPath, err)
 		}
 
 		// If the hashes are different, keep the old version of the file in the destination with the new name <ORIGINAL_FILE_NAME_{12_CHARS_OF_HASH}>
@@ -227,7 +227,7 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, srcDir st
 		if dstHash != srcHash {
 			newDstPath, err := renameWithHashSuffix(dstPath, dstHash)
 			if err != nil {
-				return nil, fmt.Errorf("error renaming file: %v", err)
+				return nil, fmt.Errorf("error renaming file: %w", err)
 			}
 
 			updatedFilesToKeepMap[newDstPath] = struct{}{}

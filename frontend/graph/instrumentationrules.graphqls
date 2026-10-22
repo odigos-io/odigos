@@ -18,6 +18,7 @@ enum InstrumentationRuleType {
   PayloadCollection
   CustomInstrumentation
   NetworkMetrics
+  KernelTraces
   UnknownType
 }
 
@@ -67,6 +68,7 @@ type InstrumentationRule {
   # Presence-based enablement of network flow / TCP stats metrics. True when the rule sets
   # `networkMetrics` (mapped from the CRD's presence-based empty `networkMetrics: {}` object).
   networkMetrics: Boolean
+  kernelTraces: KernelTraces
 }
 
 input InstrumentationRuleInput {
@@ -87,6 +89,46 @@ input InstrumentationRuleInput {
   # Presence-based enablement of network flow / TCP stats metrics. True creates the CRD's
   # `networkMetrics: {}` object; false/null leaves it unset.
   networkMetrics: Boolean
+  kernelTraces: KernelTracesInput
+}
+
+# Mirrors the CRD's presence-based kernelTraces areas: an area is traced when its object is set.
+type KernelTraces {
+  filesystem: KernelFilesystemTraces
+  subprocesses: KernelSubprocessTraces
+  cpuDelay: KernelCpuDelayTraces
+}
+
+# GraphQL types can't be empty, so areas without options hold only `enabled`, until they get some.
+type KernelFilesystemTraces {
+  enabled: Boolean
+}
+
+type KernelSubprocessTraces {
+  recordCommandArgs: Boolean
+}
+
+type KernelCpuDelayTraces {
+  enabled: Boolean
+}
+
+input KernelTracesInput {
+  filesystem: KernelFilesystemTracesInput
+  subprocesses: KernelSubprocessTracesInput
+  cpuDelay: KernelCpuDelayTracesInput
+}
+
+# A set object enables its area unless `enabled` is false.
+input KernelFilesystemTracesInput {
+  enabled: Boolean
+}
+
+input KernelSubprocessTracesInput {
+  recordCommandArgs: Boolean
+}
+
+input KernelCpuDelayTracesInput {
+  enabled: Boolean
 }
 
 type InstrumentationLibraryGlobalId {
@@ -106,10 +148,17 @@ type HeadersCollection {
 }
 
 #### CUSTOM PROBES ####
+enum CustomProbeCategory {
+  observability
+  security
+  performance
+}
+
 type CustomInstrumentations {
   golang: [GolangCustomProbe]
   java: [JavaCustomProbe]
   php: [PhpCustomProbe]
+  cpp: [CppCustomProbe]
 }
 
 type GolangCustomProbe {
@@ -117,22 +166,39 @@ type GolangCustomProbe {
   functionName: String
   receiverName: String
   receiverMethodName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 type JavaCustomProbe {
   className: String
   methodName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 type PhpCustomProbe {
   className: String
   functionName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
+}
+
+type CppCustomProbe {
+  signature: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 input CustomInstrumentationsInput {
   golang: [GolangCustomProbeInput]
   java: [JavaCustomProbeInput]
   php: [PhpCustomProbeInput]
+  cpp: [CppCustomProbeInput]
 }
 
 input GolangCustomProbeInput {
@@ -140,16 +206,32 @@ input GolangCustomProbeInput {
   functionName: String
   receiverName: String
   receiverMethodName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 input JavaCustomProbeInput {
   className: String
   methodName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 input PhpCustomProbeInput {
   className: String
   functionName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
+}
+
+input CppCustomProbeInput {
+  signature: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 #### END CUSTOM PROBES ####
 

@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -30,10 +30,10 @@ const (
 )
 
 var (
-	defaultMinReplicas                  = intPtr(1)
+	defaultMinReplicas                  = new(int32(1))
 	defaultMaxReplicas                  = int32(10)
-	ScaleDownStabilizationWindowSeconds = intPtr(900) // 15 minutes cooldown period for scaling down
-	ScaleUpStabilizationWindowSeconds   = intPtr(0)   // no cooldown period for scaling up
+	ScaleDownStabilizationWindowSeconds = new(int32(900)) // 15 minutes cooldown period for scaling down
+	ScaleUpStabilizationWindowSeconds   = new(int32(0))   // no cooldown period for scaling up
 )
 
 // syncHPA dynamically creates or updates the HorizontalPodAutoscaler (HPA)
@@ -69,7 +69,7 @@ var (
 // while avoiding aggressive scale-in that could cause instability.
 func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	kubeVersion := pipeline.ControllerConfig.K8sVersion
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	useCustomMetric := false
 	apiSvc := &apiregv1.APIService{}
@@ -89,7 +89,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 
 	minReplicas := defaultMinReplicas
 	if gateway.Spec.ResourcesSettings.MinReplicas != nil && *gateway.Spec.ResourcesSettings.MinReplicas > 0 {
-		minReplicas = intPtr(int32(*gateway.Spec.ResourcesSettings.MinReplicas))
+		minReplicas = new(int32(*gateway.Spec.ResourcesSettings.MinReplicas))
 	}
 
 	maxReplicas := defaultMaxReplicas

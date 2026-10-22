@@ -2,6 +2,8 @@ package distroresolver
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/hashicorp/go-version"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -72,9 +74,7 @@ func CalculateDefaultDistroPerLanguage(defaultDistros map[common.ProgrammingLang
 	instrumentationRules *[]odigosv1.InstrumentationRule, dg *distros.Getter,
 ) map[common.ProgrammingLanguage]string {
 	distrosPerLanguage := make(map[common.ProgrammingLanguage]string, len(defaultDistros))
-	for lang, distroName := range defaultDistros {
-		distrosPerLanguage[lang] = distroName
-	}
+	maps.Copy(distrosPerLanguage, defaultDistros)
 
 	if instrumentationRules == nil || len(*instrumentationRules) == 0 {
 		return distrosPerLanguage
@@ -111,12 +111,10 @@ func ResolveDistroForContainer(
 ) (*distro.OtelDistro, *odigosv1.AgentDisabledInfo) {
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
 	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
-	for _, ignored := range effectiveConfig.IgnoredContainers {
-		if ignored == containerName {
-			return nil, &odigosv1.AgentDisabledInfo{
-				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonIgnoredContainer),
-				AgentEnabledMessage: agentInjectionEnabled.AgentEnabledIgnoredContainer.Message,
-			}
+	if slices.Contains(effectiveConfig.IgnoredContainers, containerName) {
+		return nil, &odigosv1.AgentDisabledInfo{
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonIgnoredContainer),
+			AgentEnabledMessage: agentInjectionEnabled.AgentEnabledIgnoredContainer.Message,
 		}
 	}
 

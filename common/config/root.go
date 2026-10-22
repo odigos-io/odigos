@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -102,13 +103,7 @@ func LoadConfigers() (map[common.DestinationType]Configer, error) {
 }
 
 func isSignalExists(dest SignalSpecific, signal common.ObservabilitySignal) bool {
-	for _, s := range dest.GetSignals() {
-		if s == signal {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(dest.GetSignals(), signal)
 }
 
 func isTracingEnabled(dest SignalSpecific) bool {

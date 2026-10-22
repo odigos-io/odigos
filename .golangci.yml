@@ -1,88 +1,178 @@
-# TODO(edenfed): Commented out linters are good and we should enable them in the future.
-# Let's enable them one by one and fix the issues they find.
 version: "2"
+
 run:
-  concurrency: 4
-  timeout: 2m
-  tests: false
+  timeout: 10m
+
+# Only linters that find bugs. Style, naming, formatting and idiom rewrites are intentionally left out.
+linters:
+  default: none
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - unused
+    - unparam
+    - wastedassign
+
+    # nil and error handling
+    - nilerr
+    - nilnesserr
+    - errorlint
+    - errchkjson
+
+    # resources, contexts and concurrency
+    - bodyclose
+    - noctx
+    - contextcheck
+    - fatcontext
+    - spancheck
+
+    # subtle misuse
+    - asasalint
+    - bidichk
+    - durationcheck
+    - exhaustive
+    - gocheckcompilerdirectives
+    - loggercheck
+    - makezero
+    - nosprintfhostport
+    - predeclared
+    - reassign
+    - gocritic
+    - revive
+    - gosec
+
+    - nolintlint
+    - depguard
+
+    # tests
+    - testifylint
+    - usetesting
+
+  settings:
+    depguard:
+      rules:
+        common:
+          list-mode: lax
+          deny:
+            - pkg: github.com/odigos-io/odigos/
+              desc: common is an environment-neutral leaf module and must not import other modules of this repo
+            - pkg: k8s.io/
+              desc: common is environment-neutral (it also runs outside k8s, e.g. on VMs) and must not depend on k8s, move k8s-specific code to k8sutils
+            - pkg: sigs.k8s.io/
+              desc: common is environment-neutral (it also runs outside k8s, e.g. on VMs) and must not depend on k8s, move k8s-specific code to k8sutils
+          allow:
+            - github.com/odigos-io/odigos/common
+
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        - shadow
+
+    staticcheck:
+      # SA is the correctness suite; S, ST and QF are simplifications, style and quick fixes.
+      checks:
+        - SA*
+
+    errcheck:
+      check-type-assertions: true
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+      disabled-tags:
+        - style
+        - performance
+        - opinionated
+      disabled-checks:
+        - filepathJoin
+
+    revive:
+      rules:
+        - name: atomic
+        - name: constant-logical-expr
+        - name: context-keys-type
+        - name: datarace
+        - name: defer
+        - name: identical-branches
+        - name: modifies-value-receiver
+        - name: struct-tag
+          arguments:
+            - json,inline
+        - name: unconditional-recursion
+        - name: unreachable-code
+        - name: waitgroup-by-value
+
+    exhaustive:
+      default-signifies-exhaustive: true
+
+    nolintlint:
+      allow-unused: true
+      require-specific: true
+
+    gosec:
+      includes:
+        - G110 # decompression bomb
+        - G111 # http.Dir directory traversal
+        - G112 # slowloris: http.Server without ReadHeaderTimeout
+        - G114 # http.ListenAndServe without timeouts
+        - G306 # WriteFile permissions
+        - G401 # weak crypto
+
+    testifylint:
+      disable-all: true
+      enable:
+        - error-is-as
+        - float-compare
+        - formatter
+        - go-require
+        - suite-broken-parallel
+        - suite-subtest-run
+        - useless-assert
+
+    usetesting:
+      context-background: false
+      context-todo: false
+
+  exclusions:
+    generated: lax
+    presets:
+      - common-false-positives
+      - legacy
+    rules:
+      # Allow returning an error that is currently always nil, as preparation for future error paths.
+      - linters:
+          - unparam
+        text: 'result \d+ \(error\) is always nil'
+
+      # Errors from cleanup methods have no meaningful recovery.
+      - linters:
+          - errcheck
+        source: '\.(Close|Shutdown|Discard)\('
+
+      - path-except: ^common/
+        linters:
+          - depguard
+
+      - path: _test\.go$
+        linters:
+          - errcheck
+          - errchkjson
+          - unparam
+          - bodyclose
+          - noctx
+          - contextcheck
+          - exhaustive
+          - gosec
 
 formatters:
   enable:
     - gofmt
-    - goimports
-  settings:
-    goimports:
-      local-prefixes:
-      - github.com/odigos-io
+  exclusions:
+    generated: lax
 
-linters:
-  default: none
-  enable:
-    - nilerr
-    - nilnesserr
-    # - nilnil
-    - bodyclose
-    - dogsled
-    - dupl
-    - noctx
-    - errcheck
-    - funlen
-    - goconst
-    - gocritic
-    - gocyclo
-    # - revive
-    - gosec
-    - govet
-    - ineffassign
-    - lll
-    - misspell
-    - nakedret
-    - staticcheck
-    # - stylecheck
-    - unconvert
-    - unparam
-    - whitespace
-    - unused
-  settings:
-    dupl:
-      threshold: 200
-    goconst:
-      min-len: 6
-      min-occurrences: 3
-    misspell:
-      locale: US
-    lll:
-      line-length: 150
-    staticcheck:
-      checks: ["all", "-ST1005", "-ST1003", "-ST1021", "-ST1022", "-ST1000", "-ST1008", "-ST1020"]
-    gocritic:
-      settings:
-        hugeParam:
-          sizeThreshold: 105
-      enabled-tags:
-        - diagnostic
-        - experimental
-        - opinionated
-        - performance
-        - style
-      disabled-checks:
-        - ifElseChain
-        - unnamedResult
-        - paramTypeCombine
-    funlen:
-      lines: 110
-      statements: 65
-    whitespace:
-      multi-if: false
-      multi-func: false
-    gosec:
-      includes:
-        - G401
-        - G306
-        - G110
-        - G111
-        - G114
-        - G112
-      excludes:
-        - G204
-        - G101
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

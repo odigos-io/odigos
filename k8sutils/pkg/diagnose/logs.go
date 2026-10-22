@@ -21,15 +21,13 @@ func FetchWorkloadLogs(
 	lim := newLimiter()
 	var wg sync.WaitGroup
 
-	for i := 0; i < len(pods); i++ {
+	for i := range pods {
 		if err := lim.acquire(ctx); err != nil {
 			wg.Wait()
 			return err
 		}
 		pod := &pods[i]
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			defer lim.release()
 			for i := 0; i < len(pod.Spec.Containers); i++ {
 				container := &pod.Spec.Containers[i]
@@ -49,7 +47,7 @@ func FetchWorkloadLogs(
 				container := &pod.Spec.InitContainers[i]
 				addContainerLogs(ctx, client, builder, namespace, workloadDir, pod.Name, container.Name, false)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

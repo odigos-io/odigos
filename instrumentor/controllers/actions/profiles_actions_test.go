@@ -143,11 +143,11 @@ func assertProfileStatementContexts(t *testing.T, procs config.GenericMap, key s
 	t.Helper()
 	m, ok := procs[key].(config.GenericMap)
 	require.True(t, ok, "processor %q config missing/not a map", key)
-	ps, ok := m["profile_statements"].([]interface{})
+	ps, ok := m["profile_statements"].([]any)
 	require.True(t, ok, "processor %q missing profile_statements (got %T)", key, m["profile_statements"])
 	got := make([]string, len(ps))
 	for i, s := range ps {
-		sm, ok := s.(map[string]interface{})
+		sm, ok := s.(map[string]any)
 		require.True(t, ok, "profile_statements[%d] not a map: %T", i, s)
 		got[i], _ = sm["context"].(string)
 	}

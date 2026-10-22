@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 )
 
 // CAUpdaterReconciler watches the webhook cert secret and updates the APIService CABundle.
@@ -21,7 +21,7 @@ type CAUpdaterReconciler struct {
 
 // Reconcile ensures the APIService CA bundle stays synced with the Secret's ca.crt.
 func (r *CAUpdaterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	if req.Name != k8sconsts.InstrumentorWebhookSecretName {
 		return ctrl.Result{}, nil

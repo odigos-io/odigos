@@ -136,8 +136,10 @@ func TestUpdateInstrumentationRulePreservesOmittedFields(t *testing.T) {
 		Language: common.JavaProgrammingLanguage,
 	}}
 	headers := &apirules.HttpHeadersCollection{HeaderKeys: []string{"Authorization", "X-Request-Id"}}
-	custom := &apirules.CustomInstrumentations{
-		Java: []apirules.JavaCustomProbe{{ClassName: "com.example.Service", MethodName: "handle"}},
+	custom := &apirules.CustomInstrumentationsWithMetadata{
+		Java: []apirules.JavaCustomProbeWithMetadata{{
+			JavaCustomProbe: apirules.JavaCustomProbe{ClassName: "com.example.Service", MethodName: "handle"},
+		}},
 	}
 
 	setFakeOdigosInstrumentationRuleClient(t, &v1alpha1.InstrumentationRule{
@@ -299,4 +301,105 @@ func TestUpdateInstrumentationRuleExplicitNullWidensSelectors(t *testing.T) {
 	require.Nil(t, updated.Spec.Scopes)
 	require.Nil(t, updated.Spec.InstrumentationLibraries)
 	require.Equal(t, []string{"Authorization"}, updated.Spec.HeadersCollection.HeaderKeys)
+}
+
+func TestCustomInstrumentationsMetadataRoundTrip(t *testing.T) {
+	notes := "called from checkout"
+	addedAt := "2026-10-19T09:00:00Z"
+	category := model.CustomProbeCategorySecurity
+	className := "com.acme.Pricing"
+	methodName := "calculate"
+	signature := "SSL_write"
+
+	got, err := getCustomInstrumentationsInput(model.InstrumentationRuleInput{
+		CustomInstrumentations: &model.CustomInstrumentationsInput{
+			Java: []*model.JavaCustomProbeInput{{
+				ClassName:  &className,
+				MethodName: &methodName,
+				Notes:      &notes,
+				Category:   &category,
+				AddedAt:    &addedAt,
+			}},
+			Cpp: []*model.CppCustomProbeInput{{
+				Signature: &signature,
+				Notes:     &notes,
+				Category:  &category,
+				AddedAt:   &addedAt,
+			}},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "com.acme.Pricing", got.Java[0].ClassName)
+	require.Equal(t, notes, got.Java[0].Notes)
+	require.Equal(t, apirules.CustomProbeCategorySecurity, got.Java[0].Category)
+	require.Equal(t, addedAt, got.Java[0].AddedAt)
+	require.Equal(t, signature, got.Cpp[0].Signature)
+	require.Equal(t, apirules.CustomProbeCategorySecurity, got.Cpp[0].Category)
+
+	out := convertCustomInstrumentations(got)
+	require.Equal(t, &notes, out.Java[0].Notes)
+	require.Equal(t, &category, out.Java[0].Category)
+	require.Equal(t, &addedAt, out.Java[0].AddedAt)
+	require.Equal(t, &signature, out.Cpp[0].Signature)
+	require.Equal(t, &category, out.Cpp[0].Category)
+}
+
+func TestCreateKernelTracesRule(t *testing.T) {
+	ctx := context.Background()
+	setFakeOdigosInstrumentationRuleClient(t)
+	ruleName, notes, disabled, enabled, recordArgs := "kernel", "", false, true, true
+
+	got, err := CreateInstrumentationRule(ctx, model.InstrumentationRuleInput{
+		RuleName: &ruleName,
+		Notes:    &notes,
+		Disabled: &disabled,
+		KernelTraces: &model.KernelTracesInput{
+			Filesystem:   &model.KernelFilesystemTracesInput{},
+			Subprocesses: &model.KernelSubprocessTracesInput{RecordCommandArgs: &recordArgs},
+			CPUDelay:     &model.KernelCPUDelayTracesInput{Enabled: &disabled},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, model.InstrumentationRuleTypeKernelTraces, got.Type)
+	require.Equal(t, &model.KernelTraces{
+		Filesystem:   &model.KernelFilesystemTraces{Enabled: &enabled},
+		Subprocesses: &model.KernelSubprocessTraces{RecordCommandArgs: &recordArgs},
+	}, got.KernelTraces)
+
+	rules, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{})
+	require.NoError(t, err)
+	require.Len(t, rules.Items, 1)
+	require.Equal(t, &apirules.KernelTraces{
+		Filesystem:   &apirules.KernelFilesystemTraces{},
+		Subprocesses: &apirules.KernelSubprocessTraces{RecordCommandArgs: &recordArgs},
+	}, rules.Items[0].Spec.KernelTraces)
+}
+
+func TestUpdateKernelTracesRuleReplacesAreas(t *testing.T) {
+	ctx := context.Background()
+	ruleID := "kernel-rule"
+	setFakeOdigosInstrumentationRuleClient(t, &v1alpha1.InstrumentationRule{
+		ObjectMeta: metav1.ObjectMeta{Name: ruleID, Namespace: consts.DefaultOdigosNamespace},
+		Spec: v1alpha1.InstrumentationRuleSpec{
+			KernelTraces: &apirules.KernelTraces{
+				Filesystem:   &apirules.KernelFilesystemTraces{},
+				Subprocesses: &apirules.KernelSubprocessTraces{},
+			},
+		},
+	})
+	ruleName, notes, disabled, enabled := "kernel", "", false, true
+
+	got, err := UpdateInstrumentationRule(ctx, ruleID, model.InstrumentationRuleInput{
+		RuleName:     &ruleName,
+		Notes:        &notes,
+		Disabled:     &disabled,
+		KernelTraces: &model.KernelTracesInput{CPUDelay: &model.KernelCPUDelayTracesInput{Enabled: &enabled}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, model.InstrumentationRuleTypeKernelTraces, got.Type)
+	require.Equal(t, &model.KernelTraces{CPUDelay: &model.KernelCPUDelayTraces{Enabled: &enabled}}, got.KernelTraces)
+
+	updated, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).Get(ctx, ruleID, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, &apirules.KernelTraces{CPUDelay: &apirules.KernelCPUDelayTraces{}}, updated.Spec.KernelTraces)
 }

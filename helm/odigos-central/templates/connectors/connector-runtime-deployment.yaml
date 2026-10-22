@@ -9,6 +9,10 @@ metadata:
     odigos.io/system-object: "true"
 spec:
   replicas: 1
+  # Different installation defaults must not be reconciled by overlapping controllers during upgrade.
+  strategy:
+    type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       app: connector-runtime
@@ -55,6 +59,8 @@ spec:
               value: "http://central-backend:8081"
             - name: CONNECTOR_OPAMP_ENDPOINT
               value: {{ .Values.cloudConnectors.managedCollectors.externalEndpoint | quote }}
+            - name: CONNECTOR_COLLECTOR_IMAGE
+              value: {{ include "connectors.collectorImage" . | quote }}
             - name: CONNECTOR_AWS_IMAGE
               value: {{ .Values.cloudConnectors.aws.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-aws" "Tag" $imageTag)) | quote }}
             - name: CONNECTOR_GCP_IMAGE

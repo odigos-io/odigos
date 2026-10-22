@@ -5,7 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,7 +19,7 @@ type ClusterCollectorDeploymentReconciler struct {
 // This controller is used to track and update the collectors group status once the cluster collector is ready to receive data.
 // We don't want to spin up components that needs to export to cluster collector and have errors and memory pressure.
 func (r *ClusterCollectorDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	logger.Info("Reconciling Deployment")
 
 	var dep appsv1.Deployment

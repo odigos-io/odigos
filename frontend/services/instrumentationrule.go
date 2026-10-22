@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -42,7 +43,52 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 		return model.InstrumentationRuleTypeNetworkMetrics
 	}
 
+	if rule.KernelTraces != nil {
+		return model.InstrumentationRuleTypeKernelTraces
+	}
+
 	return model.InstrumentationRuleTypeUnknownType
+}
+
+// getKernelTracesInput maps the GraphQL areas to the CRD's presence-based ones. It returns an error when
+// no area is enabled, since the CRD requires at least one.
+func getKernelTracesInput(input model.InstrumentationRuleInput) (*instrumentationrules.KernelTraces, error) {
+	in := input.KernelTraces
+	if in == nil {
+		return nil, nil
+	}
+	out := &instrumentationrules.KernelTraces{}
+	if in.Filesystem != nil && (in.Filesystem.Enabled == nil || *in.Filesystem.Enabled) {
+		out.Filesystem = &instrumentationrules.KernelFilesystemTraces{}
+	}
+	if in.Subprocesses != nil {
+		out.Subprocesses = &instrumentationrules.KernelSubprocessTraces{RecordCommandArgs: cloneBoolPtr(in.Subprocesses.RecordCommandArgs)}
+	}
+	if in.CPUDelay != nil && (in.CPUDelay.Enabled == nil || *in.CPUDelay.Enabled) {
+		out.CPUDelay = &instrumentationrules.KernelCPUDelayTraces{}
+	}
+	if *out == (instrumentationrules.KernelTraces{}) {
+		return nil, errors.New("at least one kernel category must be enabled")
+	}
+	return out, nil
+}
+
+func convertKernelTraces(traces *instrumentationrules.KernelTraces) *model.KernelTraces {
+	if traces == nil {
+		return nil
+	}
+	enabled := true
+	out := &model.KernelTraces{}
+	if traces.Filesystem != nil {
+		out.Filesystem = &model.KernelFilesystemTraces{Enabled: &enabled}
+	}
+	if traces.Subprocesses != nil {
+		out.Subprocesses = &model.KernelSubprocessTraces{RecordCommandArgs: cloneBoolPtr(traces.Subprocesses.RecordCommandArgs)}
+	}
+	if traces.CPUDelay != nil {
+		out.CPUDelay = &model.KernelCPUDelayTraces{Enabled: &enabled}
+	}
+	return out
 }
 
 // getNetworkMetricsInput maps the presence-based GraphQL boolean to the CRD config: `true` becomes an
@@ -96,6 +142,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 			CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
 			NetworkMetrics:           networkMetricsEnabledPtr(r.Spec.NetworkMetrics),
+			KernelTraces:             convertKernelTraces(r.Spec.KernelTraces),
 		}
 		rule.Type = deriveTypeFromRule(rule)
 
@@ -131,6 +178,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
 		NetworkMetrics:           networkMetricsEnabledPtr(r.Spec.NetworkMetrics),
+		KernelTraces:             convertKernelTraces(r.Spec.KernelTraces),
 	}
 	rule.Type = deriveTypeFromRule(rule)
 
@@ -385,16 +433,16 @@ func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentati
 	return codeAttributes
 }
 
-func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*instrumentationrules.CustomInstrumentations, error) {
+func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*instrumentationrules.CustomInstrumentationsWithMetadata, error) {
 	if input.CustomInstrumentations == nil {
 		return nil, nil
 	}
-	customInstrumentations := &instrumentationrules.CustomInstrumentations{}
+	customInstrumentations := &instrumentationrules.CustomInstrumentationsWithMetadata{}
 	// Iterate Java custom probes and verify input
 	if input.CustomInstrumentations.Java != nil {
-		customInstrumentations.Java = make([]instrumentationrules.JavaCustomProbe, 0, len(input.CustomInstrumentations.Java))
+		customInstrumentations.Java = make([]instrumentationrules.JavaCustomProbeWithMetadata, 0, len(input.CustomInstrumentations.Java))
 		for _, probe := range input.CustomInstrumentations.Java {
-			apiProbe := instrumentationrules.JavaCustomProbe{}
+			apiProbe := instrumentationrules.JavaCustomProbeWithMetadata{}
 			if probe.ClassName != nil {
 				apiProbe.ClassName = *probe.ClassName
 			} else {
@@ -405,14 +453,15 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 			} else {
 				apiProbe.MethodName = ""
 			}
+			apiProbe.CustomProbeMetadata = customProbeMetadataFromInput(probe.Notes, probe.Category, probe.AddedAt)
 			customInstrumentations.Java = append(customInstrumentations.Java, apiProbe)
 		}
 	}
 
 	if input.CustomInstrumentations.Golang != nil {
-		customInstrumentations.Golang = make([]instrumentationrules.GolangCustomProbe, 0, len(input.CustomInstrumentations.Golang))
+		customInstrumentations.Golang = make([]instrumentationrules.GolangCustomProbeWithMetadata, 0, len(input.CustomInstrumentations.Golang))
 		for _, probe := range input.CustomInstrumentations.Golang {
-			apiProbe := instrumentationrules.GolangCustomProbe{}
+			apiProbe := instrumentationrules.GolangCustomProbeWithMetadata{}
 			if probe.PackageName != nil {
 				apiProbe.PackageName = *probe.PackageName
 			} else {
@@ -433,27 +482,29 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 			} else {
 				apiProbe.ReceiverMethodName = ""
 			}
+			apiProbe.CustomProbeMetadata = customProbeMetadataFromInput(probe.Notes, probe.Category, probe.AddedAt)
 			customInstrumentations.Golang = append(customInstrumentations.Golang, apiProbe)
 		}
 	}
 
 	if input.CustomInstrumentations.Php != nil {
-		customInstrumentations.Php = make([]instrumentationrules.PhpCustomProbe, 0, len(input.CustomInstrumentations.Php))
+		customInstrumentations.Php = make([]instrumentationrules.PhpCustomProbeWithMetadata, 0, len(input.CustomInstrumentations.Php))
 		for _, probe := range input.CustomInstrumentations.Php {
-			apiProbe := instrumentationrules.PhpCustomProbe{}
+			apiProbe := instrumentationrules.PhpCustomProbeWithMetadata{}
 			if probe.ClassName != nil {
 				apiProbe.ClassName = *probe.ClassName
 			}
 			if probe.FunctionName != nil {
 				apiProbe.FunctionName = *probe.FunctionName
 			}
+			apiProbe.CustomProbeMetadata = customProbeMetadataFromInput(probe.Notes, probe.Category, probe.AddedAt)
 			customInstrumentations.Php = append(customInstrumentations.Php, apiProbe)
 		}
 	}
 
 	// Remove duplicate Golang probes
-	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
-	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
+	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbeWithMetadata, 0, len(customInstrumentations.Golang))
+	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbeWithMetadata]struct{})
 	for _, probe := range customInstrumentations.Golang {
 		uniqGoProbes[probe] = struct{}{}
 	}
@@ -463,8 +514,8 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 	customInstrumentations.Golang = uniqueGolangProbes
 
 	// Remove duplicate Java probes
-	uniqueJavaProbes := make([]instrumentationrules.JavaCustomProbe, 0, len(customInstrumentations.Java))
-	javaSeen := make(map[instrumentationrules.JavaCustomProbe]struct{})
+	uniqueJavaProbes := make([]instrumentationrules.JavaCustomProbeWithMetadata, 0, len(customInstrumentations.Java))
+	javaSeen := make(map[instrumentationrules.JavaCustomProbeWithMetadata]struct{})
 	for _, probe := range customInstrumentations.Java {
 		javaSeen[probe] = struct{}{}
 	}
@@ -474,8 +525,8 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 	customInstrumentations.Java = uniqueJavaProbes
 
 	// Remove duplicate PHP probes
-	uniquePhpProbes := make([]instrumentationrules.PhpCustomProbe, 0, len(customInstrumentations.Php))
-	phpSeen := make(map[instrumentationrules.PhpCustomProbe]struct{})
+	uniquePhpProbes := make([]instrumentationrules.PhpCustomProbeWithMetadata, 0, len(customInstrumentations.Php))
+	phpSeen := make(map[instrumentationrules.PhpCustomProbeWithMetadata]struct{})
 	for _, probe := range customInstrumentations.Php {
 		phpSeen[probe] = struct{}{}
 	}
@@ -483,6 +534,18 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 		uniquePhpProbes = append(uniquePhpProbes, probe)
 	}
 	customInstrumentations.Php = uniquePhpProbes
+
+	if input.CustomInstrumentations.Cpp != nil {
+		customInstrumentations.Cpp = make([]instrumentationrules.CppCustomProbeWithMetadata, 0, len(input.CustomInstrumentations.Cpp))
+		for _, probe := range input.CustomInstrumentations.Cpp {
+			apiProbe := instrumentationrules.CppCustomProbeWithMetadata{}
+			if probe.Signature != nil {
+				apiProbe.Signature = *probe.Signature
+			}
+			apiProbe.CustomProbeMetadata = customProbeMetadataFromInput(probe.Notes, probe.Category, probe.AddedAt)
+			customInstrumentations.Cpp = append(customInstrumentations.Cpp, apiProbe)
+		}
+	}
 
 	if err := customInstrumentations.Verify(); err != nil {
 		return nil, err
@@ -539,6 +602,14 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	if input.NetworkMetrics != nil {
 		existingRule.Spec.NetworkMetrics = getNetworkMetricsInput(input)
 	}
+
+	if input.KernelTraces != nil {
+		kernelTraces, err := getKernelTracesInput(input)
+		if err != nil {
+			return nil, fmt.Errorf("invalid kernel traces: %w", err)
+		}
+		existingRule.Spec.KernelTraces = kernelTraces
+	}
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -563,6 +634,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
 		NetworkMetrics:           networkMetricsEnabledPtr(updatedRule.Spec.NetworkMetrics),
+		KernelTraces:             convertKernelTraces(updatedRule.Spec.KernelTraces),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 	return &rule, nil
@@ -594,6 +666,11 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
 	}
 
+	kernelTraces, err := getKernelTracesInput(input)
+	if err != nil {
+		return nil, fmt.Errorf("invalid kernel traces: %w", err)
+	}
+
 	// Define the new rule spec based on the input
 	newRule := &v1alpha1.InstrumentationRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -613,6 +690,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			PayloadCollection:        getPayloadCollectionInput(input),
 			CustomInstrumentations:   customInstrumentations,
 			NetworkMetrics:           getNetworkMetricsInput(input),
+			KernelTraces:             kernelTraces,
 		},
 	}
 	// Create the rule in Kubernetes
@@ -639,6 +717,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(createdRule.Spec.CustomInstrumentations),
 		NetworkMetrics:           networkMetricsEnabledPtr(createdRule.Spec.NetworkMetrics),
+		KernelTraces:             convertKernelTraces(createdRule.Spec.KernelTraces),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -829,36 +908,82 @@ func toMessagingPayload(payload *instrumentationrules.MessagingPayloadCollection
 }
 
 // Converts CustomInstrumentations to GraphQL-compatible format
-func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrules.CustomInstrumentations) *model.CustomInstrumentations {
+func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrules.CustomInstrumentationsWithMetadata) *model.CustomInstrumentations {
 	if customInstruAsInstruRule == nil {
 		return nil
 	}
 	customInstruAsGqlModel := &model.CustomInstrumentations{}
 	if customInstruAsInstruRule.Golang != nil {
 		for _, golangProbe := range customInstruAsInstruRule.Golang {
+			notes, category, addedAt := customProbeMetadataModel(golangProbe.CustomProbeMetadata)
 			customInstruAsGqlModel.Golang = append(customInstruAsGqlModel.Golang, &model.GolangCustomProbe{
 				PackageName:        &golangProbe.PackageName,
 				FunctionName:       &golangProbe.FunctionName,
 				ReceiverName:       &golangProbe.ReceiverName,
 				ReceiverMethodName: &golangProbe.ReceiverMethodName,
+				Notes:              notes,
+				Category:           category,
+				AddedAt:            addedAt,
 			})
 		}
 	}
 	if customInstruAsInstruRule.Java != nil {
 		for _, javaProbe := range customInstruAsInstruRule.Java {
+			notes, category, addedAt := customProbeMetadataModel(javaProbe.CustomProbeMetadata)
 			customInstruAsGqlModel.Java = append(customInstruAsGqlModel.Java, &model.JavaCustomProbe{
 				ClassName:  &javaProbe.ClassName,
 				MethodName: &javaProbe.MethodName,
+				Notes:      notes,
+				Category:   category,
+				AddedAt:    addedAt,
 			})
 		}
 	}
 	if customInstruAsInstruRule.Php != nil {
 		for _, phpProbe := range customInstruAsInstruRule.Php {
+			notes, category, addedAt := customProbeMetadataModel(phpProbe.CustomProbeMetadata)
 			customInstruAsGqlModel.Php = append(customInstruAsGqlModel.Php, &model.PhpCustomProbe{
 				ClassName:    &phpProbe.ClassName,
 				FunctionName: &phpProbe.FunctionName,
+				Notes:        notes,
+				Category:     category,
+				AddedAt:      addedAt,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Cpp != nil {
+		for _, cppProbe := range customInstruAsInstruRule.Cpp {
+			notes, category, addedAt := customProbeMetadataModel(cppProbe.CustomProbeMetadata)
+			customInstruAsGqlModel.Cpp = append(customInstruAsGqlModel.Cpp, &model.CppCustomProbe{
+				Signature: &cppProbe.Signature,
+				Notes:     notes,
+				Category:  category,
+				AddedAt:   addedAt,
 			})
 		}
 	}
 	return customInstruAsGqlModel
+}
+
+func customProbeMetadataFromInput(notes *string, category *model.CustomProbeCategory, addedAt *string) instrumentationrules.CustomProbeMetadata {
+	var meta instrumentationrules.CustomProbeMetadata
+	if notes != nil {
+		meta.Notes = *notes
+	}
+	if category != nil {
+		meta.Category = instrumentationrules.CustomProbeCategory(*category)
+	}
+	if addedAt != nil {
+		meta.AddedAt = *addedAt
+	}
+	return meta
+}
+
+func customProbeMetadataModel(meta instrumentationrules.CustomProbeMetadata) (*string, *model.CustomProbeCategory, *string) {
+	var category *model.CustomProbeCategory
+	if meta.Category != "" {
+		value := model.CustomProbeCategory(meta.Category)
+		category = &value
+	}
+	return StringPtrIfNotEmpty(meta.Notes), category, StringPtrIfNotEmpty(meta.AddedAt)
 }

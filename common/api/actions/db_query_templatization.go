@@ -16,12 +16,12 @@ type DbQueryTemplatizationConfig struct {
 	// - boolean literals
 	// - NULL
 	// - keywords, operators, punctuation, whitespace, comments, etc.
-	TemplatizeLiterals bool `json:"templatizeLiterals,omitempty"`
+	TemplatizeLiterals bool `json:"templatizeLiterals,omitempty" yaml:"templatizeLiterals,omitempty"`
 
 	// RemovePostgresCastOperator strips PostgreSQL `::type` casts from query text
 	// (e.g. "SELECT * FROM users WHERE id = ?::uuid" -> "SELECT * FROM users WHERE id = ?").
 	// Useful to reduce cardinality when the same query is issued with different cast types,
 	// or when casts remain after literal templatization.
 	// Applies only to PostgreSQL spans.
-	RemovePostgresCastOperator bool `json:"removePostgresCastOperator,omitempty"`
+	RemovePostgresCastOperator bool `json:"removePostgresCastOperator,omitempty" yaml:"removePostgresCastOperator,omitempty"`
 }

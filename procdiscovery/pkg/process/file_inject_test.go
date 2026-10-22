@@ -376,7 +376,7 @@ func TestInjectDirToProcessTempDir_NoOverrideSkipsExisting(t *testing.T) {
 		shouldExist     bool
 		expectedContent string
 	}{
-		{path: "file1.txt", shouldExist: true, expectedContent: "original content"},      // Should NOT be modified
+		{path: "file1.txt", shouldExist: true, expectedContent: "original content"},       // Should NOT be modified
 		{path: "subdir/file2.txt", shouldExist: true, expectedContent: "original nested"}, // Should remain
 		{path: "file3.txt", shouldExist: false, expectedContent: ""},                      // Should NOT exist (new file not copied)
 	}

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 
 	"github.com/odigos-io/odigos/common"
@@ -28,7 +29,7 @@ type ProcessorConfigurer interface {
 	GetOrderHint() int
 }
 
-type GenericMap map[string]interface{}
+type GenericMap map[string]any
 
 type Config struct {
 	Receivers  GenericMap `json:"receivers,omitempty"`
@@ -36,7 +37,7 @@ type Config struct {
 	Processors GenericMap `json:"processors,omitempty"`
 	Extensions GenericMap `json:"extensions,omitempty"`
 	Connectors GenericMap `json:"connectors,omitempty"`
-	Service    Service    `json:"service,omitempty"`
+	Service    Service    `json:"service"`
 }
 
 type MetricsConfig struct {
@@ -49,8 +50,8 @@ type LogsConfig struct {
 }
 
 type Telemetry struct {
-	Metrics  MetricsConfig      `json:"metrics,omitempty"`
-	Logs     LogsConfig         `json:"logs,omitempty"`
+	Metrics  MetricsConfig      `json:"metrics"`
+	Logs     LogsConfig         `json:"logs"`
 	Resource *TelemetryResource `json:"resource,omitempty" yaml:"resource,omitempty"`
 }
 
@@ -69,7 +70,7 @@ type ResourceAttribute struct {
 type Service struct {
 	Extensions []string            `json:"extensions,omitempty"`
 	Pipelines  map[string]Pipeline `json:"pipelines,omitempty"`
-	Telemetry  Telemetry           `json:"telemetry,omitempty"`
+	Telemetry  Telemetry           `json:"telemetry"`
 }
 
 type Pipeline struct {
@@ -132,9 +133,7 @@ func mergeExtensions(extensions1 []string, extensions2 []string) []string {
 func mergePipelines(pipelines1 map[string]Pipeline, pipelines2 map[string]Pipeline) (map[string]Pipeline, error) {
 	// Create a copy of pipelines1 to avoid modifying the input
 	mergedPipelines := make(map[string]Pipeline, len(pipelines1)+len(pipelines2))
-	for k, v := range pipelines1 {
-		mergedPipelines[k] = v
-	}
+	maps.Copy(mergedPipelines, pipelines1)
 	// Merge pipelines2
 	for k, v := range pipelines2 {
 		if _, exists := mergedPipelines[k]; exists {

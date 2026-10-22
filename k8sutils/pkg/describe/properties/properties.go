@@ -26,7 +26,7 @@ type EntityProperty struct {
 	Explain string `json:"explain,omitempty"`
 
 	// The value to display for this property
-	Value interface{} `json:"value"`
+	Value any `json:"value"`
 
 	// The status of the property actual state
 	Status PropertyStatus `json:"status,omitempty"`

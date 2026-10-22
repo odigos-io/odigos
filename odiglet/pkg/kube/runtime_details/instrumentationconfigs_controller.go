@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -58,7 +58,7 @@ type InstrumentationConfigReconciler struct {
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := commonlogger.FromContext(ctx).WithValues("controller", "odiglet-runtime-details-instrumentationconfig", "namespace", request.Namespace, "name", request.Name)
+	logger := k8slogger.FromContext(ctx).WithValues("controller", "odiglet-runtime-details-instrumentationconfig", "namespace", request.Namespace, "name", request.Name)
 
 	var instrumentationConfig odigosv1.InstrumentationConfig
 	err := r.Get(ctx, request.NamespacedName, &instrumentationConfig)

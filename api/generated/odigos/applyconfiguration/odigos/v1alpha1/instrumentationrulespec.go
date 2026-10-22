@@ -49,7 +49,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	// Configure the tracing configuration for the library.
 	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
 	// Add custom instrumentation probes
-	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+	CustomInstrumentations *instrumentationrules.CustomInstrumentationsWithMetadata `json:"customInstrumentations,omitempty"`
 	// Configure general fraction of traces to record if none of the rules evaluate to true.
 	// this can help in reducing very noisy and heavy traffic services.
 	// note that traces will be dropped regardless of thier attributes/errors/importance.
@@ -65,6 +65,10 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
 	// Configure the agent own logging configuration.
 	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
+	// Adds spans for the operating system work of the scoped workloads, from any language, like the
+	// files they open and the processes they start. A span is a child of the span in progress when the
+	// work happens. File and process spans start a trace when there is none.
+	KernelTraces *instrumentationrules.KernelTraces `json:"kernelTraces,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -168,7 +172,7 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceConfig(value instru
 // WithCustomInstrumentations sets the CustomInstrumentations field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CustomInstrumentations field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentations) *InstrumentationRuleSpecApplyConfiguration {
+func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentationsWithMetadata) *InstrumentationRuleSpecApplyConfiguration {
 	b.CustomInstrumentations = &value
 	return b
 }
@@ -210,5 +214,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceVerbosity(value ins
 // If called multiple times, the AgentDiagnostics field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithAgentDiagnostics(value instrumentationrules.AgentDiagnostics) *InstrumentationRuleSpecApplyConfiguration {
 	b.AgentDiagnostics = &value
+	return b
+}
+
+// WithKernelTraces sets the KernelTraces field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the KernelTraces field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithKernelTraces(value instrumentationrules.KernelTraces) *InstrumentationRuleSpecApplyConfiguration {
+	b.KernelTraces = &value
 	return b
 }

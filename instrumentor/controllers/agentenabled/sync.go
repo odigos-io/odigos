@@ -22,6 +22,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -84,7 +85,7 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider, ro
 }
 
 func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration, rolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName, namespace)
 	if err != nil {
@@ -150,7 +151,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	nodeCollectorsGroup, clusterCollectorsGroup, irls, agentLevelActions, samplingRules, workloadObj, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry

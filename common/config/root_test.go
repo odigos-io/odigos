@@ -14,7 +14,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-
 type DummyProcessor struct {
 	ID        string
 	Type      string
@@ -343,8 +342,6 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 	assert.Equal(t, signals, []common.ObservabilitySignal{common.LogsObservabilitySignal})
 }
 
-func strPtr(b bool) *bool { return &b }
-
 func selfMetricsReceiver() func(c *config.Config, _ []string, _ []string) error {
 	return func(c *config.Config, _ []string, _ []string) error {
 		c.Receivers["prometheus/self-metrics"] = config.GenericMap{
@@ -380,7 +377,7 @@ func TestServiceGraphOptions(t *testing.T) {
 		},
 		{
 			name:          "disabled",
-			opts:          common.ServiceGraphOptions{Disabled: strPtr(true)},
+			opts:          common.ServiceGraphOptions{Disabled: new(true)},
 			wantConnector: false,
 		},
 		{

@@ -10,7 +10,7 @@ import (
 func createTestFiles(tempDir string, num int) ([]string, error) {
 	dirs := []string{"dir1", "dir1/dir2", "dir1/dir2/dir3"}
 	var files []string
-	for i := 0; i < num; i++ {
+	for i := range num {
 		file := fmt.Sprintf("dir1/dir2/dir3/file%d", i)
 		files = append(files, file)
 	}
@@ -18,13 +18,13 @@ func createTestFiles(tempDir string, num int) ([]string, error) {
 	for _, dir := range dirs {
 		path := filepath.Join(tempDir, dir)
 		if err := os.MkdirAll(path, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create directory %s: %v", dir, err)
+			return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
 	for _, file := range files {
 		path := filepath.Join(tempDir, file)
 		if err := os.WriteFile(path, []byte("content-"+file), 0644); err != nil {
-			return nil, fmt.Errorf("failed to create file %s: %v", file, err)
+			return nil, fmt.Errorf("failed to create file %s: %w", file, err)
 		}
 	}
 	return files, nil

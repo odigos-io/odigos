@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
@@ -76,10 +77,5 @@ func setProcessorAddedToCollectorConfigReason(ctx context.Context, c client.Clie
 }
 
 func processorHasCollectorRole(processor *odigosv1.Processor, role odigosv1.CollectorsGroupRole) bool {
-	for _, r := range processor.Spec.CollectorRoles {
-		if r == role {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(processor.Spec.CollectorRoles, role)
 }

@@ -21,7 +21,7 @@ import (
 var ErrKindNotSupported = errors.New("workload kind not supported")
 
 func IsErrorKindNotSupported(err error) bool {
-	return err == ErrKindNotSupported
+	return errors.Is(err, ErrKindNotSupported)
 }
 
 func IgnoreErrorKindNotSupported(err error) error {
@@ -38,8 +38,9 @@ func IsValidWorkloadKind(kind k8sconsts.WorkloadKind) bool {
 		k8sconsts.WorkloadKindCronJob, k8sconsts.WorkloadKindStaticPod,
 		k8sconsts.WorkloadKindDeploymentConfig, k8sconsts.WorkloadKindArgoRollout:
 		return true
+	default:
+		return false
 	}
-	return false
 }
 
 func WorkloadKindLowerCaseFromKind(pascalCase k8sconsts.WorkloadKind) k8sconsts.WorkloadKindLowerCase {
