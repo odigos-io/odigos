@@ -117,6 +117,22 @@ true
   {{- end -}}
 {{- end -}}
 
+{{- define "connectors.collectorImage" -}}
+{{- $image := .Values.cloudConnectors.managedCollectors.collectorImage | default dict -}}
+{{- if $image.reference -}}
+{{- $image.reference -}}
+{{- else -}}
+{{- $registry := $image.registry | default (include "utils.imagePrefix" (dict "Values" .Values)) | trimSuffix "/" -}}
+{{- $repository := $image.repository | default "odigos-enterprise-collector" | trimPrefix "/" -}}
+{{- if $image.digest -}}
+{{- printf "%s/%s@%s" $registry $repository $image.digest -}}
+{{- else -}}
+{{- $tag := $image.tag | default (.Values.image.tag | default .Chart.AppVersion) -}}
+{{- printf "%s/%s:%s" $registry $repository $tag -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/* URL-encode connector PostgreSQL DSN components before embedding them in the connection URL. */}}
 {{- define "connectors.urlEncode" -}}
 {{- . | toString | urlquery | replace "+" "%20" -}}
