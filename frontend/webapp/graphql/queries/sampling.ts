@@ -17,6 +17,19 @@ const NOISY_OPERATION_FIELDS = `
   }
   percentageAtMost
   notes
+  surge {
+    version
+    includeDownstream
+    evaluation
+    metric
+    threshold
+    sustainedSeconds
+    minimumRequests
+    boostPercent
+    recoveryThreshold
+    recoverySeconds
+    minimumBoostSeconds
+  }
 `;
 
 const HIGHLY_RELEVANT_OPERATION_FIELDS = `
