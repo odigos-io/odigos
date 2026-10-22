@@ -343,3 +343,63 @@ func TestCustomInstrumentationsMetadataRoundTrip(t *testing.T) {
 	require.Equal(t, &signature, out.Cpp[0].Signature)
 	require.Equal(t, &category, out.Cpp[0].Category)
 }
+
+func TestCreateKernelTracesRule(t *testing.T) {
+	ctx := context.Background()
+	setFakeOdigosInstrumentationRuleClient(t)
+	ruleName, notes, disabled, enabled, recordArgs := "kernel", "", false, true, true
+
+	got, err := CreateInstrumentationRule(ctx, model.InstrumentationRuleInput{
+		RuleName: &ruleName,
+		Notes:    &notes,
+		Disabled: &disabled,
+		KernelTraces: &model.KernelTracesInput{
+			Filesystem:   &model.KernelFilesystemTracesInput{},
+			Subprocesses: &model.KernelSubprocessTracesInput{RecordCommandArgs: &recordArgs},
+			CPUDelay:     &model.KernelCPUDelayTracesInput{Enabled: &disabled},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, model.InstrumentationRuleTypeKernelTraces, got.Type)
+	require.Equal(t, &model.KernelTraces{
+		Filesystem:   &model.KernelFilesystemTraces{Enabled: &enabled},
+		Subprocesses: &model.KernelSubprocessTraces{RecordCommandArgs: &recordArgs},
+	}, got.KernelTraces)
+
+	rules, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{})
+	require.NoError(t, err)
+	require.Len(t, rules.Items, 1)
+	require.Equal(t, &apirules.KernelTraces{
+		Filesystem:   &apirules.KernelFilesystemTraces{},
+		Subprocesses: &apirules.KernelSubprocessTraces{RecordCommandArgs: &recordArgs},
+	}, rules.Items[0].Spec.KernelTraces)
+}
+
+func TestUpdateKernelTracesRuleReplacesAreas(t *testing.T) {
+	ctx := context.Background()
+	ruleID := "kernel-rule"
+	setFakeOdigosInstrumentationRuleClient(t, &v1alpha1.InstrumentationRule{
+		ObjectMeta: metav1.ObjectMeta{Name: ruleID, Namespace: consts.DefaultOdigosNamespace},
+		Spec: v1alpha1.InstrumentationRuleSpec{
+			KernelTraces: &apirules.KernelTraces{
+				Filesystem:   &apirules.KernelFilesystemTraces{},
+				Subprocesses: &apirules.KernelSubprocessTraces{},
+			},
+		},
+	})
+	ruleName, notes, disabled, enabled := "kernel", "", false, true
+
+	got, err := UpdateInstrumentationRule(ctx, ruleID, model.InstrumentationRuleInput{
+		RuleName:     &ruleName,
+		Notes:        &notes,
+		Disabled:     &disabled,
+		KernelTraces: &model.KernelTracesInput{CPUDelay: &model.KernelCPUDelayTracesInput{Enabled: &enabled}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, model.InstrumentationRuleTypeKernelTraces, got.Type)
+	require.Equal(t, &model.KernelTraces{CPUDelay: &model.KernelCPUDelayTraces{Enabled: &enabled}}, got.KernelTraces)
+
+	updated, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).Get(ctx, ruleID, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, &apirules.KernelTraces{CPUDelay: &apirules.KernelCPUDelayTraces{}}, updated.Spec.KernelTraces)
+}
