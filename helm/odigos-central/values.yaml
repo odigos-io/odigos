@@ -275,6 +275,16 @@ cloudConnectors:
     # into its workload definition, so it is redeployed to pick up a new one.
     externalEndpoint: ''
 
+    # Collector image deployed into cloud accounts, independently of the gateway image below.
+    # Empty registry follows imagePrefix; empty tag follows image.tag / Chart.AppVersion.
+    # A digest takes precedence over the tag. A full reference overrides all component fields.
+    collectorImage:
+      reference: ''
+      registry: ''
+      repository: odigos-enterprise-collector
+      tag: ''
+      digest: ''
+
     # connector-opamp-gateway is the component that SERVES the endpoint above: one gateway for the whole
     # fleet across every provider, authenticating each Collector's credential and proxying the session to
     # the connector that owns its cloud account.
