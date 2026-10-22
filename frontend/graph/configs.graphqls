@@ -16,6 +16,8 @@ type Config {
   clusterName: String
   isCentralProxyRunning: Boolean
   insightsEnabled: Boolean!
+  # trace surges can run: turned on (sampling.traceSurge.enabled), with odigos insights enabled.
+  traceSurgesEnabled: Boolean!
 }
 
 # Effective configuration, reflects the actual values applied to the cluster
