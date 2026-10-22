@@ -401,8 +401,8 @@ type DbQueryPayloadCollection struct {
 }
 
 type DbQueryPayloadCollectionInput struct {
-	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
-	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+	MaxPayloadLength    graphql.Omittable[*int]  `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads graphql.Omittable[*bool] `json:"dropPartialPayloads,omitempty"`
 }
 
 type DesiredConditionActionItem struct {
@@ -792,9 +792,9 @@ type HTTPPayloadCollection struct {
 }
 
 type HTTPPayloadCollectionInput struct {
-	MimeTypes           []*string `json:"mimeTypes,omitempty"`
-	MaxPayloadLength    *int      `json:"maxPayloadLength,omitempty"`
-	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
+	MimeTypes           graphql.Omittable[[]*string] `json:"mimeTypes,omitempty"`
+	MaxPayloadLength    graphql.Omittable[*int]      `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads graphql.Omittable[*bool]     `json:"dropPartialPayloads,omitempty"`
 }
 
 type Insights struct {
@@ -2599,8 +2599,8 @@ type MessagingPayloadCollection struct {
 }
 
 type MessagingPayloadCollectionInput struct {
-	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
-	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+	MaxPayloadLength    graphql.Omittable[*int]  `json:"maxPayloadLength,omitempty"`
+	DropPartialPayloads graphql.Omittable[*bool] `json:"dropPartialPayloads,omitempty"`
 }
 
 type MetricsSourceAgentJavaRuntimeMetricsConfig struct {
