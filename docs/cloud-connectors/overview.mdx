@@ -111,7 +111,7 @@ Direct instrumentation depends on the workload type:
 | Amazon ECS Fargate tasks (`aws.fargate-task`) | Java, Python, Node.js, .NET, PHP, Ruby |
 | GCP Cloud Run (`gcp.cloud-run`) | Java, Python, Node.js, .NET |
 
-For Lambda you can choose which OpenTelemetry distro instruments each function: the upstream OpenTelemetry layer is the default for every language, Java also offers the full agent and lightweight handler wrappers, and Java, Node.js, and Python can run AWS ADOT instead. See [Lambda distros](/cloud-connectors/aws/workloads/lambda/distros).
+For Lambda you can choose which OpenTelemetry distro instruments each function: the full OpenTelemetry agent is the default for Java and the upstream OpenTelemetry layer for Node.js, Python, and Ruby, Java also offers lightweight handler wrappers, and Java, Node.js, and Python can run AWS ADOT instead. See [Lambda distros](/cloud-connectors/aws/workloads/lambda/distros).
 
 Other Lambda runtimes (for example Go or .NET) can still be discovered; they are not instrumented until support for those runtimes is added. On Fargate, Go and any other eBPF-based language cannot be instrumented at all — Fargate does not allow the privileged containers eBPF needs — and a task with no other instrumentable container is reported unsupported.
 

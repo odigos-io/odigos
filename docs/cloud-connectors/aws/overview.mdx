@@ -35,6 +35,10 @@ This page is the map. For hands-on tasks, see:
     Run an Odigos-managed Collector in your account for workloads in a region to export to.
   </Card>
 
+  <Card title="Collector actions" icon="filter" href="/cloud-connectors/aws/regional-collector#collector-actions">
+    Modify telemetry on a regional Collector before it reaches your destinations.
+  </Card>
+
   <Card title="Instrument Fargate" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
     Self-managed Fargate instrumentation with CloudFormation for every supported language.
   </Card>
@@ -147,6 +151,8 @@ Both Lambda and Fargate export OTLP only, and the destination must be reachable 
 * **Regional Collector (optional)** — an Odigos-managed Collector that runs in your account, one per
   region. Fargate services and VPC-attached Lambda functions in that region can export to it instead of
   directly to the destination. See [Regional Collector](/cloud-connectors/aws/regional-collector#which-workloads-use-it).
+
+The regional Collector also supports [actions](/cloud-connectors/aws/regional-collector#collector-actions), which modify the telemetry that passes through it before it is sent to destinations. They apply only to telemetry routed through that Collector. Instrumentation rules and workload-level actions are not available for cloud connectors.
 
 Which signals each workload exports (traces, metrics, logs) follows the signals enabled on the destination.
 See [Destination signals](/cloud-connectors/instrument-workloads#destination-signals).

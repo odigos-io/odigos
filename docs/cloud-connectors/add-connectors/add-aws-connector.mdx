@@ -314,6 +314,8 @@ Adds Odigos-managed instrumentation for Lambda and Fargate:
 | Access container images in Amazon ECR | `ecr:GetAuthorizationToken`, `ecr:BatchGetImage`, `ecr:GetDownloadUrlForLayer` |
 | Set up CloudWatch Application Signals (ADOT + Application Signals distros only) | `iam:GetPolicy`, `iam:ListAttachedRolePolicies`, `iam:AttachRolePolicy`, `iam:GetRole`, `application-signals:StartDiscovery`, `iam:CreateServiceLinkedRole`, `cloudtrail:CreateServiceLinkedChannel` |
 
+The ECR actions are optional: the connector uses them only to read a Fargate container's image configuration for language detection. The regional Collector's image is pulled by the Collector task execution role, not by the connector, and a Collector image from ECR Public needs no ECR permissions.
+
 <Warning>
   The generated policy grants `iam:PassRole` on all resources (`*`). Scope it yourself
   with the condition `iam:PassedToService=ecs-tasks.amazonaws.com` so the connector can
@@ -369,6 +371,8 @@ Added when Odigos manages a [regional Collector](/cloud-connectors/aws/regional-
 ### Collector deployment
 
 Added when Odigos installs the regional Collector in your account (**Discovery + instrumentation + collector**, or Custom with **Installation** set to **Automatic**).
+
+Collector deployment also uses `ecs:RegisterTaskDefinition`, `ecs:UpdateService`, `ecs:TagResource`, and `iam:PassRole`, which **Discovery + instrumentation** already includes.
 
 | Purpose | Actions |
 | --- | --- |

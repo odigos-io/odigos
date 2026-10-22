@@ -234,6 +234,81 @@ The AWS [regional Collector](/cloud-connectors/aws/regional-collector) runs in y
   How long a revoked Collector credential may keep an already-open session. Empty uses the default.
 </ParamField>
 
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.reference" type="string" default="">
+  Full Collector image reference. When set, it is used verbatim and overrides every other `collectorImage` field. It must include a tag or a digest.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.registry" type="string" default="">
+  Registry to pull the Collector image from. Empty follows `imagePrefix`, then `registry.odigos.io`.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.repository" type="string" default="odigos-enterprise-collector">
+  Repository name of the Collector image.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.tag" type="string" default="">
+  Image tag. Empty follows `image.tag`, then the chart's `appVersion`.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.digest" type="string" default="">
+  Image digest, for example `sha256:...`. Takes precedence over `tag`.
+</ParamField>
+
+### Collector image
+
+Cloud Collectors run an Odigos Collector image that the chart configures. By default this is `registry.odigos.io/odigos-enterprise-collector:<Central version>`. `collectorImage` is separate from `managedCollectors.image`, which overrides the `connector-opamp-gateway` image.
+
+The image is resolved in this order:
+
+1. `reference`, used as-is.
+2. `registry/repository@digest`, when `digest` is set.
+3. `registry/repository:tag`.
+
+For the registry, an empty `registry` uses `imagePrefix`, then `registry.odigos.io`. For the tag, an empty `tag` uses `image.tag`, then the chart's `appVersion`.
+
+<Warning>
+  Odigos v1.39 and later connectors need a Collector image configured by the
+  chart. Without one, no Collector is deployed and the connector reports: `no
+  Collector is deployed on <vpc>: no managed-Collector image is configured; set
+  cloudConnectors.managedCollectors.collectorImage in Helm or
+  collector.defaults.image at runtime`. Update the chart together with the
+  connector.
+
+  Upgrading Central changes the expected Collector image. Collectors in
+  automatic mode roll to the new image. Collectors in manual mode report image
+  drift until you re-apply their artifacts, see
+  [Collector image](/cloud-connectors/aws/regional-collector#collector-image).
+</Warning>
+
+<Tabs>
+  <Tab title="Private mirror">
+    ```yaml
+    cloudConnectors:
+      managedCollectors:
+        collectorImage:
+          registry: "registry.example.com/odigos"
+          tag: "<tag>"
+    ```
+  </Tab>
+
+  <Tab title="ECR Public">
+    ```yaml
+    cloudConnectors:
+      managedCollectors:
+        collectorImage:
+          reference: "public.ecr.aws/<alias>/<repo>:<tag>"
+    ```
+
+    ECR Public images are pulled anonymously, so the task definition needs no registry credentials. The Collector's subnets need outbound HTTPS to ECR Public; a private ECR VPC endpoint is not enough. The license and OpAMP secrets are still required.
+  </Tab>
+</Tabs>
+
+<Tip>
+  A tag alone cannot detect a republished image under the same tag. Prefer a
+  digest for immutability, either `collectorImage.digest` or a `reference` ending in
+  `@sha256:...`.
+</Tip>
+
 ## Verify
 
 After enablement, confirm the subsystem is running in the Central namespace (default `odigos-central`):
@@ -255,6 +330,19 @@ You should see `connector-opamp-gateway` in a Running state.
 <Check>
   Once both pods are Running, you are ready to add a cloud provider connector.
 </Check>
+
+## Upgrading
+
+The `connector-runtime` Deployment uses the `Recreate` update strategy, so two controller versions never run at the same time during an upgrade.
+
+A plain `helm upgrade` or `odigos pro central upgrade` needs no extra step. If you apply the chart with server-side apply (Argo CD with `ServerSideApply`, Flux, or `kubectl apply --server-side`), run this once **before** upgrading:
+
+```bash
+kubectl -n odigos-central patch deployment connector-runtime --type=merge \
+  --patch '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}'
+```
+
+Replace `odigos-central` with your Central namespace.
 
 ## Next steps
 

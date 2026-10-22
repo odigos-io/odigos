@@ -40,6 +40,8 @@ A workload can reach the Collector when **all** of the following hold:
   connection** with non-overlapping CIDR blocks and routes in every subnet on both sides.
 - The Collector's security group admits the workload's security group or subnet CIDR on TCP ports **4317**
   (OTLP gRPC) and **4318** (OTLP HTTP).
+- The Collector's security group also admits **itself** on TCP **4317** and **4318**. Traffic from the load
+  balancer to the Collector tasks needs it.
 
 <Warning>
   Odigos does not create VPC peering or any other network connection between your VPCs. If a workload runs in
@@ -242,6 +244,8 @@ method switch lets you view each step as an **Overview**, as **AWS CLI** command
   reports the Collector as degraded while that fallback is in effect. When
   Odigos has to choose, it prefers subnets with private egress, at most one per Availability Zone, across up
   to three zones. If only one Availability Zone is usable, the Collector runs with reduced availability.
+  Odigos also adds the rules that let the Collector security group admit itself on TCP 4317 and 4318, plus
+  13133, including on Collectors you installed earlier.
 </Info>
 
 ## Install a Collector (manual)
@@ -262,8 +266,10 @@ connects. It never creates, repairs, or deletes your resources.
 
     <Warning>
       On the Collector security group, allow inbound **TCP 4317 and 4318** from your workloads' security
-      groups or subnets. Without it, workloads cannot reach the Collector and keep exporting directly. The
-      wizard doesn't add these rules for you.
+      groups or subnets **and from the Collector security group itself**, plus **TCP 13133** from itself.
+      Without these rules, workloads cannot reach the Collector and keep exporting directly. The wizard
+      doesn't add them for you, and the generated instructions currently only mention 13133, so add the
+      4317 and 4318 rules yourself.
     </Warning>
   </Step>
   <Step title="Save the Collector configuration">
@@ -331,7 +337,9 @@ Creating a Collector doesn't move any traffic. Workloads switch over when you ad
   </Step>
   <Step title="Wait for the Collector to be ready">
     Odigos only routes to a Collector after it has reported ready at least once. After that, the decision is
-    remembered, so a later blip in readiness doesn't send everything back to direct export.
+    remembered, so a later blip in readiness doesn't send everything back to direct export. Odigos
+    re-evaluates routing immediately when destinations or sources change or when a Collector becomes ready,
+    without waiting for the next discovery interval.
   </Step>
   <Step title="Workloads cut over">
     Eligible workloads are updated to export through the Collector. How that happens depends on whether you
@@ -391,6 +399,147 @@ is configured separately, per region, on the Collectors page.
   routing workloads to it. Profiles aren't accepted by the Collector.
 </Warning>
 
+## Collector actions
+
+Actions are processing steps that a region's Collector applies to telemetry before it sends it to **every**
+destination of that Collector. Each action belongs to one regional Collector, and removing the Collector
+deletes its actions.
+
+Actions only affect telemetry routed **through** the Collector. Workloads that export directly, such as
+non-VPC Lambda functions, workloads that can't reach the Collector, or workloads still waiting for cutover,
+bypass them.
+
+### Add an action
+
+<Steps>
+  <Step title="Open the Actions tab">
+    On **Collectors**, select the region. On the overview, switch from **Destinations** to **Actions**.
+    With no actions, the card shows **No actions** and "Add an action to configure this collector."
+  </Step>
+  <Step title="Add an action">
+    Click **Add action**. Pick an action type, using the categories (**All Actions**, **Enrichment**,
+    **Normalization**, **Privacy & Governance**) or the **Search by action name** box.
+  </Step>
+  <Step title="Configure and save">
+    Fill in the fields for the type and save. The region is preset and can't be changed. The table shows each
+    action's name, type, signals, and status (**Active** or **Disabled**).
+  </Step>
+</Steps>
+
+To change or remove an action, click **Edit** on its row. You can delete it from the drawer that opens.
+
+<Note>
+  Editing in the UI is available in **Automatic** mode only. In **Manual** mode, the **Actions** and
+  **Destinations** tabs are read-only.
+</Note>
+
+<Note>
+  Collector actions require Odigos **v1.39 or later**: Central, the connector, and the Collector image.
+</Note>
+
+### Action types
+
+| Action | Signals | What it does | Key fields |
+| --- | --- | --- | --- |
+| **URL Templatization** | Traces | Creates stable routes from HTTP URLs. | **Rule groups**, each with **Templates** such as `/users/{id}`. At least one template is required. |
+| **Processor Addition** | Depends on the processor | Adds an OpenTelemetry processor to the pipeline. | **Processor type** (default `attributes`), **Processor name**, **Processor configuration (JSON)**. |
+| **Span Metrics** | Traces in, metrics out | Generates metrics from spans. | All optional: **Interval**, **Metrics expiration**, **Additional dimensions**, **Disable latency histogram**, **Explicit histogram buckets**, **Resource metric key attributes**, **Include process in dimensions**, **Excluded resource attributes**, **Disable span metrics**. |
+| **DB Query Templatization** | Traces | Replaces literals in database queries with placeholders. | **Templatize literals** (on by default), **Remove PostgreSQL cast operator**. At least one must be on. |
+| **Infer DB Attributes** | Traces | Infers `db.operation.name` and `db.collection.name` from the query. | None. |
+| **Extract Attribute** | Traces | Extracts values into a new span attribute. | **Extractions**: a preset (JSON, SQL, or resource path, with a lookup key) or a custom regex with exactly one capture group, and a **New span attribute name**. |
+| **Delete Attribute** | Traces, metrics, logs | Deletes attributes from resources, scopes, and records. | **Attributes to delete**. |
+| **Rename Attribute** | Traces, metrics, logs | Renames attributes. | **Old key** and **New key**, one pair per **Add rename**. No duplicates, and the old and new keys must differ. |
+
+DB Query Templatization and Infer DB Attributes need the database query text to be collected at the source.
+
+Span Metrics uses the default dimensions `http.method`, `http.request.method`, `http.status_code`,
+`http.response.status_code`, `http.route`, and `span.instrumentation.scope.name`, with cumulative temporality.
+
+#### Processor Addition processors
+
+| Processor | Signals |
+| --- | --- |
+| Attributes, Filter, Transform, Resource, Group by attributes | Traces, metrics, logs |
+| Span | Traces |
+| Redaction | Traces, logs |
+| Probabilistic sampler | Traces, logs |
+| Metrics transform, Cumulative to delta, Delta to rate, Metrics generation | Metrics |
+| Extract attribute | Traces |
+
+Values such as `${env:...}` and `${file:...}` in the processor JSON are treated literally, not expanded.
+
+### How actions run
+
+- In every destination pipeline, the order is: the Collector's built-in processors (memory limiting,
+  resource detection, and `cloud.region`), then your actions, then the destination's own processors, then
+  batching.
+- You can't control the order among actions. URL Templatization always runs last.
+- **Disabled** actions aren't applied.
+- Odigos pushes changes to the running Collector. There is no redeploy.
+
+### Limits
+
+<AccordionGroup>
+  <Accordion title="One Span Metrics action per region">
+    Only one enabled Span Metrics action can run per region, and it needs an active **metrics** destination
+    on that Collector. Otherwise it isn't applied, and traces still flow.
+  </Accordion>
+  <Accordion title="Processor names">
+    Two Processor Additions of the same type need different **Processor name** values. A Resource processor
+    always needs a name.
+  </Accordion>
+  <Accordion title="Not supported">
+    - PII masking
+    - Sampling, other than the probabilistic sampler through Processor Addition
+    - Profiles
+    - Targeting a single destination
+    - Scoping an action by source, service, or language
+    - Instrumentation rules
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  Actions that conflict with each other or can't be built are **left out silently**. The UI doesn't warn you.
+  If the Collector rejects a configuration, it becomes **Degraded** and keeps running its last accepted
+  configuration. Further changes in that region don't take effect until you fix or remove the action.
+</Warning>
+
+### Validation errors
+
+| Message | Fix |
+| --- | --- |
+| `Processor type is required.` | Choose a processor type. |
+| `Processor configuration must be valid JSON.` | Fix the JSON syntax. |
+| `Processor configuration must be a JSON object.` | Use an object, not an array or a value. |
+| `Enable literal templatization or PostgreSQL cast removal` | Turn on at least one option. |
+| `At least one row is required` | Add an attribute to delete, a rename, or an extraction. |
+| `All row fields are required` | Fill in or remove incomplete rows. |
+| `Each rename needs different, non-blank old and new names.` | Make the old and new keys different. |
+| `Each row needs a target attribute name and either a regex or both lookup key and data format` | Complete every extraction. |
+| `Each new span attribute name must be unique` | Use a different **New span attribute name** for each extraction. |
+| `Each rule group needs at least one non-blank template` | Add a template to every rule group. |
+| `resource processor additions need a processorName so they do not replace the Collector's built-in resource processor` | Set a **Processor name**. |
+| `processor type "<type>" does not support <SIGNAL>` | Select only the signals that processor supports. See [Processor Addition processors](#processor-addition-processors). |
+| `extraction regex must contain exactly one capture group` | Use a regex with a single capture group. |
+| `region <region> has no Collector; create one first` | Install a Collector in the region. |
+
+## Collector image
+
+By default, Collectors run `registry.odigos.io/odigos-enterprise-collector:<Central version>`. Set the image
+with the `cloudConnectors.managedCollectors.collectorImage` Helm value. See
+[Managed Collectors](/cloud-connectors/enable#managed-collectors).
+
+- **Upgrading Central** changes the expected image. Automatic Collectors roll to a new task definition
+  revision. Manual Collectors show image drift and report **Degraded** until you re-apply the artifacts from
+  **Download config**.
+- **ECR Public** is supported. Use a `public.ecr.aws/<alias>/<repo>` image. The pull is anonymous, so no
+  repository credentials are needed, but the Collector tasks need outbound HTTPS to ECR Public and the
+  license and OpAMP secrets are still required.
+- **Private ECR** needs the execution role's ECR permissions listed in
+  [Install a Collector (automatic)](#install-a-collector-automatic).
+- For immutable deployments, reference the image by **digest** rather than by tag.
+- To override the image for a single region, contact Odigos support.
+
 ## Collector status
 
 Select a region on the Collectors page to see its status badge.
@@ -416,7 +565,7 @@ The region's overview shows:
 | **Resources** | CPU and memory size, memory in use, and whether the Collector is enabled |
 | **Placement** | Execution role, ECS cluster, VPC, public task IP, and subnets (**Selected by Odigos** or **Pinned**) |
 | **Runtime** | gRPC and HTTP endpoints, tasks, config, first ready time |
-| **Destinations** | The Collector's downstream destinations |
+| **Destinations** / **Actions** tabs | The Collector's downstream destinations, and the [actions](#collector-actions) it applies before sending to them |
 
 The action buttons on the overview are **Reconfigure** and **Uninstall**. Use **Refresh** at the top of the
 page to reload the status. **Download config** (manual mode only) opens the copyable IaC for the Collector.
@@ -431,7 +580,8 @@ When a workload exports directly instead of through the Collector, its status sh
 | `Defaulting to the global OTLP destination: the Odigos Managed Regional Collector has no ingress endpoint yet.` | The Collector exists, but its load balancer endpoint isn't published yet. |
 | `Defaulting to the global OTLP destination: this Lambda has no VPC configuration, so it cannot reach the Odigos Managed Regional Collector. Odigos will not attach the function to a VPC or change its VpcConfig.` | A Lambda function without a VPC. This is permanent by design. |
 | `Defaulting to the global OTLP destination: no Odigos Managed Regional Collector is set up in this region.` | The routing destination exists, but this region has no Collector. |
-| `Defaulting to the global OTLP destination: the Odigos Managed Regional Collector is not known to be reachable from this workload's network.` | A Fargate service in a different VPC without peering, with overlapping CIDRs or missing routes, or one the Collector security group doesn't admit. For a Fargate service, the note starts with the workload's VPC ID and what to fix. See [Which workloads use it](#which-workloads-use-it). |
+| `Workload VPC <vpc> cannot reach the regional Collector in VPC <vpc>. Verify active same-region VPC peering, reciprocal routes, workload ingress to the NLB, and NLB security-group ingress to Collector tasks on every published OTLP port. ...` | The workload runs in a different VPC from the Collector and Odigos can't confirm the path. See [Which workloads use it](#which-workloads-use-it). |
+| `Workload VPC <vpc> shares the Collector VPC, but the Collector ingress security group does not admit this workload on every published OTLP port. ...` | The workload is in the Collector's VPC, but the Collector security group doesn't admit it on 4317 and 4318, or doesn't admit itself on them. |
 | `Defaulting to the global OTLP destination: this VPC-attached Lambda cannot currently reach the Odigos Managed Regional Collector. ...` | The same for a VPC-attached Lambda function. The note goes on to list what to fix. |
 | `Continuing to use the global OTLP destination until this workload is admitted to the regional Collector rollout.` | The workload is eligible but waiting for its batch. |
 | `Cannot export telemetry through the Odigos Managed Regional Collector: <cause>, and no global OTLP destination is configured for fallback.` | There is no global destination, so the workload can't export at all. Fix the cause or add a global destination. |
