@@ -3,7 +3,9 @@ package nodecollectorsgroup
 import (
 	"testing"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestCalculateMemoryLimiterHardLimitMiB verifies the memory_limiter hard limit formula
@@ -198,4 +200,35 @@ func checkInt(t *testing.T, field string, got, want int) {
 	if got != want {
 		t.Errorf("%s = %d, want %d", field, got, want)
 	}
+}
+
+func TestAgentSpanMetricsSettings(t *testing.T) {
+	on := true
+	insights := &common.InsightsConfiguration{Enabled: &on}
+	surgesOn := &common.SamplingConfiguration{TraceSurge: &common.TraceSurgeConfiguration{Enabled: &on}}
+	optIn := &common.MetricsSourceConfiguration{AgentMetrics: &common.MetricsSourceAgentMetricsConfiguration{
+		SpanMetrics: &common.MetricsSourceAgentSpanMetricsConfiguration{Enabled: true}}}
+	metricsOn := &odigosv1.CollectorsGroupMetricsCollectionSettings{}
+	samplings := func(surge bool) *odigosv1.SamplingList {
+		op := odigosv1.NoisyOperation{Name: "shop"}
+		if surge {
+			op.Surge = &odigosv1.TraceSurgeSettings{Metric: odigosv1.TraceSurgeMetricErrorRate}
+		}
+		return &odigosv1.SamplingList{Items: []odigosv1.Sampling{{Spec: odigosv1.SamplingSpec{NoisyOperations: []odigosv1.NoisyOperation{op}}}}}
+	}
+
+	assert.Nil(t, agentSpanMetricsSettings(&common.OdigosConfiguration{Insights: insights, Sampling: surgesOn}, metricsOn, samplings(false)),
+		"no surge rule and no opt-in: no agent records span metrics, so the node collector is unchanged")
+	assert.Nil(t, agentSpanMetricsSettings(&common.OdigosConfiguration{Sampling: surgesOn}, metricsOn, samplings(true)), "surges need insights")
+	assert.Nil(t, agentSpanMetricsSettings(&common.OdigosConfiguration{Insights: insights}, metricsOn, samplings(true)), "trace surges are off")
+	assert.Equal(t, &odigosv1.AgentSpanMetricsSettings{Insights: true},
+		agentSpanMetricsSettings(&common.OdigosConfiguration{Insights: insights, Sampling: surgesOn}, nil, samplings(true)))
+	assert.Equal(t, &odigosv1.AgentSpanMetricsSettings{Destinations: true},
+		agentSpanMetricsSettings(&common.OdigosConfiguration{MetricsSources: optIn}, metricsOn, samplings(false)))
+	assert.Nil(t, agentSpanMetricsSettings(&common.OdigosConfiguration{MetricsSources: optIn}, nil, samplings(false)),
+		"the opt-in records for metrics destinations only")
+
+	disabled := samplings(true)
+	disabled.Items[0].Spec.NoisyOperations[0].Disabled = true
+	assert.Nil(t, agentSpanMetricsSettings(&common.OdigosConfiguration{Insights: insights, Sampling: surgesOn}, metricsOn, disabled), "a disabled rule")
 }
