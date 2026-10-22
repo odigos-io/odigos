@@ -67,6 +67,10 @@ spec:
                 name: odigos-pro
                 key: odigos-onprem-token
           {{- end }}
+          {{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" }}
+          - name: ODIGOS_URL_TEMPLATIZATION_LIVE_TRAFFIC_LEARNING
+            value: "true"
+          {{- end }}
         ports:
           - containerPort: 3000
             name: ui

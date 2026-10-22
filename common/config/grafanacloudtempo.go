@@ -40,7 +40,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig 
 	currentConfig.Extensions[authExtensionName] = GenericMap{
 		"client_auth": GenericMap{
 			"username": tempoUsername,
-			"password": "${GRAFANA_CLOUD_TEMPO_PASSWORD}",
+			"password": SecretEnvPlaceholder("GRAFANA_CLOUD_TEMPO_PASSWORD", dest),
 		},
 	}
 

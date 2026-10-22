@@ -181,4 +181,13 @@ else
     print_success "No Roles related to Odigos found in $NAMESPACE"
 fi
 
+API_SERVICE=$(kubectl get apiservice v1beta1.custom.metrics.k8s.io --ignore-not-found -o name 2>/dev/null || true)
+if [ ! -z "$API_SERVICE" ]; then
+    SVC_NAME=$(kubectl get apiservice v1beta1.custom.metrics.k8s.io -o jsonpath='{.spec.service.name}' 2>/dev/null || true)
+    if [ "$SVC_NAME" = "odigos-autoscaler" ] || [ "$SVC_NAME" = "odigos-instrumentor" ]; then
+        print_error "Found leftover Odigos custom-metrics APIService: $API_SERVICE"
+        exit 1
+    fi
+fi
+
 print_success "Odigos has been successfully uninstalled!"

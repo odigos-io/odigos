@@ -34,6 +34,7 @@ var AllProfiles = []profile.Profile{
 	instrumentation.JavaEnterpriseProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
 	instrumentation.LegacyDotNetProfile,
+	instrumentation.LegacyRubyProfile,
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
 	instrumentation.PodManifestEnvVarInjection,
@@ -63,6 +64,7 @@ func init() {
 			OnPremProfiles = append(OnPremProfiles, p)
 		case common.OnPremOdigosTier:
 			OnPremProfiles = append(OnPremProfiles, p)
+		default:
 		}
 	}
 }

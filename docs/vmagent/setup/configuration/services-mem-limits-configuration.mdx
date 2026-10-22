@@ -4,10 +4,12 @@ sidebarTitle: "Managing Service Resources"
 description: "Configure systemd memory limits for the odigos-otelcol and odigos-vmagent services"
 ---
 
-The Odigos VM Agent runs as two systemd services on your host:
+The Odigos VM Agent runs as two systemd services on your host **when the agent is in root mode**:
 
 - <Badge color="blue">odigos-otelcol</Badge> — the Odigos distribution of the OpenTelemetry Collector.
 - <Badge color="blue">odigos-vmagent</Badge> — the VM Agent that discovers, instruments, and manages processes.
+
+In the default **non-root** install, `odigos-otelcol` is a child of `odigos-vmagent` and they share one cgroup. Set memory limits on `odigos-vmagent` only (the packaged `nonroot.conf` already raises `MemoryMax` to 3G to cover both). Do not enable or edit `odigos-otelcol.service` in that mode.
 
 You can cap how much memory each service is allowed to use with the systemd `MemoryMax` (hard limit)
 and `MemoryHigh` (soft throttling limit) directives. This is useful on hosts where you need to
@@ -43,6 +45,10 @@ MemoryMax=1G
 MemorySwapMax=0
 ```
 </CodeGroup>
+
+<Note>
+In non-root mode the collector shares the agent's cgroup, so the relevant defaults are those in `nonroot.conf`: `MemoryHigh=2500M`, `MemoryMax=3G`, `GOMEMLIMIT=750MiB`. Override them on `odigos-vmagent`, not on `odigos-otelcol.service`.
+</Note>
 
 <Note>
 `MemorySwapMax=0` disables swap usage for the service, and `MemoryAccounting=yes` enables per-service

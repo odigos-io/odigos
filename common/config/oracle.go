@@ -36,7 +36,7 @@ func (j *Oracle) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authorization": "dataKey ${ORACLE_DATA_KEY}",
+			"Authorization": "dataKey " + SecretEnvPlaceholder("ORACLE_DATA_KEY", dest),
 		},
 	}
 

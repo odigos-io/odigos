@@ -23,7 +23,7 @@ func (j *OneUptime) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		"encoding": "json",
 		"headers": GenericMap{
 			"Content-Type":      "application/json",
-			"x-oneuptime-token": "${ONEUPTIME_INGESTION_KEY}",
+			"x-oneuptime-token": SecretEnvPlaceholder("ONEUPTIME_INGESTION_KEY", dest),
 		},
 	}
 

@@ -3,7 +3,7 @@ package podsmanifestinjectionstatus
 import (
 	"context"
 
-	commonlogger "github.com/odigos-io/odigos/common/logger"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +42,7 @@ func (r *PodsController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	err = r.PodsTracker.SetPodWorkload(req, *pw)
 	if err != nil {
-		logger := commonlogger.FromContext(ctx)
+		logger := k8slogger.FromContext(ctx)
 		logger.Error(err, "error setting pod id to workload mapping in pods tracker", "pod", req.NamespacedName)
 	}
 

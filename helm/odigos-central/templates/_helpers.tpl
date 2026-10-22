@@ -105,6 +105,18 @@ true
   {{- end -}}
 {{- end -}}
 
+{{/*
+The OpAMP gateway ships only where the connectors subsystem is on AND managed Collectors are enabled.
+Gated separately from connectors.enabled because the gateway is the one connector component that is
+useless without a public address, and deploying it by default would put an unreachable OpAMP endpoint
+in every installation that only instruments workloads.
+*/}}
+{{- define "connectors.managedCollectorsEnabled" -}}
+  {{- if and (include "connectors.enabled" .) .Values.cloudConnectors.managedCollectors.enabled -}}
+true
+  {{- end -}}
+{{- end -}}
+
 {{/* URL-encode connector PostgreSQL DSN components before embedding them in the connection URL. */}}
 {{- define "connectors.urlEncode" -}}
 {{- . | toString | urlquery | replace "+" "%20" -}}

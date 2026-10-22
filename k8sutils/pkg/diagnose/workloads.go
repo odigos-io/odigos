@@ -61,6 +61,9 @@ func FetchOdigosWorkloads(
 	} else {
 		for i := 0; i < len(deployments.Items); i++ {
 			d := &deployments.Items[i]
+			if isDeprecatedStubDeployment(d) {
+				continue
+			}
 			targets = append(targets, WorkloadTarget{
 				Namespace:   odigosNamespace,
 				Name:        d.Name,
@@ -99,6 +102,11 @@ func FetchOdigosWorkloads(
 	}
 
 	return nil
+}
+
+func isDeprecatedStubDeployment(d *appsv1.Deployment) bool {
+	name := d.Labels["app.kubernetes.io/name"]
+	return name == k8sconsts.SchedulerDeploymentName || name == k8sconsts.AutoScalerAppLabelValue
 }
 
 func collectWorkload(
@@ -279,19 +287,19 @@ func collectArgoRollout(
 // extractSelectorFromUnstructured extracts labels selector from unstructured object.
 // If useMatchLabels is true, looks for spec.selector.matchLabels (k8s style).
 // If false, looks for spec.selector directly (OpenShift DeploymentConfig style).
-func extractSelectorFromUnstructured(obj map[string]interface{}, useMatchLabels bool) labels.Selector {
-	spec, ok := obj["spec"].(map[string]interface{})
+func extractSelectorFromUnstructured(obj map[string]any, useMatchLabels bool) labels.Selector {
+	spec, ok := obj["spec"].(map[string]any)
 	if !ok {
 		return nil
 	}
-	sel, ok := spec["selector"].(map[string]interface{})
+	sel, ok := spec["selector"].(map[string]any)
 	if !ok {
 		return nil
 	}
 
-	var labelMap map[string]interface{}
+	var labelMap map[string]any
 	if useMatchLabels {
-		labelMap, ok = sel["matchLabels"].(map[string]interface{})
+		labelMap, ok = sel["matchLabels"].(map[string]any)
 		if !ok {
 			return nil
 		}
@@ -341,7 +349,7 @@ func collectPods(
 	return nil
 }
 
-func addWorkloadYAML(builder Builder, componentDir, resourceType, name string, obj interface{}) error {
+func addWorkloadYAML(builder Builder, componentDir, resourceType, name string, obj any) error {
 	cleanedObj := cleanObjectForExport(obj)
 	yamlData, err := yaml.Marshal(cleanedObj)
 	if err != nil {
@@ -365,7 +373,7 @@ func addPodYAML(builder Builder, componentDir string, pod *corev1.Pod) error {
 	return builder.AddFile(componentDir, filename, yamlData)
 }
 
-func cleanObjectForExport(obj interface{}) interface{} {
+func cleanObjectForExport(obj any) any {
 	switch v := obj.(type) {
 	case *appsv1.Deployment:
 		cleaned := v.DeepCopy()

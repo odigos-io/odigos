@@ -156,15 +156,30 @@ type ProfilingConfig {
   enabled: Boolean
 }
 
-type TraceCorrelationsServiceIOConfig {
+type LiveTrafficLearningAutomaticRulesConfig {
   enabled: Boolean
-  inputSpanAttributes: [String!]
-  outputSpanAttributes: [String!]
-  metricsFlushInterval: String
 }
 
-type TraceCorrelationsConfig {
-  serviceIO: TraceCorrelationsServiceIOConfig
+type LiveTrafficLearningRuleComputationConfig {
+  minObservationsForRule: Int
+  minCardinalityForTemplating: Int
+}
+
+type LiveTrafficLearningConfig {
+  enabled: Boolean
+  maxExamplePathsPerWorkload: Int
+  pathExampleIdleTTL: String
+  learningInterval: String
+  ruleComputation: LiveTrafficLearningRuleComputationConfig
+  automaticRules: LiveTrafficLearningAutomaticRulesConfig
+}
+
+type UrlTemplatizationCardinalityControlConfig {
+  liveTrafficLearning: LiveTrafficLearningConfig
+}
+
+type CardinalityControlConfig {
+  urlTemplatization: UrlTemplatizationCardinalityControlConfig
 }
 
 type KarpenterConfig {
@@ -287,7 +302,7 @@ type EffectiveConfig {
   componentLogLevels: ComponentLogLevelsConfig
   sampling: SamplingConfig
   profiling: ProfilingConfig
-  traceCorrelations: TraceCorrelationsConfig
+  cardinalityControl: CardinalityControlConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
 }
@@ -329,10 +344,6 @@ input LocalUiConfigAllowConcurrentAgentsInput {
   enabled: Boolean
 }
 
-input LocalUiConfigWaspInput {
-  enabled: Boolean
-}
-
 input LocalUiConfigSpanSamplingAttributesInput {
   disabled: Boolean
   samplingCategoryDisabled: Boolean
@@ -358,15 +369,32 @@ input LocalUiConfigComponentLogLevelsInput {
   collector: OdigosLogLevel
 }
 
-input LocalUiConfigTraceCorrelationsServiceIOInput {
+input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
   enabled: Boolean
-  inputSpanAttributes: [String!]
-  outputSpanAttributes: [String!]
-  metricsFlushInterval: String
 }
 
-input LocalUiConfigTraceCorrelationsInput {
-  serviceIO: LocalUiConfigTraceCorrelationsServiceIOInput
+input LocalUiConfigLiveTrafficLearningRuleComputationInput {
+  minObservationsForRule: Int
+  minCardinalityForTemplating: Int
+}
+
+input LocalUiConfigLiveTrafficLearningInput {
+  # enabled is Helm-only (deploys cacheDb); UI may override
+  # maxExamplePathsPerWorkload, pathExampleIdleTTL, learningInterval,
+  # ruleComputation, and automaticRules.
+  maxExamplePathsPerWorkload: Int
+  pathExampleIdleTTL: String
+  learningInterval: String
+  ruleComputation: LocalUiConfigLiveTrafficLearningRuleComputationInput
+  automaticRules: LocalUiConfigLiveTrafficLearningAutomaticRulesInput
+}
+
+input LocalUiConfigUrlTemplatizationCardinalityControlInput {
+  liveTrafficLearning: LocalUiConfigLiveTrafficLearningInput
+}
+
+input LocalUiConfigCardinalityControlInput {
+  urlTemplatization: LocalUiConfigUrlTemplatizationCardinalityControlInput
 }
 
 input LocalUiConfigInput {
@@ -377,14 +405,13 @@ input LocalUiConfigInput {
   clusterName: String
   instrumentor: LocalUiConfigInstrumentorInput
   allowConcurrentAgents: LocalUiConfigAllowConcurrentAgentsInput
-  wasp: LocalUiConfigWaspInput
   rollout: LocalUiConfigRolloutInput
   autoRollback: LocalUiConfigAutoRollbackInput
   goAutoOffsetsCron: String
   goAutoOffsetsMode: String
   sampling: LocalUiConfigSamplingInput
   componentLogLevels: LocalUiConfigComponentLogLevelsInput
-  traceCorrelations: LocalUiConfigTraceCorrelationsInput
+  cardinalityControl: LocalUiConfigCardinalityControlInput
 }
 
 type ConfigYamlField {

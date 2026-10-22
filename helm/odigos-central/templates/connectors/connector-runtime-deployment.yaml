@@ -53,12 +53,18 @@ spec:
               value: dsn
             - name: CONNECTOR_CENTRAL_BACKEND_URL
               value: "http://central-backend:8081"
+            - name: CONNECTOR_OPAMP_ENDPOINT
+              value: {{ .Values.cloudConnectors.managedCollectors.externalEndpoint | quote }}
             - name: CONNECTOR_AWS_IMAGE
               value: {{ .Values.cloudConnectors.aws.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-aws" "Tag" $imageTag)) | quote }}
             - name: CONNECTOR_GCP_IMAGE
               value: {{ .Values.cloudConnectors.gcp.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-gcp" "Tag" $imageTag)) | quote }}
             - name: CONNECTOR_AZURE_IMAGE
               value: {{ .Values.cloudConnectors.azure.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-azure" "Tag" $imageTag)) | quote }}
+            # Where the gateway runs, for the NetworkPolicy the runtime builds. Resolved explicitly
+            # because an empty namespace selector in a NetworkPolicy means EVERY namespace.
+            - name: CONNECTOR_OPAMP_GATEWAY_NAMESPACE
+              value: {{ .Release.Namespace | quote }}
           ports:
             - containerPort: 8081
               name: health

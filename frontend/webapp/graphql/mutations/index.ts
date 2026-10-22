@@ -2,6 +2,7 @@ export * from './action';
 export * from './config';
 export * from './data-stream';
 export * from './destination';
+export * from './go-offsets';
 export * from './instrumentation-rule';
 export * from './namespace';
 export * from './source';
@@ -10,3 +11,5 @@ export * from './insights';
 export * from './profiling';
 export * from './recommendation';
 export * from './token';
+
+export * from './insights-integrations';

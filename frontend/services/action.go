@@ -199,7 +199,7 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 		return nil, fmt.Errorf("failed to convert pii masking: %v", err)
 	}
 	spec.PiiMasking = piiMasking
-	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Fields, existingAction)
+	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Type, input.Fields, existingAction)
 	spec.ExtractAttribute = convertExtractAttributeFromInput(input.Fields, existingAction)
 	spec.DbQueryTemplatization = convertDbQueryTemplatizationFromInput(input.Type, input.Fields, existingAction)
 	spec.InferDbAttributes = convertInferDbAttributesFromInput(input.Type, input.Fields, existingAction)
@@ -466,6 +466,10 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	urlTemplatizationDefaultGroups := convertUrlTemplatizationDefaultToModel(action.Spec.URLTemplatization)
 	extractAttribute := convertExtractAttributeToModel(action.Spec.ExtractAttribute)
 	scopes, templatizeLiterals, removePostgresCastOperator := convertDbActionFieldsToModel(action)
+	if action.Spec.PiiMasking != nil && scopes == nil {
+		// PII masking is scoped too; without it the UI reads a scoped action as applying to every source.
+		scopes = SourcesScopesCRDToModel(action.Spec.PiiMasking.Scopes)
+	}
 
 	responseFields := &model.ActionFields{
 		LabelsAttributes:               labelAttrs,
@@ -519,6 +523,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		Disabled:    action.Spec.Disabled,
 		Signals:     signals,
 		Fields:      responseFields,
+		ManagedBy:   managedByFromLabels(action.Labels),
 		UIGenerated: isActionUiGenerated(action),
 	}
 
@@ -530,10 +535,10 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 }
 
 func isActionUiGenerated(action *v1alpha1.Action) bool {
-	if action == nil || action.Labels == nil {
+	if action == nil {
 		return false
 	}
-	return action.Labels[k8sconsts.OdigosProfilesManagedByLabel] == k8sconsts.OdigosUIManagedByValue
+	return managedByFromLabels(action.Labels) == model.ManagedByOdigosUI
 }
 
 func convertLabelsAttributesToModel(labelsAttributes []actionsv1.K8sLabelAttribute) []*model.K8sLabelAttribute {
@@ -652,12 +657,16 @@ func stringifyMap(m map[string]string) (string, error) {
 	return string(json), nil
 }
 
-func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.URLTemplatizationConfig {
-	if details.URLTemplatizationRulesGroups == nil && details.URLTemplatizationDefaultGroups == nil {
+func convertUrlTemplatizationFromInput(actionType model.ActionType, details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.URLTemplatizationConfig {
+	if actionType != model.ActionTypeURLTemplatization {
+		return nil
+	}
+
+	if details == nil || (details.URLTemplatizationRulesGroups == nil && details.URLTemplatizationDefaultGroups == nil) {
 		if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
 			return existingAction.Spec.URLTemplatization
 		}
-		return nil
+		return &apiactions.URLTemplatizationConfig{}
 	}
 
 	var rules []apiactions.UrlTemplatizationRule
@@ -669,6 +678,26 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 			}
 
 			for _, rule := range g.TemplatizationRules {
+				if rule == nil || rule.Template == "" {
+					continue
+				}
+				if rule.Notes != nil || rule.Examples != nil {
+					documented := apiactions.UrlTemplatizationDocumentedTemplate{
+						Template: rule.Template,
+					}
+					if rule.Notes != nil {
+						documented.Notes = *rule.Notes
+					}
+					if len(rule.Examples) > 0 {
+						examples := rule.Examples
+						if len(examples) > 5 {
+							examples = examples[:5]
+						}
+						documented.Examples = append([]string(nil), examples...)
+					}
+					group.DocumentedTemplates = append(group.DocumentedTemplates, documented)
+					continue
+				}
 				group.Templates = append(group.Templates, rule.Template)
 			}
 			rules = append(rules, group)
@@ -735,6 +764,18 @@ func convertUrlTemplatizationToModel(cfg *apiactions.URLTemplatizationConfig) []
 		for _, rule := range g.Templates {
 			group.TemplatizationRules = append(group.TemplatizationRules, &model.URLTemplatizationRule{
 				Template: rule,
+			})
+		}
+		for _, documented := range g.DocumentedTemplates {
+			notes := documented.Notes
+			examples := documented.Examples
+			if examples == nil {
+				examples = []string{}
+			}
+			group.TemplatizationRules = append(group.TemplatizationRules, &model.URLTemplatizationRule{
+				Template: documented.Template,
+				Notes:    &notes,
+				Examples: examples,
 			})
 		}
 		result = append(result, group)

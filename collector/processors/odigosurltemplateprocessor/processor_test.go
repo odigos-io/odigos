@@ -201,6 +201,30 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrValue: "/user/{id}", // should exist
 		},
 		{
+			name:          "span name contains original path",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET /user/1234",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/1234",
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "span name contains original path as prefix of longer path",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET /user/12345",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/1234",
+			},
+			expectedSpanName:  "GET /user/12345", // do not replace partial path match
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
 			name:          "ignore internal span",
 			spanKind:      ptrace.SpanKindInternal,
 			inputSpanName: "GET",

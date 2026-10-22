@@ -43,12 +43,12 @@ The SBOM attestation is attached to the **multi-arch index digest** — always p
 the digest from `imagetools inspect` as above, not a per-platform child digest
 (children carry signatures but no attestation).
 
-<Accordion title="Full worked example: verifying odigos-scheduler v1.35.0">
+<Accordion title="Full worked example: verifying odigos-instrumentor v1.35.0">
 
 Run as-is — no placeholders to fill in:
 
 ```bash
-IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler
+IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-instrumentor
 TAG=v1.35.0
 DIGEST=$(docker buildx imagetools inspect "${IMG}:${TAG}" --format '{{.Manifest.Digest}}')
 IDENTITY='^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$'
@@ -67,12 +67,12 @@ cosign verify-attestation --type cyclonedx \
 Expected output (trimmed):
 
 ```text
-Verification for us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler@sha256:f46fa614… --
+Verification for us-central1-docker.pkg.dev/odigos-cloud/components/odigos-instrumentor@sha256:f46fa614… --
 The following checks were performed on each of these signatures:
   - The cosign claims were validated
   - Existence of the claims in the transparency log was verified offline
   - The code-signing certificate was verified using trusted certificate authority certificates
-[{"critical":{"identity":{"docker-reference":"…/odigos-scheduler"},
+[{"critical":{"identity":{"docker-reference":"…/odigos-instrumentor"},
   "image":{"docker-manifest-digest":"sha256:f46fa614…"},"type":"cosign container image signature"}, …}]
 
 1022
@@ -98,9 +98,8 @@ artifact is signed from lives in
 | Artifact | Release identity (regexp) |
 | --- | --- |
 | Component images (`odigos-*`) | `^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*$` |
-| CLI image + `odigos-victoria-metrics` | `^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$` |
+| CLI image + `odigos-victoria-metrics` + `odigos-cache` | `^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$` |
 | Enterprise images (`odigos-enterprise-*`) | `^https://github\.com/odigos-io/odigos-enterprise/\.github/workflows/release-images\.yml@refs/(tags/.*\|heads/.*)$` |
-| `wasp-init` | `^https://github\.com/odigos-io/ebpf-core/\.github/workflows/build-sender\.yml@refs/(heads/main\|heads/releases/.*\|tags/.*)$` |
 | `odigos-cli-offsets` | `^https://github\.com/odigos-io/enterprise-go-instrumentation/\.github/workflows/offsets-push\.yml@refs/heads/.*$` |
 | `odigos-vmagent-instrumentations` | `^https://github\.com/odigos-io/vm-agent/\.github/workflows/publish-agents\.yml@refs/(heads/.*\|tags/agents/.*)$` |
 
@@ -121,20 +120,57 @@ Two more certificate details are expected and legitimate:
 Every image below is signed and carries a CycloneDX SBOM attestation, from the
 version listed in [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/SIGNING.md):
 
-- **Odigos platform**: `odigos-autoscaler`, `odigos-scheduler`, `odigos-instrumentor`,
+- **Odigos platform**: `odigos-instrumentor`,
   `odigos-collector`, `odigos-odiglet`, `odigos-ui`, `odigos-operator`, `odigos-agents`,
-  `odigos-cli`, `odigos-victoria-metrics`
+  `odigos-cli`, `odigos-victoria-metrics`, `odigos-cache`
 - **Odigos Enterprise**: `odigos-enterprise-odiglet`, `odigos-enterprise-instrumentor`,
   `odigos-enterprise-ui`, `odigos-enterprise-collector`, `odigos-enterprise-central-proxy`,
   `odigos-enterprise-central-backend`, `odigos-enterprise-central-ui`, `odigos-enterprise-agents`,
   `odigos-enterprise-connector-runtime`, `odigos-enterprise-connector-aws`,
   `odigos-enterprise-connector-azure`, `odigos-enterprise-connector-gcp` — `odiglet`
   and `agents` also publish `-extended` variants (separate digests, same identity)
-- **Supporting images**: `wasp-init`, `odigos-cli-offsets`, and
+- **Supporting images**: `odigos-cli-offsets`, and
   `odigos-vmagent-instrumentations` (signed for publishes after 2026-08-12)
+
+## CLI binary verification
+
+Every [GitHub release](https://github.com/odigos-io/odigos/releases) ships a
+`checksums.txt` covering the CLI archives, keyless-signed by the release pipeline.
+The Sigstore bundle (`checksums.txt.sigstore.json`) is published as a release asset
+next to it. Verify the checksum file, then check your downloaded archive against it:
+
+```bash
+VERSION=<version>   # the release you downloaded, e.g. v1.40.0
+BASE=https://github.com/odigos-io/odigos/releases/download/${VERSION}
+
+curl -sfLO "${BASE}/checksums.txt"
+curl -sfLO "${BASE}/checksums.txt.sigstore.json"
+
+cosign verify-blob \
+  --bundle checksums.txt.sigstore.json \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$' \
+  checksums.txt
+
+curl -sfLO "${BASE}/cli_${VERSION#v}_linux_amd64.tar.gz"   # your platform's archive
+sha256sum -c checksums.txt --ignore-missing
+```
+
+`--ignore-missing` limits the check to the archives you actually downloaded
+(on macOS use `shasum -a 256 -c checksums.txt --ignore-missing`).
 
 ## Air-gapped verification
 
 The Rekor proof travels inside the signature bundle, so verification works offline:
 supply `--trusted-root` with a Sigstore trusted-root file instead of relying on
 `--offline` (removed in cosign 3.x).
+
+## Linux package signing keys
+
+Every `.rpm` and `.deb` we publish is signed with the current key below. The keyring at
+`https://raw.githubusercontent.com/odigos-io/odigos/main/docs/keys/odigos-package-signing-keys.asc` always contains every key that signed a published package: point `gpgkey=` at it once
+and never change it, rotation only appends.
+
+| Fingerprint | Issued | Status | Notes |
+| --- | --- | --- | --- |
+| `6E80516AF71835E5FD12E3D8272251E89CC74CFF` | 2026-10-18 | current | initial package signing key (RUN-1042) |

@@ -64,9 +64,6 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 	if config.AllowConcurrentAgents != nil {
 		provenance["allowConcurrentAgents"] = sourceName
 	}
-	if config.WaspEnabled != nil {
-		provenance["waspEnabled"] = sourceName
-	}
 	if config.Rollout != nil {
 		if config.Rollout.AutomaticRolloutDisabled != nil {
 			provenance["rollout.automaticRolloutDisabled"] = sourceName
@@ -116,6 +113,9 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 			if config.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				provenance["sampling.tailSampling.traceAggregationWaitDuration"] = sourceName
 			}
+			if config.Sampling.TailSampling.NoisyOperationsEnforcement != nil {
+				provenance["sampling.tailSampling.noisyOperationsEnforcement"] = sourceName
+			}
 		}
 		if config.Sampling.K8sHealthProbesSampling != nil {
 			if config.Sampling.K8sHealthProbesSampling.Enabled != nil {
@@ -155,19 +155,34 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 		}
 	}
 
-	if config.TraceCorrelations != nil && config.TraceCorrelations.ServiceIO != nil {
-		serviceIO := config.TraceCorrelations.ServiceIO
-		if serviceIO.Enabled != nil {
-			provenance["traceCorrelations.serviceIO.enabled"] = sourceName
+	if config.CardinalityControl != nil &&
+		config.CardinalityControl.UrlTemplatization != nil &&
+		config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
+		ltl := config.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+		if ltl.Enabled != nil {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.enabled"] = sourceName
 		}
-		if serviceIO.InputSpanAttributes != nil {
-			provenance["traceCorrelations.serviceIO.inputSpanAttributes"] = sourceName
+		if ltl.MaxExamplePathsPerWorkload != nil {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.maxExamplePathsPerWorkload"] = sourceName
 		}
-		if serviceIO.OutputSpanAttributes != nil {
-			provenance["traceCorrelations.serviceIO.outputSpanAttributes"] = sourceName
+		if ltl.PathExampleIdleTTL != "" {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL"] = sourceName
 		}
-		if serviceIO.MetricsFlushInterval != "" {
-			provenance["traceCorrelations.serviceIO.metricsFlushInterval"] = sourceName
+		if ltl.LearningInterval != "" {
+			provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval"] = sourceName
+		}
+		if ltl.RuleComputation != nil {
+			if ltl.RuleComputation.MinObservationsForRule != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minObservationsForRule"] = sourceName
+			}
+			if ltl.RuleComputation.MinCardinalityForTemplating != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minCardinalityForTemplating"] = sourceName
+			}
+		}
+		if ltl.AutomaticRules != nil {
+			if ltl.AutomaticRules.Enabled != nil {
+				provenance["cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled"] = sourceName
+			}
 		}
 	}
 }
@@ -233,18 +248,6 @@ func detectProfileProvenance(base, remote, local, effective *common.OdigosConfig
 	}
 	if !reflect.DeepEqual(preCheckHealth, effective.CheckDeviceHealthBeforeInjection) {
 		provenance["checkDeviceHealthBeforeInjection"] = "profile"
-	}
-
-	// waspEnabled: settable by overlays
-	preWasp := base.WaspEnabled
-	if remote != nil && remote.WaspEnabled != nil {
-		preWasp = remote.WaspEnabled
-	}
-	if local != nil && local.WaspEnabled != nil {
-		preWasp = local.WaspEnabled
-	}
-	if !reflect.DeepEqual(preWasp, effective.WaspEnabled) {
-		provenance["waspEnabled"] = "profile"
 	}
 
 	// metricsSources: only base config and profiles can set this

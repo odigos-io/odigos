@@ -137,11 +137,6 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 			cfg.AllowConcurrentAgents = input.AllowConcurrentAgents.Enabled
 		}
 	}
-	if input.Wasp != nil {
-		if input.Wasp.Enabled != nil {
-			cfg.WaspEnabled = input.Wasp.Enabled
-		}
-	}
 	if input.Rollout != nil {
 		if cfg.Rollout == nil {
 			cfg.Rollout = &common.RolloutConfiguration{}
@@ -182,35 +177,66 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 		}
 		applyComponentLogLevelsInput(cfg.ComponentLogLevels, input.ComponentLogLevels)
 	}
-	if input.TraceCorrelations != nil {
-		applyTraceCorrelationsInput(cfg, input.TraceCorrelations)
+	if input.CardinalityControl != nil {
+		applyCardinalityControlInput(cfg, input.CardinalityControl)
 	}
 }
 
-func applyTraceCorrelationsInput(cfg *common.OdigosConfiguration, input *model.LocalUIConfigTraceCorrelationsInput) {
-	if input == nil || input.ServiceIo == nil {
+func applyCardinalityControlInput(cfg *common.OdigosConfiguration, input *model.LocalUIConfigCardinalityControlInput) {
+	if input == nil || input.URLTemplatization == nil || input.URLTemplatization.LiveTrafficLearning == nil {
+		return
+	}
+	ltlInput := input.URLTemplatization.LiveTrafficLearning
+	// enabled is Helm-only; UI overlays may set maxExamplePathsPerWorkload,
+	// pathExampleIdleTTL, learningInterval, ruleComputation, and automaticRules.
+	if ltlInput.AutomaticRules == nil &&
+		ltlInput.RuleComputation == nil &&
+		ltlInput.MaxExamplePathsPerWorkload == nil &&
+		ltlInput.PathExampleIdleTTL == nil &&
+		ltlInput.LearningInterval == nil {
 		return
 	}
 
-	if cfg.TraceCorrelations == nil {
-		cfg.TraceCorrelations = &common.TraceCorrelationsConfiguration{}
+	if cfg.CardinalityControl == nil {
+		cfg.CardinalityControl = &common.CardinalityControlConfiguration{}
 	}
-	if cfg.TraceCorrelations.ServiceIO == nil {
-		cfg.TraceCorrelations.ServiceIO = &common.TraceCorrelationsServiceIOConfiguration{}
+	if cfg.CardinalityControl.UrlTemplatization == nil {
+		cfg.CardinalityControl.UrlTemplatization = &common.UrlTemplatizationCardinalityControlConfiguration{}
+	}
+	if cfg.CardinalityControl.UrlTemplatization.LiveTrafficLearning == nil {
+		cfg.CardinalityControl.UrlTemplatization.LiveTrafficLearning = &common.LiveTrafficLearningConfiguration{}
 	}
 
-	serviceIO := input.ServiceIo
-	if serviceIO.Enabled != nil {
-		cfg.TraceCorrelations.ServiceIO.Enabled = serviceIO.Enabled
+	ltl := cfg.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+	if ltlInput.MaxExamplePathsPerWorkload != nil {
+		ltl.MaxExamplePathsPerWorkload = ltlInput.MaxExamplePathsPerWorkload
 	}
-	if serviceIO.InputSpanAttributes != nil {
-		cfg.TraceCorrelations.ServiceIO.InputSpanAttributes = serviceIO.InputSpanAttributes
+	if ltlInput.PathExampleIdleTTL != nil {
+		ltl.PathExampleIdleTTL = *ltlInput.PathExampleIdleTTL
 	}
-	if serviceIO.OutputSpanAttributes != nil {
-		cfg.TraceCorrelations.ServiceIO.OutputSpanAttributes = serviceIO.OutputSpanAttributes
+	if ltlInput.LearningInterval != nil {
+		ltl.LearningInterval = *ltlInput.LearningInterval
 	}
-	if serviceIO.MetricsFlushInterval != nil {
-		cfg.TraceCorrelations.ServiceIO.MetricsFlushInterval = *serviceIO.MetricsFlushInterval
+	if ltlInput.RuleComputation != nil {
+		if ltl.RuleComputation == nil {
+			ltl.RuleComputation = &common.LiveTrafficLearningRuleComputationConfiguration{}
+		}
+		if ltlInput.RuleComputation.MinObservationsForRule != nil {
+			ltl.RuleComputation.MinObservationsForRule = ltlInput.RuleComputation.MinObservationsForRule
+		}
+		if ltlInput.RuleComputation.MinCardinalityForTemplating != nil {
+			ltl.RuleComputation.MinCardinalityForTemplating = ltlInput.RuleComputation.MinCardinalityForTemplating
+		}
+	}
+	if ltlInput.AutomaticRules == nil {
+		return
+	}
+	if ltl.AutomaticRules == nil {
+		ltl.AutomaticRules = &common.LiveTrafficLearningAutomaticRulesConfiguration{}
+	}
+
+	if ltlInput.AutomaticRules.Enabled != nil {
+		ltl.AutomaticRules.Enabled = ltlInput.AutomaticRules.Enabled
 	}
 }
 
@@ -244,6 +270,10 @@ func applySamplingInput(cfg *common.SamplingConfiguration, input *model.LocalUIC
 		}
 		if input.TailSampling.TraceAggregationWaitDuration != nil {
 			cfg.TailSampling.TraceAggregationWaitDuration = input.TailSampling.TraceAggregationWaitDuration
+		}
+		if input.TailSampling.NoisyOperationsEnforcement != nil {
+			enforcement := sampling.NoisyOperationsEnforcement(*input.TailSampling.NoisyOperationsEnforcement)
+			cfg.TailSampling.NoisyOperationsEnforcement = &enforcement
 		}
 	}
 	if input.K8sHealthProbesSampling != nil {

@@ -26,38 +26,66 @@ func (s *SignalFx) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	config := dest.GetConfig()
 	realm := config[signalfxRealm]
 
-	exporterName := "signalfx/" + dest.GetID()
-	exporterConfig := GenericMap{
-		"access_token": "${SIGNALFX_ACCESS_TOKEN}",
-		"realm":        realm,
-		"api_url":      fmt.Sprintf("https://api.%s.signalfx.com", realm),
-		"ingest_url":   fmt.Sprintf("https://ingest.%s.signalfx.com", realm),
+	var pipelineNames []string
+
+	if isMetricsEnabled(dest) {
+		exporterName := "signalfx/" + dest.GetID()
+		exporterConfig := GenericMap{
+			"access_token": SecretEnvPlaceholder("SIGNALFX_ACCESS_TOKEN", dest),
+			"realm":        realm,
+			"api_url":      fmt.Sprintf("https://api.%s.signalfx.com", realm),
+			"ingest_url":   fmt.Sprintf("https://ingest.%s.signalfx.com", realm),
+		}
+		if tlsConfig := signalfxTLSConfig(config); tlsConfig != nil {
+			exporterConfig["tls"] = tlsConfig
+		}
+		currentConfig.Exporters[exporterName] = exporterConfig
+
+		pipelineName := "metrics/signalfx-" + dest.GetID()
+		currentConfig.Service.Pipelines[pipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+		pipelineNames = append(pipelineNames, pipelineName)
 	}
 
-	// Add TLS config if CA PEM or insecure skip verify is set
+	// The signalfx exporter handles metrics and events only, so traces go to the same
+	// Splunk Observability Cloud realm over OTLP/HTTP, as the legacy splunk destination does.
+	if isTracingEnabled(dest) {
+		exporterName := "otlp_http/signalfx-" + dest.GetID()
+		exporterConfig := GenericMap{
+			"traces_endpoint": fmt.Sprintf("https://ingest.%s.signalfx.com/v2/trace/otlp", realm),
+			"headers": GenericMap{
+				"X-SF-Token": SecretEnvPlaceholder("SIGNALFX_ACCESS_TOKEN", dest),
+			},
+		}
+		if tlsConfig := signalfxTLSConfig(config); tlsConfig != nil {
+			exporterConfig["tls"] = tlsConfig
+		}
+		currentConfig.Exporters[exporterName] = exporterConfig
+
+		pipelineName := "traces/signalfx-" + dest.GetID()
+		currentConfig.Service.Pipelines[pipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+		pipelineNames = append(pipelineNames, pipelineName)
+	}
+
+	return pipelineNames, nil
+}
+
+// signalfxTLSConfig returns the exporter tls block when the destination customizes TLS, and nil
+// otherwise. A fresh map is returned on every call so exporters never share one.
+func signalfxTLSConfig(config map[string]string) GenericMap {
 	caPem := config[signalfxCaPem]
 	insecureSkipVerify := config[signalfxInsecureSkipVerify] == "true"
 
-	if caPem != "" || insecureSkipVerify {
-		tlsConfig := GenericMap{}
-		if caPem != "" {
-			tlsConfig["ca_file"] = SignalfxCaMountPath + "/" + signalfxCaPem
-		}
-		if insecureSkipVerify {
-			tlsConfig["insecure_skip_verify"] = true
-		} else {
-			tlsConfig["insecure_skip_verify"] = false
-		}
-		exporterConfig["tls"] = tlsConfig
+	if caPem == "" && !insecureSkipVerify {
+		return nil
 	}
 
-	currentConfig.Exporters[exporterName] = exporterConfig
-
-	// Configure metrics pipeline only
-	pipelineName := "metrics/signalfx-" + dest.GetID()
-	currentConfig.Service.Pipelines[pipelineName] = Pipeline{
-		Exporters: []string{exporterName},
+	tlsConfig := GenericMap{"insecure_skip_verify": insecureSkipVerify}
+	if caPem != "" {
+		tlsConfig["ca_file"] = SignalfxCaMountPath + "/" + signalfxCaPem
 	}
-
-	return []string{pipelineName}, nil
+	return tlsConfig
 }

@@ -55,6 +55,8 @@ type InstrumentationRule {
   disabled: Boolean
   mutable: Boolean!
   profileName: String!
+  # Which Odigos surface owns this InstrumentationRule (metadata label odigos.io/managed-by).
+  managedBy: ManagedBy!
   sourcesScopes: [InstrumentationRuleSourcesScope!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   conditions: [Condition!]
@@ -104,10 +106,17 @@ type HeadersCollection {
 }
 
 #### CUSTOM PROBES ####
+enum CustomProbeCategory {
+  observability
+  security
+  performance
+}
+
 type CustomInstrumentations {
   golang: [GolangCustomProbe]
   java: [JavaCustomProbe]
   php: [PhpCustomProbe]
+  cpp: [CppCustomProbe]
 }
 
 type GolangCustomProbe {
@@ -115,22 +124,39 @@ type GolangCustomProbe {
   functionName: String
   receiverName: String
   receiverMethodName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 type JavaCustomProbe {
   className: String
   methodName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 type PhpCustomProbe {
   className: String
   functionName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
+}
+
+type CppCustomProbe {
+  signature: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 input CustomInstrumentationsInput {
   golang: [GolangCustomProbeInput]
   java: [JavaCustomProbeInput]
   php: [PhpCustomProbeInput]
+  cpp: [CppCustomProbeInput]
 }
 
 input GolangCustomProbeInput {
@@ -138,16 +164,32 @@ input GolangCustomProbeInput {
   functionName: String
   receiverName: String
   receiverMethodName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 input JavaCustomProbeInput {
   className: String
   methodName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 
 input PhpCustomProbeInput {
   className: String
   functionName: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
+}
+
+input CppCustomProbeInput {
+  signature: String
+  notes: String
+  category: CustomProbeCategory
+  addedAt: String
 }
 #### END CUSTOM PROBES ####
 

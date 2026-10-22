@@ -34,8 +34,8 @@ func (j *Bonree) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"x-br-acid": "${BONREE_ACCOUNT_ID}",
-			"x-br-eid":  "${BONREE_ENVIRONMENT_ID}",
+			"x-br-acid": SecretEnvPlaceholder("BONREE_ACCOUNT_ID", dest),
+			"x-br-eid":  SecretEnvPlaceholder("BONREE_ENVIRONMENT_ID", dest),
 		},
 	}
 

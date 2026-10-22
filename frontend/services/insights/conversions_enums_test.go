@@ -52,6 +52,9 @@ func TestEnumBridgesKeepBothVocabulariesInSync(t *testing.T) {
 	t.Run("rule mode", func(t *testing.T) {
 		assertEnumBridge(t, model.AllInsightsRuleMode, RuleModeToModel, RuleModeFromModel)
 	})
+	t.Run("correlation relation", func(t *testing.T) {
+		assertEnumBridge(t, model.AllInsightsCorrelationRelation, CorrelationRelationToModel, CorrelationRelationFromModel)
+	})
 	t.Run("learning mode", func(t *testing.T) {
 		assertEnumBridge(t, model.AllInsightsLearningMode, LearningModeToModel, LearningModeFromModel)
 	})

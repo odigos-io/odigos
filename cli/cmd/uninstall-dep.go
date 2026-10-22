@@ -17,11 +17,12 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/cli/pkg/log"
-	"github.com/odigos-io/odigos/common/consts"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -108,27 +109,6 @@ and rollback any metadata changes made to your objects.`,
 				// In CLI logic, this is done in UninstallClusterResources after the Odiglet is deleted.
 				cmdutil.CreateKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
 					client, ns, k8sconsts.OdigosSystemLabelKey, cleanupNodeOdigosLabels)
-				// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
-				// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
-				// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.
-				config, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
-				if err != nil && apierrors.IsNotFound(err) {
-					// If the ConfigMap does not exist, we can safely exit.
-					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
-					return
-				} else if err != nil {
-					fmt.Printf("\033[31mERROR\033[0m Failed to get legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
-					os.Exit(1)
-				}
-				if val, ok := config.Labels[k8sconsts.AppManagedByHelmLabel]; ok && val == k8sconsts.AppManagedByHelmValue {
-					err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
-					if err != nil {
-						fmt.Printf("\033[31mERROR\033[0m Failed to delete legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
-						os.Exit(1)
-					} else {
-						fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.OdigosLegacyConfigName, ns)
-					}
-				}
 				fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
 				return
 			}
@@ -207,6 +187,9 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 
 	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallCRDs)
+
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos APIService",
+		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallCustomMetricsAPIService)
 
 }
 
@@ -470,6 +453,28 @@ func uninstallValidatingWebhookConfigs(ctx context.Context, client *kube.Client,
 	}
 
 	return nil
+}
+
+func uninstallCustomMetricsAPIService(ctx context.Context, client *kube.Client, ns, _ string) error {
+	gvr := schema.GroupVersionResource{
+		Group:    "apiregistration.k8s.io",
+		Version:  "v1",
+		Resource: "apiservices",
+	}
+	obj, err := client.Dynamic.Resource(gvr).Get(ctx, k8sconsts.CustomMetricsAPIServiceName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	serviceName, _, _ := unstructured.NestedString(obj.Object, "spec", "service", "name")
+	if serviceName != k8sconsts.AutoScalerWebhookServiceName && serviceName != k8sconsts.InstrumentorServiceName {
+		return nil
+	}
+
+	return client.Dynamic.Resource(gvr).Delete(ctx, k8sconsts.CustomMetricsAPIServiceName, metav1.DeleteOptions{})
 }
 
 func uninstallRBAC(ctx context.Context, client *kube.Client, ns, _ string) error {

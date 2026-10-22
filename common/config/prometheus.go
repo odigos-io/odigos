@@ -77,7 +77,7 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 			currentConfig.Extensions[authExtensionName] = GenericMap{
 				"client_auth": GenericMap{
 					"username": username,
-					"password": fmt.Sprintf("${%s}", promBasicAuthPasswordKey),
+					"password": SecretEnvPlaceholder(promBasicAuthPasswordKey, dest),
 				},
 			}
 			exporterConfig["auth"] = GenericMap{
@@ -89,7 +89,7 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 			// Token may be in config map or in a Secret (injected as env var)
 			authExtensionName := "bearertokenauth/" + uniqueUri
 			currentConfig.Extensions[authExtensionName] = GenericMap{
-				"token": fmt.Sprintf("${%s}", promAuthHeaderKey),
+				"token": SecretEnvPlaceholder(promAuthHeaderKey, dest),
 			}
 			exporterConfig["auth"] = GenericMap{
 				"authenticator": authExtensionName,

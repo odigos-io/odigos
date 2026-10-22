@@ -64,7 +64,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"x-api-key": "${APPDYNAMICS_API_KEY}",
+			"x-api-key": SecretEnvPlaceholder("APPDYNAMICS_API_KEY", dest),
 		},
 	}
 

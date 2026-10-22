@@ -178,12 +178,6 @@ spec:
                   - percentageAtMost
                   type: object
                 type: array
-              disabled:
-                description: |-
-                  if set to true, the sampling rules will be disabled,
-                  they will not be taken into account for any sampling decisions.
-                  useful if you want to temporarily disable the rules but re-enable them later,
-                type: boolean
               highlyRelevantOperations:
                 items:
                   description: |-

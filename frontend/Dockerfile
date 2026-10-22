@@ -20,7 +20,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/webapp .
 RUN yarn build
 
-FROM --platform=$BUILDPLATFORM golang:1.26.6 AS backend
+FROM --platform=$BUILDPLATFORM golang:1.26.9 AS backend
 WORKDIR /app
 # Copy only the go.mod/go.sum of the frontend module and its locally-replaced
 # deps first. This lets `go mod download` be cached independently of source
@@ -30,6 +30,7 @@ COPY api/go.mod api/go.sum ./api/
 COPY common/go.mod common/go.sum ./common/
 COPY config/go.mod config/go.sum ./config/
 COPY destinations/go.mod destinations/go.sum ./destinations/
+COPY distros/go.mod distros/go.sum ./distros/
 COPY actions/go.mod actions/go.sum ./actions/
 COPY instrumentationrules/go.mod instrumentationrules/go.sum ./instrumentationrules/
 COPY k8sutils/go.mod k8sutils/go.sum ./k8sutils/
@@ -46,6 +47,7 @@ COPY api ./api
 COPY common ./common
 COPY config ./config
 COPY destinations ./destinations
+COPY distros ./distros
 COPY actions ./actions
 COPY instrumentationrules ./instrumentationrules
 COPY k8sutils ./k8sutils

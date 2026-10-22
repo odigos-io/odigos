@@ -11,59 +11,61 @@ import (
 
 func noisyOperationFromInput(input model.NoisyOperationRuleInput) v1alpha1.NoisyOperation {
 	return v1alpha1.NoisyOperation{
-		Name:             services.DerefString(input.Name),
-		Disabled:         services.DerefBool(input.Disabled),
-		SourceScopes:     services.SourcesScopesInputToCRD(input.SourceScopes),
-		Operation:        headSamplingOperationMatcherInputToCRD(input.Operation),
-		PercentageAtMost: input.PercentageAtMost,
-		Notes:            services.DerefString(input.Notes),
+		Name:             services.DerefString(input.Name.Value()),
+		Disabled:         services.DerefBool(input.Disabled.Value()),
+		SourceScopes:     services.SourcesScopesInputToCRD(input.SourceScopes.Value()),
+		Operation:        headSamplingOperationMatcherInputToCRD(input.Operation.Value()),
+		PercentageAtMost: input.PercentageAtMost.Value(),
+		Notes:            services.DerefString(input.Notes.Value()),
 	}
 }
 
 func highlyRelevantOperationFromInput(input model.HighlyRelevantOperationRuleInput) v1alpha1.HighlyRelevantOperation {
 	return v1alpha1.HighlyRelevantOperation{
-		Name:              services.DerefString(input.Name),
-		Disabled:          services.DerefBool(input.Disabled),
-		SourceScopes:      services.SourcesScopesInputToCRD(input.SourceScopes),
-		Error:             services.DerefBool(input.Error),
-		DurationAtLeastMs: input.DurationAtLeastMs,
-		Operation:         tailSamplingOperationMatcherInputToCRD(input.Operation),
-		PercentageAtLeast: input.PercentageAtLeast,
-		Notes:             services.DerefString(input.Notes),
+		Name:              services.DerefString(input.Name.Value()),
+		Disabled:          services.DerefBool(input.Disabled.Value()),
+		SourceScopes:      services.SourcesScopesInputToCRD(input.SourceScopes.Value()),
+		Error:             services.DerefBool(input.Error.Value()),
+		DurationAtLeastMs: input.DurationAtLeastMs.Value(),
+		Operation:         tailSamplingOperationMatcherInputToCRD(input.Operation.Value()),
+		PercentageAtLeast: input.PercentageAtLeast.Value(),
+		Notes:             services.DerefString(input.Notes.Value()),
 	}
 }
 
 func costReductionRuleFromInput(input model.CostReductionRuleInput) v1alpha1.CostReductionRule {
 	return v1alpha1.CostReductionRule{
-		Name:             services.DerefString(input.Name),
-		Disabled:         services.DerefBool(input.Disabled),
-		SourceScopes:     services.SourcesScopesInputToCRD(input.SourceScopes),
-		Operation:        tailSamplingOperationMatcherInputToCRD(input.Operation),
+		Name:             services.DerefString(input.Name.Value()),
+		Disabled:         services.DerefBool(input.Disabled.Value()),
+		SourceScopes:     services.SourcesScopesInputToCRD(input.SourceScopes.Value()),
+		Operation:        tailSamplingOperationMatcherInputToCRD(input.Operation.Value()),
 		PercentageAtMost: input.PercentageAtMost,
-		Notes:            services.DerefString(input.Notes),
+		Notes:            services.DerefString(input.Notes.Value()),
 	}
 }
 
-// Nil SourceScopes/Operation match all sources/operations; preserve them on GraphQL omit.
+// Updates are partial: a field omitted from the GraphQL input keeps its current value, while an
+// explicit null clears it. Nil SourceScopes/Operation match all sources/operations, so null is how
+// a client widens a scoped rule, and omission must not silently widen one.
 
 func mergeNoisyOperationUpdate(existing v1alpha1.NoisyOperation, input model.NoisyOperationRuleInput) v1alpha1.NoisyOperation {
 	rule := noisyOperationFromInput(input)
-	if input.Name == nil {
+	if !input.Name.IsSet() {
 		rule.Name = existing.Name
 	}
-	if input.Disabled == nil {
+	if !input.Disabled.IsSet() {
 		rule.Disabled = existing.Disabled
 	}
-	if input.SourceScopes == nil {
+	if !input.SourceScopes.IsSet() {
 		rule.SourceScopes = existing.SourceScopes
 	}
-	if input.Operation == nil {
+	if !input.Operation.IsSet() {
 		rule.Operation = existing.Operation
 	}
-	if input.PercentageAtMost == nil {
+	if !input.PercentageAtMost.IsSet() {
 		rule.PercentageAtMost = existing.PercentageAtMost
 	}
-	if input.Notes == nil {
+	if !input.Notes.IsSet() {
 		rule.Notes = existing.Notes
 	}
 	return rule
@@ -71,28 +73,28 @@ func mergeNoisyOperationUpdate(existing v1alpha1.NoisyOperation, input model.Noi
 
 func mergeHighlyRelevantOperationUpdate(existing v1alpha1.HighlyRelevantOperation, input model.HighlyRelevantOperationRuleInput) v1alpha1.HighlyRelevantOperation {
 	rule := highlyRelevantOperationFromInput(input)
-	if input.Name == nil {
+	if !input.Name.IsSet() {
 		rule.Name = existing.Name
 	}
-	if input.Disabled == nil {
+	if !input.Disabled.IsSet() {
 		rule.Disabled = existing.Disabled
 	}
-	if input.SourceScopes == nil {
+	if !input.SourceScopes.IsSet() {
 		rule.SourceScopes = existing.SourceScopes
 	}
-	if input.Error == nil {
+	if !input.Error.IsSet() {
 		rule.Error = existing.Error
 	}
-	if input.DurationAtLeastMs == nil {
+	if !input.DurationAtLeastMs.IsSet() {
 		rule.DurationAtLeastMs = existing.DurationAtLeastMs
 	}
-	if input.Operation == nil {
+	if !input.Operation.IsSet() {
 		rule.Operation = existing.Operation
 	}
-	if input.PercentageAtLeast == nil {
+	if !input.PercentageAtLeast.IsSet() {
 		rule.PercentageAtLeast = existing.PercentageAtLeast
 	}
-	if input.Notes == nil {
+	if !input.Notes.IsSet() {
 		rule.Notes = existing.Notes
 	}
 	return rule
@@ -100,19 +102,19 @@ func mergeHighlyRelevantOperationUpdate(existing v1alpha1.HighlyRelevantOperatio
 
 func mergeCostReductionRuleUpdate(existing v1alpha1.CostReductionRule, input model.CostReductionRuleInput) v1alpha1.CostReductionRule {
 	rule := costReductionRuleFromInput(input)
-	if input.Name == nil {
+	if !input.Name.IsSet() {
 		rule.Name = existing.Name
 	}
-	if input.Disabled == nil {
+	if !input.Disabled.IsSet() {
 		rule.Disabled = existing.Disabled
 	}
-	if input.SourceScopes == nil {
+	if !input.SourceScopes.IsSet() {
 		rule.SourceScopes = existing.SourceScopes
 	}
-	if input.Operation == nil {
+	if !input.Operation.IsSet() {
 		rule.Operation = existing.Operation
 	}
-	if input.Notes == nil {
+	if !input.Notes.IsSet() {
 		rule.Notes = existing.Notes
 	}
 	return rule

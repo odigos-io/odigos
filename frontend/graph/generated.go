@@ -45,6 +45,8 @@ type ResolverRoot interface {
 	K8sActualSource() K8sActualSourceResolver
 	K8sNamespace() K8sNamespaceResolver
 	K8sWorkload() K8sWorkloadResolver
+	K8sWorkloadContainer() K8sWorkloadContainerResolver
+	K8sWorkloadContainerUrlTemplatization() K8sWorkloadContainerUrlTemplatizationResolver
 	K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver
 	K8sWorkloadRollout() K8sWorkloadRolloutResolver
 	K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver
@@ -64,6 +66,7 @@ type ComplexityRoot struct {
 		Disabled    func(childComplexity int) int
 		Fields      func(childComplexity int) int
 		ID          func(childComplexity int) int
+		ManagedBy   func(childComplexity int) int
 		Name        func(childComplexity int) int
 		Notes       func(childComplexity int) int
 		Signals     func(childComplexity int) int
@@ -137,6 +140,10 @@ type ComplexityRoot struct {
 		Disabled            func(childComplexity int) int
 		GraceTime           func(childComplexity int) int
 		StabilityWindowTime func(childComplexity int) int
+	}
+
+	CardinalityControlConfig struct {
+		URLTemplatization func(childComplexity int) int
 	}
 
 	ClearProfilingBufferResult struct {
@@ -324,12 +331,20 @@ type ComplexityRoot struct {
 		SourceScopes     func(childComplexity int) int
 	}
 
+	CppCustomProbe struct {
+		AddedAt   func(childComplexity int) int
+		Category  func(childComplexity int) int
+		Notes     func(childComplexity int) int
+		Signature func(childComplexity int) int
+	}
+
 	CustomFormatMasking struct {
 		DataFormat func(childComplexity int) int
 		LookupKey  func(childComplexity int) int
 	}
 
 	CustomInstrumentations struct {
+		Cpp    func(childComplexity int) int
 		Golang func(childComplexity int) int
 		Java   func(childComplexity int) int
 		Php    func(childComplexity int) int
@@ -442,6 +457,7 @@ type ComplexityRoot struct {
 		AllowConcurrentAgents            func(childComplexity int) int
 		AllowedTestConnectionHosts       func(childComplexity int) int
 		AutoRollback                     func(childComplexity int) int
+		CardinalityControl               func(childComplexity int) int
 		CentralBackendURL                func(childComplexity int) int
 		ClickhouseJSONTypeEnabled        func(childComplexity int) int
 		ClusterName                      func(childComplexity int) int
@@ -475,7 +491,6 @@ type ComplexityRoot struct {
 		Sampling                         func(childComplexity int) int
 		SkipWebhookIssuerCreation        func(childComplexity int) int
 		TelemetryEnabled                 func(childComplexity int) int
-		TraceCorrelations                func(childComplexity int) int
 		TraceIDSuffix                    func(childComplexity int) int
 		UIMode                           func(childComplexity int) int
 		UIPaginationLimit                func(childComplexity int) int
@@ -539,8 +554,58 @@ type ComplexityRoot struct {
 		Categories func(childComplexity int) int
 	}
 
+	GoOffsetMinorVersion struct {
+		MinorVersion func(childComplexity int) int
+		Versions     func(childComplexity int) int
+	}
+
+	GoOffsetMinorVersionUpdate struct {
+		IsNew        func(childComplexity int) int
+		IsRemoved    func(childComplexity int) int
+		MinorVersion func(childComplexity int) int
+		Versions     func(childComplexity int) int
+	}
+
+	GoOffsetModule struct {
+		MaxVersion    func(childComplexity int) int
+		MinVersion    func(childComplexity int) int
+		MinorVersions func(childComplexity int) int
+		Module        func(childComplexity int) int
+	}
+
+	GoOffsetModuleUpdate struct {
+		IsNew         func(childComplexity int) int
+		IsRemoved     func(childComplexity int) int
+		MaxVersion    func(childComplexity int) int
+		MinVersion    func(childComplexity int) int
+		MinorVersions func(childComplexity int) int
+		Module        func(childComplexity int) int
+	}
+
+	GoOffsetVersionUpdate struct {
+		IsNew     func(childComplexity int) int
+		IsRemoved func(childComplexity int) int
+		Version   func(childComplexity int) int
+	}
+
+	GoOffsets struct {
+		Installed func(childComplexity int) int
+		Mods      func(childComplexity int) int
+		Timestamp func(childComplexity int) int
+	}
+
+	GoOffsetsUpdateCheck struct {
+		CurrentTimestamp  func(childComplexity int) int
+		HasUpdates        func(childComplexity int) int
+		Mods              func(childComplexity int) int
+		ProposedTimestamp func(childComplexity int) int
+	}
+
 	GolangCustomProbe struct {
+		AddedAt            func(childComplexity int) int
+		Category           func(childComplexity int) int
 		FunctionName       func(childComplexity int) int
+		Notes              func(childComplexity int) int
 		PackageName        func(childComplexity int) int
 		ReceiverMethodName func(childComplexity int) int
 		ReceiverName       func(childComplexity int) int
@@ -601,26 +666,34 @@ type ComplexityRoot struct {
 	}
 
 	Insights struct {
-		Anomalies           func(childComplexity int, windowHours *int, service *string, namespace *string, status *string) int
-		Anomaly             func(childComplexity int, transactionID string, signature string) int
-		Baseline            func(childComplexity int, transactionID string) int
-		BlastRadius         func(childComplexity int, namespace *string, service string, depth *int) int
-		Catalog             func(childComplexity int) int
-		Findings            func(childComplexity int, windowHours *int, service *string, namespace *string, status *string, kind *model.InsightsFindingKind) int
-		GuardrailViolation  func(childComplexity int, scopeKey string, ruleKey string, offending string) int
-		GuardrailViolations func(childComplexity int, windowHours *int, service *string, namespace *string, status *string) int
-		Guardrails          func(childComplexity int) int
-		LearningPolicies    func(childComplexity int) int
-		Observation         func(childComplexity int, transactionID string, traceID string) int
-		Observations        func(childComplexity int, transactionID string, sampleReason *model.InsightsSampleReason) int
-		Policies            func(childComplexity int) int
-		ServiceNames        func(childComplexity int) int
-		ServiceProfile      func(childComplexity int, namespace *string, service string) int
-		Services            func(childComplexity int) int
-		StorageHealth       func(childComplexity int) int
-		SystemSettings      func(childComplexity int) int
-		Transaction         func(childComplexity int, id string) int
-		Transactions        func(childComplexity int, namespace *string, service *string, kind *model.InsightsTransactionKind, windowHours *int) int
+		Anomalies             func(childComplexity int, windowHours *int, service *string, namespace *string, status *string) int
+		Anomaly               func(childComplexity int, transactionID string, signature string) int
+		Baseline              func(childComplexity int, transactionID string) int
+		BlastRadius           func(childComplexity int, namespace *string, service string, depth *int) int
+		Catalog               func(childComplexity int) int
+		FindingDeliveries     func(childComplexity int, findingKey string) int
+		Findings              func(childComplexity int, windowHours *int, service *string, namespace *string, status *string, kind *model.InsightsFindingKind) int
+		GuardrailViolation    func(childComplexity int, scopeKey string, ruleKey string, offending string) int
+		GuardrailViolations   func(childComplexity int, windowHours *int, service *string, namespace *string, status *string) int
+		Guardrails            func(childComplexity int) int
+		Integration           func(childComplexity int, id string) int
+		IntegrationAttempts   func(childComplexity int, integrationID string, limit *int) int
+		IntegrationCatalog    func(childComplexity int) int
+		IntegrationDeliveries func(childComplexity int, integrationID string, state *model.InsightsDeliveryState, limit *int) int
+		Integrations          func(childComplexity int) int
+		LearningPolicies      func(childComplexity int) int
+		Observation           func(childComplexity int, transactionID string, traceID string) int
+		Observations          func(childComplexity int, transactionID string, sampleReason *model.InsightsSampleReason) int
+		Policies              func(childComplexity int) int
+		Recommendation        func(childComplexity int, id string) int
+		Recommendations       func(childComplexity int, kind *model.InsightsRecommendationKind, state *model.InsightsRecommendationState, transactionID *string, service *string, namespace *string, includeStale *bool) int
+		ServiceNames          func(childComplexity int) int
+		ServiceProfile        func(childComplexity int, namespace *string, service string) int
+		Services              func(childComplexity int) int
+		StorageHealth         func(childComplexity int) int
+		SystemSettings        func(childComplexity int) int
+		Transaction           func(childComplexity int, id string) int
+		Transactions          func(childComplexity int, namespace *string, service *string, kind *model.InsightsTransactionKind, windowHours *int) int
 	}
 
 	InsightsAnomalyAttrHighlight struct {
@@ -712,6 +785,7 @@ type ComplexityRoot struct {
 		ObservationCount             func(childComplexity int) int
 		ObservationCountAtLastChange func(childComplexity int) int
 		Promoted                     func(childComplexity int) int
+		Saturated                    func(childComplexity int) int
 		TransactionID                func(childComplexity int) int
 	}
 
@@ -841,6 +915,56 @@ type ComplexityRoot struct {
 		Weight      func(childComplexity int) int
 	}
 
+	InsightsCorrelationSelector struct {
+		Attr    func(childComplexity int) int
+		Extract func(childComplexity int) int
+		Service func(childComplexity int) int
+		Span    func(childComplexity int) int
+	}
+
+	InsightsCorrelationSpec struct {
+		Left     func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Relation func(childComplexity int) int
+		Right    func(childComplexity int) int
+		Severity func(childComplexity int) int
+		Why      func(childComplexity int) int
+	}
+
+	InsightsDelivery struct {
+		Attempts          func(childComplexity int) int
+		ExternalID        func(childComplexity int) int
+		FindingKey        func(childComplexity int) int
+		IntegrationID     func(childComplexity int) int
+		LastAction        func(childComplexity int) int
+		LastError         func(childComplexity int) int
+		NextAttemptAt     func(childComplexity int) int
+		OccurrencesAtSend func(childComplexity int) int
+		SentAt            func(childComplexity int) int
+		SeverityAtSend    func(childComplexity int) int
+		State             func(childComplexity int) int
+		StatusAtSend      func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
+	}
+
+	InsightsDeliveryAttempt struct {
+		Action        func(childComplexity int) int
+		Attempt       func(childComplexity int) int
+		AttemptedAt   func(childComplexity int) int
+		DurationMs    func(childComplexity int) int
+		Error         func(childComplexity int) int
+		EventCount    func(childComplexity int) int
+		FindingKey    func(childComplexity int) int
+		HTTPStatus    func(childComplexity int) int
+		IntegrationID func(childComplexity int) int
+		Outcome       func(childComplexity int) int
+	}
+
+	InsightsDeliverySettings struct {
+		ExcludedIntegrationIds func(childComplexity int) int
+		Muted                  func(childComplexity int) int
+	}
+
 	InsightsEnricherList struct {
 		Default func(childComplexity int) int
 		Hint    func(childComplexity int) int
@@ -865,23 +989,26 @@ type ComplexityRoot struct {
 		Severity           func(childComplexity int) int
 		Signature          func(childComplexity int) int
 		Status             func(childComplexity int) int
+		Summary            func(childComplexity int) int
 		Title              func(childComplexity int) int
 		TransactionID      func(childComplexity int) int
 		TriggeredClasses   func(childComplexity int) int
 	}
 
 	InsightsGuardrail struct {
+		Delivery func(childComplexity int) int
 		Rules    func(childComplexity int) int
 		Scope    func(childComplexity int) int
 		ScopeKey func(childComplexity int) int
 	}
 
 	InsightsGuardrailRule struct {
-		Allowlist func(childComplexity int) int
-		Key       func(childComplexity int) int
-		Label     func(childComplexity int) int
-		Mode      func(childComplexity int) int
-		Origin    func(childComplexity int) int
+		Allowlist    func(childComplexity int) int
+		Correlations func(childComplexity int) int
+		Key          func(childComplexity int) int
+		Label        func(childComplexity int) int
+		Mode         func(childComplexity int) int
+		Origin       func(childComplexity int) int
 	}
 
 	InsightsGuardrailViolation struct {
@@ -913,6 +1040,61 @@ type ComplexityRoot struct {
 		SpanHighlights func(childComplexity int) int
 		Status         func(childComplexity int) int
 		Summary        func(childComplexity int) int
+	}
+
+	InsightsIntegration struct {
+		Config    func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Enabled   func(childComplexity int) int
+		Filters   func(childComplexity int) int
+		Health    func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Type      func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+	}
+
+	InsightsIntegrationCapabilities struct {
+		MaxBatch          func(childComplexity int) int
+		NeedsHeartbeat    func(childComplexity int) int
+		ReturnsExternalID func(childComplexity int) int
+		SupportsResolve   func(childComplexity int) int
+	}
+
+	InsightsIntegrationDescriptor struct {
+		Capabilities func(childComplexity int) int
+		Description  func(childComplexity int) int
+		DocsURL      func(childComplexity int) int
+		Fields       func(childComplexity int) int
+		Name         func(childComplexity int) int
+		Type         func(childComplexity int) int
+	}
+
+	InsightsIntegrationFieldSpec struct {
+		Default     func(childComplexity int) int
+		Help        func(childComplexity int) int
+		Key         func(childComplexity int) int
+		Label       func(childComplexity int) int
+		Options     func(childComplexity int) int
+		Placeholder func(childComplexity int) int
+		Required    func(childComplexity int) int
+		Type        func(childComplexity int) int
+	}
+
+	InsightsIntegrationFilters struct {
+		Kinds           func(childComplexity int) int
+		MinSeverity     func(childComplexity int) int
+		NotifyOnResolve func(childComplexity int) int
+	}
+
+	InsightsIntegrationHealth struct {
+		ConsecutiveFailures func(childComplexity int) int
+		Dead                func(childComplexity int) int
+		Failed              func(childComplexity int) int
+		LastError           func(childComplexity int) int
+		LastFailureAt       func(childComplexity int) int
+		LastSuccessAt       func(childComplexity int) int
+		Pending             func(childComplexity int) int
 	}
 
 	InsightsLearningCondition struct {
@@ -950,6 +1132,7 @@ type ComplexityRoot struct {
 	}
 
 	InsightsPolicy struct {
+		Delivery      func(childComplexity int) int
 		Enabled       func(childComplexity int) int
 		EnricherLists func(childComplexity int) int
 		FireAtScore   func(childComplexity int) int
@@ -964,6 +1147,89 @@ type ComplexityRoot struct {
 		Class         func(childComplexity int) int
 		Promoted      func(childComplexity int) int
 		TransactionID func(childComplexity int) int
+	}
+
+	InsightsRecommendation struct {
+		AlreadyCovered  func(childComplexity int) int
+		AppliedRules    func(childComplexity int) int
+		Confidence      func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		Examples        func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Kind            func(childComplexity int) int
+		MinedAt         func(childComplexity int) int
+		Namespace       func(childComplexity int) int
+		Operation       func(childComplexity int) int
+		Rank            func(childComplexity int) int
+		Rules           func(childComplexity int) int
+		Scope           func(childComplexity int) int
+		ScopeKey        func(childComplexity int) int
+		Service         func(childComplexity int) int
+		Spec            func(childComplexity int) int
+		Stale           func(childComplexity int) int
+		State           func(childComplexity int) int
+		Summary         func(childComplexity int) int
+		Title           func(childComplexity int) int
+		TransactionID   func(childComplexity int) int
+		TransactionKind func(childComplexity int) int
+		Transform       func(childComplexity int) int
+		Transport       func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
+		WhyItMatters    func(childComplexity int) int
+	}
+
+	InsightsRecommendationBulkResult struct {
+		Done   func(childComplexity int) int
+		Errors func(childComplexity int) int
+		Failed func(childComplexity int) int
+	}
+
+	InsightsRecommendationConfidence struct {
+		Distinct    func(childComplexity int) int
+		Held        func(childComplexity int) int
+		HoldRatio   func(childComplexity int) int
+		Level       func(childComplexity int) int
+		LiveBroken  func(childComplexity int) int
+		LiveHeld    func(childComplexity int) int
+		LiveLast    func(childComplexity int) int
+		LiveSince   func(childComplexity int) int
+		Observed    func(childComplexity int) int
+		Reasons     func(childComplexity int) int
+		SampleCount func(childComplexity int) int
+	}
+
+	InsightsRecommendationExample struct {
+		LeftValue  func(childComplexity int) int
+		ObservedAt func(childComplexity int) int
+		RightValue func(childComplexity int) int
+		TraceID    func(childComplexity int) int
+	}
+
+	InsightsRecommendationItemError struct {
+		Error func(childComplexity int) int
+		ID    func(childComplexity int) int
+	}
+
+	InsightsRecommendationPreview struct {
+		CounterExamples func(childComplexity int) int
+		Distinct        func(childComplexity int) int
+		Examples        func(childComplexity int) int
+		Held            func(childComplexity int) int
+		HoldRatio       func(childComplexity int) int
+		Observed        func(childComplexity int) int
+		SampleCount     func(childComplexity int) int
+	}
+
+	InsightsRecommendationRule struct {
+		Confidence   func(childComplexity int) int
+		Description  func(childComplexity int) int
+		Items        func(childComplexity int) int
+		Label        func(childComplexity int) int
+		LiveChecked  func(childComplexity int) int
+		LiveLast     func(childComplexity int) int
+		LiveSince    func(childComplexity int) int
+		LiveViolated func(childComplexity int) int
+		Rule         func(childComplexity int) int
 	}
 
 	InsightsRiskAssessment struct {
@@ -997,11 +1263,13 @@ type ComplexityRoot struct {
 	}
 
 	InsightsServiceStat struct {
-		LastSeen         func(childComplexity int) int
-		Namespace        func(childComplexity int) int
-		Service          func(childComplexity int) int
-		TransactionCount func(childComplexity int) int
-		Volume           func(childComplexity int) int
+		LastSeen                func(childComplexity int) int
+		Namespace               func(childComplexity int) int
+		Service                 func(childComplexity int) int
+		TransactionCount        func(childComplexity int) int
+		TransactionLimit        func(childComplexity int) int
+		TransactionLimitReached func(childComplexity int) int
+		Volume                  func(childComplexity int) int
 	}
 
 	InsightsSeverityBand struct {
@@ -1083,8 +1351,9 @@ type ComplexityRoot struct {
 	}
 
 	InsightsSystemCapacitySettings struct {
-		MaxBaselineSetMembers   func(childComplexity int) int
-		MaxResidentTransactions func(childComplexity int) int
+		MaxBaselineSetMembers     func(childComplexity int) int
+		MaxResidentTransactions   func(childComplexity int) int
+		MaxTransactionsPerService func(childComplexity int) int
 	}
 
 	InsightsSystemDetectionSettings struct {
@@ -1147,8 +1416,20 @@ type ComplexityRoot struct {
 		Operation          func(childComplexity int) int
 		OperationName      func(childComplexity int) int
 		Promoted           func(childComplexity int) int
+		SaturatedClasses   func(childComplexity int) int
 		Service            func(childComplexity int) int
 		Volume             func(childComplexity int) int
+	}
+
+	InstrumentationAgent struct {
+		Description              func(childComplexity int) int
+		DistroDisplayName        func(childComplexity int) int
+		DistroName               func(childComplexity int) int
+		IsDefault                func(childComplexity int) int
+		Language                 func(childComplexity int) int
+		RuntimeEnvironment       func(childComplexity int) int
+		Sources                  func(childComplexity int) int
+		SupportedRuntimeVersions func(childComplexity int) int
 	}
 
 	InstrumentationInstanceAnalyze struct {
@@ -1179,6 +1460,7 @@ type ComplexityRoot struct {
 		Disabled                 func(childComplexity int) int
 		HeadersCollection        func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
+		ManagedBy                func(childComplexity int) int
 		Mutable                  func(childComplexity int) int
 		NetworkMetrics           func(childComplexity int) int
 		Notes                    func(childComplexity int) int
@@ -1230,8 +1512,11 @@ type ComplexityRoot struct {
 	}
 
 	JavaCustomProbe struct {
+		AddedAt    func(childComplexity int) int
+		Category   func(childComplexity int) int
 		ClassName  func(childComplexity int) int
 		MethodName func(childComplexity int) int
+		Notes      func(childComplexity int) int
 	}
 
 	K8sActualNamespace struct {
@@ -1352,13 +1637,14 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadContainer struct {
-		AgentConfig      func(childComplexity int) int
-		AgentEnabled     func(childComplexity int) int
-		CollectorConfig  func(childComplexity int) int
-		ContainerName    func(childComplexity int) int
-		Instrumentations func(childComplexity int) int
-		Overrides        func(childComplexity int) int
-		RuntimeInfo      func(childComplexity int) int
+		AgentConfig       func(childComplexity int) int
+		AgentEnabled      func(childComplexity int) int
+		CollectorConfig   func(childComplexity int) int
+		ContainerName     func(childComplexity int) int
+		Instrumentations  func(childComplexity int) int
+		Overrides         func(childComplexity int) int
+		RuntimeInfo       func(childComplexity int) int
+		URLTemplatization func(childComplexity int) int
 	}
 
 	K8sWorkloadContainerAgentConfig struct {
@@ -1419,11 +1705,23 @@ type ComplexityRoot struct {
 		RuleID           func(childComplexity int) int
 	}
 
+	K8sWorkloadContainerLiveTrafficLearning struct {
+		ClientRecommendedRules func(childComplexity int) int
+		ServerRecommendedRules func(childComplexity int) int
+		UnmatchedClientPaths   func(childComplexity int) int
+		UnmatchedServerPaths   func(childComplexity int) int
+	}
+
 	K8sWorkloadContainerOverrides struct {
 		AllowConcurrentAgents func(childComplexity int) int
 		ContainerName         func(childComplexity int) int
 		OtelDistroName        func(childComplexity int) int
 		RuntimeInfo           func(childComplexity int) int
+	}
+
+	K8sWorkloadContainerUrlTemplatization struct {
+		LiveTrafficLearning func(childComplexity int) int
+		Templatization      func(childComplexity int) int
 	}
 
 	K8sWorkloadId struct {
@@ -1545,6 +1843,56 @@ type ComplexityRoot struct {
 		EnvVars func(childComplexity int) int
 	}
 
+	LiveTrafficLearningAutomaticRulesConfig struct {
+		Enabled func(childComplexity int) int
+	}
+
+	LiveTrafficLearningConfig struct {
+		AutomaticRules             func(childComplexity int) int
+		Enabled                    func(childComplexity int) int
+		LearningInterval           func(childComplexity int) int
+		MaxExamplePathsPerWorkload func(childComplexity int) int
+		PathExampleIdleTTL         func(childComplexity int) int
+		RuleComputation            func(childComplexity int) int
+	}
+
+	LiveTrafficLearningPatternBasedTemplatization struct {
+		Disabled   func(childComplexity int) int
+		SkipPolicy func(childComplexity int) int
+	}
+
+	LiveTrafficLearningRecommendedRule struct {
+		Reason   func(childComplexity int) int
+		Segments func(childComplexity int) int
+		Template func(childComplexity int) int
+	}
+
+	LiveTrafficLearningRecommendedSegment struct {
+		Certainty    func(childComplexity int) int
+		Examples     func(childComplexity int) int
+		Static       func(childComplexity int) int
+		TemplateName func(childComplexity int) int
+	}
+
+	LiveTrafficLearningRuleComputationConfig struct {
+		MinCardinalityForTemplating func(childComplexity int) int
+		MinObservationsForRule      func(childComplexity int) int
+	}
+
+	LiveTrafficLearningTemplate struct {
+		ActionID   func(childComplexity int) int
+		ActionName func(childComplexity int) int
+		Examples   func(childComplexity int) int
+		ManagedBy  func(childComplexity int) int
+		Notes      func(childComplexity int) int
+		Template   func(childComplexity int) int
+	}
+
+	LiveTrafficLearningTemplatization struct {
+		PatternBasedTemplatization func(childComplexity int) int
+		Templates                  func(childComplexity int) int
+	}
+
 	MessagingPayloadCollection struct {
 		DropPartialPayloads func(childComplexity int) int
 		MaxPayloadLength    func(childComplexity int) int
@@ -1609,15 +1957,18 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AcceptInsightsGuardrailViolation    func(childComplexity int, action model.InsightsViolationActionInput) int
-		ApplyRecommendationRemediation      func(childComplexity int, recommendationType model.RecommendationType, remediationType string) int
+		ApplyInsightsRecommendations        func(childComplexity int, items []*model.InsightsRecommendationApplyItemInput) int
+		ApplyRecommendationRemediation      func(childComplexity int, recommendationType string, remediationType string) int
 		BulkDeleteInsightsTransactions      func(childComplexity int, transactionIds []string) int
 		BulkPromoteInsightsTransactions     func(childComplexity int, transactionIds []string) int
 		BulkResolveInsightsAnomalies        func(childComplexity int, resolution model.InsightsBulkResolution, items []*model.InsightsAnomalyRefInput) int
+		CheckGoOffsetsUpdates               func(childComplexity int, content string) int
 		ClearSourceProfilingBuffer          func(childComplexity int, namespace string, kind string, name string) int
 		ConfigureProfilingCache             func(childComplexity int, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) int
 		CreateAction                        func(childComplexity int, action model.ActionInput) int
 		CreateCostReductionRule             func(childComplexity int, samplingID string, rule model.CostReductionRuleInput) int
 		CreateHighlyRelevantOperationRule   func(childComplexity int, samplingID string, rule model.HighlyRelevantOperationRuleInput) int
+		CreateInsightsIntegration           func(childComplexity int, integration model.InsightsIntegrationInput) int
 		CreateInstrumentationRule           func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
 		CreateNewDestination                func(childComplexity int, destination model.DestinationInput) int
 		CreateNoisyOperationRule            func(childComplexity int, samplingID string, rule model.NoisyOperationRuleInput) int
@@ -1626,7 +1977,8 @@ type ComplexityRoot struct {
 		DeleteDataStream                    func(childComplexity int, id string) int
 		DeleteDestination                   func(childComplexity int, id string, currentStreamName string) int
 		DeleteHighlyRelevantOperationRule   func(childComplexity int, samplingID string, ruleID string) int
-		DeleteInsightsGuardrail             func(childComplexity int, scopeKey string) int
+		DeleteInsightsGuardrail             func(childComplexity int, scopeKey string, scope *model.InsightsPolicyScope) int
+		DeleteInsightsIntegration           func(childComplexity int, id string) int
 		DeleteInsightsLearningPolicy        func(childComplexity int, class model.InsightsDeviationClass, scope model.InsightsPolicyScope, scopeKey string) int
 		DeleteInsightsPolicy                func(childComplexity int, scope model.InsightsPolicyScope, scopeKey string) int
 		DeleteInsightsTransaction           func(childComplexity int, transactionID string) int
@@ -1635,14 +1987,17 @@ type ComplexityRoot struct {
 		DisableInsightsTransactionGuardrail func(childComplexity int, namespace string, service string) int
 		DisableSourceProfiling              func(childComplexity int, namespace string, kind string, name string) int
 		DismissInsightsGuardrailViolation   func(childComplexity int, action model.InsightsViolationActionInput) int
+		DismissInsightsRecommendations      func(childComplexity int, ids []string) int
 		EnableInsightsTransactionGuardrail  func(childComplexity int, namespace string, service string) int
 		EnableSourceProfiling               func(childComplexity int, namespace string, kind string, name string) int
 		ForcePromoteInsightsService         func(childComplexity int, namespace string, service string) int
 		PauseOdigos                         func(childComplexity int) int
 		PersistK8sNamespaces                func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
 		PersistK8sSources                   func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
+		PreviewInsightsRecommendation       func(childComplexity int, transactionID string, spec model.InsightsCorrelationSpecInput) int
 		PromoteInsightsBaselineClass        func(childComplexity int, transactionID string, class model.InsightsDeviationClass) int
 		PromoteInsightsTransactionBaselines func(childComplexity int, transactionID string) int
+		RecomputeInsightsRecommendations    func(childComplexity int, transactionID *string, namespace *string, service *string) int
 		RecoverFromRollbackForWorkload      func(childComplexity int, sourceID model.K8sSourceID) int
 		ReopenInsightsGuardrailViolation    func(childComplexity int, action model.InsightsViolationActionInput) int
 		ResetInsightsBaselineClass          func(childComplexity int, transactionID string, class model.InsightsDeviationClass) int
@@ -1651,17 +2006,23 @@ type ComplexityRoot struct {
 		ResolveInsightsAnomaly              func(childComplexity int, transactionID string, signature string, resolution model.InsightsAnomalyResolution) int
 		RestartPod                          func(childComplexity int, namespace string, name string) int
 		RestartWorkloads                    func(childComplexity int, sourceIds []*model.K8sSourceID) int
+		RestoreInsightsRecommendations      func(childComplexity int, ids []string) int
+		RetryInsightsIntegrationDeliveries  func(childComplexity int, id string, findingKeys []string) int
+		RevertInsightsRecommendations       func(childComplexity int, ids []string) int
 		SeedInsightsGuardrail               func(childComplexity int, seed model.InsightsGuardrailSeedInput) int
 		SetComponentLogLevel                func(childComplexity int, component *model.OdigosComponent, level model.OdigosLogLevel) int
 		SetRecommendationDismissed          func(childComplexity int, name string, dismissed bool) int
 		TestConnectionForDestination        func(childComplexity int, destination model.DestinationInput) int
+		TestInsightsIntegration             func(childComplexity int, id string) int
 		UninstrumentCluster                 func(childComplexity int) int
 		UpdateAPIToken                      func(childComplexity int, token string) int
 		UpdateAction                        func(childComplexity int, id string, action model.ActionInput) int
 		UpdateCostReductionRule             func(childComplexity int, samplingID string, ruleID string, rule model.CostReductionRuleInput) int
 		UpdateDataStream                    func(childComplexity int, id string, dataStream model.DataStreamInput) int
 		UpdateDestination                   func(childComplexity int, id string, destination model.DestinationInput) int
+		UpdateGoOffsets                     func(childComplexity int, content string) int
 		UpdateHighlyRelevantOperationRule   func(childComplexity int, samplingID string, ruleID string, rule model.HighlyRelevantOperationRuleInput) int
+		UpdateInsightsIntegration           func(childComplexity int, id string, integration model.InsightsIntegrationInput) int
 		UpdateInsightsSystemSettings        func(childComplexity int, settings model.InsightsSystemSettingsInput) int
 		UpdateInstrumentationRule           func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
 		UpdateK8sActualSource               func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
@@ -1764,8 +2125,11 @@ type ComplexityRoot struct {
 	}
 
 	PhpCustomProbe struct {
+		AddedAt      func(childComplexity int) int
+		Category     func(childComplexity int) int
 		ClassName    func(childComplexity int) int
 		FunctionName func(childComplexity int) int
+		Notes        func(childComplexity int) int
 	}
 
 	PodAnalyze struct {
@@ -1848,7 +2212,9 @@ type ComplexityRoot struct {
 		GatewayPods                       func(childComplexity int) int
 		GetOverviewMetrics                func(childComplexity int) int
 		GetServiceMap                     func(childComplexity int) int
+		GoOffsets                         func(childComplexity int) int
 		Insights                          func(childComplexity int) int
+		InstrumentationAgents             func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
 		InstrumentationRuleTypes          func(childComplexity int) int
 		K8sManifest                       func(childComplexity int, namespace string, kind model.K8sResourceKind, name string) int
@@ -1862,7 +2228,6 @@ type ComplexityRoot struct {
 		RemoteConfig                      func(childComplexity int) int
 		Sampling                          func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
-		TraceCorrelations                 func(childComplexity int, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) int
 		Workloads                         func(childComplexity int, filter *model.WorkloadFilter) int
 		WorkloadsByIds                    func(childComplexity int, ids []*model.K8sWorkloadIDInput) int
 	}
@@ -1905,6 +2270,7 @@ type ComplexityRoot struct {
 	RecommendationCatalogRemediation struct {
 		ApplyExamples func(childComplexity int) int
 		ButtonText    func(childComplexity int) int
+		CanApplyViaUI func(childComplexity int) int
 		Tooltip       func(childComplexity int) int
 		Type          func(childComplexity int) int
 	}
@@ -2059,6 +2425,7 @@ type ComplexityRoot struct {
 
 	TailSamplingConfig struct {
 		Disabled                     func(childComplexity int) int
+		NoisyOperationsEnforcement   func(childComplexity int) int
 		TraceAggregationWaitDuration func(childComplexity int) int
 	}
 
@@ -2091,47 +2458,19 @@ type ComplexityRoot struct {
 		Succeeded       func(childComplexity int) int
 	}
 
-	TraceCorrelations struct {
-		Workloads func(childComplexity int) int
-	}
-
-	TraceCorrelationsConfig struct {
-		ServiceIo func(childComplexity int) int
-	}
-
-	TraceCorrelationsInputGroup struct {
-		Attributes func(childComplexity int) int
-		Outputs    func(childComplexity int) int
-	}
-
-	TraceCorrelationsOutputSeries struct {
-		Attributes      func(childComplexity int) int
-		ConnectionCount func(childComplexity int) int
-		FirstDetectedAt func(childComplexity int) int
-	}
-
-	TraceCorrelationsServiceIOConfig struct {
-		Enabled              func(childComplexity int) int
-		InputSpanAttributes  func(childComplexity int) int
-		MetricsFlushInterval func(childComplexity int) int
-		OutputSpanAttributes func(childComplexity int) int
-	}
-
-	TraceCorrelationsWorkload struct {
-		ContainerName         func(childComplexity int) int
-		Inputs                func(childComplexity int) int
-		Kind                  func(childComplexity int) int
-		Name                  func(childComplexity int) int
-		Namespace             func(childComplexity int) int
-		ProcessRuntimeName    func(childComplexity int) int
-		ProcessRuntimeVersion func(childComplexity int) int
-		TelemetrySdkLanguage  func(childComplexity int) int
-	}
-
 	URLTemplatizationRule struct {
 		Examples func(childComplexity int) int
 		Notes    func(childComplexity int) int
 		Template func(childComplexity int) int
+	}
+
+	UnmatchedUrlPath struct {
+		Count func(childComplexity int) int
+		Path  func(childComplexity int) int
+	}
+
+	UrlTemplatizationCardinalityControlConfig struct {
+		LiveTrafficLearning func(childComplexity int) int
 	}
 
 	UrlTemplatizationDefaultGroup struct {
@@ -2178,6 +2517,12 @@ type ComputePlatformResolver interface {
 	APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error)
 }
 type InsightsResolver interface {
+	IntegrationCatalog(ctx context.Context, obj *model.Insights) ([]*model.InsightsIntegrationDescriptor, error)
+	Integrations(ctx context.Context, obj *model.Insights) ([]*model.InsightsIntegration, error)
+	Integration(ctx context.Context, obj *model.Insights, id string) (*model.InsightsIntegration, error)
+	IntegrationDeliveries(ctx context.Context, obj *model.Insights, integrationID string, state *model.InsightsDeliveryState, limit *int) ([]*model.InsightsDelivery, error)
+	IntegrationAttempts(ctx context.Context, obj *model.Insights, integrationID string, limit *int) ([]*model.InsightsDeliveryAttempt, error)
+	FindingDeliveries(ctx context.Context, obj *model.Insights, findingKey string) ([]*model.InsightsDelivery, error)
 	Services(ctx context.Context, obj *model.Insights) ([]*model.InsightsServiceStat, error)
 	ServiceNames(ctx context.Context, obj *model.Insights) ([]string, error)
 	ServiceProfile(ctx context.Context, obj *model.Insights, namespace *string, service string) (*model.InsightsServiceProfile, error)
@@ -2195,6 +2540,8 @@ type InsightsResolver interface {
 	Guardrails(ctx context.Context, obj *model.Insights) ([]*model.InsightsGuardrail, error)
 	GuardrailViolations(ctx context.Context, obj *model.Insights, windowHours *int, service *string, namespace *string, status *string) ([]*model.InsightsGuardrailViolation, error)
 	GuardrailViolation(ctx context.Context, obj *model.Insights, scopeKey string, ruleKey string, offending string) (*model.InsightsGuardrailViolationDetail, error)
+	Recommendations(ctx context.Context, obj *model.Insights, kind *model.InsightsRecommendationKind, state *model.InsightsRecommendationState, transactionID *string, service *string, namespace *string, includeStale *bool) ([]*model.InsightsRecommendation, error)
+	Recommendation(ctx context.Context, obj *model.Insights, id string) (*model.InsightsRecommendation, error)
 	Catalog(ctx context.Context, obj *model.Insights) (*model.InsightsCatalog, error)
 	SystemSettings(ctx context.Context, obj *model.Insights) (*model.InsightsSystemSettings, error)
 	StorageHealth(ctx context.Context, obj *model.Insights) (*model.InsightsStorageHealth, error)
@@ -2231,6 +2578,12 @@ type K8sWorkloadResolver interface {
 	NumberOfInstances(ctx context.Context, obj *model.K8sWorkload) (*int, error)
 	RollbackOccurred(ctx context.Context, obj *model.K8sWorkload) (bool, error)
 }
+type K8sWorkloadContainerResolver interface {
+	URLTemplatization(ctx context.Context, obj *model.K8sWorkloadContainer) (*model.K8sWorkloadContainerURLTemplatization, error)
+}
+type K8sWorkloadContainerUrlTemplatizationResolver interface {
+	LiveTrafficLearning(ctx context.Context, obj *model.K8sWorkloadContainerURLTemplatization) (*model.K8sWorkloadContainerLiveTrafficLearning, error)
+}
 type K8sWorkloadPodContainerResolver interface {
 	Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error)
 }
@@ -2256,6 +2609,8 @@ type MutationResolver interface {
 	UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error)
 	DeleteDestination(ctx context.Context, id string, currentStreamName string) (bool, error)
 	TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error)
+	UpdateGoOffsets(ctx context.Context, content string) (bool, error)
+	CheckGoOffsetsUpdates(ctx context.Context, content string) (*model.GoOffsetsUpdateCheck, error)
 	PromoteInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (*model.InsightsPromoteResult, error)
 	ResetInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (bool, error)
 	ResetInsightsTransactionBaselines(ctx context.Context, transactionID string) (bool, error)
@@ -2273,12 +2628,23 @@ type MutationResolver interface {
 	ResolveInsightsAnomaly(ctx context.Context, transactionID string, signature string, resolution model.InsightsAnomalyResolution) (bool, error)
 	BulkResolveInsightsAnomalies(ctx context.Context, resolution model.InsightsBulkResolution, items []*model.InsightsAnomalyRefInput) (*model.InsightsBulkResolveResult, error)
 	UpsertInsightsGuardrail(ctx context.Context, guardrail model.InsightsGuardrailInput) (*model.InsightsGuardrail, error)
-	DeleteInsightsGuardrail(ctx context.Context, scopeKey string) (bool, error)
+	DeleteInsightsGuardrail(ctx context.Context, scopeKey string, scope *model.InsightsPolicyScope) (bool, error)
 	SeedInsightsGuardrail(ctx context.Context, seed model.InsightsGuardrailSeedInput) (bool, error)
 	AcceptInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error)
 	DismissInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error)
 	ReopenInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error)
 	UpdateInsightsSystemSettings(ctx context.Context, settings model.InsightsSystemSettingsInput) (*model.InsightsSystemSettings, error)
+	ApplyInsightsRecommendations(ctx context.Context, items []*model.InsightsRecommendationApplyItemInput) (*model.InsightsRecommendationBulkResult, error)
+	DismissInsightsRecommendations(ctx context.Context, ids []string) (*model.InsightsRecommendationBulkResult, error)
+	RestoreInsightsRecommendations(ctx context.Context, ids []string) (*model.InsightsRecommendationBulkResult, error)
+	RevertInsightsRecommendations(ctx context.Context, ids []string) (*model.InsightsRecommendationBulkResult, error)
+	PreviewInsightsRecommendation(ctx context.Context, transactionID string, spec model.InsightsCorrelationSpecInput) (*model.InsightsRecommendationPreview, error)
+	RecomputeInsightsRecommendations(ctx context.Context, transactionID *string, namespace *string, service *string) (bool, error)
+	CreateInsightsIntegration(ctx context.Context, integration model.InsightsIntegrationInput) (*model.InsightsIntegration, error)
+	UpdateInsightsIntegration(ctx context.Context, id string, integration model.InsightsIntegrationInput) (*model.InsightsIntegration, error)
+	DeleteInsightsIntegration(ctx context.Context, id string) (bool, error)
+	TestInsightsIntegration(ctx context.Context, id string) (bool, error)
+	RetryInsightsIntegrationDeliveries(ctx context.Context, id string, findingKeys []string) (bool, error)
 	CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error)
 	UpdateInstrumentationRule(ctx context.Context, ruleID string, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error)
 	DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error)
@@ -2288,7 +2654,7 @@ type MutationResolver interface {
 	ClearSourceProfilingBuffer(ctx context.Context, namespace string, kind string, name string) (*model.ClearProfilingBufferResult, error)
 	ConfigureProfilingCache(ctx context.Context, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) (*model.ProfilingSlots, error)
 	SetRecommendationDismissed(ctx context.Context, name string, dismissed bool) (*model.Recommendation, error)
-	ApplyRecommendationRemediation(ctx context.Context, recommendationType model.RecommendationType, remediationType string) (bool, error)
+	ApplyRecommendationRemediation(ctx context.Context, recommendationType string, remediationType string) (bool, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
 	UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
@@ -2323,7 +2689,9 @@ type QueryResolver interface {
 	DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error)
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
 	Diagnose(ctx context.Context, input *model.DiagnoseInput, dryRun *bool) (*model.DiagnoseResponse, error)
+	GoOffsets(ctx context.Context) (*model.GoOffsets, error)
 	Insights(ctx context.Context) (*model.Insights, error)
+	InstrumentationAgents(ctx context.Context) ([]*model.InstrumentationAgent, error)
 	InstrumentationRuleTypes(ctx context.Context) ([]*model.InstrumentationRuleTypeOption, error)
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
 	Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
@@ -2334,7 +2702,6 @@ type QueryResolver interface {
 	K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error)
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
 	InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error)
-	TraceCorrelations(ctx context.Context, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) (*model.TraceCorrelations, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error)
 	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
@@ -2400,6 +2767,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Action.ID(childComplexity), true
+
+	case "Action.managedBy":
+		if e.complexity.Action.ManagedBy == nil {
+			break
+		}
+
+		return e.complexity.Action.ManagedBy(childComplexity), true
 
 	case "Action.name":
 		if e.complexity.Action.Name == nil {
@@ -2764,6 +3138,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AutoRollbackConfig.StabilityWindowTime(childComplexity), true
+
+	case "CardinalityControlConfig.urlTemplatization":
+		if e.complexity.CardinalityControlConfig.URLTemplatization == nil {
+			break
+		}
+
+		return e.complexity.CardinalityControlConfig.URLTemplatization(childComplexity), true
 
 	case "ClearProfilingBufferResult.activeSlots":
 		if e.complexity.ClearProfilingBufferResult.ActiveSlots == nil {
@@ -3692,6 +4073,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CostReductionRule.SourceScopes(childComplexity), true
 
+	case "CppCustomProbe.addedAt":
+		if e.complexity.CppCustomProbe.AddedAt == nil {
+			break
+		}
+
+		return e.complexity.CppCustomProbe.AddedAt(childComplexity), true
+
+	case "CppCustomProbe.category":
+		if e.complexity.CppCustomProbe.Category == nil {
+			break
+		}
+
+		return e.complexity.CppCustomProbe.Category(childComplexity), true
+
+	case "CppCustomProbe.notes":
+		if e.complexity.CppCustomProbe.Notes == nil {
+			break
+		}
+
+		return e.complexity.CppCustomProbe.Notes(childComplexity), true
+
+	case "CppCustomProbe.signature":
+		if e.complexity.CppCustomProbe.Signature == nil {
+			break
+		}
+
+		return e.complexity.CppCustomProbe.Signature(childComplexity), true
+
 	case "CustomFormatMasking.dataFormat":
 		if e.complexity.CustomFormatMasking.DataFormat == nil {
 			break
@@ -3705,6 +4114,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CustomFormatMasking.LookupKey(childComplexity), true
+
+	case "CustomInstrumentations.cpp":
+		if e.complexity.CustomInstrumentations.Cpp == nil {
+			break
+		}
+
+		return e.complexity.CustomInstrumentations.Cpp(childComplexity), true
 
 	case "CustomInstrumentations.golang":
 		if e.complexity.CustomInstrumentations.Golang == nil {
@@ -4154,6 +4570,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EffectiveConfig.AutoRollback(childComplexity), true
 
+	case "EffectiveConfig.cardinalityControl":
+		if e.complexity.EffectiveConfig.CardinalityControl == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.CardinalityControl(childComplexity), true
+
 	case "EffectiveConfig.centralBackendURL":
 		if e.complexity.EffectiveConfig.CentralBackendURL == nil {
 			break
@@ -4384,13 +4807,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.TelemetryEnabled(childComplexity), true
-
-	case "EffectiveConfig.traceCorrelations":
-		if e.complexity.EffectiveConfig.TraceCorrelations == nil {
-			break
-		}
-
-		return e.complexity.EffectiveConfig.TraceCorrelations(childComplexity), true
 
 	case "EffectiveConfig.traceIdSuffix":
 		if e.complexity.EffectiveConfig.TraceIDSuffix == nil {
@@ -4651,12 +5067,215 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GetDestinationCategories.Categories(childComplexity), true
 
+	case "GoOffsetMinorVersion.minorVersion":
+		if e.complexity.GoOffsetMinorVersion.MinorVersion == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetMinorVersion.MinorVersion(childComplexity), true
+
+	case "GoOffsetMinorVersion.versions":
+		if e.complexity.GoOffsetMinorVersion.Versions == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetMinorVersion.Versions(childComplexity), true
+
+	case "GoOffsetMinorVersionUpdate.isNew":
+		if e.complexity.GoOffsetMinorVersionUpdate.IsNew == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetMinorVersionUpdate.IsNew(childComplexity), true
+
+	case "GoOffsetMinorVersionUpdate.isRemoved":
+		if e.complexity.GoOffsetMinorVersionUpdate.IsRemoved == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetMinorVersionUpdate.IsRemoved(childComplexity), true
+
+	case "GoOffsetMinorVersionUpdate.minorVersion":
+		if e.complexity.GoOffsetMinorVersionUpdate.MinorVersion == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetMinorVersionUpdate.MinorVersion(childComplexity), true
+
+	case "GoOffsetMinorVersionUpdate.versions":
+		if e.complexity.GoOffsetMinorVersionUpdate.Versions == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetMinorVersionUpdate.Versions(childComplexity), true
+
+	case "GoOffsetModule.maxVersion":
+		if e.complexity.GoOffsetModule.MaxVersion == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModule.MaxVersion(childComplexity), true
+
+	case "GoOffsetModule.minVersion":
+		if e.complexity.GoOffsetModule.MinVersion == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModule.MinVersion(childComplexity), true
+
+	case "GoOffsetModule.minorVersions":
+		if e.complexity.GoOffsetModule.MinorVersions == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModule.MinorVersions(childComplexity), true
+
+	case "GoOffsetModule.module":
+		if e.complexity.GoOffsetModule.Module == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModule.Module(childComplexity), true
+
+	case "GoOffsetModuleUpdate.isNew":
+		if e.complexity.GoOffsetModuleUpdate.IsNew == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModuleUpdate.IsNew(childComplexity), true
+
+	case "GoOffsetModuleUpdate.isRemoved":
+		if e.complexity.GoOffsetModuleUpdate.IsRemoved == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModuleUpdate.IsRemoved(childComplexity), true
+
+	case "GoOffsetModuleUpdate.maxVersion":
+		if e.complexity.GoOffsetModuleUpdate.MaxVersion == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModuleUpdate.MaxVersion(childComplexity), true
+
+	case "GoOffsetModuleUpdate.minVersion":
+		if e.complexity.GoOffsetModuleUpdate.MinVersion == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModuleUpdate.MinVersion(childComplexity), true
+
+	case "GoOffsetModuleUpdate.minorVersions":
+		if e.complexity.GoOffsetModuleUpdate.MinorVersions == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModuleUpdate.MinorVersions(childComplexity), true
+
+	case "GoOffsetModuleUpdate.module":
+		if e.complexity.GoOffsetModuleUpdate.Module == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetModuleUpdate.Module(childComplexity), true
+
+	case "GoOffsetVersionUpdate.isNew":
+		if e.complexity.GoOffsetVersionUpdate.IsNew == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetVersionUpdate.IsNew(childComplexity), true
+
+	case "GoOffsetVersionUpdate.isRemoved":
+		if e.complexity.GoOffsetVersionUpdate.IsRemoved == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetVersionUpdate.IsRemoved(childComplexity), true
+
+	case "GoOffsetVersionUpdate.version":
+		if e.complexity.GoOffsetVersionUpdate.Version == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetVersionUpdate.Version(childComplexity), true
+
+	case "GoOffsets.installed":
+		if e.complexity.GoOffsets.Installed == nil {
+			break
+		}
+
+		return e.complexity.GoOffsets.Installed(childComplexity), true
+
+	case "GoOffsets.mods":
+		if e.complexity.GoOffsets.Mods == nil {
+			break
+		}
+
+		return e.complexity.GoOffsets.Mods(childComplexity), true
+
+	case "GoOffsets.timestamp":
+		if e.complexity.GoOffsets.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.GoOffsets.Timestamp(childComplexity), true
+
+	case "GoOffsetsUpdateCheck.currentTimestamp":
+		if e.complexity.GoOffsetsUpdateCheck.CurrentTimestamp == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetsUpdateCheck.CurrentTimestamp(childComplexity), true
+
+	case "GoOffsetsUpdateCheck.hasUpdates":
+		if e.complexity.GoOffsetsUpdateCheck.HasUpdates == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetsUpdateCheck.HasUpdates(childComplexity), true
+
+	case "GoOffsetsUpdateCheck.mods":
+		if e.complexity.GoOffsetsUpdateCheck.Mods == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetsUpdateCheck.Mods(childComplexity), true
+
+	case "GoOffsetsUpdateCheck.proposedTimestamp":
+		if e.complexity.GoOffsetsUpdateCheck.ProposedTimestamp == nil {
+			break
+		}
+
+		return e.complexity.GoOffsetsUpdateCheck.ProposedTimestamp(childComplexity), true
+
+	case "GolangCustomProbe.addedAt":
+		if e.complexity.GolangCustomProbe.AddedAt == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.AddedAt(childComplexity), true
+
+	case "GolangCustomProbe.category":
+		if e.complexity.GolangCustomProbe.Category == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.Category(childComplexity), true
+
 	case "GolangCustomProbe.functionName":
 		if e.complexity.GolangCustomProbe.FunctionName == nil {
 			break
 		}
 
 		return e.complexity.GolangCustomProbe.FunctionName(childComplexity), true
+
+	case "GolangCustomProbe.notes":
+		if e.complexity.GolangCustomProbe.Notes == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.Notes(childComplexity), true
 
 	case "GolangCustomProbe.packageName":
 		if e.complexity.GolangCustomProbe.PackageName == nil {
@@ -4944,6 +5563,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Insights.Catalog(childComplexity), true
 
+	case "Insights.findingDeliveries":
+		if e.complexity.Insights.FindingDeliveries == nil {
+			break
+		}
+
+		args, err := ec.field_Insights_findingDeliveries_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Insights.FindingDeliveries(childComplexity, args["findingKey"].(string)), true
+
 	case "Insights.findings":
 		if e.complexity.Insights.Findings == nil {
 			break
@@ -4987,6 +5618,56 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Insights.Guardrails(childComplexity), true
 
+	case "Insights.integration":
+		if e.complexity.Insights.Integration == nil {
+			break
+		}
+
+		args, err := ec.field_Insights_integration_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Insights.Integration(childComplexity, args["id"].(string)), true
+
+	case "Insights.integrationAttempts":
+		if e.complexity.Insights.IntegrationAttempts == nil {
+			break
+		}
+
+		args, err := ec.field_Insights_integrationAttempts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Insights.IntegrationAttempts(childComplexity, args["integrationId"].(string), args["limit"].(*int)), true
+
+	case "Insights.integrationCatalog":
+		if e.complexity.Insights.IntegrationCatalog == nil {
+			break
+		}
+
+		return e.complexity.Insights.IntegrationCatalog(childComplexity), true
+
+	case "Insights.integrationDeliveries":
+		if e.complexity.Insights.IntegrationDeliveries == nil {
+			break
+		}
+
+		args, err := ec.field_Insights_integrationDeliveries_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Insights.IntegrationDeliveries(childComplexity, args["integrationId"].(string), args["state"].(*model.InsightsDeliveryState), args["limit"].(*int)), true
+
+	case "Insights.integrations":
+		if e.complexity.Insights.Integrations == nil {
+			break
+		}
+
+		return e.complexity.Insights.Integrations(childComplexity), true
+
 	case "Insights.learningPolicies":
 		if e.complexity.Insights.LearningPolicies == nil {
 			break
@@ -5024,6 +5705,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Insights.Policies(childComplexity), true
+
+	case "Insights.recommendation":
+		if e.complexity.Insights.Recommendation == nil {
+			break
+		}
+
+		args, err := ec.field_Insights_recommendation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Insights.Recommendation(childComplexity, args["id"].(string)), true
+
+	case "Insights.recommendations":
+		if e.complexity.Insights.Recommendations == nil {
+			break
+		}
+
+		args, err := ec.field_Insights_recommendations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Insights.Recommendations(childComplexity, args["kind"].(*model.InsightsRecommendationKind), args["state"].(*model.InsightsRecommendationState), args["transactionId"].(*string), args["service"].(*string), args["namespace"].(*string), args["includeStale"].(*bool)), true
 
 	case "Insights.serviceNames":
 		if e.complexity.Insights.ServiceNames == nil {
@@ -5579,6 +6284,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsBaselineClass.Promoted(childComplexity), true
 
+	case "InsightsBaselineClass.saturated":
+		if e.complexity.InsightsBaselineClass.Saturated == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineClass.Saturated(childComplexity), true
+
 	case "InsightsBaselineClass.transactionId":
 		if e.complexity.InsightsBaselineClass.TransactionID == nil {
 			break
@@ -6111,6 +6823,251 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsCatalogGuardrailRule.Weight(childComplexity), true
 
+	case "InsightsCorrelationSelector.attr":
+		if e.complexity.InsightsCorrelationSelector.Attr == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSelector.Attr(childComplexity), true
+
+	case "InsightsCorrelationSelector.extract":
+		if e.complexity.InsightsCorrelationSelector.Extract == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSelector.Extract(childComplexity), true
+
+	case "InsightsCorrelationSelector.service":
+		if e.complexity.InsightsCorrelationSelector.Service == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSelector.Service(childComplexity), true
+
+	case "InsightsCorrelationSelector.span":
+		if e.complexity.InsightsCorrelationSelector.Span == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSelector.Span(childComplexity), true
+
+	case "InsightsCorrelationSpec.left":
+		if e.complexity.InsightsCorrelationSpec.Left == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSpec.Left(childComplexity), true
+
+	case "InsightsCorrelationSpec.name":
+		if e.complexity.InsightsCorrelationSpec.Name == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSpec.Name(childComplexity), true
+
+	case "InsightsCorrelationSpec.relation":
+		if e.complexity.InsightsCorrelationSpec.Relation == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSpec.Relation(childComplexity), true
+
+	case "InsightsCorrelationSpec.right":
+		if e.complexity.InsightsCorrelationSpec.Right == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSpec.Right(childComplexity), true
+
+	case "InsightsCorrelationSpec.severity":
+		if e.complexity.InsightsCorrelationSpec.Severity == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSpec.Severity(childComplexity), true
+
+	case "InsightsCorrelationSpec.why":
+		if e.complexity.InsightsCorrelationSpec.Why == nil {
+			break
+		}
+
+		return e.complexity.InsightsCorrelationSpec.Why(childComplexity), true
+
+	case "InsightsDelivery.attempts":
+		if e.complexity.InsightsDelivery.Attempts == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.Attempts(childComplexity), true
+
+	case "InsightsDelivery.externalId":
+		if e.complexity.InsightsDelivery.ExternalID == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.ExternalID(childComplexity), true
+
+	case "InsightsDelivery.findingKey":
+		if e.complexity.InsightsDelivery.FindingKey == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.FindingKey(childComplexity), true
+
+	case "InsightsDelivery.integrationId":
+		if e.complexity.InsightsDelivery.IntegrationID == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.IntegrationID(childComplexity), true
+
+	case "InsightsDelivery.lastAction":
+		if e.complexity.InsightsDelivery.LastAction == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.LastAction(childComplexity), true
+
+	case "InsightsDelivery.lastError":
+		if e.complexity.InsightsDelivery.LastError == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.LastError(childComplexity), true
+
+	case "InsightsDelivery.nextAttemptAt":
+		if e.complexity.InsightsDelivery.NextAttemptAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.NextAttemptAt(childComplexity), true
+
+	case "InsightsDelivery.occurrencesAtSend":
+		if e.complexity.InsightsDelivery.OccurrencesAtSend == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.OccurrencesAtSend(childComplexity), true
+
+	case "InsightsDelivery.sentAt":
+		if e.complexity.InsightsDelivery.SentAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.SentAt(childComplexity), true
+
+	case "InsightsDelivery.severityAtSend":
+		if e.complexity.InsightsDelivery.SeverityAtSend == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.SeverityAtSend(childComplexity), true
+
+	case "InsightsDelivery.state":
+		if e.complexity.InsightsDelivery.State == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.State(childComplexity), true
+
+	case "InsightsDelivery.statusAtSend":
+		if e.complexity.InsightsDelivery.StatusAtSend == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.StatusAtSend(childComplexity), true
+
+	case "InsightsDelivery.updatedAt":
+		if e.complexity.InsightsDelivery.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsDelivery.UpdatedAt(childComplexity), true
+
+	case "InsightsDeliveryAttempt.action":
+		if e.complexity.InsightsDeliveryAttempt.Action == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.Action(childComplexity), true
+
+	case "InsightsDeliveryAttempt.attempt":
+		if e.complexity.InsightsDeliveryAttempt.Attempt == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.Attempt(childComplexity), true
+
+	case "InsightsDeliveryAttempt.attemptedAt":
+		if e.complexity.InsightsDeliveryAttempt.AttemptedAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.AttemptedAt(childComplexity), true
+
+	case "InsightsDeliveryAttempt.durationMs":
+		if e.complexity.InsightsDeliveryAttempt.DurationMs == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.DurationMs(childComplexity), true
+
+	case "InsightsDeliveryAttempt.error":
+		if e.complexity.InsightsDeliveryAttempt.Error == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.Error(childComplexity), true
+
+	case "InsightsDeliveryAttempt.eventCount":
+		if e.complexity.InsightsDeliveryAttempt.EventCount == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.EventCount(childComplexity), true
+
+	case "InsightsDeliveryAttempt.findingKey":
+		if e.complexity.InsightsDeliveryAttempt.FindingKey == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.FindingKey(childComplexity), true
+
+	case "InsightsDeliveryAttempt.httpStatus":
+		if e.complexity.InsightsDeliveryAttempt.HTTPStatus == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.HTTPStatus(childComplexity), true
+
+	case "InsightsDeliveryAttempt.integrationId":
+		if e.complexity.InsightsDeliveryAttempt.IntegrationID == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.IntegrationID(childComplexity), true
+
+	case "InsightsDeliveryAttempt.outcome":
+		if e.complexity.InsightsDeliveryAttempt.Outcome == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliveryAttempt.Outcome(childComplexity), true
+
+	case "InsightsDeliverySettings.excludedIntegrationIds":
+		if e.complexity.InsightsDeliverySettings.ExcludedIntegrationIds == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliverySettings.ExcludedIntegrationIds(childComplexity), true
+
+	case "InsightsDeliverySettings.muted":
+		if e.complexity.InsightsDeliverySettings.Muted == nil {
+			break
+		}
+
+		return e.complexity.InsightsDeliverySettings.Muted(childComplexity), true
+
 	case "InsightsEnricherList.default":
 		if e.complexity.InsightsEnricherList.Default == nil {
 			break
@@ -6251,6 +7208,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsFinding.Status(childComplexity), true
 
+	case "InsightsFinding.summary":
+		if e.complexity.InsightsFinding.Summary == nil {
+			break
+		}
+
+		return e.complexity.InsightsFinding.Summary(childComplexity), true
+
 	case "InsightsFinding.title":
 		if e.complexity.InsightsFinding.Title == nil {
 			break
@@ -6271,6 +7235,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsFinding.TriggeredClasses(childComplexity), true
+
+	case "InsightsGuardrail.delivery":
+		if e.complexity.InsightsGuardrail.Delivery == nil {
+			break
+		}
+
+		return e.complexity.InsightsGuardrail.Delivery(childComplexity), true
 
 	case "InsightsGuardrail.rules":
 		if e.complexity.InsightsGuardrail.Rules == nil {
@@ -6299,6 +7270,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsGuardrailRule.Allowlist(childComplexity), true
+
+	case "InsightsGuardrailRule.correlations":
+		if e.complexity.InsightsGuardrailRule.Correlations == nil {
+			break
+		}
+
+		return e.complexity.InsightsGuardrailRule.Correlations(childComplexity), true
 
 	case "InsightsGuardrailRule.key":
 		if e.complexity.InsightsGuardrailRule.Key == nil {
@@ -6503,6 +7481,265 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsGuardrailViolationDetail.Summary(childComplexity), true
 
+	case "InsightsIntegration.config":
+		if e.complexity.InsightsIntegration.Config == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.Config(childComplexity), true
+
+	case "InsightsIntegration.createdAt":
+		if e.complexity.InsightsIntegration.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.CreatedAt(childComplexity), true
+
+	case "InsightsIntegration.enabled":
+		if e.complexity.InsightsIntegration.Enabled == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.Enabled(childComplexity), true
+
+	case "InsightsIntegration.filters":
+		if e.complexity.InsightsIntegration.Filters == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.Filters(childComplexity), true
+
+	case "InsightsIntegration.health":
+		if e.complexity.InsightsIntegration.Health == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.Health(childComplexity), true
+
+	case "InsightsIntegration.id":
+		if e.complexity.InsightsIntegration.ID == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.ID(childComplexity), true
+
+	case "InsightsIntegration.name":
+		if e.complexity.InsightsIntegration.Name == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.Name(childComplexity), true
+
+	case "InsightsIntegration.type":
+		if e.complexity.InsightsIntegration.Type == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.Type(childComplexity), true
+
+	case "InsightsIntegration.updatedAt":
+		if e.complexity.InsightsIntegration.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegration.UpdatedAt(childComplexity), true
+
+	case "InsightsIntegrationCapabilities.maxBatch":
+		if e.complexity.InsightsIntegrationCapabilities.MaxBatch == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationCapabilities.MaxBatch(childComplexity), true
+
+	case "InsightsIntegrationCapabilities.needsHeartbeat":
+		if e.complexity.InsightsIntegrationCapabilities.NeedsHeartbeat == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationCapabilities.NeedsHeartbeat(childComplexity), true
+
+	case "InsightsIntegrationCapabilities.returnsExternalId":
+		if e.complexity.InsightsIntegrationCapabilities.ReturnsExternalID == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationCapabilities.ReturnsExternalID(childComplexity), true
+
+	case "InsightsIntegrationCapabilities.supportsResolve":
+		if e.complexity.InsightsIntegrationCapabilities.SupportsResolve == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationCapabilities.SupportsResolve(childComplexity), true
+
+	case "InsightsIntegrationDescriptor.capabilities":
+		if e.complexity.InsightsIntegrationDescriptor.Capabilities == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationDescriptor.Capabilities(childComplexity), true
+
+	case "InsightsIntegrationDescriptor.description":
+		if e.complexity.InsightsIntegrationDescriptor.Description == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationDescriptor.Description(childComplexity), true
+
+	case "InsightsIntegrationDescriptor.docsUrl":
+		if e.complexity.InsightsIntegrationDescriptor.DocsURL == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationDescriptor.DocsURL(childComplexity), true
+
+	case "InsightsIntegrationDescriptor.fields":
+		if e.complexity.InsightsIntegrationDescriptor.Fields == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationDescriptor.Fields(childComplexity), true
+
+	case "InsightsIntegrationDescriptor.name":
+		if e.complexity.InsightsIntegrationDescriptor.Name == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationDescriptor.Name(childComplexity), true
+
+	case "InsightsIntegrationDescriptor.type":
+		if e.complexity.InsightsIntegrationDescriptor.Type == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationDescriptor.Type(childComplexity), true
+
+	case "InsightsIntegrationFieldSpec.default":
+		if e.complexity.InsightsIntegrationFieldSpec.Default == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFieldSpec.Default(childComplexity), true
+
+	case "InsightsIntegrationFieldSpec.help":
+		if e.complexity.InsightsIntegrationFieldSpec.Help == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFieldSpec.Help(childComplexity), true
+
+	case "InsightsIntegrationFieldSpec.key":
+		if e.complexity.InsightsIntegrationFieldSpec.Key == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFieldSpec.Key(childComplexity), true
+
+	case "InsightsIntegrationFieldSpec.label":
+		if e.complexity.InsightsIntegrationFieldSpec.Label == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFieldSpec.Label(childComplexity), true
+
+	case "InsightsIntegrationFieldSpec.options":
+		if e.complexity.InsightsIntegrationFieldSpec.Options == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFieldSpec.Options(childComplexity), true
+
+	case "InsightsIntegrationFieldSpec.placeholder":
+		if e.complexity.InsightsIntegrationFieldSpec.Placeholder == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFieldSpec.Placeholder(childComplexity), true
+
+	case "InsightsIntegrationFieldSpec.required":
+		if e.complexity.InsightsIntegrationFieldSpec.Required == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFieldSpec.Required(childComplexity), true
+
+	case "InsightsIntegrationFieldSpec.type":
+		if e.complexity.InsightsIntegrationFieldSpec.Type == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFieldSpec.Type(childComplexity), true
+
+	case "InsightsIntegrationFilters.kinds":
+		if e.complexity.InsightsIntegrationFilters.Kinds == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFilters.Kinds(childComplexity), true
+
+	case "InsightsIntegrationFilters.minSeverity":
+		if e.complexity.InsightsIntegrationFilters.MinSeverity == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFilters.MinSeverity(childComplexity), true
+
+	case "InsightsIntegrationFilters.notifyOnResolve":
+		if e.complexity.InsightsIntegrationFilters.NotifyOnResolve == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationFilters.NotifyOnResolve(childComplexity), true
+
+	case "InsightsIntegrationHealth.consecutiveFailures":
+		if e.complexity.InsightsIntegrationHealth.ConsecutiveFailures == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationHealth.ConsecutiveFailures(childComplexity), true
+
+	case "InsightsIntegrationHealth.dead":
+		if e.complexity.InsightsIntegrationHealth.Dead == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationHealth.Dead(childComplexity), true
+
+	case "InsightsIntegrationHealth.failed":
+		if e.complexity.InsightsIntegrationHealth.Failed == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationHealth.Failed(childComplexity), true
+
+	case "InsightsIntegrationHealth.lastError":
+		if e.complexity.InsightsIntegrationHealth.LastError == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationHealth.LastError(childComplexity), true
+
+	case "InsightsIntegrationHealth.lastFailureAt":
+		if e.complexity.InsightsIntegrationHealth.LastFailureAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationHealth.LastFailureAt(childComplexity), true
+
+	case "InsightsIntegrationHealth.lastSuccessAt":
+		if e.complexity.InsightsIntegrationHealth.LastSuccessAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationHealth.LastSuccessAt(childComplexity), true
+
+	case "InsightsIntegrationHealth.pending":
+		if e.complexity.InsightsIntegrationHealth.Pending == nil {
+			break
+		}
+
+		return e.complexity.InsightsIntegrationHealth.Pending(childComplexity), true
+
 	case "InsightsLearningCondition.minDurationMinutes":
 		if e.complexity.InsightsLearningCondition.MinDurationMinutes == nil {
 			break
@@ -6657,6 +7894,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsObservationSummary.TransactionID(childComplexity), true
 
+	case "InsightsPolicy.delivery":
+		if e.complexity.InsightsPolicy.Delivery == nil {
+			break
+		}
+
+		return e.complexity.InsightsPolicy.Delivery(childComplexity), true
+
 	case "InsightsPolicy.enabled":
 		if e.complexity.InsightsPolicy.Enabled == nil {
 			break
@@ -6733,6 +7977,440 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsPromoteResult.TransactionID(childComplexity), true
+
+	case "InsightsRecommendation.alreadyCovered":
+		if e.complexity.InsightsRecommendation.AlreadyCovered == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.AlreadyCovered(childComplexity), true
+
+	case "InsightsRecommendation.appliedRules":
+		if e.complexity.InsightsRecommendation.AppliedRules == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.AppliedRules(childComplexity), true
+
+	case "InsightsRecommendation.confidence":
+		if e.complexity.InsightsRecommendation.Confidence == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Confidence(childComplexity), true
+
+	case "InsightsRecommendation.createdAt":
+		if e.complexity.InsightsRecommendation.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.CreatedAt(childComplexity), true
+
+	case "InsightsRecommendation.examples":
+		if e.complexity.InsightsRecommendation.Examples == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Examples(childComplexity), true
+
+	case "InsightsRecommendation.id":
+		if e.complexity.InsightsRecommendation.ID == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.ID(childComplexity), true
+
+	case "InsightsRecommendation.kind":
+		if e.complexity.InsightsRecommendation.Kind == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Kind(childComplexity), true
+
+	case "InsightsRecommendation.minedAt":
+		if e.complexity.InsightsRecommendation.MinedAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.MinedAt(childComplexity), true
+
+	case "InsightsRecommendation.namespace":
+		if e.complexity.InsightsRecommendation.Namespace == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Namespace(childComplexity), true
+
+	case "InsightsRecommendation.operation":
+		if e.complexity.InsightsRecommendation.Operation == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Operation(childComplexity), true
+
+	case "InsightsRecommendation.rank":
+		if e.complexity.InsightsRecommendation.Rank == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Rank(childComplexity), true
+
+	case "InsightsRecommendation.rules":
+		if e.complexity.InsightsRecommendation.Rules == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Rules(childComplexity), true
+
+	case "InsightsRecommendation.scope":
+		if e.complexity.InsightsRecommendation.Scope == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Scope(childComplexity), true
+
+	case "InsightsRecommendation.scopeKey":
+		if e.complexity.InsightsRecommendation.ScopeKey == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.ScopeKey(childComplexity), true
+
+	case "InsightsRecommendation.service":
+		if e.complexity.InsightsRecommendation.Service == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Service(childComplexity), true
+
+	case "InsightsRecommendation.spec":
+		if e.complexity.InsightsRecommendation.Spec == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Spec(childComplexity), true
+
+	case "InsightsRecommendation.stale":
+		if e.complexity.InsightsRecommendation.Stale == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Stale(childComplexity), true
+
+	case "InsightsRecommendation.state":
+		if e.complexity.InsightsRecommendation.State == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.State(childComplexity), true
+
+	case "InsightsRecommendation.summary":
+		if e.complexity.InsightsRecommendation.Summary == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Summary(childComplexity), true
+
+	case "InsightsRecommendation.title":
+		if e.complexity.InsightsRecommendation.Title == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Title(childComplexity), true
+
+	case "InsightsRecommendation.transactionId":
+		if e.complexity.InsightsRecommendation.TransactionID == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.TransactionID(childComplexity), true
+
+	case "InsightsRecommendation.transactionKind":
+		if e.complexity.InsightsRecommendation.TransactionKind == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.TransactionKind(childComplexity), true
+
+	case "InsightsRecommendation.transform":
+		if e.complexity.InsightsRecommendation.Transform == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Transform(childComplexity), true
+
+	case "InsightsRecommendation.transport":
+		if e.complexity.InsightsRecommendation.Transport == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.Transport(childComplexity), true
+
+	case "InsightsRecommendation.updatedAt":
+		if e.complexity.InsightsRecommendation.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.UpdatedAt(childComplexity), true
+
+	case "InsightsRecommendation.whyItMatters":
+		if e.complexity.InsightsRecommendation.WhyItMatters == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendation.WhyItMatters(childComplexity), true
+
+	case "InsightsRecommendationBulkResult.done":
+		if e.complexity.InsightsRecommendationBulkResult.Done == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationBulkResult.Done(childComplexity), true
+
+	case "InsightsRecommendationBulkResult.errors":
+		if e.complexity.InsightsRecommendationBulkResult.Errors == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationBulkResult.Errors(childComplexity), true
+
+	case "InsightsRecommendationBulkResult.failed":
+		if e.complexity.InsightsRecommendationBulkResult.Failed == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationBulkResult.Failed(childComplexity), true
+
+	case "InsightsRecommendationConfidence.distinct":
+		if e.complexity.InsightsRecommendationConfidence.Distinct == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.Distinct(childComplexity), true
+
+	case "InsightsRecommendationConfidence.held":
+		if e.complexity.InsightsRecommendationConfidence.Held == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.Held(childComplexity), true
+
+	case "InsightsRecommendationConfidence.holdRatio":
+		if e.complexity.InsightsRecommendationConfidence.HoldRatio == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.HoldRatio(childComplexity), true
+
+	case "InsightsRecommendationConfidence.level":
+		if e.complexity.InsightsRecommendationConfidence.Level == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.Level(childComplexity), true
+
+	case "InsightsRecommendationConfidence.liveBroken":
+		if e.complexity.InsightsRecommendationConfidence.LiveBroken == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.LiveBroken(childComplexity), true
+
+	case "InsightsRecommendationConfidence.liveHeld":
+		if e.complexity.InsightsRecommendationConfidence.LiveHeld == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.LiveHeld(childComplexity), true
+
+	case "InsightsRecommendationConfidence.liveLast":
+		if e.complexity.InsightsRecommendationConfidence.LiveLast == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.LiveLast(childComplexity), true
+
+	case "InsightsRecommendationConfidence.liveSince":
+		if e.complexity.InsightsRecommendationConfidence.LiveSince == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.LiveSince(childComplexity), true
+
+	case "InsightsRecommendationConfidence.observed":
+		if e.complexity.InsightsRecommendationConfidence.Observed == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.Observed(childComplexity), true
+
+	case "InsightsRecommendationConfidence.reasons":
+		if e.complexity.InsightsRecommendationConfidence.Reasons == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.Reasons(childComplexity), true
+
+	case "InsightsRecommendationConfidence.sampleCount":
+		if e.complexity.InsightsRecommendationConfidence.SampleCount == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationConfidence.SampleCount(childComplexity), true
+
+	case "InsightsRecommendationExample.leftValue":
+		if e.complexity.InsightsRecommendationExample.LeftValue == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationExample.LeftValue(childComplexity), true
+
+	case "InsightsRecommendationExample.observedAt":
+		if e.complexity.InsightsRecommendationExample.ObservedAt == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationExample.ObservedAt(childComplexity), true
+
+	case "InsightsRecommendationExample.rightValue":
+		if e.complexity.InsightsRecommendationExample.RightValue == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationExample.RightValue(childComplexity), true
+
+	case "InsightsRecommendationExample.traceId":
+		if e.complexity.InsightsRecommendationExample.TraceID == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationExample.TraceID(childComplexity), true
+
+	case "InsightsRecommendationItemError.error":
+		if e.complexity.InsightsRecommendationItemError.Error == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationItemError.Error(childComplexity), true
+
+	case "InsightsRecommendationItemError.id":
+		if e.complexity.InsightsRecommendationItemError.ID == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationItemError.ID(childComplexity), true
+
+	case "InsightsRecommendationPreview.counterExamples":
+		if e.complexity.InsightsRecommendationPreview.CounterExamples == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationPreview.CounterExamples(childComplexity), true
+
+	case "InsightsRecommendationPreview.distinct":
+		if e.complexity.InsightsRecommendationPreview.Distinct == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationPreview.Distinct(childComplexity), true
+
+	case "InsightsRecommendationPreview.examples":
+		if e.complexity.InsightsRecommendationPreview.Examples == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationPreview.Examples(childComplexity), true
+
+	case "InsightsRecommendationPreview.held":
+		if e.complexity.InsightsRecommendationPreview.Held == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationPreview.Held(childComplexity), true
+
+	case "InsightsRecommendationPreview.holdRatio":
+		if e.complexity.InsightsRecommendationPreview.HoldRatio == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationPreview.HoldRatio(childComplexity), true
+
+	case "InsightsRecommendationPreview.observed":
+		if e.complexity.InsightsRecommendationPreview.Observed == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationPreview.Observed(childComplexity), true
+
+	case "InsightsRecommendationPreview.sampleCount":
+		if e.complexity.InsightsRecommendationPreview.SampleCount == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationPreview.SampleCount(childComplexity), true
+
+	case "InsightsRecommendationRule.confidence":
+		if e.complexity.InsightsRecommendationRule.Confidence == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.Confidence(childComplexity), true
+
+	case "InsightsRecommendationRule.description":
+		if e.complexity.InsightsRecommendationRule.Description == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.Description(childComplexity), true
+
+	case "InsightsRecommendationRule.items":
+		if e.complexity.InsightsRecommendationRule.Items == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.Items(childComplexity), true
+
+	case "InsightsRecommendationRule.label":
+		if e.complexity.InsightsRecommendationRule.Label == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.Label(childComplexity), true
+
+	case "InsightsRecommendationRule.liveChecked":
+		if e.complexity.InsightsRecommendationRule.LiveChecked == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.LiveChecked(childComplexity), true
+
+	case "InsightsRecommendationRule.liveLast":
+		if e.complexity.InsightsRecommendationRule.LiveLast == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.LiveLast(childComplexity), true
+
+	case "InsightsRecommendationRule.liveSince":
+		if e.complexity.InsightsRecommendationRule.LiveSince == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.LiveSince(childComplexity), true
+
+	case "InsightsRecommendationRule.liveViolated":
+		if e.complexity.InsightsRecommendationRule.LiveViolated == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.LiveViolated(childComplexity), true
+
+	case "InsightsRecommendationRule.rule":
+		if e.complexity.InsightsRecommendationRule.Rule == nil {
+			break
+		}
+
+		return e.complexity.InsightsRecommendationRule.Rule(childComplexity), true
 
 	case "InsightsRiskAssessment.categories":
 		if e.complexity.InsightsRiskAssessment.Categories == nil {
@@ -6908,6 +8586,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsServiceStat.TransactionCount(childComplexity), true
+
+	case "InsightsServiceStat.transactionLimit":
+		if e.complexity.InsightsServiceStat.TransactionLimit == nil {
+			break
+		}
+
+		return e.complexity.InsightsServiceStat.TransactionLimit(childComplexity), true
+
+	case "InsightsServiceStat.transactionLimitReached":
+		if e.complexity.InsightsServiceStat.TransactionLimitReached == nil {
+			break
+		}
+
+		return e.complexity.InsightsServiceStat.TransactionLimitReached(childComplexity), true
 
 	case "InsightsServiceStat.volume":
 		if e.complexity.InsightsServiceStat.Volume == nil {
@@ -7266,6 +8958,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsSystemCapacitySettings.MaxResidentTransactions(childComplexity), true
 
+	case "InsightsSystemCapacitySettings.maxTransactionsPerService":
+		if e.complexity.InsightsSystemCapacitySettings.MaxTransactionsPerService == nil {
+			break
+		}
+
+		return e.complexity.InsightsSystemCapacitySettings.MaxTransactionsPerService(childComplexity), true
+
 	case "InsightsSystemDetectionSettings.autoTransactionGuardrail":
 		if e.complexity.InsightsSystemDetectionSettings.AutoTransactionGuardrail == nil {
 			break
@@ -7490,6 +9189,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsTransactionStat.Promoted(childComplexity), true
 
+	case "InsightsTransactionStat.saturatedClasses":
+		if e.complexity.InsightsTransactionStat.SaturatedClasses == nil {
+			break
+		}
+
+		return e.complexity.InsightsTransactionStat.SaturatedClasses(childComplexity), true
+
 	case "InsightsTransactionStat.service":
 		if e.complexity.InsightsTransactionStat.Service == nil {
 			break
@@ -7503,6 +9209,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsTransactionStat.Volume(childComplexity), true
+
+	case "InstrumentationAgent.description":
+		if e.complexity.InstrumentationAgent.Description == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.Description(childComplexity), true
+
+	case "InstrumentationAgent.distroDisplayName":
+		if e.complexity.InstrumentationAgent.DistroDisplayName == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.DistroDisplayName(childComplexity), true
+
+	case "InstrumentationAgent.distroName":
+		if e.complexity.InstrumentationAgent.DistroName == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.DistroName(childComplexity), true
+
+	case "InstrumentationAgent.isDefault":
+		if e.complexity.InstrumentationAgent.IsDefault == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.IsDefault(childComplexity), true
+
+	case "InstrumentationAgent.language":
+		if e.complexity.InstrumentationAgent.Language == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.Language(childComplexity), true
+
+	case "InstrumentationAgent.runtimeEnvironment":
+		if e.complexity.InstrumentationAgent.RuntimeEnvironment == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.RuntimeEnvironment(childComplexity), true
+
+	case "InstrumentationAgent.sources":
+		if e.complexity.InstrumentationAgent.Sources == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.Sources(childComplexity), true
+
+	case "InstrumentationAgent.supportedRuntimeVersions":
+		if e.complexity.InstrumentationAgent.SupportedRuntimeVersions == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationAgent.SupportedRuntimeVersions(childComplexity), true
 
 	case "InstrumentationInstanceAnalyze.healthy":
 		if e.complexity.InstrumentationInstanceAnalyze.Healthy == nil {
@@ -7629,6 +9391,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.InstrumentationLibraries(childComplexity), true
+
+	case "InstrumentationRule.managedBy":
+		if e.complexity.InstrumentationRule.ManagedBy == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.ManagedBy(childComplexity), true
 
 	case "InstrumentationRule.mutable":
 		if e.complexity.InstrumentationRule.Mutable == nil {
@@ -7861,6 +9630,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentorConfig.MountMethod(childComplexity), true
 
+	case "JavaCustomProbe.addedAt":
+		if e.complexity.JavaCustomProbe.AddedAt == nil {
+			break
+		}
+
+		return e.complexity.JavaCustomProbe.AddedAt(childComplexity), true
+
+	case "JavaCustomProbe.category":
+		if e.complexity.JavaCustomProbe.Category == nil {
+			break
+		}
+
+		return e.complexity.JavaCustomProbe.Category(childComplexity), true
+
 	case "JavaCustomProbe.className":
 		if e.complexity.JavaCustomProbe.ClassName == nil {
 			break
@@ -7874,6 +9657,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.JavaCustomProbe.MethodName(childComplexity), true
+
+	case "JavaCustomProbe.notes":
+		if e.complexity.JavaCustomProbe.Notes == nil {
+			break
+		}
+
+		return e.complexity.JavaCustomProbe.Notes(childComplexity), true
 
 	case "K8sActualNamespace.dataStreamNames":
 		if e.complexity.K8sActualNamespace.DataStreamNames == nil {
@@ -8449,6 +10239,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadContainer.RuntimeInfo(childComplexity), true
 
+	case "K8sWorkloadContainer.urlTemplatization":
+		if e.complexity.K8sWorkloadContainer.URLTemplatization == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainer.URLTemplatization(childComplexity), true
+
 	case "K8sWorkloadContainerAgentConfig.traces":
 		if e.complexity.K8sWorkloadContainerAgentConfig.Traces == nil {
 			break
@@ -8666,6 +10463,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation.RuleID(childComplexity), true
 
+	case "K8sWorkloadContainerLiveTrafficLearning.clientRecommendedRules":
+		if e.complexity.K8sWorkloadContainerLiveTrafficLearning.ClientRecommendedRules == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerLiveTrafficLearning.ClientRecommendedRules(childComplexity), true
+
+	case "K8sWorkloadContainerLiveTrafficLearning.serverRecommendedRules":
+		if e.complexity.K8sWorkloadContainerLiveTrafficLearning.ServerRecommendedRules == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerLiveTrafficLearning.ServerRecommendedRules(childComplexity), true
+
+	case "K8sWorkloadContainerLiveTrafficLearning.unmatchedClientPaths":
+		if e.complexity.K8sWorkloadContainerLiveTrafficLearning.UnmatchedClientPaths == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerLiveTrafficLearning.UnmatchedClientPaths(childComplexity), true
+
+	case "K8sWorkloadContainerLiveTrafficLearning.unmatchedServerPaths":
+		if e.complexity.K8sWorkloadContainerLiveTrafficLearning.UnmatchedServerPaths == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerLiveTrafficLearning.UnmatchedServerPaths(childComplexity), true
+
 	case "K8sWorkloadContainerOverrides.allowConcurrentAgents":
 		if e.complexity.K8sWorkloadContainerOverrides.AllowConcurrentAgents == nil {
 			break
@@ -8693,6 +10518,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadContainerOverrides.RuntimeInfo(childComplexity), true
+
+	case "K8sWorkloadContainerUrlTemplatization.liveTrafficLearning":
+		if e.complexity.K8sWorkloadContainerUrlTemplatization.LiveTrafficLearning == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerUrlTemplatization.LiveTrafficLearning(childComplexity), true
+
+	case "K8sWorkloadContainerUrlTemplatization.templatization":
+		if e.complexity.K8sWorkloadContainerUrlTemplatization.Templatization == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerUrlTemplatization.Templatization(childComplexity), true
 
 	case "K8sWorkloadId.kind":
 		if e.complexity.K8sWorkloadId.Kind == nil {
@@ -9212,6 +11051,188 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LanguageConfig.EnvVars(childComplexity), true
 
+	case "LiveTrafficLearningAutomaticRulesConfig.enabled":
+		if e.complexity.LiveTrafficLearningAutomaticRulesConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningAutomaticRulesConfig.Enabled(childComplexity), true
+
+	case "LiveTrafficLearningConfig.automaticRules":
+		if e.complexity.LiveTrafficLearningConfig.AutomaticRules == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.AutomaticRules(childComplexity), true
+
+	case "LiveTrafficLearningConfig.enabled":
+		if e.complexity.LiveTrafficLearningConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.Enabled(childComplexity), true
+
+	case "LiveTrafficLearningConfig.learningInterval":
+		if e.complexity.LiveTrafficLearningConfig.LearningInterval == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.LearningInterval(childComplexity), true
+
+	case "LiveTrafficLearningConfig.maxExamplePathsPerWorkload":
+		if e.complexity.LiveTrafficLearningConfig.MaxExamplePathsPerWorkload == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.MaxExamplePathsPerWorkload(childComplexity), true
+
+	case "LiveTrafficLearningConfig.pathExampleIdleTTL":
+		if e.complexity.LiveTrafficLearningConfig.PathExampleIdleTTL == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.PathExampleIdleTTL(childComplexity), true
+
+	case "LiveTrafficLearningConfig.ruleComputation":
+		if e.complexity.LiveTrafficLearningConfig.RuleComputation == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningConfig.RuleComputation(childComplexity), true
+
+	case "LiveTrafficLearningPatternBasedTemplatization.disabled":
+		if e.complexity.LiveTrafficLearningPatternBasedTemplatization.Disabled == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningPatternBasedTemplatization.Disabled(childComplexity), true
+
+	case "LiveTrafficLearningPatternBasedTemplatization.skipPolicy":
+		if e.complexity.LiveTrafficLearningPatternBasedTemplatization.SkipPolicy == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningPatternBasedTemplatization.SkipPolicy(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedRule.reason":
+		if e.complexity.LiveTrafficLearningRecommendedRule.Reason == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedRule.Reason(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedRule.segments":
+		if e.complexity.LiveTrafficLearningRecommendedRule.Segments == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedRule.Segments(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedRule.template":
+		if e.complexity.LiveTrafficLearningRecommendedRule.Template == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedRule.Template(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedSegment.certainty":
+		if e.complexity.LiveTrafficLearningRecommendedSegment.Certainty == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedSegment.Certainty(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedSegment.examples":
+		if e.complexity.LiveTrafficLearningRecommendedSegment.Examples == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedSegment.Examples(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedSegment.static":
+		if e.complexity.LiveTrafficLearningRecommendedSegment.Static == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedSegment.Static(childComplexity), true
+
+	case "LiveTrafficLearningRecommendedSegment.templateName":
+		if e.complexity.LiveTrafficLearningRecommendedSegment.TemplateName == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRecommendedSegment.TemplateName(childComplexity), true
+
+	case "LiveTrafficLearningRuleComputationConfig.minCardinalityForTemplating":
+		if e.complexity.LiveTrafficLearningRuleComputationConfig.MinCardinalityForTemplating == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRuleComputationConfig.MinCardinalityForTemplating(childComplexity), true
+
+	case "LiveTrafficLearningRuleComputationConfig.minObservationsForRule":
+		if e.complexity.LiveTrafficLearningRuleComputationConfig.MinObservationsForRule == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningRuleComputationConfig.MinObservationsForRule(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.actionId":
+		if e.complexity.LiveTrafficLearningTemplate.ActionID == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.ActionID(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.actionName":
+		if e.complexity.LiveTrafficLearningTemplate.ActionName == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.ActionName(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.examples":
+		if e.complexity.LiveTrafficLearningTemplate.Examples == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.Examples(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.managedBy":
+		if e.complexity.LiveTrafficLearningTemplate.ManagedBy == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.ManagedBy(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.notes":
+		if e.complexity.LiveTrafficLearningTemplate.Notes == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.Notes(childComplexity), true
+
+	case "LiveTrafficLearningTemplate.template":
+		if e.complexity.LiveTrafficLearningTemplate.Template == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplate.Template(childComplexity), true
+
+	case "LiveTrafficLearningTemplatization.patternBasedTemplatization":
+		if e.complexity.LiveTrafficLearningTemplatization.PatternBasedTemplatization == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplatization.PatternBasedTemplatization(childComplexity), true
+
+	case "LiveTrafficLearningTemplatization.templates":
+		if e.complexity.LiveTrafficLearningTemplatization.Templates == nil {
+			break
+		}
+
+		return e.complexity.LiveTrafficLearningTemplatization.Templates(childComplexity), true
+
 	case "MessagingPayloadCollection.dropPartialPayloads":
 		if e.complexity.MessagingPayloadCollection.DropPartialPayloads == nil {
 			break
@@ -9427,6 +11448,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AcceptInsightsGuardrailViolation(childComplexity, args["action"].(model.InsightsViolationActionInput)), true
 
+	case "Mutation.applyInsightsRecommendations":
+		if e.complexity.Mutation.ApplyInsightsRecommendations == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_applyInsightsRecommendations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ApplyInsightsRecommendations(childComplexity, args["items"].([]*model.InsightsRecommendationApplyItemInput)), true
+
 	case "Mutation.applyRecommendationRemediation":
 		if e.complexity.Mutation.ApplyRecommendationRemediation == nil {
 			break
@@ -9437,7 +11470,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ApplyRecommendationRemediation(childComplexity, args["recommendationType"].(model.RecommendationType), args["remediationType"].(string)), true
+		return e.complexity.Mutation.ApplyRecommendationRemediation(childComplexity, args["recommendationType"].(string), args["remediationType"].(string)), true
 
 	case "Mutation.bulkDeleteInsightsTransactions":
 		if e.complexity.Mutation.BulkDeleteInsightsTransactions == nil {
@@ -9474,6 +11507,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.BulkResolveInsightsAnomalies(childComplexity, args["resolution"].(model.InsightsBulkResolution), args["items"].([]*model.InsightsAnomalyRefInput)), true
+
+	case "Mutation.checkGoOffsetsUpdates":
+		if e.complexity.Mutation.CheckGoOffsetsUpdates == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_checkGoOffsetsUpdates_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CheckGoOffsetsUpdates(childComplexity, args["content"].(string)), true
 
 	case "Mutation.clearSourceProfilingBuffer":
 		if e.complexity.Mutation.ClearSourceProfilingBuffer == nil {
@@ -9534,6 +11579,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateHighlyRelevantOperationRule(childComplexity, args["samplingId"].(string), args["rule"].(model.HighlyRelevantOperationRuleInput)), true
+
+	case "Mutation.createInsightsIntegration":
+		if e.complexity.Mutation.CreateInsightsIntegration == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createInsightsIntegration_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateInsightsIntegration(childComplexity, args["integration"].(model.InsightsIntegrationInput)), true
 
 	case "Mutation.createInstrumentationRule":
 		if e.complexity.Mutation.CreateInstrumentationRule == nil {
@@ -9641,7 +11698,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteInsightsGuardrail(childComplexity, args["scopeKey"].(string)), true
+		return e.complexity.Mutation.DeleteInsightsGuardrail(childComplexity, args["scopeKey"].(string), args["scope"].(*model.InsightsPolicyScope)), true
+
+	case "Mutation.deleteInsightsIntegration":
+		if e.complexity.Mutation.DeleteInsightsIntegration == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteInsightsIntegration_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteInsightsIntegration(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteInsightsLearningPolicy":
 		if e.complexity.Mutation.DeleteInsightsLearningPolicy == nil {
@@ -9739,6 +11808,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DismissInsightsGuardrailViolation(childComplexity, args["action"].(model.InsightsViolationActionInput)), true
 
+	case "Mutation.dismissInsightsRecommendations":
+		if e.complexity.Mutation.DismissInsightsRecommendations == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_dismissInsightsRecommendations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DismissInsightsRecommendations(childComplexity, args["ids"].([]string)), true
+
 	case "Mutation.enableInsightsTransactionGuardrail":
 		if e.complexity.Mutation.EnableInsightsTransactionGuardrail == nil {
 			break
@@ -9806,6 +11887,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["sources"].([]*model.PersistNamespaceSourceInput)), true
 
+	case "Mutation.previewInsightsRecommendation":
+		if e.complexity.Mutation.PreviewInsightsRecommendation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_previewInsightsRecommendation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PreviewInsightsRecommendation(childComplexity, args["transactionId"].(string), args["spec"].(model.InsightsCorrelationSpecInput)), true
+
 	case "Mutation.promoteInsightsBaselineClass":
 		if e.complexity.Mutation.PromoteInsightsBaselineClass == nil {
 			break
@@ -9829,6 +11922,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PromoteInsightsTransactionBaselines(childComplexity, args["transactionId"].(string)), true
+
+	case "Mutation.recomputeInsightsRecommendations":
+		if e.complexity.Mutation.RecomputeInsightsRecommendations == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_recomputeInsightsRecommendations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RecomputeInsightsRecommendations(childComplexity, args["transactionId"].(*string), args["namespace"].(*string), args["service"].(*string)), true
 
 	case "Mutation.recoverFromRollbackForWorkload":
 		if e.complexity.Mutation.RecoverFromRollbackForWorkload == nil {
@@ -9921,6 +12026,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RestartWorkloads(childComplexity, args["sourceIds"].([]*model.K8sSourceID)), true
 
+	case "Mutation.restoreInsightsRecommendations":
+		if e.complexity.Mutation.RestoreInsightsRecommendations == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_restoreInsightsRecommendations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RestoreInsightsRecommendations(childComplexity, args["ids"].([]string)), true
+
+	case "Mutation.retryInsightsIntegrationDeliveries":
+		if e.complexity.Mutation.RetryInsightsIntegrationDeliveries == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_retryInsightsIntegrationDeliveries_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RetryInsightsIntegrationDeliveries(childComplexity, args["id"].(string), args["findingKeys"].([]string)), true
+
+	case "Mutation.revertInsightsRecommendations":
+		if e.complexity.Mutation.RevertInsightsRecommendations == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_revertInsightsRecommendations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RevertInsightsRecommendations(childComplexity, args["ids"].([]string)), true
+
 	case "Mutation.seedInsightsGuardrail":
 		if e.complexity.Mutation.SeedInsightsGuardrail == nil {
 			break
@@ -9968,6 +12109,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.TestConnectionForDestination(childComplexity, args["destination"].(model.DestinationInput)), true
+
+	case "Mutation.testInsightsIntegration":
+		if e.complexity.Mutation.TestInsightsIntegration == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_testInsightsIntegration_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.TestInsightsIntegration(childComplexity, args["id"].(string)), true
 
 	case "Mutation.uninstrumentCluster":
 		if e.complexity.Mutation.UninstrumentCluster == nil {
@@ -10036,6 +12189,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateDestination(childComplexity, args["id"].(string), args["destination"].(model.DestinationInput)), true
 
+	case "Mutation.updateGoOffsets":
+		if e.complexity.Mutation.UpdateGoOffsets == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateGoOffsets_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateGoOffsets(childComplexity, args["content"].(string)), true
+
 	case "Mutation.updateHighlyRelevantOperationRule":
 		if e.complexity.Mutation.UpdateHighlyRelevantOperationRule == nil {
 			break
@@ -10047,6 +12212,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateHighlyRelevantOperationRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string), args["rule"].(model.HighlyRelevantOperationRuleInput)), true
+
+	case "Mutation.updateInsightsIntegration":
+		if e.complexity.Mutation.UpdateInsightsIntegration == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateInsightsIntegration_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateInsightsIntegration(childComplexity, args["id"].(string), args["integration"].(model.InsightsIntegrationInput)), true
 
 	case "Mutation.updateInsightsSystemSettings":
 		if e.complexity.Mutation.UpdateInsightsSystemSettings == nil {
@@ -10518,6 +12695,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PeerSources.Outbound(childComplexity), true
 
+	case "PhpCustomProbe.addedAt":
+		if e.complexity.PhpCustomProbe.AddedAt == nil {
+			break
+		}
+
+		return e.complexity.PhpCustomProbe.AddedAt(childComplexity), true
+
+	case "PhpCustomProbe.category":
+		if e.complexity.PhpCustomProbe.Category == nil {
+			break
+		}
+
+		return e.complexity.PhpCustomProbe.Category(childComplexity), true
+
 	case "PhpCustomProbe.className":
 		if e.complexity.PhpCustomProbe.ClassName == nil {
 			break
@@ -10531,6 +12722,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PhpCustomProbe.FunctionName(childComplexity), true
+
+	case "PhpCustomProbe.notes":
+		if e.complexity.PhpCustomProbe.Notes == nil {
+			break
+		}
+
+		return e.complexity.PhpCustomProbe.Notes(childComplexity), true
 
 	case "PodAnalyze.agentInjected":
 		if e.complexity.PodAnalyze.AgentInjected == nil {
@@ -10932,12 +13130,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetServiceMap(childComplexity), true
 
+	case "Query.goOffsets":
+		if e.complexity.Query.GoOffsets == nil {
+			break
+		}
+
+		return e.complexity.Query.GoOffsets(childComplexity), true
+
 	case "Query.insights":
 		if e.complexity.Query.Insights == nil {
 			break
 		}
 
 		return e.complexity.Query.Insights(childComplexity), true
+
+	case "Query.instrumentationAgents":
+		if e.complexity.Query.InstrumentationAgents == nil {
+			break
+		}
+
+		return e.complexity.Query.InstrumentationAgents(childComplexity), true
 
 	case "Query.instrumentationInstanceComponents":
 		if e.complexity.Query.InstrumentationInstanceComponents == nil {
@@ -11049,18 +13261,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.SourceConditions(childComplexity), true
-
-	case "Query.traceCorrelations":
-		if e.complexity.Query.TraceCorrelations == nil {
-			break
-		}
-
-		args, err := ec.field_Query_traceCorrelations_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.TraceCorrelations(childComplexity, args["filter"].(*model.WorkloadFilter), args["timeRange"].(*model.TraceCorrelationsTimeRangeInput)), true
 
 	case "Query.workloads":
 		if e.complexity.Query.Workloads == nil {
@@ -11260,6 +13460,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RecommendationCatalogRemediation.ButtonText(childComplexity), true
+
+	case "RecommendationCatalogRemediation.canApplyViaUi":
+		if e.complexity.RecommendationCatalogRemediation.CanApplyViaUI == nil {
+			break
+		}
+
+		return e.complexity.RecommendationCatalogRemediation.CanApplyViaUI(childComplexity), true
 
 	case "RecommendationCatalogRemediation.tooltip":
 		if e.complexity.RecommendationCatalogRemediation.Tooltip == nil {
@@ -11835,6 +14042,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TailSamplingConfig.Disabled(childComplexity), true
 
+	case "TailSamplingConfig.noisyOperationsEnforcement":
+		if e.complexity.TailSamplingConfig.NoisyOperationsEnforcement == nil {
+			break
+		}
+
+		return e.complexity.TailSamplingConfig.NoisyOperationsEnforcement(childComplexity), true
+
 	case "TailSamplingConfig.traceAggregationWaitDuration":
 		if e.complexity.TailSamplingConfig.TraceAggregationWaitDuration == nil {
 			break
@@ -11940,139 +14154,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TestConnectionResponse.Succeeded(childComplexity), true
 
-	case "TraceCorrelations.workloads":
-		if e.complexity.TraceCorrelations.Workloads == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelations.Workloads(childComplexity), true
-
-	case "TraceCorrelationsConfig.serviceIO":
-		if e.complexity.TraceCorrelationsConfig.ServiceIo == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsConfig.ServiceIo(childComplexity), true
-
-	case "TraceCorrelationsInputGroup.attributes":
-		if e.complexity.TraceCorrelationsInputGroup.Attributes == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsInputGroup.Attributes(childComplexity), true
-
-	case "TraceCorrelationsInputGroup.outputs":
-		if e.complexity.TraceCorrelationsInputGroup.Outputs == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsInputGroup.Outputs(childComplexity), true
-
-	case "TraceCorrelationsOutputSeries.attributes":
-		if e.complexity.TraceCorrelationsOutputSeries.Attributes == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsOutputSeries.Attributes(childComplexity), true
-
-	case "TraceCorrelationsOutputSeries.connectionCount":
-		if e.complexity.TraceCorrelationsOutputSeries.ConnectionCount == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsOutputSeries.ConnectionCount(childComplexity), true
-
-	case "TraceCorrelationsOutputSeries.firstDetectedAt":
-		if e.complexity.TraceCorrelationsOutputSeries.FirstDetectedAt == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsOutputSeries.FirstDetectedAt(childComplexity), true
-
-	case "TraceCorrelationsServiceIOConfig.enabled":
-		if e.complexity.TraceCorrelationsServiceIOConfig.Enabled == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsServiceIOConfig.Enabled(childComplexity), true
-
-	case "TraceCorrelationsServiceIOConfig.inputSpanAttributes":
-		if e.complexity.TraceCorrelationsServiceIOConfig.InputSpanAttributes == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsServiceIOConfig.InputSpanAttributes(childComplexity), true
-
-	case "TraceCorrelationsServiceIOConfig.metricsFlushInterval":
-		if e.complexity.TraceCorrelationsServiceIOConfig.MetricsFlushInterval == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsServiceIOConfig.MetricsFlushInterval(childComplexity), true
-
-	case "TraceCorrelationsServiceIOConfig.outputSpanAttributes":
-		if e.complexity.TraceCorrelationsServiceIOConfig.OutputSpanAttributes == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsServiceIOConfig.OutputSpanAttributes(childComplexity), true
-
-	case "TraceCorrelationsWorkload.containerName":
-		if e.complexity.TraceCorrelationsWorkload.ContainerName == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsWorkload.ContainerName(childComplexity), true
-
-	case "TraceCorrelationsWorkload.inputs":
-		if e.complexity.TraceCorrelationsWorkload.Inputs == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsWorkload.Inputs(childComplexity), true
-
-	case "TraceCorrelationsWorkload.kind":
-		if e.complexity.TraceCorrelationsWorkload.Kind == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsWorkload.Kind(childComplexity), true
-
-	case "TraceCorrelationsWorkload.name":
-		if e.complexity.TraceCorrelationsWorkload.Name == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsWorkload.Name(childComplexity), true
-
-	case "TraceCorrelationsWorkload.namespace":
-		if e.complexity.TraceCorrelationsWorkload.Namespace == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsWorkload.Namespace(childComplexity), true
-
-	case "TraceCorrelationsWorkload.processRuntimeName":
-		if e.complexity.TraceCorrelationsWorkload.ProcessRuntimeName == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsWorkload.ProcessRuntimeName(childComplexity), true
-
-	case "TraceCorrelationsWorkload.processRuntimeVersion":
-		if e.complexity.TraceCorrelationsWorkload.ProcessRuntimeVersion == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsWorkload.ProcessRuntimeVersion(childComplexity), true
-
-	case "TraceCorrelationsWorkload.telemetrySdkLanguage":
-		if e.complexity.TraceCorrelationsWorkload.TelemetrySdkLanguage == nil {
-			break
-		}
-
-		return e.complexity.TraceCorrelationsWorkload.TelemetrySdkLanguage(childComplexity), true
-
 	case "URLTemplatizationRule.examples":
 		if e.complexity.URLTemplatizationRule.Examples == nil {
 			break
@@ -12093,6 +14174,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.URLTemplatizationRule.Template(childComplexity), true
+
+	case "UnmatchedUrlPath.count":
+		if e.complexity.UnmatchedUrlPath.Count == nil {
+			break
+		}
+
+		return e.complexity.UnmatchedUrlPath.Count(childComplexity), true
+
+	case "UnmatchedUrlPath.path":
+		if e.complexity.UnmatchedUrlPath.Path == nil {
+			break
+		}
+
+		return e.complexity.UnmatchedUrlPath.Path(childComplexity), true
+
+	case "UrlTemplatizationCardinalityControlConfig.liveTrafficLearning":
+		if e.complexity.UrlTemplatizationCardinalityControlConfig.LiveTrafficLearning == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationCardinalityControlConfig.LiveTrafficLearning(childComplexity), true
 
 	case "UrlTemplatizationDefaultGroup.disabled":
 		if e.complexity.UrlTemplatizationDefaultGroup.Disabled == nil {
@@ -12212,6 +14314,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputClusterAttributeInput,
 		ec.unmarshalInputCodeAttributesInput,
 		ec.unmarshalInputCostReductionRuleInput,
+		ec.unmarshalInputCppCustomProbeInput,
 		ec.unmarshalInputCustomFormatMaskingInput,
 		ec.unmarshalInputCustomInstrumentationsInput,
 		ec.unmarshalInputCustomRegexMaskingInput,
@@ -12232,12 +14335,18 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHighlyRelevantOperationRuleInput,
 		ec.unmarshalInputHttpPayloadCollectionInput,
 		ec.unmarshalInputInsightsAnomalyRefInput,
+		ec.unmarshalInputInsightsCorrelationSelectorInput,
+		ec.unmarshalInputInsightsCorrelationSpecInput,
+		ec.unmarshalInputInsightsDeliverySettingsInput,
 		ec.unmarshalInputInsightsGuardrailInput,
 		ec.unmarshalInputInsightsGuardrailRuleInput,
 		ec.unmarshalInputInsightsGuardrailSeedInput,
+		ec.unmarshalInputInsightsIntegrationFiltersInput,
+		ec.unmarshalInputInsightsIntegrationInput,
 		ec.unmarshalInputInsightsLearningConditionInput,
 		ec.unmarshalInputInsightsLearningPolicyInput,
 		ec.unmarshalInputInsightsPolicyInput,
+		ec.unmarshalInputInsightsRecommendationApplyItemInput,
 		ec.unmarshalInputInsightsSystemCapacitySettingsInput,
 		ec.unmarshalInputInsightsSystemDetectionSettingsInput,
 		ec.unmarshalInputInsightsSystemIdentitySettingsInput,
@@ -12261,15 +14370,17 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputK8sWorkloadIdInput,
 		ec.unmarshalInputLocalUiConfigAllowConcurrentAgentsInput,
 		ec.unmarshalInputLocalUiConfigAutoRollbackInput,
+		ec.unmarshalInputLocalUiConfigCardinalityControlInput,
 		ec.unmarshalInputLocalUiConfigComponentLogLevelsInput,
 		ec.unmarshalInputLocalUiConfigInput,
 		ec.unmarshalInputLocalUiConfigInstrumentorInput,
+		ec.unmarshalInputLocalUiConfigLiveTrafficLearningAutomaticRulesInput,
+		ec.unmarshalInputLocalUiConfigLiveTrafficLearningInput,
+		ec.unmarshalInputLocalUiConfigLiveTrafficLearningRuleComputationInput,
 		ec.unmarshalInputLocalUiConfigRolloutInput,
 		ec.unmarshalInputLocalUiConfigSamplingInput,
 		ec.unmarshalInputLocalUiConfigSpanSamplingAttributesInput,
-		ec.unmarshalInputLocalUiConfigTraceCorrelationsInput,
-		ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput,
-		ec.unmarshalInputLocalUiConfigWaspInput,
+		ec.unmarshalInputLocalUiConfigUrlTemplatizationCardinalityControlInput,
 		ec.unmarshalInputMessagingPayloadCollectionInput,
 		ec.unmarshalInputNoisyOperationRuleInput,
 		ec.unmarshalInputPatchSourceRequestInput,
@@ -12287,7 +14398,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTailSamplingKafkaMatcherInput,
 		ec.unmarshalInputTailSamplingOperationMatcherInput,
 		ec.unmarshalInputTemplatizationWorkloadFilterInput,
-		ec.unmarshalInputTraceCorrelationsTimeRangeInput,
 		ec.unmarshalInputURLTemplatizationRuleInput,
 		ec.unmarshalInputUrlTemplatizationDefaultGroupInput,
 		ec.unmarshalInputUrlTemplatizationDefaultSkipPolicyInput,
@@ -12389,7 +14499,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "actions.graphqls" "collectors.graphqls" "common.graphqls" "configs.graphqls" "datastreams.graphqls" "describe.graphqls" "desiredcondition.graphqls" "destinations.graphqls" "diagnose.graphqls" "insights.graphqls" "instrumentationrules.graphqls" "metrics.graphqls" "pod.graphqls" "profiling.graphqls" "recommendations.graphqls" "sampling.graphqls" "servicemap.graphqls" "sources.graphqls" "tokens.graphqls" "tracecorrelations.graphqls" "workload.graphqls"
+//go:embed "actions.graphqls" "collectors.graphqls" "common.graphqls" "configs.graphqls" "datastreams.graphqls" "describe.graphqls" "desiredcondition.graphqls" "destinations.graphqls" "diagnose.graphqls" "gooffsets.graphqls" "insights.graphqls" "instrumentationagents.graphqls" "instrumentationrules.graphqls" "metrics.graphqls" "pod.graphqls" "profiling.graphqls" "recommendations.graphqls" "sampling.graphqls" "servicemap.graphqls" "sources.graphqls" "tokens.graphqls" "urltemplatization.graphqls" "workload.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -12410,7 +14520,9 @@ var sources = []*ast.Source{
 	{Name: "desiredcondition.graphqls", Input: sourceData("desiredcondition.graphqls"), BuiltIn: false},
 	{Name: "destinations.graphqls", Input: sourceData("destinations.graphqls"), BuiltIn: false},
 	{Name: "diagnose.graphqls", Input: sourceData("diagnose.graphqls"), BuiltIn: false},
+	{Name: "gooffsets.graphqls", Input: sourceData("gooffsets.graphqls"), BuiltIn: false},
 	{Name: "insights.graphqls", Input: sourceData("insights.graphqls"), BuiltIn: false},
+	{Name: "instrumentationagents.graphqls", Input: sourceData("instrumentationagents.graphqls"), BuiltIn: false},
 	{Name: "instrumentationrules.graphqls", Input: sourceData("instrumentationrules.graphqls"), BuiltIn: false},
 	{Name: "metrics.graphqls", Input: sourceData("metrics.graphqls"), BuiltIn: false},
 	{Name: "pod.graphqls", Input: sourceData("pod.graphqls"), BuiltIn: false},
@@ -12420,7 +14532,7 @@ var sources = []*ast.Source{
 	{Name: "servicemap.graphqls", Input: sourceData("servicemap.graphqls"), BuiltIn: false},
 	{Name: "sources.graphqls", Input: sourceData("sources.graphqls"), BuiltIn: false},
 	{Name: "tokens.graphqls", Input: sourceData("tokens.graphqls"), BuiltIn: false},
-	{Name: "tracecorrelations.graphqls", Input: sourceData("tracecorrelations.graphqls"), BuiltIn: false},
+	{Name: "urltemplatization.graphqls", Input: sourceData("urltemplatization.graphqls"), BuiltIn: false},
 	{Name: "workload.graphqls", Input: sourceData("workload.graphqls"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -12735,6 +14847,34 @@ func (ec *executionContext) field_Insights_blastRadius_argsDepth(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Insights_findingDeliveries_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Insights_findingDeliveries_argsFindingKey(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["findingKey"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Insights_findingDeliveries_argsFindingKey(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["findingKey"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("findingKey"))
+	if tmp, ok := rawArgs["findingKey"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Insights_findings_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -13026,6 +15166,159 @@ func (ec *executionContext) field_Insights_guardrailViolations_argsStatus(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Insights_integrationAttempts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Insights_integrationAttempts_argsIntegrationID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["integrationId"] = arg0
+	arg1, err := ec.field_Insights_integrationAttempts_argsLimit(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Insights_integrationAttempts_argsIntegrationID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["integrationId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("integrationId"))
+	if tmp, ok := rawArgs["integrationId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_integrationAttempts_argsLimit(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["limit"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_integrationDeliveries_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Insights_integrationDeliveries_argsIntegrationID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["integrationId"] = arg0
+	arg1, err := ec.field_Insights_integrationDeliveries_argsState(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["state"] = arg1
+	arg2, err := ec.field_Insights_integrationDeliveries_argsLimit(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Insights_integrationDeliveries_argsIntegrationID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["integrationId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("integrationId"))
+	if tmp, ok := rawArgs["integrationId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_integrationDeliveries_argsState(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.InsightsDeliveryState, error) {
+	if _, ok := rawArgs["state"]; !ok {
+		var zeroVal *model.InsightsDeliveryState
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
+	if tmp, ok := rawArgs["state"]; ok {
+		return ec.unmarshalOInsightsDeliveryState2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryState(ctx, tmp)
+	}
+
+	var zeroVal *model.InsightsDeliveryState
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_integrationDeliveries_argsLimit(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["limit"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_integration_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Insights_integration_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Insights_integration_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Insights_observation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -13125,6 +15418,177 @@ func (ec *executionContext) field_Insights_observations_argsSampleReason(
 	}
 
 	var zeroVal *model.InsightsSampleReason
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_recommendation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Insights_recommendation_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Insights_recommendation_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_recommendations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Insights_recommendations_argsKind(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = arg0
+	arg1, err := ec.field_Insights_recommendations_argsState(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["state"] = arg1
+	arg2, err := ec.field_Insights_recommendations_argsTransactionID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["transactionId"] = arg2
+	arg3, err := ec.field_Insights_recommendations_argsService(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["service"] = arg3
+	arg4, err := ec.field_Insights_recommendations_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg4
+	arg5, err := ec.field_Insights_recommendations_argsIncludeStale(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["includeStale"] = arg5
+	return args, nil
+}
+func (ec *executionContext) field_Insights_recommendations_argsKind(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.InsightsRecommendationKind, error) {
+	if _, ok := rawArgs["kind"]; !ok {
+		var zeroVal *model.InsightsRecommendationKind
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+	if tmp, ok := rawArgs["kind"]; ok {
+		return ec.unmarshalOInsightsRecommendationKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationKind(ctx, tmp)
+	}
+
+	var zeroVal *model.InsightsRecommendationKind
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_recommendations_argsState(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.InsightsRecommendationState, error) {
+	if _, ok := rawArgs["state"]; !ok {
+		var zeroVal *model.InsightsRecommendationState
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
+	if tmp, ok := rawArgs["state"]; ok {
+		return ec.unmarshalOInsightsRecommendationState2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationState(ctx, tmp)
+	}
+
+	var zeroVal *model.InsightsRecommendationState
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_recommendations_argsTransactionID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["transactionId"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("transactionId"))
+	if tmp, ok := rawArgs["transactionId"]; ok {
+		return ec.unmarshalOID2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_recommendations_argsService(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["service"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
+	if tmp, ok := rawArgs["service"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_recommendations_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_recommendations_argsIncludeStale(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*bool, error) {
+	if _, ok := rawArgs["includeStale"]; !ok {
+		var zeroVal *bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeStale"))
+	if tmp, ok := rawArgs["includeStale"]; ok {
+		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	}
+
+	var zeroVal *bool
 	return zeroVal, nil
 }
 
@@ -13332,6 +15796,34 @@ func (ec *executionContext) field_Mutation_acceptInsightsGuardrailViolation_args
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_applyInsightsRecommendations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_applyInsightsRecommendations_argsItems(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["items"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_applyInsightsRecommendations_argsItems(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*model.InsightsRecommendationApplyItemInput, error) {
+	if _, ok := rawArgs["items"]; !ok {
+		var zeroVal []*model.InsightsRecommendationApplyItemInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("items"))
+	if tmp, ok := rawArgs["items"]; ok {
+		return ec.unmarshalNInsightsRecommendationApplyItemInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationApplyItemInputᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*model.InsightsRecommendationApplyItemInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_applyRecommendationRemediation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -13350,18 +15842,18 @@ func (ec *executionContext) field_Mutation_applyRecommendationRemediation_args(c
 func (ec *executionContext) field_Mutation_applyRecommendationRemediation_argsRecommendationType(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (model.RecommendationType, error) {
+) (string, error) {
 	if _, ok := rawArgs["recommendationType"]; !ok {
-		var zeroVal model.RecommendationType
+		var zeroVal string
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("recommendationType"))
 	if tmp, ok := rawArgs["recommendationType"]; ok {
-		return ec.unmarshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx, tmp)
+		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
-	var zeroVal model.RecommendationType
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -13487,6 +15979,34 @@ func (ec *executionContext) field_Mutation_bulkResolveInsightsAnomalies_argsItem
 	}
 
 	var zeroVal []*model.InsightsAnomalyRefInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_checkGoOffsetsUpdates_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_checkGoOffsetsUpdates_argsContent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["content"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_checkGoOffsetsUpdates_argsContent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["content"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
+	if tmp, ok := rawArgs["content"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -13765,6 +16285,34 @@ func (ec *executionContext) field_Mutation_createHighlyRelevantOperationRule_arg
 	}
 
 	var zeroVal model.HighlyRelevantOperationRuleInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createInsightsIntegration_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createInsightsIntegration_argsIntegration(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["integration"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createInsightsIntegration_argsIntegration(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.InsightsIntegrationInput, error) {
+	if _, ok := rawArgs["integration"]; !ok {
+		var zeroVal model.InsightsIntegrationInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("integration"))
+	if tmp, ok := rawArgs["integration"]; ok {
+		return ec.unmarshalNInsightsIntegrationInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationInput(ctx, tmp)
+	}
+
+	var zeroVal model.InsightsIntegrationInput
 	return zeroVal, nil
 }
 
@@ -14115,6 +16663,11 @@ func (ec *executionContext) field_Mutation_deleteInsightsGuardrail_args(ctx cont
 		return nil, err
 	}
 	args["scopeKey"] = arg0
+	arg1, err := ec.field_Mutation_deleteInsightsGuardrail_argsScope(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["scope"] = arg1
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_deleteInsightsGuardrail_argsScopeKey(
@@ -14129,6 +16682,52 @@ func (ec *executionContext) field_Mutation_deleteInsightsGuardrail_argsScopeKey(
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("scopeKey"))
 	if tmp, ok := rawArgs["scopeKey"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteInsightsGuardrail_argsScope(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.InsightsPolicyScope, error) {
+	if _, ok := rawArgs["scope"]; !ok {
+		var zeroVal *model.InsightsPolicyScope
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("scope"))
+	if tmp, ok := rawArgs["scope"]; ok {
+		return ec.unmarshalOInsightsPolicyScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsPolicyScope(ctx, tmp)
+	}
+
+	var zeroVal *model.InsightsPolicyScope
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteInsightsIntegration_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteInsightsIntegration_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteInsightsIntegration_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
 	}
 
 	var zeroVal string
@@ -14520,6 +17119,34 @@ func (ec *executionContext) field_Mutation_dismissInsightsGuardrailViolation_arg
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_dismissInsightsRecommendations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_dismissInsightsRecommendations_argsIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ids"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_dismissInsightsRecommendations_argsIds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["ids"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
+	if tmp, ok := rawArgs["ids"]; ok {
+		return ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_enableInsightsTransactionGuardrail_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -14752,6 +17379,57 @@ func (ec *executionContext) field_Mutation_persistK8sSources_argsSources(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_previewInsightsRecommendation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_previewInsightsRecommendation_argsTransactionID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["transactionId"] = arg0
+	arg1, err := ec.field_Mutation_previewInsightsRecommendation_argsSpec(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["spec"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_previewInsightsRecommendation_argsTransactionID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["transactionId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("transactionId"))
+	if tmp, ok := rawArgs["transactionId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_previewInsightsRecommendation_argsSpec(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.InsightsCorrelationSpecInput, error) {
+	if _, ok := rawArgs["spec"]; !ok {
+		var zeroVal model.InsightsCorrelationSpecInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("spec"))
+	if tmp, ok := rawArgs["spec"]; ok {
+		return ec.unmarshalNInsightsCorrelationSpecInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecInput(ctx, tmp)
+	}
+
+	var zeroVal model.InsightsCorrelationSpecInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_promoteInsightsBaselineClass_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -14828,6 +17506,80 @@ func (ec *executionContext) field_Mutation_promoteInsightsTransactionBaselines_a
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_recomputeInsightsRecommendations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_recomputeInsightsRecommendations_argsTransactionID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["transactionId"] = arg0
+	arg1, err := ec.field_Mutation_recomputeInsightsRecommendations_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg1
+	arg2, err := ec.field_Mutation_recomputeInsightsRecommendations_argsService(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["service"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_recomputeInsightsRecommendations_argsTransactionID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["transactionId"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("transactionId"))
+	if tmp, ok := rawArgs["transactionId"]; ok {
+		return ec.unmarshalOID2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_recomputeInsightsRecommendations_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_recomputeInsightsRecommendations_argsService(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["service"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
+	if tmp, ok := rawArgs["service"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
 	return zeroVal, nil
 }
 
@@ -15119,6 +17871,113 @@ func (ec *executionContext) field_Mutation_restartWorkloads_argsSourceIds(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_restoreInsightsRecommendations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_restoreInsightsRecommendations_argsIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ids"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_restoreInsightsRecommendations_argsIds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["ids"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
+	if tmp, ok := rawArgs["ids"]; ok {
+		return ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_retryInsightsIntegrationDeliveries_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_retryInsightsIntegrationDeliveries_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := ec.field_Mutation_retryInsightsIntegrationDeliveries_argsFindingKeys(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["findingKeys"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_retryInsightsIntegrationDeliveries_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_retryInsightsIntegrationDeliveries_argsFindingKeys(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["findingKeys"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("findingKeys"))
+	if tmp, ok := rawArgs["findingKeys"]; ok {
+		return ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_revertInsightsRecommendations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_revertInsightsRecommendations_argsIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ids"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_revertInsightsRecommendations_argsIds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["ids"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
+	if tmp, ok := rawArgs["ids"]; ok {
+		return ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_seedInsightsGuardrail_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -15274,6 +18133,34 @@ func (ec *executionContext) field_Mutation_testConnectionForDestination_argsDest
 	}
 
 	var zeroVal model.DestinationInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_testInsightsIntegration_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_testInsightsIntegration_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_testInsightsIntegration_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -15532,6 +18419,34 @@ func (ec *executionContext) field_Mutation_updateDestination_argsDestination(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_updateGoOffsets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateGoOffsets_argsContent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["content"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateGoOffsets_argsContent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["content"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
+	if tmp, ok := rawArgs["content"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_updateHighlyRelevantOperationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -15603,6 +18518,57 @@ func (ec *executionContext) field_Mutation_updateHighlyRelevantOperationRule_arg
 	}
 
 	var zeroVal model.HighlyRelevantOperationRuleInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateInsightsIntegration_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateInsightsIntegration_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := ec.field_Mutation_updateInsightsIntegration_argsIntegration(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["integration"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateInsightsIntegration_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateInsightsIntegration_argsIntegration(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.InsightsIntegrationInput, error) {
+	if _, ok := rawArgs["integration"]; !ok {
+		var zeroVal model.InsightsIntegrationInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("integration"))
+	if tmp, ok := rawArgs["integration"]; ok {
+		return ec.unmarshalNInsightsIntegrationInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationInput(ctx, tmp)
+	}
+
+	var zeroVal model.InsightsIntegrationInput
 	return zeroVal, nil
 }
 
@@ -16409,57 +19375,6 @@ func (ec *executionContext) field_Query_pod_argsName(
 	return zeroVal, nil
 }
 
-func (ec *executionContext) field_Query_traceCorrelations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Query_traceCorrelations_argsFilter(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["filter"] = arg0
-	arg1, err := ec.field_Query_traceCorrelations_argsTimeRange(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["timeRange"] = arg1
-	return args, nil
-}
-func (ec *executionContext) field_Query_traceCorrelations_argsFilter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*model.WorkloadFilter, error) {
-	if _, ok := rawArgs["filter"]; !ok {
-		var zeroVal *model.WorkloadFilter
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-	if tmp, ok := rawArgs["filter"]; ok {
-		return ec.unmarshalOWorkloadFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadFilter(ctx, tmp)
-	}
-
-	var zeroVal *model.WorkloadFilter
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_traceCorrelations_argsTimeRange(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*model.TraceCorrelationsTimeRangeInput, error) {
-	if _, ok := rawArgs["timeRange"]; !ok {
-		var zeroVal *model.TraceCorrelationsTimeRangeInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("timeRange"))
-	if tmp, ok := rawArgs["timeRange"]; ok {
-		return ec.unmarshalOTraceCorrelationsTimeRangeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsTimeRangeInput(ctx, tmp)
-	}
-
-	var zeroVal *model.TraceCorrelationsTimeRangeInput
-	return zeroVal, nil
-}
-
 func (ec *executionContext) field_Query_workloadsByIds_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -16973,6 +19888,50 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_removePostgresCastOperator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActionFields", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Action_managedBy(ctx context.Context, field graphql.CollectedField, obj *model.Action) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Action_managedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManagedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ManagedBy)
+	fc.Result = res
+	return ec.marshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Action_managedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Action",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ManagedBy does not have child fields")
 		},
 	}
 	return fc, nil
@@ -19152,6 +22111,51 @@ func (ec *executionContext) fieldContext_AutoRollbackConfig_stabilityWindowTime(
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CardinalityControlConfig_urlTemplatization(ctx context.Context, field graphql.CollectedField, obj *model.CardinalityControlConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CardinalityControlConfig_urlTemplatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URLTemplatization, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.URLTemplatizationCardinalityControlConfig)
+	fc.Result = res
+	return ec.marshalOUrlTemplatizationCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationCardinalityControlConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CardinalityControlConfig_urlTemplatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CardinalityControlConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "liveTrafficLearning":
+				return ec.fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationCardinalityControlConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -22298,6 +25302,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_actions(_ context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_Action_managedBy(ctx, field)
 			case "uiGenerated":
 				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
@@ -22476,6 +25482,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -25180,6 +28188,170 @@ func (ec *executionContext) fieldContext_CostReductionRule_notes(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _CppCustomProbe_signature(ctx context.Context, field graphql.CollectedField, obj *model.CppCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CppCustomProbe_signature(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signature, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CppCustomProbe_signature(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CppCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CppCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.CppCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CppCustomProbe_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CppCustomProbe_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CppCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CppCustomProbe_category(ctx context.Context, field graphql.CollectedField, obj *model.CppCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CppCustomProbe_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CustomProbeCategory)
+	fc.Result = res
+	return ec.marshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CppCustomProbe_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CppCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type CustomProbeCategory does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CppCustomProbe_addedAt(ctx context.Context, field graphql.CollectedField, obj *model.CppCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CppCustomProbe_addedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AddedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CppCustomProbe_addedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CppCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _CustomFormatMasking_lookupKey(ctx context.Context, field graphql.CollectedField, obj *model.CustomFormatMasking) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_CustomFormatMasking_lookupKey(ctx, field)
 	if err != nil {
@@ -25312,6 +28484,12 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_golang(_ context
 				return ec.fieldContext_GolangCustomProbe_receiverName(ctx, field)
 			case "receiverMethodName":
 				return ec.fieldContext_GolangCustomProbe_receiverMethodName(ctx, field)
+			case "notes":
+				return ec.fieldContext_GolangCustomProbe_notes(ctx, field)
+			case "category":
+				return ec.fieldContext_GolangCustomProbe_category(ctx, field)
+			case "addedAt":
+				return ec.fieldContext_GolangCustomProbe_addedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GolangCustomProbe", field.Name)
 		},
@@ -25359,6 +28537,12 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_java(_ context.C
 				return ec.fieldContext_JavaCustomProbe_className(ctx, field)
 			case "methodName":
 				return ec.fieldContext_JavaCustomProbe_methodName(ctx, field)
+			case "notes":
+				return ec.fieldContext_JavaCustomProbe_notes(ctx, field)
+			case "category":
+				return ec.fieldContext_JavaCustomProbe_category(ctx, field)
+			case "addedAt":
+				return ec.fieldContext_JavaCustomProbe_addedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type JavaCustomProbe", field.Name)
 		},
@@ -25406,8 +28590,65 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_php(_ context.Co
 				return ec.fieldContext_PhpCustomProbe_className(ctx, field)
 			case "functionName":
 				return ec.fieldContext_PhpCustomProbe_functionName(ctx, field)
+			case "notes":
+				return ec.fieldContext_PhpCustomProbe_notes(ctx, field)
+			case "category":
+				return ec.fieldContext_PhpCustomProbe_category(ctx, field)
+			case "addedAt":
+				return ec.fieldContext_PhpCustomProbe_addedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PhpCustomProbe", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CustomInstrumentations_cpp(ctx context.Context, field graphql.CollectedField, obj *model.CustomInstrumentations) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CustomInstrumentations_cpp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cpp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.CppCustomProbe)
+	fc.Result = res
+	return ec.marshalOCppCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCppCustomProbe(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CustomInstrumentations_cpp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CustomInstrumentations",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "signature":
+				return ec.fieldContext_CppCustomProbe_signature(ctx, field)
+			case "notes":
+				return ec.fieldContext_CppCustomProbe_notes(ctx, field)
+			case "category":
+				return ec.fieldContext_CppCustomProbe_category(ctx, field)
+			case "addedAt":
+				return ec.fieldContext_CppCustomProbe_addedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CppCustomProbe", field.Name)
 		},
 	}
 	return fc, nil
@@ -29846,8 +33087,8 @@ func (ec *executionContext) fieldContext_EffectiveConfig_profiling(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _EffectiveConfig_traceCorrelations(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EffectiveConfig_traceCorrelations(ctx, field)
+func (ec *executionContext) _EffectiveConfig_cardinalityControl(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_cardinalityControl(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -29860,7 +33101,7 @@ func (ec *executionContext) _EffectiveConfig_traceCorrelations(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TraceCorrelations, nil
+		return obj.CardinalityControl, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29869,12 +33110,12 @@ func (ec *executionContext) _EffectiveConfig_traceCorrelations(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.TraceCorrelationsConfig)
+	res := resTmp.(*model.CardinalityControlConfig)
 	fc.Result = res
-	return ec.marshalOTraceCorrelationsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsConfig(ctx, field.Selections, res)
+	return ec.marshalOCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCardinalityControlConfig(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EffectiveConfig_traceCorrelations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EffectiveConfig_cardinalityControl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EffectiveConfig",
 		Field:      field,
@@ -29882,10 +33123,10 @@ func (ec *executionContext) fieldContext_EffectiveConfig_traceCorrelations(_ con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "serviceIO":
-				return ec.fieldContext_TraceCorrelationsConfig_serviceIO(ctx, field)
+			case "urlTemplatization":
+				return ec.fieldContext_CardinalityControlConfig_urlTemplatization(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsConfig", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type CardinalityControlConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -31343,6 +34584,1198 @@ func (ec *executionContext) fieldContext_GetDestinationCategories_categories(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _GoOffsetMinorVersion_minorVersion(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetMinorVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetMinorVersion_minorVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinorVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetMinorVersion_minorVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetMinorVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetMinorVersion_versions(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetMinorVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetMinorVersion_versions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Versions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetMinorVersion_versions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetMinorVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetMinorVersionUpdate_minorVersion(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetMinorVersionUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetMinorVersionUpdate_minorVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinorVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetMinorVersionUpdate_minorVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetMinorVersionUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetMinorVersionUpdate_isNew(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetMinorVersionUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetMinorVersionUpdate_isNew(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsNew, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetMinorVersionUpdate_isNew(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetMinorVersionUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetMinorVersionUpdate_isRemoved(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetMinorVersionUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetMinorVersionUpdate_isRemoved(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsRemoved, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetMinorVersionUpdate_isRemoved(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetMinorVersionUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetMinorVersionUpdate_versions(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetMinorVersionUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetMinorVersionUpdate_versions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Versions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.GoOffsetVersionUpdate)
+	fc.Result = res
+	return ec.marshalNGoOffsetVersionUpdate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetVersionUpdateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetMinorVersionUpdate_versions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetMinorVersionUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "version":
+				return ec.fieldContext_GoOffsetVersionUpdate_version(ctx, field)
+			case "isNew":
+				return ec.fieldContext_GoOffsetVersionUpdate_isNew(ctx, field)
+			case "isRemoved":
+				return ec.fieldContext_GoOffsetVersionUpdate_isRemoved(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GoOffsetVersionUpdate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModule_module(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModule_module(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Module, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModule_module(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModule_minVersion(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModule_minVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModule_minVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModule_maxVersion(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModule_maxVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModule_maxVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModule_minorVersions(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModule_minorVersions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinorVersions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.GoOffsetMinorVersion)
+	fc.Result = res
+	return ec.marshalNGoOffsetMinorVersion2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetMinorVersionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModule_minorVersions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minorVersion":
+				return ec.fieldContext_GoOffsetMinorVersion_minorVersion(ctx, field)
+			case "versions":
+				return ec.fieldContext_GoOffsetMinorVersion_versions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GoOffsetMinorVersion", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModuleUpdate_module(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModuleUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModuleUpdate_module(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Module, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModuleUpdate_module(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModuleUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModuleUpdate_isNew(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModuleUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModuleUpdate_isNew(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsNew, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModuleUpdate_isNew(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModuleUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModuleUpdate_isRemoved(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModuleUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModuleUpdate_isRemoved(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsRemoved, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModuleUpdate_isRemoved(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModuleUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModuleUpdate_minVersion(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModuleUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModuleUpdate_minVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModuleUpdate_minVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModuleUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModuleUpdate_maxVersion(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModuleUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModuleUpdate_maxVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModuleUpdate_maxVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModuleUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetModuleUpdate_minorVersions(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetModuleUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetModuleUpdate_minorVersions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinorVersions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.GoOffsetMinorVersionUpdate)
+	fc.Result = res
+	return ec.marshalNGoOffsetMinorVersionUpdate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetMinorVersionUpdateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetModuleUpdate_minorVersions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetModuleUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minorVersion":
+				return ec.fieldContext_GoOffsetMinorVersionUpdate_minorVersion(ctx, field)
+			case "isNew":
+				return ec.fieldContext_GoOffsetMinorVersionUpdate_isNew(ctx, field)
+			case "isRemoved":
+				return ec.fieldContext_GoOffsetMinorVersionUpdate_isRemoved(ctx, field)
+			case "versions":
+				return ec.fieldContext_GoOffsetMinorVersionUpdate_versions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GoOffsetMinorVersionUpdate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetVersionUpdate_version(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetVersionUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetVersionUpdate_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetVersionUpdate_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetVersionUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetVersionUpdate_isNew(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetVersionUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetVersionUpdate_isNew(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsNew, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetVersionUpdate_isNew(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetVersionUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetVersionUpdate_isRemoved(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetVersionUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetVersionUpdate_isRemoved(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsRemoved, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetVersionUpdate_isRemoved(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetVersionUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsets_installed(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsets) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsets_installed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Installed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsets_installed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsets",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsets_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsets) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsets_timestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsets_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsets",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsets_mods(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsets) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsets_mods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mods, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.GoOffsetModule)
+	fc.Result = res
+	return ec.marshalNGoOffsetModule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetModuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsets_mods(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsets",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "module":
+				return ec.fieldContext_GoOffsetModule_module(ctx, field)
+			case "minVersion":
+				return ec.fieldContext_GoOffsetModule_minVersion(ctx, field)
+			case "maxVersion":
+				return ec.fieldContext_GoOffsetModule_maxVersion(ctx, field)
+			case "minorVersions":
+				return ec.fieldContext_GoOffsetModule_minorVersions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GoOffsetModule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetsUpdateCheck_hasUpdates(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetsUpdateCheck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetsUpdateCheck_hasUpdates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasUpdates, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetsUpdateCheck_hasUpdates(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetsUpdateCheck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetsUpdateCheck_currentTimestamp(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetsUpdateCheck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetsUpdateCheck_currentTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrentTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetsUpdateCheck_currentTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetsUpdateCheck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetsUpdateCheck_proposedTimestamp(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetsUpdateCheck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetsUpdateCheck_proposedTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProposedTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetsUpdateCheck_proposedTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetsUpdateCheck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoOffsetsUpdateCheck_mods(ctx context.Context, field graphql.CollectedField, obj *model.GoOffsetsUpdateCheck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GoOffsetsUpdateCheck_mods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mods, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.GoOffsetModuleUpdate)
+	fc.Result = res
+	return ec.marshalNGoOffsetModuleUpdate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetModuleUpdateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GoOffsetsUpdateCheck_mods(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoOffsetsUpdateCheck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "module":
+				return ec.fieldContext_GoOffsetModuleUpdate_module(ctx, field)
+			case "isNew":
+				return ec.fieldContext_GoOffsetModuleUpdate_isNew(ctx, field)
+			case "isRemoved":
+				return ec.fieldContext_GoOffsetModuleUpdate_isRemoved(ctx, field)
+			case "minVersion":
+				return ec.fieldContext_GoOffsetModuleUpdate_minVersion(ctx, field)
+			case "maxVersion":
+				return ec.fieldContext_GoOffsetModuleUpdate_maxVersion(ctx, field)
+			case "minorVersions":
+				return ec.fieldContext_GoOffsetModuleUpdate_minorVersions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GoOffsetModuleUpdate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GolangCustomProbe_packageName(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GolangCustomProbe_packageName(ctx, field)
 	if err != nil {
@@ -31495,6 +35928,129 @@ func (ec *executionContext) _GolangCustomProbe_receiverMethodName(ctx context.Co
 }
 
 func (ec *executionContext) fieldContext_GolangCustomProbe_receiverMethodName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GolangCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GolangCustomProbe_category(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CustomProbeCategory)
+	fc.Result = res
+	return ec.marshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type CustomProbeCategory does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GolangCustomProbe_addedAt(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_addedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AddedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_addedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "GolangCustomProbe",
 		Field:      field,
@@ -32801,6 +37357,443 @@ func (ec *executionContext) fieldContext_HttpPayloadCollection_dropPartialPayloa
 	return fc, nil
 }
 
+func (ec *executionContext) _Insights_integrationCatalog(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_integrationCatalog(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().IntegrationCatalog(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsIntegrationDescriptor)
+	fc.Result = res
+	return ec.marshalNInsightsIntegrationDescriptor2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationDescriptorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_integrationCatalog(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_InsightsIntegrationDescriptor_type(ctx, field)
+			case "name":
+				return ec.fieldContext_InsightsIntegrationDescriptor_name(ctx, field)
+			case "description":
+				return ec.fieldContext_InsightsIntegrationDescriptor_description(ctx, field)
+			case "docsUrl":
+				return ec.fieldContext_InsightsIntegrationDescriptor_docsUrl(ctx, field)
+			case "fields":
+				return ec.fieldContext_InsightsIntegrationDescriptor_fields(ctx, field)
+			case "capabilities":
+				return ec.fieldContext_InsightsIntegrationDescriptor_capabilities(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegrationDescriptor", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Insights_integrations(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_integrations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().Integrations(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsIntegration)
+	fc.Result = res
+	return ec.marshalNInsightsIntegration2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_integrations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InsightsIntegration_id(ctx, field)
+			case "name":
+				return ec.fieldContext_InsightsIntegration_name(ctx, field)
+			case "type":
+				return ec.fieldContext_InsightsIntegration_type(ctx, field)
+			case "enabled":
+				return ec.fieldContext_InsightsIntegration_enabled(ctx, field)
+			case "config":
+				return ec.fieldContext_InsightsIntegration_config(ctx, field)
+			case "filters":
+				return ec.fieldContext_InsightsIntegration_filters(ctx, field)
+			case "health":
+				return ec.fieldContext_InsightsIntegration_health(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_InsightsIntegration_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_InsightsIntegration_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegration", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Insights_integration(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_integration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().Integration(rctx, obj, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsIntegration)
+	fc.Result = res
+	return ec.marshalOInsightsIntegration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_integration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InsightsIntegration_id(ctx, field)
+			case "name":
+				return ec.fieldContext_InsightsIntegration_name(ctx, field)
+			case "type":
+				return ec.fieldContext_InsightsIntegration_type(ctx, field)
+			case "enabled":
+				return ec.fieldContext_InsightsIntegration_enabled(ctx, field)
+			case "config":
+				return ec.fieldContext_InsightsIntegration_config(ctx, field)
+			case "filters":
+				return ec.fieldContext_InsightsIntegration_filters(ctx, field)
+			case "health":
+				return ec.fieldContext_InsightsIntegration_health(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_InsightsIntegration_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_InsightsIntegration_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegration", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Insights_integration_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Insights_integrationDeliveries(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_integrationDeliveries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().IntegrationDeliveries(rctx, obj, fc.Args["integrationId"].(string), fc.Args["state"].(*model.InsightsDeliveryState), fc.Args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsDelivery)
+	fc.Result = res
+	return ec.marshalNInsightsDelivery2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_integrationDeliveries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "integrationId":
+				return ec.fieldContext_InsightsDelivery_integrationId(ctx, field)
+			case "findingKey":
+				return ec.fieldContext_InsightsDelivery_findingKey(ctx, field)
+			case "lastAction":
+				return ec.fieldContext_InsightsDelivery_lastAction(ctx, field)
+			case "state":
+				return ec.fieldContext_InsightsDelivery_state(ctx, field)
+			case "attempts":
+				return ec.fieldContext_InsightsDelivery_attempts(ctx, field)
+			case "nextAttemptAt":
+				return ec.fieldContext_InsightsDelivery_nextAttemptAt(ctx, field)
+			case "lastError":
+				return ec.fieldContext_InsightsDelivery_lastError(ctx, field)
+			case "sentAt":
+				return ec.fieldContext_InsightsDelivery_sentAt(ctx, field)
+			case "occurrencesAtSend":
+				return ec.fieldContext_InsightsDelivery_occurrencesAtSend(ctx, field)
+			case "severityAtSend":
+				return ec.fieldContext_InsightsDelivery_severityAtSend(ctx, field)
+			case "statusAtSend":
+				return ec.fieldContext_InsightsDelivery_statusAtSend(ctx, field)
+			case "externalId":
+				return ec.fieldContext_InsightsDelivery_externalId(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_InsightsDelivery_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsDelivery", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Insights_integrationDeliveries_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Insights_integrationAttempts(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_integrationAttempts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().IntegrationAttempts(rctx, obj, fc.Args["integrationId"].(string), fc.Args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsDeliveryAttempt)
+	fc.Result = res
+	return ec.marshalNInsightsDeliveryAttempt2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAttemptᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_integrationAttempts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "integrationId":
+				return ec.fieldContext_InsightsDeliveryAttempt_integrationId(ctx, field)
+			case "findingKey":
+				return ec.fieldContext_InsightsDeliveryAttempt_findingKey(ctx, field)
+			case "action":
+				return ec.fieldContext_InsightsDeliveryAttempt_action(ctx, field)
+			case "attempt":
+				return ec.fieldContext_InsightsDeliveryAttempt_attempt(ctx, field)
+			case "outcome":
+				return ec.fieldContext_InsightsDeliveryAttempt_outcome(ctx, field)
+			case "httpStatus":
+				return ec.fieldContext_InsightsDeliveryAttempt_httpStatus(ctx, field)
+			case "error":
+				return ec.fieldContext_InsightsDeliveryAttempt_error(ctx, field)
+			case "durationMs":
+				return ec.fieldContext_InsightsDeliveryAttempt_durationMs(ctx, field)
+			case "eventCount":
+				return ec.fieldContext_InsightsDeliveryAttempt_eventCount(ctx, field)
+			case "attemptedAt":
+				return ec.fieldContext_InsightsDeliveryAttempt_attemptedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsDeliveryAttempt", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Insights_integrationAttempts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Insights_findingDeliveries(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_findingDeliveries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().FindingDeliveries(rctx, obj, fc.Args["findingKey"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsDelivery)
+	fc.Result = res
+	return ec.marshalNInsightsDelivery2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_findingDeliveries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "integrationId":
+				return ec.fieldContext_InsightsDelivery_integrationId(ctx, field)
+			case "findingKey":
+				return ec.fieldContext_InsightsDelivery_findingKey(ctx, field)
+			case "lastAction":
+				return ec.fieldContext_InsightsDelivery_lastAction(ctx, field)
+			case "state":
+				return ec.fieldContext_InsightsDelivery_state(ctx, field)
+			case "attempts":
+				return ec.fieldContext_InsightsDelivery_attempts(ctx, field)
+			case "nextAttemptAt":
+				return ec.fieldContext_InsightsDelivery_nextAttemptAt(ctx, field)
+			case "lastError":
+				return ec.fieldContext_InsightsDelivery_lastError(ctx, field)
+			case "sentAt":
+				return ec.fieldContext_InsightsDelivery_sentAt(ctx, field)
+			case "occurrencesAtSend":
+				return ec.fieldContext_InsightsDelivery_occurrencesAtSend(ctx, field)
+			case "severityAtSend":
+				return ec.fieldContext_InsightsDelivery_severityAtSend(ctx, field)
+			case "statusAtSend":
+				return ec.fieldContext_InsightsDelivery_statusAtSend(ctx, field)
+			case "externalId":
+				return ec.fieldContext_InsightsDelivery_externalId(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_InsightsDelivery_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsDelivery", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Insights_findingDeliveries_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Insights_services(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Insights_services(ctx, field)
 	if err != nil {
@@ -32850,6 +37843,10 @@ func (ec *executionContext) fieldContext_Insights_services(_ context.Context, fi
 				return ec.fieldContext_InsightsServiceStat_volume(ctx, field)
 			case "lastSeen":
 				return ec.fieldContext_InsightsServiceStat_lastSeen(ctx, field)
+			case "transactionLimit":
+				return ec.fieldContext_InsightsServiceStat_transactionLimit(ctx, field)
+			case "transactionLimitReached":
+				return ec.fieldContext_InsightsServiceStat_transactionLimitReached(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsServiceStat", field.Name)
 		},
@@ -33094,6 +38091,8 @@ func (ec *executionContext) fieldContext_Insights_transactions(ctx context.Conte
 				return ec.fieldContext_InsightsTransactionStat_hasBaseline(ctx, field)
 			case "promoted":
 				return ec.fieldContext_InsightsTransactionStat_promoted(ctx, field)
+			case "saturatedClasses":
+				return ec.fieldContext_InsightsTransactionStat_saturatedClasses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsTransactionStat", field.Name)
 		},
@@ -33237,6 +38236,8 @@ func (ec *executionContext) fieldContext_Insights_baseline(ctx context.Context, 
 				return ec.fieldContext_InsightsBaselineClass_observationCount(ctx, field)
 			case "promoted":
 				return ec.fieldContext_InsightsBaselineClass_promoted(ctx, field)
+			case "saturated":
+				return ec.fieldContext_InsightsBaselineClass_saturated(ctx, field)
 			case "learningStartedAt":
 				return ec.fieldContext_InsightsBaselineClass_learningStartedAt(ctx, field)
 			case "lastChangedAt":
@@ -33443,6 +38444,8 @@ func (ec *executionContext) fieldContext_Insights_findings(ctx context.Context, 
 				return ec.fieldContext_InsightsFinding_namespace(ctx, field)
 			case "title":
 				return ec.fieldContext_InsightsFinding_title(ctx, field)
+			case "summary":
+				return ec.fieldContext_InsightsFinding_summary(ctx, field)
 			case "operation":
 				return ec.fieldContext_InsightsFinding_operation(ctx, field)
 			case "operationName":
@@ -33723,6 +38726,8 @@ func (ec *executionContext) fieldContext_Insights_policies(_ context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "delivery":
+				return ec.fieldContext_InsightsPolicy_delivery(ctx, field)
 			case "id":
 				return ec.fieldContext_InsightsPolicy_id(ctx, field)
 			case "name":
@@ -33843,6 +38848,8 @@ func (ec *executionContext) fieldContext_Insights_guardrails(_ context.Context, 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "delivery":
+				return ec.fieldContext_InsightsGuardrail_delivery(ctx, field)
 			case "scope":
 				return ec.fieldContext_InsightsGuardrail_scope(ctx, field)
 			case "scopeKey":
@@ -34011,6 +39018,221 @@ func (ec *executionContext) fieldContext_Insights_guardrailViolation(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Insights_guardrailViolation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Insights_recommendations(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_recommendations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().Recommendations(rctx, obj, fc.Args["kind"].(*model.InsightsRecommendationKind), fc.Args["state"].(*model.InsightsRecommendationState), fc.Args["transactionId"].(*string), fc.Args["service"].(*string), fc.Args["namespace"].(*string), fc.Args["includeStale"].(*bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsRecommendation)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendation2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_recommendations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InsightsRecommendation_id(ctx, field)
+			case "kind":
+				return ec.fieldContext_InsightsRecommendation_kind(ctx, field)
+			case "state":
+				return ec.fieldContext_InsightsRecommendation_state(ctx, field)
+			case "stale":
+				return ec.fieldContext_InsightsRecommendation_stale(ctx, field)
+			case "rank":
+				return ec.fieldContext_InsightsRecommendation_rank(ctx, field)
+			case "scope":
+				return ec.fieldContext_InsightsRecommendation_scope(ctx, field)
+			case "scopeKey":
+				return ec.fieldContext_InsightsRecommendation_scopeKey(ctx, field)
+			case "transactionId":
+				return ec.fieldContext_InsightsRecommendation_transactionId(ctx, field)
+			case "transactionKind":
+				return ec.fieldContext_InsightsRecommendation_transactionKind(ctx, field)
+			case "service":
+				return ec.fieldContext_InsightsRecommendation_service(ctx, field)
+			case "namespace":
+				return ec.fieldContext_InsightsRecommendation_namespace(ctx, field)
+			case "operation":
+				return ec.fieldContext_InsightsRecommendation_operation(ctx, field)
+			case "title":
+				return ec.fieldContext_InsightsRecommendation_title(ctx, field)
+			case "summary":
+				return ec.fieldContext_InsightsRecommendation_summary(ctx, field)
+			case "whyItMatters":
+				return ec.fieldContext_InsightsRecommendation_whyItMatters(ctx, field)
+			case "transform":
+				return ec.fieldContext_InsightsRecommendation_transform(ctx, field)
+			case "transport":
+				return ec.fieldContext_InsightsRecommendation_transport(ctx, field)
+			case "spec":
+				return ec.fieldContext_InsightsRecommendation_spec(ctx, field)
+			case "rules":
+				return ec.fieldContext_InsightsRecommendation_rules(ctx, field)
+			case "appliedRules":
+				return ec.fieldContext_InsightsRecommendation_appliedRules(ctx, field)
+			case "confidence":
+				return ec.fieldContext_InsightsRecommendation_confidence(ctx, field)
+			case "examples":
+				return ec.fieldContext_InsightsRecommendation_examples(ctx, field)
+			case "alreadyCovered":
+				return ec.fieldContext_InsightsRecommendation_alreadyCovered(ctx, field)
+			case "minedAt":
+				return ec.fieldContext_InsightsRecommendation_minedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_InsightsRecommendation_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_InsightsRecommendation_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendation", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Insights_recommendations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Insights_recommendation(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_recommendation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().Recommendation(rctx, obj, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsRecommendation)
+	fc.Result = res
+	return ec.marshalOInsightsRecommendation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_recommendation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InsightsRecommendation_id(ctx, field)
+			case "kind":
+				return ec.fieldContext_InsightsRecommendation_kind(ctx, field)
+			case "state":
+				return ec.fieldContext_InsightsRecommendation_state(ctx, field)
+			case "stale":
+				return ec.fieldContext_InsightsRecommendation_stale(ctx, field)
+			case "rank":
+				return ec.fieldContext_InsightsRecommendation_rank(ctx, field)
+			case "scope":
+				return ec.fieldContext_InsightsRecommendation_scope(ctx, field)
+			case "scopeKey":
+				return ec.fieldContext_InsightsRecommendation_scopeKey(ctx, field)
+			case "transactionId":
+				return ec.fieldContext_InsightsRecommendation_transactionId(ctx, field)
+			case "transactionKind":
+				return ec.fieldContext_InsightsRecommendation_transactionKind(ctx, field)
+			case "service":
+				return ec.fieldContext_InsightsRecommendation_service(ctx, field)
+			case "namespace":
+				return ec.fieldContext_InsightsRecommendation_namespace(ctx, field)
+			case "operation":
+				return ec.fieldContext_InsightsRecommendation_operation(ctx, field)
+			case "title":
+				return ec.fieldContext_InsightsRecommendation_title(ctx, field)
+			case "summary":
+				return ec.fieldContext_InsightsRecommendation_summary(ctx, field)
+			case "whyItMatters":
+				return ec.fieldContext_InsightsRecommendation_whyItMatters(ctx, field)
+			case "transform":
+				return ec.fieldContext_InsightsRecommendation_transform(ctx, field)
+			case "transport":
+				return ec.fieldContext_InsightsRecommendation_transport(ctx, field)
+			case "spec":
+				return ec.fieldContext_InsightsRecommendation_spec(ctx, field)
+			case "rules":
+				return ec.fieldContext_InsightsRecommendation_rules(ctx, field)
+			case "appliedRules":
+				return ec.fieldContext_InsightsRecommendation_appliedRules(ctx, field)
+			case "confidence":
+				return ec.fieldContext_InsightsRecommendation_confidence(ctx, field)
+			case "examples":
+				return ec.fieldContext_InsightsRecommendation_examples(ctx, field)
+			case "alreadyCovered":
+				return ec.fieldContext_InsightsRecommendation_alreadyCovered(ctx, field)
+			case "minedAt":
+				return ec.fieldContext_InsightsRecommendation_minedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_InsightsRecommendation_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_InsightsRecommendation_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendation", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Insights_recommendation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -37175,6 +42397,50 @@ func (ec *executionContext) _InsightsBaselineClass_promoted(ctx context.Context,
 }
 
 func (ec *executionContext) fieldContext_InsightsBaselineClass_promoted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineClass",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineClass_saturated(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineClass) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineClass_saturated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Saturated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineClass_saturated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InsightsBaselineClass",
 		Field:      field,
@@ -40790,6 +46056,1560 @@ func (ec *executionContext) fieldContext_InsightsCatalogGuardrailRule_hint(_ con
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsCorrelationSelector_service(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSelector) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSelector_service(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Service, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSelector_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSelector",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSelector_span(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSelector) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSelector_span(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Span, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSelector_span(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSelector",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSelector_attr(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSelector) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSelector_attr(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSelector_attr(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSelector",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSelector_extract(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSelector) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSelector_extract(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Extract, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSelector_extract(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSelector",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSpec_name(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSpec_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSpec_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSpec_left(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSpec_left(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Left, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsCorrelationSelector)
+	fc.Result = res
+	return ec.marshalNInsightsCorrelationSelector2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSelector(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSpec_left(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "service":
+				return ec.fieldContext_InsightsCorrelationSelector_service(ctx, field)
+			case "span":
+				return ec.fieldContext_InsightsCorrelationSelector_span(ctx, field)
+			case "attr":
+				return ec.fieldContext_InsightsCorrelationSelector_attr(ctx, field)
+			case "extract":
+				return ec.fieldContext_InsightsCorrelationSelector_extract(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsCorrelationSelector", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSpec_right(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSpec_right(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Right, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsCorrelationSelector)
+	fc.Result = res
+	return ec.marshalNInsightsCorrelationSelector2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSelector(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSpec_right(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "service":
+				return ec.fieldContext_InsightsCorrelationSelector_service(ctx, field)
+			case "span":
+				return ec.fieldContext_InsightsCorrelationSelector_span(ctx, field)
+			case "attr":
+				return ec.fieldContext_InsightsCorrelationSelector_attr(ctx, field)
+			case "extract":
+				return ec.fieldContext_InsightsCorrelationSelector_extract(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsCorrelationSelector", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSpec_relation(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSpec_relation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Relation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsCorrelationRelation)
+	fc.Result = res
+	return ec.marshalNInsightsCorrelationRelation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationRelation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSpec_relation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsCorrelationRelation does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSpec_severity(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSpec_severity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Severity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsSeverity)
+	fc.Result = res
+	return ec.marshalNInsightsSeverity2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSeverity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSpec_severity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsSeverity does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsCorrelationSpec_why(ctx context.Context, field graphql.CollectedField, obj *model.InsightsCorrelationSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsCorrelationSpec_why(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Why, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsCorrelationSpec_why(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsCorrelationSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_integrationId(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_integrationId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IntegrationID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_integrationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_findingKey(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_findingKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FindingKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_findingKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_lastAction(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_lastAction(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastAction, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsDeliveryAction)
+	fc.Result = res
+	return ec.marshalNInsightsDeliveryAction2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAction(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_lastAction(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsDeliveryAction does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_state(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_state(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.State, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsDeliveryState)
+	fc.Result = res
+	return ec.marshalNInsightsDeliveryState2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryState(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsDeliveryState does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_attempts(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_attempts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attempts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_attempts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_nextAttemptAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_nextAttemptAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NextAttemptAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_nextAttemptAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_lastError(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_lastError(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastError, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_lastError(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_sentAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_sentAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SentAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_sentAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_occurrencesAtSend(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_occurrencesAtSend(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OccurrencesAtSend, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_occurrencesAtSend(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_severityAtSend(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_severityAtSend(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SeverityAtSend, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_severityAtSend(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_statusAtSend(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_statusAtSend(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StatusAtSend, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_statusAtSend(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_externalId(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_externalId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExternalID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_externalId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDelivery_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDelivery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDelivery_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDelivery_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDelivery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_integrationId(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_integrationId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IntegrationID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_integrationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_findingKey(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_findingKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FindingKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_findingKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_action(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_action(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Action, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsDeliveryAction)
+	fc.Result = res
+	return ec.marshalNInsightsDeliveryAction2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAction(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_action(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsDeliveryAction does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_attempt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_attempt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attempt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_attempt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_outcome(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_outcome(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Outcome, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsDeliveryAttemptOutcome)
+	fc.Result = res
+	return ec.marshalNInsightsDeliveryAttemptOutcome2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAttemptOutcome(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_outcome(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsDeliveryAttemptOutcome does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_httpStatus(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_httpStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HTTPStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_httpStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_error(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_error(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_error(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_durationMs(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_durationMs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DurationMs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_durationMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_eventCount(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_eventCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EventCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_eventCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliveryAttempt_attemptedAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliveryAttempt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliveryAttempt_attemptedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AttemptedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliveryAttempt_attemptedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliveryAttempt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliverySettings_muted(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliverySettings) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliverySettings_muted(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Muted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliverySettings_muted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliverySettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsDeliverySettings_excludedIntegrationIds(ctx context.Context, field graphql.CollectedField, obj *model.InsightsDeliverySettings) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsDeliverySettings_excludedIntegrationIds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExcludedIntegrationIds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsDeliverySettings_excludedIntegrationIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsDeliverySettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsEnricherList_key(ctx context.Context, field graphql.CollectedField, obj *model.InsightsEnricherList) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsEnricherList_key(ctx, field)
 	if err != nil {
@@ -41124,6 +47944,50 @@ func (ec *executionContext) _InsightsFinding_title(ctx context.Context, field gr
 }
 
 func (ec *executionContext) fieldContext_InsightsFinding_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsFinding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsFinding_summary(ctx context.Context, field graphql.CollectedField, obj *model.InsightsFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsFinding_summary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Summary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsFinding_summary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InsightsFinding",
 		Field:      field,
@@ -41772,6 +48636,53 @@ func (ec *executionContext) fieldContext_InsightsFinding_ruleKey(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsGuardrail_delivery(ctx context.Context, field graphql.CollectedField, obj *model.InsightsGuardrail) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsGuardrail_delivery(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Delivery, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsDeliverySettings)
+	fc.Result = res
+	return ec.marshalOInsightsDeliverySettings2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliverySettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsGuardrail_delivery(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsGuardrail",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "muted":
+				return ec.fieldContext_InsightsDeliverySettings_muted(ctx, field)
+			case "excludedIntegrationIds":
+				return ec.fieldContext_InsightsDeliverySettings_excludedIntegrationIds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsDeliverySettings", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsGuardrail_scope(ctx context.Context, field graphql.CollectedField, obj *model.InsightsGuardrail) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsGuardrail_scope(ctx, field)
 	if err != nil {
@@ -41907,6 +48818,8 @@ func (ec *executionContext) fieldContext_InsightsGuardrail_rules(_ context.Conte
 				return ec.fieldContext_InsightsGuardrailRule_mode(ctx, field)
 			case "allowlist":
 				return ec.fieldContext_InsightsGuardrailRule_allowlist(ctx, field)
+			case "correlations":
+				return ec.fieldContext_InsightsGuardrailRule_correlations(ctx, field)
 			case "origin":
 				return ec.fieldContext_InsightsGuardrailRule_origin(ctx, field)
 			}
@@ -42084,6 +48997,61 @@ func (ec *executionContext) fieldContext_InsightsGuardrailRule_allowlist(_ conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsGuardrailRule_correlations(ctx context.Context, field graphql.CollectedField, obj *model.InsightsGuardrailRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsGuardrailRule_correlations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Correlations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsCorrelationSpec)
+	fc.Result = res
+	return ec.marshalOInsightsCorrelationSpec2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsGuardrailRule_correlations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsGuardrailRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_InsightsCorrelationSpec_name(ctx, field)
+			case "left":
+				return ec.fieldContext_InsightsCorrelationSpec_left(ctx, field)
+			case "right":
+				return ec.fieldContext_InsightsCorrelationSpec_right(ctx, field)
+			case "relation":
+				return ec.fieldContext_InsightsCorrelationSpec_relation(ctx, field)
+			case "severity":
+				return ec.fieldContext_InsightsCorrelationSpec_severity(ctx, field)
+			case "why":
+				return ec.fieldContext_InsightsCorrelationSpec_why(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsCorrelationSpec", field.Name)
 		},
 	}
 	return fc, nil
@@ -43237,6 +50205,1683 @@ func (ec *executionContext) fieldContext_InsightsGuardrailViolationDetail_eviden
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsIntegration_id(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegration_name(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegration_type(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegration_enabled(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegration_config(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Config, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_config(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegration_filters(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_filters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsIntegrationFilters)
+	fc.Result = res
+	return ec.marshalNInsightsIntegrationFilters2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFilters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_filters(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minSeverity":
+				return ec.fieldContext_InsightsIntegrationFilters_minSeverity(ctx, field)
+			case "kinds":
+				return ec.fieldContext_InsightsIntegrationFilters_kinds(ctx, field)
+			case "notifyOnResolve":
+				return ec.fieldContext_InsightsIntegrationFilters_notifyOnResolve(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegrationFilters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegration_health(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_health(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Health, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsIntegrationHealth)
+	fc.Result = res
+	return ec.marshalNInsightsIntegrationHealth2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationHealth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_health(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "lastSuccessAt":
+				return ec.fieldContext_InsightsIntegrationHealth_lastSuccessAt(ctx, field)
+			case "lastFailureAt":
+				return ec.fieldContext_InsightsIntegrationHealth_lastFailureAt(ctx, field)
+			case "lastError":
+				return ec.fieldContext_InsightsIntegrationHealth_lastError(ctx, field)
+			case "consecutiveFailures":
+				return ec.fieldContext_InsightsIntegrationHealth_consecutiveFailures(ctx, field)
+			case "pending":
+				return ec.fieldContext_InsightsIntegrationHealth_pending(ctx, field)
+			case "failed":
+				return ec.fieldContext_InsightsIntegrationHealth_failed(ctx, field)
+			case "dead":
+				return ec.fieldContext_InsightsIntegrationHealth_dead(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegrationHealth", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegration_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegration_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegration_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegration_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationCapabilities_needsHeartbeat(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationCapabilities) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationCapabilities_needsHeartbeat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NeedsHeartbeat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationCapabilities_needsHeartbeat(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationCapabilities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationCapabilities_supportsResolve(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationCapabilities) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationCapabilities_supportsResolve(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SupportsResolve, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationCapabilities_supportsResolve(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationCapabilities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationCapabilities_returnsExternalId(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationCapabilities) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationCapabilities_returnsExternalId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReturnsExternalID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationCapabilities_returnsExternalId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationCapabilities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationCapabilities_maxBatch(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationCapabilities) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationCapabilities_maxBatch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxBatch, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationCapabilities_maxBatch(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationCapabilities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationDescriptor_type(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationDescriptor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationDescriptor_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationDescriptor_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationDescriptor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationDescriptor_name(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationDescriptor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationDescriptor_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationDescriptor_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationDescriptor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationDescriptor_description(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationDescriptor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationDescriptor_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationDescriptor_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationDescriptor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationDescriptor_docsUrl(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationDescriptor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationDescriptor_docsUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DocsURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationDescriptor_docsUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationDescriptor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationDescriptor_fields(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationDescriptor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationDescriptor_fields(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fields, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsIntegrationFieldSpec)
+	fc.Result = res
+	return ec.marshalNInsightsIntegrationFieldSpec2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFieldSpecᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationDescriptor_fields(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationDescriptor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_InsightsIntegrationFieldSpec_key(ctx, field)
+			case "label":
+				return ec.fieldContext_InsightsIntegrationFieldSpec_label(ctx, field)
+			case "type":
+				return ec.fieldContext_InsightsIntegrationFieldSpec_type(ctx, field)
+			case "required":
+				return ec.fieldContext_InsightsIntegrationFieldSpec_required(ctx, field)
+			case "help":
+				return ec.fieldContext_InsightsIntegrationFieldSpec_help(ctx, field)
+			case "placeholder":
+				return ec.fieldContext_InsightsIntegrationFieldSpec_placeholder(ctx, field)
+			case "default":
+				return ec.fieldContext_InsightsIntegrationFieldSpec_default(ctx, field)
+			case "options":
+				return ec.fieldContext_InsightsIntegrationFieldSpec_options(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegrationFieldSpec", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationDescriptor_capabilities(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationDescriptor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationDescriptor_capabilities(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Capabilities, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsIntegrationCapabilities)
+	fc.Result = res
+	return ec.marshalNInsightsIntegrationCapabilities2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationCapabilities(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationDescriptor_capabilities(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationDescriptor",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "needsHeartbeat":
+				return ec.fieldContext_InsightsIntegrationCapabilities_needsHeartbeat(ctx, field)
+			case "supportsResolve":
+				return ec.fieldContext_InsightsIntegrationCapabilities_supportsResolve(ctx, field)
+			case "returnsExternalId":
+				return ec.fieldContext_InsightsIntegrationCapabilities_returnsExternalId(ctx, field)
+			case "maxBatch":
+				return ec.fieldContext_InsightsIntegrationCapabilities_maxBatch(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegrationCapabilities", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec_key(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFieldSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFieldSpec_key(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFieldSpec_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFieldSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec_label(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFieldSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFieldSpec_label(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFieldSpec_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFieldSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec_type(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFieldSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFieldSpec_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsIntegrationFieldType)
+	fc.Result = res
+	return ec.marshalNInsightsIntegrationFieldType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFieldType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFieldSpec_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFieldSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsIntegrationFieldType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec_required(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFieldSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFieldSpec_required(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Required, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFieldSpec_required(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFieldSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec_help(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFieldSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFieldSpec_help(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Help, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFieldSpec_help(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFieldSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec_placeholder(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFieldSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFieldSpec_placeholder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Placeholder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFieldSpec_placeholder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFieldSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec_default(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFieldSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFieldSpec_default(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Default, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFieldSpec_default(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFieldSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec_options(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFieldSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFieldSpec_options(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Options, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFieldSpec_options(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFieldSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFilters_minSeverity(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFilters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFilters_minSeverity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinSeverity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsSeverity)
+	fc.Result = res
+	return ec.marshalOInsightsSeverity2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSeverity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFilters_minSeverity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFilters",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsSeverity does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFilters_kinds(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFilters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFilters_kinds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kinds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.InsightsFindingKind)
+	fc.Result = res
+	return ec.marshalNInsightsFindingKind2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsFindingKindᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFilters_kinds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFilters",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsFindingKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationFilters_notifyOnResolve(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationFilters) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationFilters_notifyOnResolve(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NotifyOnResolve, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationFilters_notifyOnResolve(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationFilters",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationHealth_lastSuccessAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationHealth) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationHealth_lastSuccessAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastSuccessAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationHealth_lastSuccessAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationHealth",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationHealth_lastFailureAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationHealth) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationHealth_lastFailureAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastFailureAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationHealth_lastFailureAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationHealth",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationHealth_lastError(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationHealth) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationHealth_lastError(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastError, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationHealth_lastError(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationHealth",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationHealth_consecutiveFailures(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationHealth) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationHealth_consecutiveFailures(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConsecutiveFailures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationHealth_consecutiveFailures(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationHealth",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationHealth_pending(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationHealth) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationHealth_pending(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pending, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationHealth_pending(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationHealth",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationHealth_failed(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationHealth) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationHealth_failed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Failed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationHealth_failed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationHealth",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsIntegrationHealth_dead(ctx context.Context, field graphql.CollectedField, obj *model.InsightsIntegrationHealth) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsIntegrationHealth_dead(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Dead, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsIntegrationHealth_dead(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsIntegrationHealth",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsLearningCondition_type(ctx context.Context, field graphql.CollectedField, obj *model.InsightsLearningCondition) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsLearningCondition_type(ctx, field)
 	if err != nil {
@@ -44199,6 +52844,53 @@ func (ec *executionContext) fieldContext_InsightsObservationSummary_sampleReason
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsPolicy_delivery(ctx context.Context, field graphql.CollectedField, obj *model.InsightsPolicy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsPolicy_delivery(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Delivery, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsDeliverySettings)
+	fc.Result = res
+	return ec.marshalOInsightsDeliverySettings2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliverySettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsPolicy_delivery(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsPolicy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "muted":
+				return ec.fieldContext_InsightsDeliverySettings_muted(ctx, field)
+			case "excludedIntegrationIds":
+				return ec.fieldContext_InsightsDeliverySettings_excludedIntegrationIds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsDeliverySettings", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsPolicy_id(ctx context.Context, field graphql.CollectedField, obj *model.InsightsPolicy) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsPolicy_id(ctx, field)
 	if err != nil {
@@ -44672,6 +53364,2774 @@ func (ec *executionContext) fieldContext_InsightsPromoteResult_promoted(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_id(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_kind(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_kind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsRecommendationKind)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsRecommendationKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_state(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_state(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.State, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsRecommendationState)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationState2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationState(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsRecommendationState does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_stale(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_stale(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Stale, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_stale(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_rank(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_rank(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rank, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_rank(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_scope(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_scope(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scope, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsPolicyScope)
+	fc.Result = res
+	return ec.marshalNInsightsPolicyScope2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsPolicyScope(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_scope(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsPolicyScope does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_scopeKey(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_scopeKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScopeKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_scopeKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_transactionId(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_transactionId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_transactionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_transactionKind(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_transactionKind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionKind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsTransactionKind)
+	fc.Result = res
+	return ec.marshalOInsightsTransactionKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsTransactionKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_transactionKind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsTransactionKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_service(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_service(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Service, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_namespace(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_operation(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_operation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Operation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_operation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_title(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_summary(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_summary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Summary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_summary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_whyItMatters(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_whyItMatters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WhyItMatters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_whyItMatters(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_transform(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_transform(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Transform, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_transform(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_transport(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_transport(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Transport, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_transport(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_spec(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_spec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Spec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsCorrelationSpec)
+	fc.Result = res
+	return ec.marshalOInsightsCorrelationSpec2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpec(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_spec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_InsightsCorrelationSpec_name(ctx, field)
+			case "left":
+				return ec.fieldContext_InsightsCorrelationSpec_left(ctx, field)
+			case "right":
+				return ec.fieldContext_InsightsCorrelationSpec_right(ctx, field)
+			case "relation":
+				return ec.fieldContext_InsightsCorrelationSpec_relation(ctx, field)
+			case "severity":
+				return ec.fieldContext_InsightsCorrelationSpec_severity(ctx, field)
+			case "why":
+				return ec.fieldContext_InsightsCorrelationSpec_why(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsCorrelationSpec", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_rules(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_rules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsRecommendationRule)
+	fc.Result = res
+	return ec.marshalOInsightsRecommendationRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_rules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "rule":
+				return ec.fieldContext_InsightsRecommendationRule_rule(ctx, field)
+			case "label":
+				return ec.fieldContext_InsightsRecommendationRule_label(ctx, field)
+			case "description":
+				return ec.fieldContext_InsightsRecommendationRule_description(ctx, field)
+			case "items":
+				return ec.fieldContext_InsightsRecommendationRule_items(ctx, field)
+			case "confidence":
+				return ec.fieldContext_InsightsRecommendationRule_confidence(ctx, field)
+			case "liveChecked":
+				return ec.fieldContext_InsightsRecommendationRule_liveChecked(ctx, field)
+			case "liveViolated":
+				return ec.fieldContext_InsightsRecommendationRule_liveViolated(ctx, field)
+			case "liveSince":
+				return ec.fieldContext_InsightsRecommendationRule_liveSince(ctx, field)
+			case "liveLast":
+				return ec.fieldContext_InsightsRecommendationRule_liveLast(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_appliedRules(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_appliedRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AppliedRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_appliedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_confidence(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_confidence(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Confidence, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsRecommendationConfidence)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationConfidence2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationConfidence(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_confidence(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "level":
+				return ec.fieldContext_InsightsRecommendationConfidence_level(ctx, field)
+			case "holdRatio":
+				return ec.fieldContext_InsightsRecommendationConfidence_holdRatio(ctx, field)
+			case "observed":
+				return ec.fieldContext_InsightsRecommendationConfidence_observed(ctx, field)
+			case "held":
+				return ec.fieldContext_InsightsRecommendationConfidence_held(ctx, field)
+			case "distinct":
+				return ec.fieldContext_InsightsRecommendationConfidence_distinct(ctx, field)
+			case "sampleCount":
+				return ec.fieldContext_InsightsRecommendationConfidence_sampleCount(ctx, field)
+			case "liveHeld":
+				return ec.fieldContext_InsightsRecommendationConfidence_liveHeld(ctx, field)
+			case "liveBroken":
+				return ec.fieldContext_InsightsRecommendationConfidence_liveBroken(ctx, field)
+			case "liveSince":
+				return ec.fieldContext_InsightsRecommendationConfidence_liveSince(ctx, field)
+			case "liveLast":
+				return ec.fieldContext_InsightsRecommendationConfidence_liveLast(ctx, field)
+			case "reasons":
+				return ec.fieldContext_InsightsRecommendationConfidence_reasons(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationConfidence", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_examples(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_examples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Examples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsRecommendationExample)
+	fc.Result = res
+	return ec.marshalOInsightsRecommendationExample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationExampleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_examples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "traceId":
+				return ec.fieldContext_InsightsRecommendationExample_traceId(ctx, field)
+			case "leftValue":
+				return ec.fieldContext_InsightsRecommendationExample_leftValue(ctx, field)
+			case "rightValue":
+				return ec.fieldContext_InsightsRecommendationExample_rightValue(ctx, field)
+			case "observedAt":
+				return ec.fieldContext_InsightsRecommendationExample_observedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationExample", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_alreadyCovered(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_alreadyCovered(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AlreadyCovered, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_alreadyCovered(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_minedAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_minedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_minedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendation_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendation_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendation_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationBulkResult_done(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationBulkResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationBulkResult_done(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Done, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationBulkResult_done(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationBulkResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationBulkResult_failed(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationBulkResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationBulkResult_failed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Failed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationBulkResult_failed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationBulkResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationBulkResult_errors(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationBulkResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationBulkResult_errors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsRecommendationItemError)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationItemError2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationItemErrorᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationBulkResult_errors(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationBulkResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InsightsRecommendationItemError_id(ctx, field)
+			case "error":
+				return ec.fieldContext_InsightsRecommendationItemError_error(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationItemError", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_level(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_level(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Level, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsRecommendationConfidenceLevel)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationConfidenceLevel2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationConfidenceLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_level(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsRecommendationConfidenceLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_holdRatio(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_holdRatio(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HoldRatio, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_holdRatio(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_observed(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_observed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Observed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_observed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_held(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_held(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Held, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_held(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_distinct(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_distinct(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distinct, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_distinct(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_sampleCount(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_sampleCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SampleCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_sampleCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_liveHeld(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_liveHeld(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveHeld, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_liveHeld(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_liveBroken(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_liveBroken(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveBroken, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_liveBroken(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_liveSince(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_liveSince(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveSince, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_liveSince(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_liveLast(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_liveLast(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveLast, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_liveLast(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationConfidence_reasons(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationConfidence) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationConfidence_reasons(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reasons, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationConfidence_reasons(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationConfidence",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationExample_traceId(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationExample) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationExample_traceId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TraceID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationExample_traceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationExample",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationExample_leftValue(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationExample) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationExample_leftValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LeftValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationExample_leftValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationExample",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationExample_rightValue(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationExample) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationExample_rightValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RightValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationExample_rightValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationExample",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationExample_observedAt(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationExample) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationExample_observedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ObservedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationExample_observedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationExample",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationItemError_id(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationItemError) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationItemError_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationItemError_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationItemError",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationItemError_error(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationItemError) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationItemError_error(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationItemError_error(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationItemError",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationPreview_sampleCount(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationPreview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationPreview_sampleCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SampleCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationPreview_sampleCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationPreview_observed(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationPreview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationPreview_observed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Observed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationPreview_observed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationPreview_held(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationPreview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationPreview_held(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Held, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationPreview_held(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationPreview_distinct(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationPreview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationPreview_distinct(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distinct, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationPreview_distinct(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationPreview_holdRatio(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationPreview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationPreview_holdRatio(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HoldRatio, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationPreview_holdRatio(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationPreview_examples(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationPreview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationPreview_examples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Examples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsRecommendationExample)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationExample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationExampleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationPreview_examples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "traceId":
+				return ec.fieldContext_InsightsRecommendationExample_traceId(ctx, field)
+			case "leftValue":
+				return ec.fieldContext_InsightsRecommendationExample_leftValue(ctx, field)
+			case "rightValue":
+				return ec.fieldContext_InsightsRecommendationExample_rightValue(ctx, field)
+			case "observedAt":
+				return ec.fieldContext_InsightsRecommendationExample_observedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationExample", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationPreview_counterExamples(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationPreview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationPreview_counterExamples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CounterExamples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsRecommendationExample)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationExample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationExampleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationPreview_counterExamples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationPreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "traceId":
+				return ec.fieldContext_InsightsRecommendationExample_traceId(ctx, field)
+			case "leftValue":
+				return ec.fieldContext_InsightsRecommendationExample_leftValue(ctx, field)
+			case "rightValue":
+				return ec.fieldContext_InsightsRecommendationExample_rightValue(ctx, field)
+			case "observedAt":
+				return ec.fieldContext_InsightsRecommendationExample_observedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationExample", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_rule(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_rule(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rule, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_rule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_label(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_label(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_description(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_items(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_items(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Items, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_confidence(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_confidence(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Confidence, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsRecommendationConfidenceLevel)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationConfidenceLevel2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationConfidenceLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_confidence(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsRecommendationConfidenceLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_liveChecked(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_liveChecked(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveChecked, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_liveChecked(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_liveViolated(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_liveViolated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveViolated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_liveViolated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_liveSince(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_liveSince(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveSince, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_liveSince(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsRecommendationRule_liveLast(ctx context.Context, field graphql.CollectedField, obj *model.InsightsRecommendationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsRecommendationRule_liveLast(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveLast, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsRecommendationRule_liveLast(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsRecommendationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -45822,6 +57282,94 @@ func (ec *executionContext) fieldContext_InsightsServiceStat_lastSeen(_ context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsServiceStat_transactionLimit(ctx context.Context, field graphql.CollectedField, obj *model.InsightsServiceStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsServiceStat_transactionLimit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsServiceStat_transactionLimit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsServiceStat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsServiceStat_transactionLimitReached(ctx context.Context, field graphql.CollectedField, obj *model.InsightsServiceStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsServiceStat_transactionLimitReached(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionLimitReached, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsServiceStat_transactionLimitReached(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsServiceStat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -48129,6 +59677,50 @@ func (ec *executionContext) fieldContext_InsightsSystemCapacitySettings_maxBasel
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsSystemCapacitySettings_maxTransactionsPerService(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemCapacitySettings) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsSystemCapacitySettings_maxTransactionsPerService(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxTransactionsPerService, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsSystemCapacitySettings_maxTransactionsPerService(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsSystemCapacitySettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsSystemDetectionSettings_autoTransactionGuardrail(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemDetectionSettings) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsSystemDetectionSettings_autoTransactionGuardrail(ctx, field)
 	if err != nil {
@@ -48496,6 +60088,8 @@ func (ec *executionContext) fieldContext_InsightsSystemSettings_capacity(_ conte
 				return ec.fieldContext_InsightsSystemCapacitySettings_maxResidentTransactions(ctx, field)
 			case "maxBaselineSetMembers":
 				return ec.fieldContext_InsightsSystemCapacitySettings_maxBaselineSetMembers(ctx, field)
+			case "maxTransactionsPerService":
+				return ec.fieldContext_InsightsSystemCapacitySettings_maxTransactionsPerService(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsSystemCapacitySettings", field.Name)
 		},
@@ -49665,6 +61259,402 @@ func (ec *executionContext) fieldContext_InsightsTransactionStat_promoted(_ cont
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsTransactionStat_saturatedClasses(ctx context.Context, field graphql.CollectedField, obj *model.InsightsTransactionStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsTransactionStat_saturatedClasses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SaturatedClasses, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.InsightsDeviationClass)
+	fc.Result = res
+	return ec.marshalNInsightsDeviationClass2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClassᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsTransactionStat_saturatedClasses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsTransactionStat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsDeviationClass does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationAgent_language(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_language(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Language, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_language(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationAgent_distroName(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_distroName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DistroName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_distroName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationAgent_distroDisplayName(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_distroDisplayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DistroDisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_distroDisplayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationAgent_description(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationAgent_runtimeEnvironment(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_runtimeEnvironment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeEnvironment, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_runtimeEnvironment(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationAgent_supportedRuntimeVersions(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_supportedRuntimeVersions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SupportedRuntimeVersions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_supportedRuntimeVersions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationAgent_sources(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_sources(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sources, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_sources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationAgent_isDefault(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationAgent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationAgent_isDefault(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsDefault, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationAgent_isDefault(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationAgent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationInstanceAnalyze_healthy(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationInstanceAnalyze_healthy(ctx, field)
 	if err != nil {
@@ -50507,6 +62497,50 @@ func (ec *executionContext) fieldContext_InstrumentationRule_profileName(_ conte
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_managedBy(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManagedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ManagedBy)
+	fc.Result = res
+	return ec.marshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_managedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ManagedBy does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRule_sourcesScopes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 	if err != nil {
@@ -50853,6 +62887,8 @@ func (ec *executionContext) fieldContext_InstrumentationRule_customInstrumentati
 				return ec.fieldContext_CustomInstrumentations_java(ctx, field)
 			case "php":
 				return ec.fieldContext_CustomInstrumentations_php(ctx, field)
+			case "cpp":
+				return ec.fieldContext_CustomInstrumentations_cpp(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CustomInstrumentations", field.Name)
 		},
@@ -52048,6 +64084,129 @@ func (ec *executionContext) _JavaCustomProbe_methodName(ctx context.Context, fie
 }
 
 func (ec *executionContext) fieldContext_JavaCustomProbe_methodName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JavaCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JavaCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.JavaCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_JavaCustomProbe_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_JavaCustomProbe_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JavaCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JavaCustomProbe_category(ctx context.Context, field graphql.CollectedField, obj *model.JavaCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_JavaCustomProbe_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CustomProbeCategory)
+	fc.Result = res
+	return ec.marshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_JavaCustomProbe_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JavaCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type CustomProbeCategory does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JavaCustomProbe_addedAt(ctx context.Context, field graphql.CollectedField, obj *model.JavaCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_JavaCustomProbe_addedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AddedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_JavaCustomProbe_addedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "JavaCustomProbe",
 		Field:      field,
@@ -53950,6 +66109,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_containers(_ context.Contex
 				return ec.fieldContext_K8sWorkloadContainer_collectorConfig(ctx, field)
 			case "instrumentations":
 				return ec.fieldContext_K8sWorkloadContainer_instrumentations(ctx, field)
+			case "urlTemplatization":
+				return ec.fieldContext_K8sWorkloadContainer_urlTemplatization(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainer", field.Name)
 		},
@@ -56064,6 +68225,53 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_instrumentations(_
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadContainer_urlTemplatization(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainer_urlTemplatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkloadContainer().URLTemplatization(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadContainerURLTemplatization)
+	fc.Result = res
+	return ec.marshalOK8sWorkloadContainerUrlTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerURLTemplatization(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainer_urlTemplatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainer",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "templatization":
+				return ec.fieldContext_K8sWorkloadContainerUrlTemplatization_templatization(ctx, field)
+			case "liveTrafficLearning":
+				return ec.fieldContext_K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainerUrlTemplatization", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadContainerAgentConfig_traces(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerAgentConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadContainerAgentConfig_traces(ctx, field)
 	if err != nil {
@@ -57465,6 +69673,198 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerCollectorConfigTail
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UnmatchedServerPaths, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UnmatchedURLPath)
+	fc.Result = res
+	return ec.marshalOUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+			case "count":
+				return ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPath", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UnmatchedClientPaths, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UnmatchedURLPath)
+	fc.Result = res
+	return ec.marshalOUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+			case "count":
+				return ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPath", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServerRecommendedRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.LiveTrafficLearningRecommendedRule)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_template(ctx, field)
+			case "reason":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_reason(ctx, field)
+			case "segments":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_segments(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningRecommendedRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientRecommendedRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.LiveTrafficLearningRecommendedRule)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_template(ctx, field)
+			case "reason":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_reason(ctx, field)
+			case "segments":
+				return ec.fieldContext_LiveTrafficLearningRecommendedRule_segments(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningRecommendedRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadContainerOverrides_containerName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerOverrides) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadContainerOverrides_containerName(ctx, field)
 	if err != nil {
@@ -57647,6 +70047,104 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_allowConc
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerUrlTemplatization_templatization(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerURLTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerUrlTemplatization_templatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Templatization, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningTemplatization)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplatization(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerUrlTemplatization_templatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerUrlTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "templates":
+				return ec.fieldContext_LiveTrafficLearningTemplatization_templates(ctx, field)
+			case "patternBasedTemplatization":
+				return ec.fieldContext_LiveTrafficLearningTemplatization_patternBasedTemplatization(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningTemplatization", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerURLTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkloadContainerUrlTemplatization().LiveTrafficLearning(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadContainerLiveTrafficLearning)
+	fc.Result = res
+	return ec.marshalOK8sWorkloadContainerLiveTrafficLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerLiveTrafficLearning(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerUrlTemplatization",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "unmatchedServerPaths":
+				return ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(ctx, field)
+			case "unmatchedClientPaths":
+				return ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(ctx, field)
+			case "serverRecommendedRules":
+				return ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(ctx, field)
+			case "clientRecommendedRules":
+				return ec.fieldContext_K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainerLiveTrafficLearning", field.Name)
 		},
 	}
 	return fc, nil
@@ -61040,6 +73538,1154 @@ func (ec *executionContext) fieldContext_LanguageConfig_envVars(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _LiveTrafficLearningAutomaticRulesConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningAutomaticRulesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningAutomaticRulesConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningAutomaticRulesConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningAutomaticRulesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxExamplePathsPerWorkload, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_maxExamplePathsPerWorkload(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_pathExampleIdleTTL(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_pathExampleIdleTTL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PathExampleIdleTTL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_pathExampleIdleTTL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_learningInterval(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_learningInterval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LearningInterval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_learningInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_ruleComputation(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_ruleComputation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuleComputation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningRuleComputationConfig)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningRuleComputationConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRuleComputationConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_ruleComputation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minObservationsForRule":
+				return ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx, field)
+			case "minCardinalityForTemplating":
+				return ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningRuleComputationConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningConfig_automaticRules(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningConfig_automaticRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AutomaticRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningAutomaticRulesConfig)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningAutomaticRulesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningAutomaticRulesConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningConfig_automaticRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_LiveTrafficLearningAutomaticRulesConfig_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningAutomaticRulesConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningPatternBasedTemplatization_disabled(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningPatternBasedTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningPatternBasedTemplatization_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningPatternBasedTemplatization_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningPatternBasedTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningPatternBasedTemplatization_skipPolicy(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningPatternBasedTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningPatternBasedTemplatization_skipPolicy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SkipPolicy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.URLTemplatizationDefaultSkipPolicy)
+	fc.Result = res
+	return ec.marshalOUrlTemplatizationDefaultSkipPolicy2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultSkipPolicy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningPatternBasedTemplatization_skipPolicy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningPatternBasedTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "skipForNonSuccessCodes":
+				return ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipForNonSuccessCodes(ctx, field)
+			case "skipHttpStatusCodes":
+				return ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipHttpStatusCodes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationDefaultSkipPolicy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedRule_template(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedRule_template(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Template, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedRule_template(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedRule_reason(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedRule_reason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedRule_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedRule_segments(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedRule_segments(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Segments, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.LiveTrafficLearningRecommendedSegment)
+	fc.Result = res
+	return ec.marshalNLiveTrafficLearningRecommendedSegment2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedSegmentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedRule_segments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "templateName":
+				return ec.fieldContext_LiveTrafficLearningRecommendedSegment_templateName(ctx, field)
+			case "static":
+				return ec.fieldContext_LiveTrafficLearningRecommendedSegment_static(ctx, field)
+			case "certainty":
+				return ec.fieldContext_LiveTrafficLearningRecommendedSegment_certainty(ctx, field)
+			case "examples":
+				return ec.fieldContext_LiveTrafficLearningRecommendedSegment_examples(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningRecommendedSegment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment_templateName(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedSegment_templateName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TemplateName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedSegment_templateName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment_static(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedSegment_static(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Static, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedSegment_static(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment_certainty(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedSegment_certainty(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Certainty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedSegment_certainty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment_examples(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRecommendedSegment_examples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Examples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRecommendedSegment_examples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRuleComputationConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinObservationsForRule, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRuleComputationConfig_minObservationsForRule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRuleComputationConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningRuleComputationConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinCardinalityForTemplating, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningRuleComputationConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_template(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_template(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Template, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_template(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_examples(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_examples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Examples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_examples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_notes(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_actionId(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_actionId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActionID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_actionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_actionName(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_actionName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActionName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_actionName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate_managedBy(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplate_managedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManagedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ManagedBy)
+	fc.Result = res
+	return ec.marshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplate_managedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ManagedBy does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplatization_templates(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplatization_templates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Templates, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.LiveTrafficLearningTemplate)
+	fc.Result = res
+	return ec.marshalNLiveTrafficLearningTemplate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplatization_templates(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_LiveTrafficLearningTemplate_template(ctx, field)
+			case "examples":
+				return ec.fieldContext_LiveTrafficLearningTemplate_examples(ctx, field)
+			case "notes":
+				return ec.fieldContext_LiveTrafficLearningTemplate_notes(ctx, field)
+			case "actionId":
+				return ec.fieldContext_LiveTrafficLearningTemplate_actionId(ctx, field)
+			case "actionName":
+				return ec.fieldContext_LiveTrafficLearningTemplate_actionName(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_LiveTrafficLearningTemplate_managedBy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningTemplate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiveTrafficLearningTemplatization_patternBasedTemplatization(ctx context.Context, field graphql.CollectedField, obj *model.LiveTrafficLearningTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiveTrafficLearningTemplatization_patternBasedTemplatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PatternBasedTemplatization, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningPatternBasedTemplatization)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningPatternBasedTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningPatternBasedTemplatization(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiveTrafficLearningTemplatization_patternBasedTemplatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiveTrafficLearningTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disabled":
+				return ec.fieldContext_LiveTrafficLearningPatternBasedTemplatization_disabled(ctx, field)
+			case "skipPolicy":
+				return ec.fieldContext_LiveTrafficLearningPatternBasedTemplatization_skipPolicy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningPatternBasedTemplatization", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MessagingPayloadCollection_maxPayloadLength(ctx context.Context, field graphql.CollectedField, obj *model.MessagingPayloadCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MessagingPayloadCollection_maxPayloadLength(ctx, field)
 	if err != nil {
@@ -62432,6 +76078,8 @@ func (ec *executionContext) fieldContext_Mutation_createAction(ctx context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_Action_managedBy(ctx, field)
 			case "uiGenerated":
 				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
@@ -62509,6 +76157,8 @@ func (ec *executionContext) fieldContext_Mutation_updateAction(ctx context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_Action_managedBy(ctx, field)
 			case "uiGenerated":
 				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
@@ -63183,6 +76833,126 @@ func (ec *executionContext) fieldContext_Mutation_testConnectionForDestination(c
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateGoOffsets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateGoOffsets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateGoOffsets(rctx, fc.Args["content"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateGoOffsets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateGoOffsets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_checkGoOffsetsUpdates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_checkGoOffsetsUpdates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CheckGoOffsetsUpdates(rctx, fc.Args["content"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.GoOffsetsUpdateCheck)
+	fc.Result = res
+	return ec.marshalNGoOffsetsUpdateCheck2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetsUpdateCheck(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_checkGoOffsetsUpdates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasUpdates":
+				return ec.fieldContext_GoOffsetsUpdateCheck_hasUpdates(ctx, field)
+			case "currentTimestamp":
+				return ec.fieldContext_GoOffsetsUpdateCheck_currentTimestamp(ctx, field)
+			case "proposedTimestamp":
+				return ec.fieldContext_GoOffsetsUpdateCheck_proposedTimestamp(ctx, field)
+			case "mods":
+				return ec.fieldContext_GoOffsetsUpdateCheck_mods(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GoOffsetsUpdateCheck", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_checkGoOffsetsUpdates_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_promoteInsightsBaselineClass(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_promoteInsightsBaselineClass(ctx, field)
 	if err != nil {
@@ -63788,6 +77558,8 @@ func (ec *executionContext) fieldContext_Mutation_upsertInsightsPolicy(ctx conte
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "delivery":
+				return ec.fieldContext_InsightsPolicy_delivery(ctx, field)
 			case "id":
 				return ec.fieldContext_InsightsPolicy_id(ctx, field)
 			case "name":
@@ -64156,6 +77928,8 @@ func (ec *executionContext) fieldContext_Mutation_upsertInsightsGuardrail(ctx co
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "delivery":
+				return ec.fieldContext_InsightsGuardrail_delivery(ctx, field)
 			case "scope":
 				return ec.fieldContext_InsightsGuardrail_scope(ctx, field)
 			case "scopeKey":
@@ -64194,7 +77968,7 @@ func (ec *executionContext) _Mutation_deleteInsightsGuardrail(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteInsightsGuardrail(rctx, fc.Args["scopeKey"].(string))
+		return ec.resolvers.Mutation().DeleteInsightsGuardrail(rctx, fc.Args["scopeKey"].(string), fc.Args["scope"].(*model.InsightsPolicyScope))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -64524,6 +78298,699 @@ func (ec *executionContext) fieldContext_Mutation_updateInsightsSystemSettings(c
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_applyInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_applyInsightsRecommendations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ApplyInsightsRecommendations(rctx, fc.Args["items"].([]*model.InsightsRecommendationApplyItemInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsRecommendationBulkResult)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationBulkResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationBulkResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_applyInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "done":
+				return ec.fieldContext_InsightsRecommendationBulkResult_done(ctx, field)
+			case "failed":
+				return ec.fieldContext_InsightsRecommendationBulkResult_failed(ctx, field)
+			case "errors":
+				return ec.fieldContext_InsightsRecommendationBulkResult_errors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationBulkResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_applyInsightsRecommendations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_dismissInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_dismissInsightsRecommendations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DismissInsightsRecommendations(rctx, fc.Args["ids"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsRecommendationBulkResult)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationBulkResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationBulkResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_dismissInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "done":
+				return ec.fieldContext_InsightsRecommendationBulkResult_done(ctx, field)
+			case "failed":
+				return ec.fieldContext_InsightsRecommendationBulkResult_failed(ctx, field)
+			case "errors":
+				return ec.fieldContext_InsightsRecommendationBulkResult_errors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationBulkResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_dismissInsightsRecommendations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_restoreInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_restoreInsightsRecommendations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RestoreInsightsRecommendations(rctx, fc.Args["ids"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsRecommendationBulkResult)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationBulkResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationBulkResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_restoreInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "done":
+				return ec.fieldContext_InsightsRecommendationBulkResult_done(ctx, field)
+			case "failed":
+				return ec.fieldContext_InsightsRecommendationBulkResult_failed(ctx, field)
+			case "errors":
+				return ec.fieldContext_InsightsRecommendationBulkResult_errors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationBulkResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_restoreInsightsRecommendations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_revertInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_revertInsightsRecommendations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RevertInsightsRecommendations(rctx, fc.Args["ids"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsRecommendationBulkResult)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationBulkResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationBulkResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_revertInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "done":
+				return ec.fieldContext_InsightsRecommendationBulkResult_done(ctx, field)
+			case "failed":
+				return ec.fieldContext_InsightsRecommendationBulkResult_failed(ctx, field)
+			case "errors":
+				return ec.fieldContext_InsightsRecommendationBulkResult_errors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationBulkResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_revertInsightsRecommendations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_previewInsightsRecommendation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_previewInsightsRecommendation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PreviewInsightsRecommendation(rctx, fc.Args["transactionId"].(string), fc.Args["spec"].(model.InsightsCorrelationSpecInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsRecommendationPreview)
+	fc.Result = res
+	return ec.marshalNInsightsRecommendationPreview2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationPreview(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_previewInsightsRecommendation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sampleCount":
+				return ec.fieldContext_InsightsRecommendationPreview_sampleCount(ctx, field)
+			case "observed":
+				return ec.fieldContext_InsightsRecommendationPreview_observed(ctx, field)
+			case "held":
+				return ec.fieldContext_InsightsRecommendationPreview_held(ctx, field)
+			case "distinct":
+				return ec.fieldContext_InsightsRecommendationPreview_distinct(ctx, field)
+			case "holdRatio":
+				return ec.fieldContext_InsightsRecommendationPreview_holdRatio(ctx, field)
+			case "examples":
+				return ec.fieldContext_InsightsRecommendationPreview_examples(ctx, field)
+			case "counterExamples":
+				return ec.fieldContext_InsightsRecommendationPreview_counterExamples(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsRecommendationPreview", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_previewInsightsRecommendation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_recomputeInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_recomputeInsightsRecommendations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RecomputeInsightsRecommendations(rctx, fc.Args["transactionId"].(*string), fc.Args["namespace"].(*string), fc.Args["service"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_recomputeInsightsRecommendations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_recomputeInsightsRecommendations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createInsightsIntegration(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createInsightsIntegration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateInsightsIntegration(rctx, fc.Args["integration"].(model.InsightsIntegrationInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsIntegration)
+	fc.Result = res
+	return ec.marshalNInsightsIntegration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createInsightsIntegration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InsightsIntegration_id(ctx, field)
+			case "name":
+				return ec.fieldContext_InsightsIntegration_name(ctx, field)
+			case "type":
+				return ec.fieldContext_InsightsIntegration_type(ctx, field)
+			case "enabled":
+				return ec.fieldContext_InsightsIntegration_enabled(ctx, field)
+			case "config":
+				return ec.fieldContext_InsightsIntegration_config(ctx, field)
+			case "filters":
+				return ec.fieldContext_InsightsIntegration_filters(ctx, field)
+			case "health":
+				return ec.fieldContext_InsightsIntegration_health(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_InsightsIntegration_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_InsightsIntegration_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegration", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createInsightsIntegration_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateInsightsIntegration(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateInsightsIntegration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateInsightsIntegration(rctx, fc.Args["id"].(string), fc.Args["integration"].(model.InsightsIntegrationInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsIntegration)
+	fc.Result = res
+	return ec.marshalNInsightsIntegration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateInsightsIntegration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InsightsIntegration_id(ctx, field)
+			case "name":
+				return ec.fieldContext_InsightsIntegration_name(ctx, field)
+			case "type":
+				return ec.fieldContext_InsightsIntegration_type(ctx, field)
+			case "enabled":
+				return ec.fieldContext_InsightsIntegration_enabled(ctx, field)
+			case "config":
+				return ec.fieldContext_InsightsIntegration_config(ctx, field)
+			case "filters":
+				return ec.fieldContext_InsightsIntegration_filters(ctx, field)
+			case "health":
+				return ec.fieldContext_InsightsIntegration_health(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_InsightsIntegration_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_InsightsIntegration_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsIntegration", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateInsightsIntegration_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteInsightsIntegration(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteInsightsIntegration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteInsightsIntegration(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteInsightsIntegration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteInsightsIntegration_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_testInsightsIntegration(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_testInsightsIntegration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().TestInsightsIntegration(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_testInsightsIntegration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_testInsightsIntegration_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_retryInsightsIntegrationDeliveries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_retryInsightsIntegrationDeliveries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RetryInsightsIntegrationDeliveries(rctx, fc.Args["id"].(string), fc.Args["findingKeys"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_retryInsightsIntegrationDeliveries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_retryInsightsIntegrationDeliveries_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createInstrumentationRule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createInstrumentationRule(ctx, field)
 	if err != nil {
@@ -64577,6 +79044,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -64664,6 +79133,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
+			case "managedBy":
+				return ec.fieldContext_InstrumentationRule_managedBy(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -65175,7 +79646,7 @@ func (ec *executionContext) _Mutation_applyRecommendationRemediation(ctx context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ApplyRecommendationRemediation(rctx, fc.Args["recommendationType"].(model.RecommendationType), fc.Args["remediationType"].(string))
+		return ec.resolvers.Mutation().ApplyRecommendationRemediation(rctx, fc.Args["recommendationType"].(string), fc.Args["remediationType"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -68726,6 +83197,129 @@ func (ec *executionContext) fieldContext_PhpCustomProbe_functionName(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _PhpCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.PhpCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PhpCustomProbe_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PhpCustomProbe_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PhpCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PhpCustomProbe_category(ctx context.Context, field graphql.CollectedField, obj *model.PhpCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PhpCustomProbe_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CustomProbeCategory)
+	fc.Result = res
+	return ec.marshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PhpCustomProbe_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PhpCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type CustomProbeCategory does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PhpCustomProbe_addedAt(ctx context.Context, field graphql.CollectedField, obj *model.PhpCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PhpCustomProbe_addedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AddedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PhpCustomProbe_addedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PhpCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PodAnalyze_podName(ctx context.Context, field graphql.CollectedField, obj *model.PodAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodAnalyze_podName(ctx, field)
 	if err != nil {
@@ -71312,8 +85906,8 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_sampling(ctx, field)
 			case "profiling":
 				return ec.fieldContext_EffectiveConfig_profiling(ctx, field)
-			case "traceCorrelations":
-				return ec.fieldContext_EffectiveConfig_traceCorrelations(ctx, field)
+			case "cardinalityControl":
+				return ec.fieldContext_EffectiveConfig_cardinalityControl(ctx, field)
 			case "provenance":
 				return ec.fieldContext_EffectiveConfig_provenance(ctx, field)
 			case "manifestYAML":
@@ -71682,6 +86276,58 @@ func (ec *executionContext) fieldContext_Query_diagnose(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_goOffsets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_goOffsets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GoOffsets(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.GoOffsets)
+	fc.Result = res
+	return ec.marshalNGoOffsets2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsets(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_goOffsets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "installed":
+				return ec.fieldContext_GoOffsets_installed(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_GoOffsets_timestamp(ctx, field)
+			case "mods":
+				return ec.fieldContext_GoOffsets_mods(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GoOffsets", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_insights(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_insights(ctx, field)
 	if err != nil {
@@ -71718,6 +86364,18 @@ func (ec *executionContext) fieldContext_Query_insights(_ context.Context, field
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "integrationCatalog":
+				return ec.fieldContext_Insights_integrationCatalog(ctx, field)
+			case "integrations":
+				return ec.fieldContext_Insights_integrations(ctx, field)
+			case "integration":
+				return ec.fieldContext_Insights_integration(ctx, field)
+			case "integrationDeliveries":
+				return ec.fieldContext_Insights_integrationDeliveries(ctx, field)
+			case "integrationAttempts":
+				return ec.fieldContext_Insights_integrationAttempts(ctx, field)
+			case "findingDeliveries":
+				return ec.fieldContext_Insights_findingDeliveries(ctx, field)
 			case "services":
 				return ec.fieldContext_Insights_services(ctx, field)
 			case "serviceNames":
@@ -71752,6 +86410,10 @@ func (ec *executionContext) fieldContext_Query_insights(_ context.Context, field
 				return ec.fieldContext_Insights_guardrailViolations(ctx, field)
 			case "guardrailViolation":
 				return ec.fieldContext_Insights_guardrailViolation(ctx, field)
+			case "recommendations":
+				return ec.fieldContext_Insights_recommendations(ctx, field)
+			case "recommendation":
+				return ec.fieldContext_Insights_recommendation(ctx, field)
 			case "catalog":
 				return ec.fieldContext_Insights_catalog(ctx, field)
 			case "systemSettings":
@@ -71760,6 +86422,68 @@ func (ec *executionContext) fieldContext_Query_insights(_ context.Context, field
 				return ec.fieldContext_Insights_storageHealth(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Insights", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_instrumentationAgents(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_instrumentationAgents(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().InstrumentationAgents(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InstrumentationAgent)
+	fc.Result = res
+	return ec.marshalNInstrumentationAgent2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_instrumentationAgents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "language":
+				return ec.fieldContext_InstrumentationAgent_language(ctx, field)
+			case "distroName":
+				return ec.fieldContext_InstrumentationAgent_distroName(ctx, field)
+			case "distroDisplayName":
+				return ec.fieldContext_InstrumentationAgent_distroDisplayName(ctx, field)
+			case "description":
+				return ec.fieldContext_InstrumentationAgent_description(ctx, field)
+			case "runtimeEnvironment":
+				return ec.fieldContext_InstrumentationAgent_runtimeEnvironment(ctx, field)
+			case "supportedRuntimeVersions":
+				return ec.fieldContext_InstrumentationAgent_supportedRuntimeVersions(ctx, field)
+			case "sources":
+				return ec.fieldContext_InstrumentationAgent_sources(ctx, field)
+			case "isDefault":
+				return ec.fieldContext_InstrumentationAgent_isDefault(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InstrumentationAgent", field.Name)
 		},
 	}
 	return fc, nil
@@ -72333,65 +87057,6 @@ func (ec *executionContext) fieldContext_Query_instrumentationInstanceComponents
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_traceCorrelations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_traceCorrelations(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TraceCorrelations(rctx, fc.Args["filter"].(*model.WorkloadFilter), fc.Args["timeRange"].(*model.TraceCorrelationsTimeRangeInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.TraceCorrelations)
-	fc.Result = res
-	return ec.marshalNTraceCorrelations2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelations(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_traceCorrelations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "workloads":
-				return ec.fieldContext_TraceCorrelations_workloads(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelations", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_traceCorrelations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_workloads(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_workloads(ctx, field)
 	if err != nil {
@@ -72841,9 +87506,9 @@ func (ec *executionContext) _Recommendation_type(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.RecommendationType)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Recommendation_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -72853,7 +87518,7 @@ func (ec *executionContext) fieldContext_Recommendation_type(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type RecommendationType does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -73529,6 +88194,8 @@ func (ec *executionContext) fieldContext_Recommendation_remediations(_ context.C
 				return ec.fieldContext_RecommendationCatalogRemediation_buttonText(ctx, field)
 			case "tooltip":
 				return ec.fieldContext_RecommendationCatalogRemediation_tooltip(ctx, field)
+			case "canApplyViaUi":
+				return ec.fieldContext_RecommendationCatalogRemediation_canApplyViaUi(ctx, field)
 			case "applyExamples":
 				return ec.fieldContext_RecommendationCatalogRemediation_applyExamples(ctx, field)
 			}
@@ -73923,6 +88590,50 @@ func (ec *executionContext) fieldContext_RecommendationCatalogRemediation_toolti
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationCatalogRemediation_canApplyViaUi(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCatalogRemediation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecommendationCatalogRemediation_canApplyViaUi(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CanApplyViaUI, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecommendationCatalogRemediation_canApplyViaUi(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationCatalogRemediation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -74836,6 +89547,8 @@ func (ec *executionContext) fieldContext_SamplingConfig_tailSampling(_ context.C
 				return ec.fieldContext_TailSamplingConfig_disabled(ctx, field)
 			case "traceAggregationWaitDuration":
 				return ec.fieldContext_TailSamplingConfig_traceAggregationWaitDuration(ctx, field)
+			case "noisyOperationsEnforcement":
+				return ec.fieldContext_TailSamplingConfig_noisyOperationsEnforcement(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TailSamplingConfig", field.Name)
 		},
@@ -77753,6 +92466,47 @@ func (ec *executionContext) fieldContext_TailSamplingConfig_traceAggregationWait
 	return fc, nil
 }
 
+func (ec *executionContext) _TailSamplingConfig_noisyOperationsEnforcement(ctx context.Context, field graphql.CollectedField, obj *model.TailSamplingConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TailSamplingConfig_noisyOperationsEnforcement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NoisyOperationsEnforcement, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.NoisyOperationsEnforcement)
+	fc.Result = res
+	return ec.marshalONoisyOperationsEnforcement2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationsEnforcement(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TailSamplingConfig_noisyOperationsEnforcement(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TailSamplingConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type NoisyOperationsEnforcement does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TailSamplingHttpServerMatcher_route(ctx context.Context, field graphql.CollectedField, obj *model.TailSamplingHTTPServerMatcher) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_TailSamplingHttpServerMatcher_route(ctx, field)
 	if err != nil {
@@ -78349,872 +93103,6 @@ func (ec *executionContext) fieldContext_TestConnectionResponse_reason(_ context
 	return fc, nil
 }
 
-func (ec *executionContext) _TraceCorrelations_workloads(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelations) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelations_workloads(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Workloads, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.TraceCorrelationsWorkload)
-	fc.Result = res
-	return ec.marshalNTraceCorrelationsWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsWorkloadᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelations_workloads(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelations",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "namespace":
-				return ec.fieldContext_TraceCorrelationsWorkload_namespace(ctx, field)
-			case "kind":
-				return ec.fieldContext_TraceCorrelationsWorkload_kind(ctx, field)
-			case "name":
-				return ec.fieldContext_TraceCorrelationsWorkload_name(ctx, field)
-			case "containerName":
-				return ec.fieldContext_TraceCorrelationsWorkload_containerName(ctx, field)
-			case "telemetrySdkLanguage":
-				return ec.fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field)
-			case "processRuntimeName":
-				return ec.fieldContext_TraceCorrelationsWorkload_processRuntimeName(ctx, field)
-			case "processRuntimeVersion":
-				return ec.fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(ctx, field)
-			case "inputs":
-				return ec.fieldContext_TraceCorrelationsWorkload_inputs(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsWorkload", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsConfig_serviceIO(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsConfig_serviceIO(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ServiceIo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.TraceCorrelationsServiceIOConfig)
-	fc.Result = res
-	return ec.marshalOTraceCorrelationsServiceIOConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsServiceIOConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsConfig_serviceIO(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "enabled":
-				return ec.fieldContext_TraceCorrelationsServiceIOConfig_enabled(ctx, field)
-			case "inputSpanAttributes":
-				return ec.fieldContext_TraceCorrelationsServiceIOConfig_inputSpanAttributes(ctx, field)
-			case "outputSpanAttributes":
-				return ec.fieldContext_TraceCorrelationsServiceIOConfig_outputSpanAttributes(ctx, field)
-			case "metricsFlushInterval":
-				return ec.fieldContext_TraceCorrelationsServiceIOConfig_metricsFlushInterval(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsServiceIOConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsInputGroup_attributes(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsInputGroup) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsInputGroup_attributes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Attributes, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.NonIdentifyingAttribute)
-	fc.Result = res
-	return ec.marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsInputGroup_attributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsInputGroup",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "key":
-				return ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
-			case "value":
-				return ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NonIdentifyingAttribute", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsInputGroup_outputs(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsInputGroup) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsInputGroup_outputs(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Outputs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.TraceCorrelationsOutputSeries)
-	fc.Result = res
-	return ec.marshalNTraceCorrelationsOutputSeries2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsOutputSeriesᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsInputGroup_outputs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsInputGroup",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "attributes":
-				return ec.fieldContext_TraceCorrelationsOutputSeries_attributes(ctx, field)
-			case "connectionCount":
-				return ec.fieldContext_TraceCorrelationsOutputSeries_connectionCount(ctx, field)
-			case "firstDetectedAt":
-				return ec.fieldContext_TraceCorrelationsOutputSeries_firstDetectedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsOutputSeries", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsOutputSeries_attributes(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsOutputSeries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsOutputSeries_attributes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Attributes, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.NonIdentifyingAttribute)
-	fc.Result = res
-	return ec.marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsOutputSeries_attributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsOutputSeries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "key":
-				return ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
-			case "value":
-				return ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NonIdentifyingAttribute", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsOutputSeries_connectionCount(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsOutputSeries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsOutputSeries_connectionCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ConnectionCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsOutputSeries_connectionCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsOutputSeries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsOutputSeries_firstDetectedAt(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsOutputSeries) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsOutputSeries_firstDetectedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.FirstDetectedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsOutputSeries_firstDetectedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsOutputSeries",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsServiceIOConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsServiceIOConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsServiceIOConfig_enabled(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Enabled, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsServiceIOConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsServiceIOConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsServiceIOConfig_inputSpanAttributes(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsServiceIOConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsServiceIOConfig_inputSpanAttributes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InputSpanAttributes, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsServiceIOConfig_inputSpanAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsServiceIOConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsServiceIOConfig_outputSpanAttributes(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsServiceIOConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsServiceIOConfig_outputSpanAttributes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OutputSpanAttributes, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsServiceIOConfig_outputSpanAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsServiceIOConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsServiceIOConfig_metricsFlushInterval(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsServiceIOConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsServiceIOConfig_metricsFlushInterval(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MetricsFlushInterval, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsServiceIOConfig_metricsFlushInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsServiceIOConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsWorkload_namespace(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsWorkload_namespace(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Namespace, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsWorkload_kind(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsWorkload_kind(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Kind, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.K8sResourceKind)
-	fc.Result = res
-	return ec.marshalNK8sResourceKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type K8sResourceKind does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsWorkload_name(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsWorkload_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsWorkload_containerName(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsWorkload_containerName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ContainerName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsWorkload_telemetrySdkLanguage(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TelemetrySdkLanguage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsWorkload_processRuntimeName(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsWorkload_processRuntimeName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProcessRuntimeName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_processRuntimeName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsWorkload_processRuntimeVersion(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProcessRuntimeVersion, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TraceCorrelationsWorkload_inputs(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TraceCorrelationsWorkload_inputs(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Inputs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.TraceCorrelationsInputGroup)
-	fc.Result = res
-	return ec.marshalNTraceCorrelationsInputGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsInputGroupᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_inputs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TraceCorrelationsWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "attributes":
-				return ec.fieldContext_TraceCorrelationsInputGroup_attributes(ctx, field)
-			case "outputs":
-				return ec.fieldContext_TraceCorrelationsInputGroup_outputs(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsInputGroup", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _URLTemplatizationRule_template(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_URLTemplatizationRule_template(ctx, field)
 	if err != nil {
@@ -79336,6 +93224,149 @@ func (ec *executionContext) fieldContext_URLTemplatizationRule_examples(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UnmatchedUrlPath_path(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPath) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Path, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UnmatchedUrlPath_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UnmatchedUrlPath",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UnmatchedUrlPath_count(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPath) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UnmatchedUrlPath_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UnmatchedUrlPath",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationCardinalityControlConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveTrafficLearning, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.LiveTrafficLearningConfig)
+	fc.Result = res
+	return ec.marshalOLiveTrafficLearningConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationCardinalityControlConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_LiveTrafficLearningConfig_enabled(ctx, field)
+			case "maxExamplePathsPerWorkload":
+				return ec.fieldContext_LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx, field)
+			case "pathExampleIdleTTL":
+				return ec.fieldContext_LiveTrafficLearningConfig_pathExampleIdleTTL(ctx, field)
+			case "learningInterval":
+				return ec.fieldContext_LiveTrafficLearningConfig_learningInterval(ctx, field)
+			case "ruleComputation":
+				return ec.fieldContext_LiveTrafficLearningConfig_ruleComputation(ctx, field)
+			case "automaticRules":
+				return ec.fieldContext_LiveTrafficLearningConfig_automaticRules(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiveTrafficLearningConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -82277,28 +96308,28 @@ func (ec *executionContext) unmarshalInputCostReductionRuleInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOTailSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTailSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtMost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtMost"))
 			data, err := ec.unmarshalNFloat2float64(ctx, v)
@@ -82312,7 +96343,55 @@ func (ec *executionContext) unmarshalInputCostReductionRuleInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
+			it.Notes = graphql.OmittableOf(data)
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCppCustomProbeInput(ctx context.Context, obj any) (model.CppCustomProbeInput, error) {
+	var it model.CppCustomProbeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"signature", "notes", "category", "addedAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "signature":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("signature"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Signature = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 			it.Notes = data
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "addedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addedAt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddedAt = data
 		}
 	}
 
@@ -82360,7 +96439,7 @@ func (ec *executionContext) unmarshalInputCustomInstrumentationsInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"golang", "java", "php"}
+	fieldsInOrder := [...]string{"golang", "java", "php", "cpp"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -82388,6 +96467,13 @@ func (ec *executionContext) unmarshalInputCustomInstrumentationsInput(ctx contex
 				return it, err
 			}
 			it.Php = data
+		case "cpp":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cpp"))
+			data, err := ec.unmarshalOCppCustomProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCppCustomProbeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Cpp = data
 		}
 	}
 
@@ -82760,7 +96846,7 @@ func (ec *executionContext) unmarshalInputGolangCustomProbeInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"packageName", "functionName", "receiverName", "receiverMethodName"}
+	fieldsInOrder := [...]string{"packageName", "functionName", "receiverName", "receiverMethodName", "notes", "category", "addedAt"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -82795,6 +96881,27 @@ func (ec *executionContext) unmarshalInputGolangCustomProbeInput(ctx context.Con
 				return it, err
 			}
 			it.ReceiverMethodName = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "addedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addedAt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddedAt = data
 		}
 	}
 
@@ -83012,56 +97119,56 @@ func (ec *executionContext) unmarshalInputHighlyRelevantOperationRuleInput(ctx c
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "error":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("error"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Error = data
+			it.Error = graphql.OmittableOf(data)
 		case "durationAtLeastMs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("durationAtLeastMs"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DurationAtLeastMs = data
+			it.DurationAtLeastMs = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOTailSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTailSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtLeast":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtLeast"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.PercentageAtLeast = data
+			it.PercentageAtLeast = graphql.OmittableOf(data)
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Notes = data
+			it.Notes = graphql.OmittableOf(data)
 		}
 	}
 
@@ -83143,6 +97250,150 @@ func (ec *executionContext) unmarshalInputInsightsAnomalyRefInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputInsightsCorrelationSelectorInput(ctx context.Context, obj any) (model.InsightsCorrelationSelectorInput, error) {
+	var it model.InsightsCorrelationSelectorInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"service", "span", "attr", "extract"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "service":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Service = data
+		case "span":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("span"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Span = data
+		case "attr":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attr"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Attr = data
+		case "extract":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extract"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Extract = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputInsightsCorrelationSpecInput(ctx context.Context, obj any) (model.InsightsCorrelationSpecInput, error) {
+	var it model.InsightsCorrelationSpecInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "left", "right", "relation", "severity", "why"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "left":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("left"))
+			data, err := ec.unmarshalNInsightsCorrelationSelectorInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSelectorInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Left = data
+		case "right":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("right"))
+			data, err := ec.unmarshalNInsightsCorrelationSelectorInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSelectorInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Right = data
+		case "relation":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("relation"))
+			data, err := ec.unmarshalNInsightsCorrelationRelation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationRelation(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Relation = data
+		case "severity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("severity"))
+			data, err := ec.unmarshalOInsightsSeverity2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSeverity(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Severity = data
+		case "why":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("why"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Why = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputInsightsDeliverySettingsInput(ctx context.Context, obj any) (model.InsightsDeliverySettingsInput, error) {
+	var it model.InsightsDeliverySettingsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"muted", "excludedIntegrationIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "muted":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("muted"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Muted = data
+		case "excludedIntegrationIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("excludedIntegrationIds"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExcludedIntegrationIds = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputInsightsGuardrailInput(ctx context.Context, obj any) (model.InsightsGuardrailInput, error) {
 	var it model.InsightsGuardrailInput
 	asMap := map[string]any{}
@@ -83150,13 +97401,20 @@ func (ec *executionContext) unmarshalInputInsightsGuardrailInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"scope", "scopeKey", "rules"}
+	fieldsInOrder := [...]string{"delivery", "scope", "scopeKey", "rules"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "delivery":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("delivery"))
+			data, err := ec.unmarshalOInsightsDeliverySettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliverySettingsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Delivery = data
 		case "scope":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scope"))
 			data, err := ec.unmarshalNInsightsPolicyScope2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsPolicyScope(ctx, v)
@@ -83191,7 +97449,7 @@ func (ec *executionContext) unmarshalInputInsightsGuardrailRuleInput(ctx context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"key", "label", "mode", "allowlist", "origin"}
+	fieldsInOrder := [...]string{"key", "label", "mode", "allowlist", "correlations", "origin"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -83226,6 +97484,13 @@ func (ec *executionContext) unmarshalInputInsightsGuardrailRuleInput(ctx context
 				return it, err
 			}
 			it.Allowlist = data
+		case "correlations":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("correlations"))
+			data, err := ec.unmarshalOInsightsCorrelationSpecInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Correlations = data
 		case "origin":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("origin"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -83274,6 +97539,102 @@ func (ec *executionContext) unmarshalInputInsightsGuardrailSeedInput(ctx context
 				return it, err
 			}
 			it.Items = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputInsightsIntegrationFiltersInput(ctx context.Context, obj any) (model.InsightsIntegrationFiltersInput, error) {
+	var it model.InsightsIntegrationFiltersInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"minSeverity", "kinds", "notifyOnResolve"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "minSeverity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minSeverity"))
+			data, err := ec.unmarshalOInsightsSeverity2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSeverity(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinSeverity = data
+		case "kinds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kinds"))
+			data, err := ec.unmarshalNInsightsFindingKind2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsFindingKindᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kinds = data
+		case "notifyOnResolve":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notifyOnResolve"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NotifyOnResolve = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputInsightsIntegrationInput(ctx context.Context, obj any) (model.InsightsIntegrationInput, error) {
+	var it model.InsightsIntegrationInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "type", "enabled", "config", "filters"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		case "config":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Config = data
+		case "filters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filters"))
+			data, err := ec.unmarshalNInsightsIntegrationFiltersInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFiltersInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Filters = data
 		}
 	}
 
@@ -83404,13 +97765,20 @@ func (ec *executionContext) unmarshalInputInsightsPolicyInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "name", "enabled", "fireAtScore", "signalWeights", "enricherLists", "scope", "scopeKey"}
+	fieldsInOrder := [...]string{"delivery", "id", "name", "enabled", "fireAtScore", "signalWeights", "enricherLists", "scope", "scopeKey"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "delivery":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("delivery"))
+			data, err := ec.unmarshalOInsightsDeliverySettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliverySettingsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Delivery = data
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
@@ -83473,6 +97841,47 @@ func (ec *executionContext) unmarshalInputInsightsPolicyInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputInsightsRecommendationApplyItemInput(ctx context.Context, obj any) (model.InsightsRecommendationApplyItemInput, error) {
+	var it model.InsightsRecommendationApplyItemInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "spec", "rules"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "spec":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("spec"))
+			data, err := ec.unmarshalOInsightsCorrelationSpecInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Spec = data
+		case "rules":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rules"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Rules = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputInsightsSystemCapacitySettingsInput(ctx context.Context, obj any) (model.InsightsSystemCapacitySettingsInput, error) {
 	var it model.InsightsSystemCapacitySettingsInput
 	asMap := map[string]any{}
@@ -83480,7 +97889,7 @@ func (ec *executionContext) unmarshalInputInsightsSystemCapacitySettingsInput(ct
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"maxResidentTransactions", "maxBaselineSetMembers"}
+	fieldsInOrder := [...]string{"maxResidentTransactions", "maxBaselineSetMembers", "maxTransactionsPerService"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -83501,6 +97910,13 @@ func (ec *executionContext) unmarshalInputInsightsSystemCapacitySettingsInput(ct
 				return it, err
 			}
 			it.MaxBaselineSetMembers = data
+		case "maxTransactionsPerService":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxTransactionsPerService"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxTransactionsPerService = data
 		}
 	}
 
@@ -83882,14 +98298,14 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
-			it.SourcesScopes = data
+			it.SourcesScopes = graphql.OmittableOf(data)
 		case "instrumentationLibraries":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentationLibraries"))
 			data, err := ec.unmarshalOInstrumentationLibraryGlobalIdInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationLibraryGlobalIDInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.InstrumentationLibraries = data
+			it.InstrumentationLibraries = graphql.OmittableOf(data)
 		case "codeAttributes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("codeAttributes"))
 			data, err := ec.unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributesInput(ctx, v)
@@ -83993,7 +98409,7 @@ func (ec *executionContext) unmarshalInputJavaCustomProbeInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"className", "methodName"}
+	fieldsInOrder := [...]string{"className", "methodName", "notes", "category", "addedAt"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -84014,6 +98430,27 @@ func (ec *executionContext) unmarshalInputJavaCustomProbeInput(ctx context.Conte
 				return it, err
 			}
 			it.MethodName = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "addedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addedAt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddedAt = data
 		}
 	}
 
@@ -84388,6 +98825,33 @@ func (ec *executionContext) unmarshalInputLocalUiConfigAutoRollbackInput(ctx con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputLocalUiConfigCardinalityControlInput(ctx context.Context, obj any) (model.LocalUIConfigCardinalityControlInput, error) {
+	var it model.LocalUIConfigCardinalityControlInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"urlTemplatization"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "urlTemplatization":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlTemplatization"))
+			data, err := ec.unmarshalOLocalUiConfigUrlTemplatizationCardinalityControlInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigURLTemplatizationCardinalityControlInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.URLTemplatization = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLocalUiConfigComponentLogLevelsInput(ctx context.Context, obj any) (model.LocalUIConfigComponentLogLevelsInput, error) {
 	var it model.LocalUIConfigComponentLogLevelsInput
 	asMap := map[string]any{}
@@ -84471,7 +98935,7 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "wasp", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "traceCorrelations"}
+	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "cardinalityControl"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -84527,13 +98991,6 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 				return it, err
 			}
 			it.AllowConcurrentAgents = data
-		case "wasp":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wasp"))
-			data, err := ec.unmarshalOLocalUiConfigWaspInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigWaspInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Wasp = data
 		case "rollout":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rollout"))
 			data, err := ec.unmarshalOLocalUiConfigRolloutInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigRolloutInput(ctx, v)
@@ -84576,13 +99033,13 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 				return it, err
 			}
 			it.ComponentLogLevels = data
-		case "traceCorrelations":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceCorrelations"))
-			data, err := ec.unmarshalOLocalUiConfigTraceCorrelationsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigTraceCorrelationsInput(ctx, v)
+		case "cardinalityControl":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardinalityControl"))
+			data, err := ec.unmarshalOLocalUiConfigCardinalityControlInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigCardinalityControlInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.TraceCorrelations = data
+			it.CardinalityControl = data
 		}
 	}
 
@@ -84617,6 +99074,122 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInstrumentorInput(ctx con
 				return it, err
 			}
 			it.CheckDeviceHealthBeforeInjection = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigLiveTrafficLearningAutomaticRulesInput(ctx context.Context, obj any) (model.LocalUIConfigLiveTrafficLearningAutomaticRulesInput, error) {
+	var it model.LocalUIConfigLiveTrafficLearningAutomaticRulesInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigLiveTrafficLearningInput(ctx context.Context, obj any) (model.LocalUIConfigLiveTrafficLearningInput, error) {
+	var it model.LocalUIConfigLiveTrafficLearningInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"maxExamplePathsPerWorkload", "pathExampleIdleTTL", "learningInterval", "ruleComputation", "automaticRules"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "maxExamplePathsPerWorkload":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxExamplePathsPerWorkload"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxExamplePathsPerWorkload = data
+		case "pathExampleIdleTTL":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pathExampleIdleTTL"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PathExampleIdleTTL = data
+		case "learningInterval":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("learningInterval"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LearningInterval = data
+		case "ruleComputation":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleComputation"))
+			data, err := ec.unmarshalOLocalUiConfigLiveTrafficLearningRuleComputationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningRuleComputationInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuleComputation = data
+		case "automaticRules":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("automaticRules"))
+			data, err := ec.unmarshalOLocalUiConfigLiveTrafficLearningAutomaticRulesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningAutomaticRulesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutomaticRules = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigLiveTrafficLearningRuleComputationInput(ctx context.Context, obj any) (model.LocalUIConfigLiveTrafficLearningRuleComputationInput, error) {
+	var it model.LocalUIConfigLiveTrafficLearningRuleComputationInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"minObservationsForRule", "minCardinalityForTemplating"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "minObservationsForRule":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minObservationsForRule"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinObservationsForRule = data
+		case "minCardinalityForTemplating":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minCardinalityForTemplating"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinCardinalityForTemplating = data
 		}
 	}
 
@@ -84753,102 +99326,27 @@ func (ec *executionContext) unmarshalInputLocalUiConfigSpanSamplingAttributesInp
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputLocalUiConfigTraceCorrelationsInput(ctx context.Context, obj any) (model.LocalUIConfigTraceCorrelationsInput, error) {
-	var it model.LocalUIConfigTraceCorrelationsInput
+func (ec *executionContext) unmarshalInputLocalUiConfigUrlTemplatizationCardinalityControlInput(ctx context.Context, obj any) (model.LocalUIConfigURLTemplatizationCardinalityControlInput, error) {
+	var it model.LocalUIConfigURLTemplatizationCardinalityControlInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"serviceIO"}
+	fieldsInOrder := [...]string{"liveTrafficLearning"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "serviceIO":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceIO"))
-			data, err := ec.unmarshalOLocalUiConfigTraceCorrelationsServiceIOInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigTraceCorrelationsServiceIOInput(ctx, v)
+		case "liveTrafficLearning":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("liveTrafficLearning"))
+			data, err := ec.unmarshalOLocalUiConfigLiveTrafficLearningInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ServiceIo = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput(ctx context.Context, obj any) (model.LocalUIConfigTraceCorrelationsServiceIOInput, error) {
-	var it model.LocalUIConfigTraceCorrelationsServiceIOInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"enabled", "inputSpanAttributes", "outputSpanAttributes", "metricsFlushInterval"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "enabled":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Enabled = data
-		case "inputSpanAttributes":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inputSpanAttributes"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.InputSpanAttributes = data
-		case "outputSpanAttributes":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("outputSpanAttributes"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.OutputSpanAttributes = data
-		case "metricsFlushInterval":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metricsFlushInterval"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MetricsFlushInterval = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputLocalUiConfigWaspInput(ctx context.Context, obj any) (model.LocalUIConfigWaspInput, error) {
-	var it model.LocalUIConfigWaspInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"enabled"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "enabled":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Enabled = data
+			it.LiveTrafficLearning = data
 		}
 	}
 
@@ -84909,42 +99407,42 @@ func (ec *executionContext) unmarshalInputNoisyOperationRuleInput(ctx context.Co
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Name = graphql.OmittableOf(data)
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Disabled = data
+			it.Disabled = graphql.OmittableOf(data)
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
 			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SourceScopes = data
+			it.SourceScopes = graphql.OmittableOf(data)
 		case "operation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			data, err := ec.unmarshalOHeadSamplingOperationMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingOperationMatcherInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Operation = data
+			it.Operation = graphql.OmittableOf(data)
 		case "percentageAtMost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("percentageAtMost"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.PercentageAtMost = data
+			it.PercentageAtMost = graphql.OmittableOf(data)
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Notes = data
+			it.Notes = graphql.OmittableOf(data)
 		}
 	}
 
@@ -85171,7 +99669,7 @@ func (ec *executionContext) unmarshalInputPhpCustomProbeInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"className", "functionName"}
+	fieldsInOrder := [...]string{"className", "functionName", "notes", "category", "addedAt"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -85192,6 +99690,27 @@ func (ec *executionContext) unmarshalInputPhpCustomProbeInput(ctx context.Contex
 				return it, err
 			}
 			it.FunctionName = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "addedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addedAt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddedAt = data
 		}
 	}
 
@@ -85375,7 +99894,7 @@ func (ec *executionContext) unmarshalInputTailSamplingConfigInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"disabled", "traceAggregationWaitDuration"}
+	fieldsInOrder := [...]string{"disabled", "traceAggregationWaitDuration", "noisyOperationsEnforcement"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -85396,6 +99915,13 @@ func (ec *executionContext) unmarshalInputTailSamplingConfigInput(ctx context.Co
 				return it, err
 			}
 			it.TraceAggregationWaitDuration = data
+		case "noisyOperationsEnforcement":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("noisyOperationsEnforcement"))
+			data, err := ec.unmarshalONoisyOperationsEnforcement2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationsEnforcement(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NoisyOperationsEnforcement = data
 		}
 	}
 
@@ -85539,40 +100065,6 @@ func (ec *executionContext) unmarshalInputTemplatizationWorkloadFilterInput(ctx 
 				return it, err
 			}
 			it.Name = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputTraceCorrelationsTimeRangeInput(ctx context.Context, obj any) (model.TraceCorrelationsTimeRangeInput, error) {
-	var it model.TraceCorrelationsTimeRangeInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"start", "end"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "start":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Start = data
-		case "end":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.End = data
 		}
 	}
 
@@ -85864,6 +100356,11 @@ func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "fields":
 			out.Values[i] = ec._Action_fields(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "managedBy":
+			out.Values[i] = ec._Action_managedBy(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -86263,6 +100760,42 @@ func (ec *executionContext) _AutoRollbackConfig(ctx context.Context, sel ast.Sel
 			out.Values[i] = ec._AutoRollbackConfig_graceTime(ctx, field, obj)
 		case "stabilityWindowTime":
 			out.Values[i] = ec._AutoRollbackConfig_stabilityWindowTime(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var cardinalityControlConfigImplementors = []string{"CardinalityControlConfig"}
+
+func (ec *executionContext) _CardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, obj *model.CardinalityControlConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, cardinalityControlConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CardinalityControlConfig")
+		case "urlTemplatization":
+			out.Values[i] = ec._CardinalityControlConfig_urlTemplatization(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -87650,6 +102183,48 @@ func (ec *executionContext) _CostReductionRule(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var cppCustomProbeImplementors = []string{"CppCustomProbe"}
+
+func (ec *executionContext) _CppCustomProbe(ctx context.Context, sel ast.SelectionSet, obj *model.CppCustomProbe) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, cppCustomProbeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CppCustomProbe")
+		case "signature":
+			out.Values[i] = ec._CppCustomProbe_signature(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._CppCustomProbe_notes(ctx, field, obj)
+		case "category":
+			out.Values[i] = ec._CppCustomProbe_category(ctx, field, obj)
+		case "addedAt":
+			out.Values[i] = ec._CppCustomProbe_addedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var customFormatMaskingImplementors = []string{"CustomFormatMasking"}
 
 func (ec *executionContext) _CustomFormatMasking(ctx context.Context, sel ast.SelectionSet, obj *model.CustomFormatMasking) graphql.Marshaler {
@@ -87711,6 +102286,8 @@ func (ec *executionContext) _CustomInstrumentations(ctx context.Context, sel ast
 			out.Values[i] = ec._CustomInstrumentations_java(ctx, field, obj)
 		case "php":
 			out.Values[i] = ec._CustomInstrumentations_php(ctx, field, obj)
+		case "cpp":
+			out.Values[i] = ec._CustomInstrumentations_cpp(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -88610,8 +103187,8 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_sampling(ctx, field, obj)
 		case "profiling":
 			out.Values[i] = ec._EffectiveConfig_profiling(ctx, field, obj)
-		case "traceCorrelations":
-			out.Values[i] = ec._EffectiveConfig_traceCorrelations(ctx, field, obj)
+		case "cardinalityControl":
+			out.Values[i] = ec._EffectiveConfig_cardinalityControl(ctx, field, obj)
 		case "provenance":
 			out.Values[i] = ec._EffectiveConfig_provenance(ctx, field, obj)
 		case "manifestYAML":
@@ -89030,6 +103607,374 @@ func (ec *executionContext) _GetDestinationCategories(ctx context.Context, sel a
 	return out
 }
 
+var goOffsetMinorVersionImplementors = []string{"GoOffsetMinorVersion"}
+
+func (ec *executionContext) _GoOffsetMinorVersion(ctx context.Context, sel ast.SelectionSet, obj *model.GoOffsetMinorVersion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goOffsetMinorVersionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoOffsetMinorVersion")
+		case "minorVersion":
+			out.Values[i] = ec._GoOffsetMinorVersion_minorVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "versions":
+			out.Values[i] = ec._GoOffsetMinorVersion_versions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var goOffsetMinorVersionUpdateImplementors = []string{"GoOffsetMinorVersionUpdate"}
+
+func (ec *executionContext) _GoOffsetMinorVersionUpdate(ctx context.Context, sel ast.SelectionSet, obj *model.GoOffsetMinorVersionUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goOffsetMinorVersionUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoOffsetMinorVersionUpdate")
+		case "minorVersion":
+			out.Values[i] = ec._GoOffsetMinorVersionUpdate_minorVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isNew":
+			out.Values[i] = ec._GoOffsetMinorVersionUpdate_isNew(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isRemoved":
+			out.Values[i] = ec._GoOffsetMinorVersionUpdate_isRemoved(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "versions":
+			out.Values[i] = ec._GoOffsetMinorVersionUpdate_versions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var goOffsetModuleImplementors = []string{"GoOffsetModule"}
+
+func (ec *executionContext) _GoOffsetModule(ctx context.Context, sel ast.SelectionSet, obj *model.GoOffsetModule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goOffsetModuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoOffsetModule")
+		case "module":
+			out.Values[i] = ec._GoOffsetModule_module(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minVersion":
+			out.Values[i] = ec._GoOffsetModule_minVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxVersion":
+			out.Values[i] = ec._GoOffsetModule_maxVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minorVersions":
+			out.Values[i] = ec._GoOffsetModule_minorVersions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var goOffsetModuleUpdateImplementors = []string{"GoOffsetModuleUpdate"}
+
+func (ec *executionContext) _GoOffsetModuleUpdate(ctx context.Context, sel ast.SelectionSet, obj *model.GoOffsetModuleUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goOffsetModuleUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoOffsetModuleUpdate")
+		case "module":
+			out.Values[i] = ec._GoOffsetModuleUpdate_module(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isNew":
+			out.Values[i] = ec._GoOffsetModuleUpdate_isNew(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isRemoved":
+			out.Values[i] = ec._GoOffsetModuleUpdate_isRemoved(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minVersion":
+			out.Values[i] = ec._GoOffsetModuleUpdate_minVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxVersion":
+			out.Values[i] = ec._GoOffsetModuleUpdate_maxVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minorVersions":
+			out.Values[i] = ec._GoOffsetModuleUpdate_minorVersions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var goOffsetVersionUpdateImplementors = []string{"GoOffsetVersionUpdate"}
+
+func (ec *executionContext) _GoOffsetVersionUpdate(ctx context.Context, sel ast.SelectionSet, obj *model.GoOffsetVersionUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goOffsetVersionUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoOffsetVersionUpdate")
+		case "version":
+			out.Values[i] = ec._GoOffsetVersionUpdate_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isNew":
+			out.Values[i] = ec._GoOffsetVersionUpdate_isNew(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isRemoved":
+			out.Values[i] = ec._GoOffsetVersionUpdate_isRemoved(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var goOffsetsImplementors = []string{"GoOffsets"}
+
+func (ec *executionContext) _GoOffsets(ctx context.Context, sel ast.SelectionSet, obj *model.GoOffsets) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goOffsetsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoOffsets")
+		case "installed":
+			out.Values[i] = ec._GoOffsets_installed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._GoOffsets_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "mods":
+			out.Values[i] = ec._GoOffsets_mods(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var goOffsetsUpdateCheckImplementors = []string{"GoOffsetsUpdateCheck"}
+
+func (ec *executionContext) _GoOffsetsUpdateCheck(ctx context.Context, sel ast.SelectionSet, obj *model.GoOffsetsUpdateCheck) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goOffsetsUpdateCheckImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoOffsetsUpdateCheck")
+		case "hasUpdates":
+			out.Values[i] = ec._GoOffsetsUpdateCheck_hasUpdates(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "currentTimestamp":
+			out.Values[i] = ec._GoOffsetsUpdateCheck_currentTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "proposedTimestamp":
+			out.Values[i] = ec._GoOffsetsUpdateCheck_proposedTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "mods":
+			out.Values[i] = ec._GoOffsetsUpdateCheck_mods(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var golangCustomProbeImplementors = []string{"GolangCustomProbe"}
 
 func (ec *executionContext) _GolangCustomProbe(ctx context.Context, sel ast.SelectionSet, obj *model.GolangCustomProbe) graphql.Marshaler {
@@ -89049,6 +103994,12 @@ func (ec *executionContext) _GolangCustomProbe(ctx context.Context, sel ast.Sele
 			out.Values[i] = ec._GolangCustomProbe_receiverName(ctx, field, obj)
 		case "receiverMethodName":
 			out.Values[i] = ec._GolangCustomProbe_receiverMethodName(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._GolangCustomProbe_notes(ctx, field, obj)
+		case "category":
+			out.Values[i] = ec._GolangCustomProbe_category(ctx, field, obj)
+		case "addedAt":
+			out.Values[i] = ec._GolangCustomProbe_addedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -89427,6 +104378,219 @@ func (ec *executionContext) _Insights(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Insights")
+		case "integrationCatalog":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_integrationCatalog(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "integrations":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_integrations(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "integration":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_integration(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "integrationDeliveries":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_integrationDeliveries(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "integrationAttempts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_integrationAttempts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "findingDeliveries":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_findingDeliveries(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "services":
 			field := field
 
@@ -90004,6 +105168,75 @@ func (ec *executionContext) _Insights(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Insights_guardrailViolation(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "recommendations":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_recommendations(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "recommendation":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_recommendation(ctx, field, obj)
 				return res
 			}
 
@@ -90639,6 +105872,11 @@ func (ec *executionContext) _InsightsBaselineClass(ctx context.Context, sel ast.
 			}
 		case "promoted":
 			out.Values[i] = ec._InsightsBaselineClass_promoted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "saturated":
+			out.Values[i] = ec._InsightsBaselineClass_saturated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -91593,6 +106831,345 @@ func (ec *executionContext) _InsightsCatalogGuardrailRule(ctx context.Context, s
 	return out
 }
 
+var insightsCorrelationSelectorImplementors = []string{"InsightsCorrelationSelector"}
+
+func (ec *executionContext) _InsightsCorrelationSelector(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsCorrelationSelector) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsCorrelationSelectorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsCorrelationSelector")
+		case "service":
+			out.Values[i] = ec._InsightsCorrelationSelector_service(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "span":
+			out.Values[i] = ec._InsightsCorrelationSelector_span(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "attr":
+			out.Values[i] = ec._InsightsCorrelationSelector_attr(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "extract":
+			out.Values[i] = ec._InsightsCorrelationSelector_extract(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsCorrelationSpecImplementors = []string{"InsightsCorrelationSpec"}
+
+func (ec *executionContext) _InsightsCorrelationSpec(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsCorrelationSpec) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsCorrelationSpecImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsCorrelationSpec")
+		case "name":
+			out.Values[i] = ec._InsightsCorrelationSpec_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "left":
+			out.Values[i] = ec._InsightsCorrelationSpec_left(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "right":
+			out.Values[i] = ec._InsightsCorrelationSpec_right(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "relation":
+			out.Values[i] = ec._InsightsCorrelationSpec_relation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "severity":
+			out.Values[i] = ec._InsightsCorrelationSpec_severity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "why":
+			out.Values[i] = ec._InsightsCorrelationSpec_why(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsDeliveryImplementors = []string{"InsightsDelivery"}
+
+func (ec *executionContext) _InsightsDelivery(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsDelivery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsDeliveryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsDelivery")
+		case "integrationId":
+			out.Values[i] = ec._InsightsDelivery_integrationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "findingKey":
+			out.Values[i] = ec._InsightsDelivery_findingKey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastAction":
+			out.Values[i] = ec._InsightsDelivery_lastAction(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._InsightsDelivery_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "attempts":
+			out.Values[i] = ec._InsightsDelivery_attempts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nextAttemptAt":
+			out.Values[i] = ec._InsightsDelivery_nextAttemptAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastError":
+			out.Values[i] = ec._InsightsDelivery_lastError(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sentAt":
+			out.Values[i] = ec._InsightsDelivery_sentAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "occurrencesAtSend":
+			out.Values[i] = ec._InsightsDelivery_occurrencesAtSend(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "severityAtSend":
+			out.Values[i] = ec._InsightsDelivery_severityAtSend(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "statusAtSend":
+			out.Values[i] = ec._InsightsDelivery_statusAtSend(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "externalId":
+			out.Values[i] = ec._InsightsDelivery_externalId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._InsightsDelivery_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsDeliveryAttemptImplementors = []string{"InsightsDeliveryAttempt"}
+
+func (ec *executionContext) _InsightsDeliveryAttempt(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsDeliveryAttempt) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsDeliveryAttemptImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsDeliveryAttempt")
+		case "integrationId":
+			out.Values[i] = ec._InsightsDeliveryAttempt_integrationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "findingKey":
+			out.Values[i] = ec._InsightsDeliveryAttempt_findingKey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "action":
+			out.Values[i] = ec._InsightsDeliveryAttempt_action(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "attempt":
+			out.Values[i] = ec._InsightsDeliveryAttempt_attempt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "outcome":
+			out.Values[i] = ec._InsightsDeliveryAttempt_outcome(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "httpStatus":
+			out.Values[i] = ec._InsightsDeliveryAttempt_httpStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "error":
+			out.Values[i] = ec._InsightsDeliveryAttempt_error(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "durationMs":
+			out.Values[i] = ec._InsightsDeliveryAttempt_durationMs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "eventCount":
+			out.Values[i] = ec._InsightsDeliveryAttempt_eventCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "attemptedAt":
+			out.Values[i] = ec._InsightsDeliveryAttempt_attemptedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsDeliverySettingsImplementors = []string{"InsightsDeliverySettings"}
+
+func (ec *executionContext) _InsightsDeliverySettings(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsDeliverySettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsDeliverySettingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsDeliverySettings")
+		case "muted":
+			out.Values[i] = ec._InsightsDeliverySettings_muted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "excludedIntegrationIds":
+			out.Values[i] = ec._InsightsDeliverySettings_excludedIntegrationIds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var insightsEnricherListImplementors = []string{"InsightsEnricherList"}
 
 func (ec *executionContext) _InsightsEnricherList(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsEnricherList) graphql.Marshaler {
@@ -91669,6 +107246,11 @@ func (ec *executionContext) _InsightsFinding(ctx context.Context, sel ast.Select
 			}
 		case "title":
 			out.Values[i] = ec._InsightsFinding_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "summary":
+			out.Values[i] = ec._InsightsFinding_summary(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -91751,6 +107333,8 @@ func (ec *executionContext) _InsightsGuardrail(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("InsightsGuardrail")
+		case "delivery":
+			out.Values[i] = ec._InsightsGuardrail_delivery(ctx, field, obj)
 		case "scope":
 			out.Values[i] = ec._InsightsGuardrail_scope(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -91817,6 +107401,8 @@ func (ec *executionContext) _InsightsGuardrailRule(ctx context.Context, sel ast.
 			}
 		case "allowlist":
 			out.Values[i] = ec._InsightsGuardrailRule_allowlist(ctx, field, obj)
+		case "correlations":
+			out.Values[i] = ec._InsightsGuardrailRule_correlations(ctx, field, obj)
 		case "origin":
 			out.Values[i] = ec._InsightsGuardrailRule_origin(ctx, field, obj)
 		default:
@@ -91997,6 +107583,392 @@ func (ec *executionContext) _InsightsGuardrailViolationDetail(ctx context.Contex
 			out.Values[i] = ec._InsightsGuardrailViolationDetail_spanHighlights(ctx, field, obj)
 		case "evidenceTrace":
 			out.Values[i] = ec._InsightsGuardrailViolationDetail_evidenceTrace(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsIntegrationImplementors = []string{"InsightsIntegration"}
+
+func (ec *executionContext) _InsightsIntegration(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsIntegration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsIntegrationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsIntegration")
+		case "id":
+			out.Values[i] = ec._InsightsIntegration_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._InsightsIntegration_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._InsightsIntegration_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "enabled":
+			out.Values[i] = ec._InsightsIntegration_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "config":
+			out.Values[i] = ec._InsightsIntegration_config(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "filters":
+			out.Values[i] = ec._InsightsIntegration_filters(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "health":
+			out.Values[i] = ec._InsightsIntegration_health(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._InsightsIntegration_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._InsightsIntegration_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsIntegrationCapabilitiesImplementors = []string{"InsightsIntegrationCapabilities"}
+
+func (ec *executionContext) _InsightsIntegrationCapabilities(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsIntegrationCapabilities) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsIntegrationCapabilitiesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsIntegrationCapabilities")
+		case "needsHeartbeat":
+			out.Values[i] = ec._InsightsIntegrationCapabilities_needsHeartbeat(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "supportsResolve":
+			out.Values[i] = ec._InsightsIntegrationCapabilities_supportsResolve(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "returnsExternalId":
+			out.Values[i] = ec._InsightsIntegrationCapabilities_returnsExternalId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxBatch":
+			out.Values[i] = ec._InsightsIntegrationCapabilities_maxBatch(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsIntegrationDescriptorImplementors = []string{"InsightsIntegrationDescriptor"}
+
+func (ec *executionContext) _InsightsIntegrationDescriptor(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsIntegrationDescriptor) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsIntegrationDescriptorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsIntegrationDescriptor")
+		case "type":
+			out.Values[i] = ec._InsightsIntegrationDescriptor_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._InsightsIntegrationDescriptor_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._InsightsIntegrationDescriptor_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "docsUrl":
+			out.Values[i] = ec._InsightsIntegrationDescriptor_docsUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fields":
+			out.Values[i] = ec._InsightsIntegrationDescriptor_fields(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "capabilities":
+			out.Values[i] = ec._InsightsIntegrationDescriptor_capabilities(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsIntegrationFieldSpecImplementors = []string{"InsightsIntegrationFieldSpec"}
+
+func (ec *executionContext) _InsightsIntegrationFieldSpec(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsIntegrationFieldSpec) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsIntegrationFieldSpecImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsIntegrationFieldSpec")
+		case "key":
+			out.Values[i] = ec._InsightsIntegrationFieldSpec_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._InsightsIntegrationFieldSpec_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._InsightsIntegrationFieldSpec_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "required":
+			out.Values[i] = ec._InsightsIntegrationFieldSpec_required(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "help":
+			out.Values[i] = ec._InsightsIntegrationFieldSpec_help(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "placeholder":
+			out.Values[i] = ec._InsightsIntegrationFieldSpec_placeholder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "default":
+			out.Values[i] = ec._InsightsIntegrationFieldSpec_default(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "options":
+			out.Values[i] = ec._InsightsIntegrationFieldSpec_options(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsIntegrationFiltersImplementors = []string{"InsightsIntegrationFilters"}
+
+func (ec *executionContext) _InsightsIntegrationFilters(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsIntegrationFilters) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsIntegrationFiltersImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsIntegrationFilters")
+		case "minSeverity":
+			out.Values[i] = ec._InsightsIntegrationFilters_minSeverity(ctx, field, obj)
+		case "kinds":
+			out.Values[i] = ec._InsightsIntegrationFilters_kinds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "notifyOnResolve":
+			out.Values[i] = ec._InsightsIntegrationFilters_notifyOnResolve(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsIntegrationHealthImplementors = []string{"InsightsIntegrationHealth"}
+
+func (ec *executionContext) _InsightsIntegrationHealth(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsIntegrationHealth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsIntegrationHealthImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsIntegrationHealth")
+		case "lastSuccessAt":
+			out.Values[i] = ec._InsightsIntegrationHealth_lastSuccessAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastFailureAt":
+			out.Values[i] = ec._InsightsIntegrationHealth_lastFailureAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastError":
+			out.Values[i] = ec._InsightsIntegrationHealth_lastError(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "consecutiveFailures":
+			out.Values[i] = ec._InsightsIntegrationHealth_consecutiveFailures(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pending":
+			out.Values[i] = ec._InsightsIntegrationHealth_pending(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "failed":
+			out.Values[i] = ec._InsightsIntegrationHealth_failed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dead":
+			out.Values[i] = ec._InsightsIntegrationHealth_dead(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -92259,6 +108231,8 @@ func (ec *executionContext) _InsightsPolicy(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("InsightsPolicy")
+		case "delivery":
+			out.Values[i] = ec._InsightsPolicy_delivery(ctx, field, obj)
 		case "id":
 			out.Values[i] = ec._InsightsPolicy_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -92342,6 +108316,500 @@ func (ec *executionContext) _InsightsPromoteResult(ctx context.Context, sel ast.
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsRecommendationImplementors = []string{"InsightsRecommendation"}
+
+func (ec *executionContext) _InsightsRecommendation(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsRecommendation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsRecommendationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsRecommendation")
+		case "id":
+			out.Values[i] = ec._InsightsRecommendation_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._InsightsRecommendation_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._InsightsRecommendation_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stale":
+			out.Values[i] = ec._InsightsRecommendation_stale(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rank":
+			out.Values[i] = ec._InsightsRecommendation_rank(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scope":
+			out.Values[i] = ec._InsightsRecommendation_scope(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scopeKey":
+			out.Values[i] = ec._InsightsRecommendation_scopeKey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transactionId":
+			out.Values[i] = ec._InsightsRecommendation_transactionId(ctx, field, obj)
+		case "transactionKind":
+			out.Values[i] = ec._InsightsRecommendation_transactionKind(ctx, field, obj)
+		case "service":
+			out.Values[i] = ec._InsightsRecommendation_service(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._InsightsRecommendation_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "operation":
+			out.Values[i] = ec._InsightsRecommendation_operation(ctx, field, obj)
+		case "title":
+			out.Values[i] = ec._InsightsRecommendation_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "summary":
+			out.Values[i] = ec._InsightsRecommendation_summary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "whyItMatters":
+			out.Values[i] = ec._InsightsRecommendation_whyItMatters(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transform":
+			out.Values[i] = ec._InsightsRecommendation_transform(ctx, field, obj)
+		case "transport":
+			out.Values[i] = ec._InsightsRecommendation_transport(ctx, field, obj)
+		case "spec":
+			out.Values[i] = ec._InsightsRecommendation_spec(ctx, field, obj)
+		case "rules":
+			out.Values[i] = ec._InsightsRecommendation_rules(ctx, field, obj)
+		case "appliedRules":
+			out.Values[i] = ec._InsightsRecommendation_appliedRules(ctx, field, obj)
+		case "confidence":
+			out.Values[i] = ec._InsightsRecommendation_confidence(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "examples":
+			out.Values[i] = ec._InsightsRecommendation_examples(ctx, field, obj)
+		case "alreadyCovered":
+			out.Values[i] = ec._InsightsRecommendation_alreadyCovered(ctx, field, obj)
+		case "minedAt":
+			out.Values[i] = ec._InsightsRecommendation_minedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._InsightsRecommendation_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._InsightsRecommendation_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsRecommendationBulkResultImplementors = []string{"InsightsRecommendationBulkResult"}
+
+func (ec *executionContext) _InsightsRecommendationBulkResult(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsRecommendationBulkResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsRecommendationBulkResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsRecommendationBulkResult")
+		case "done":
+			out.Values[i] = ec._InsightsRecommendationBulkResult_done(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "failed":
+			out.Values[i] = ec._InsightsRecommendationBulkResult_failed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "errors":
+			out.Values[i] = ec._InsightsRecommendationBulkResult_errors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsRecommendationConfidenceImplementors = []string{"InsightsRecommendationConfidence"}
+
+func (ec *executionContext) _InsightsRecommendationConfidence(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsRecommendationConfidence) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsRecommendationConfidenceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsRecommendationConfidence")
+		case "level":
+			out.Values[i] = ec._InsightsRecommendationConfidence_level(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "holdRatio":
+			out.Values[i] = ec._InsightsRecommendationConfidence_holdRatio(ctx, field, obj)
+		case "observed":
+			out.Values[i] = ec._InsightsRecommendationConfidence_observed(ctx, field, obj)
+		case "held":
+			out.Values[i] = ec._InsightsRecommendationConfidence_held(ctx, field, obj)
+		case "distinct":
+			out.Values[i] = ec._InsightsRecommendationConfidence_distinct(ctx, field, obj)
+		case "sampleCount":
+			out.Values[i] = ec._InsightsRecommendationConfidence_sampleCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "liveHeld":
+			out.Values[i] = ec._InsightsRecommendationConfidence_liveHeld(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "liveBroken":
+			out.Values[i] = ec._InsightsRecommendationConfidence_liveBroken(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "liveSince":
+			out.Values[i] = ec._InsightsRecommendationConfidence_liveSince(ctx, field, obj)
+		case "liveLast":
+			out.Values[i] = ec._InsightsRecommendationConfidence_liveLast(ctx, field, obj)
+		case "reasons":
+			out.Values[i] = ec._InsightsRecommendationConfidence_reasons(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsRecommendationExampleImplementors = []string{"InsightsRecommendationExample"}
+
+func (ec *executionContext) _InsightsRecommendationExample(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsRecommendationExample) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsRecommendationExampleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsRecommendationExample")
+		case "traceId":
+			out.Values[i] = ec._InsightsRecommendationExample_traceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "leftValue":
+			out.Values[i] = ec._InsightsRecommendationExample_leftValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rightValue":
+			out.Values[i] = ec._InsightsRecommendationExample_rightValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "observedAt":
+			out.Values[i] = ec._InsightsRecommendationExample_observedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsRecommendationItemErrorImplementors = []string{"InsightsRecommendationItemError"}
+
+func (ec *executionContext) _InsightsRecommendationItemError(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsRecommendationItemError) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsRecommendationItemErrorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsRecommendationItemError")
+		case "id":
+			out.Values[i] = ec._InsightsRecommendationItemError_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "error":
+			out.Values[i] = ec._InsightsRecommendationItemError_error(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsRecommendationPreviewImplementors = []string{"InsightsRecommendationPreview"}
+
+func (ec *executionContext) _InsightsRecommendationPreview(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsRecommendationPreview) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsRecommendationPreviewImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsRecommendationPreview")
+		case "sampleCount":
+			out.Values[i] = ec._InsightsRecommendationPreview_sampleCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "observed":
+			out.Values[i] = ec._InsightsRecommendationPreview_observed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "held":
+			out.Values[i] = ec._InsightsRecommendationPreview_held(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "distinct":
+			out.Values[i] = ec._InsightsRecommendationPreview_distinct(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "holdRatio":
+			out.Values[i] = ec._InsightsRecommendationPreview_holdRatio(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "examples":
+			out.Values[i] = ec._InsightsRecommendationPreview_examples(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "counterExamples":
+			out.Values[i] = ec._InsightsRecommendationPreview_counterExamples(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsRecommendationRuleImplementors = []string{"InsightsRecommendationRule"}
+
+func (ec *executionContext) _InsightsRecommendationRule(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsRecommendationRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsRecommendationRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsRecommendationRule")
+		case "rule":
+			out.Values[i] = ec._InsightsRecommendationRule_rule(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._InsightsRecommendationRule_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._InsightsRecommendationRule_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "items":
+			out.Values[i] = ec._InsightsRecommendationRule_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "confidence":
+			out.Values[i] = ec._InsightsRecommendationRule_confidence(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "liveChecked":
+			out.Values[i] = ec._InsightsRecommendationRule_liveChecked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "liveViolated":
+			out.Values[i] = ec._InsightsRecommendationRule_liveViolated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "liveSince":
+			out.Values[i] = ec._InsightsRecommendationRule_liveSince(ctx, field, obj)
+		case "liveLast":
+			out.Values[i] = ec._InsightsRecommendationRule_liveLast(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -92593,6 +109061,16 @@ func (ec *executionContext) _InsightsServiceStat(ctx context.Context, sel ast.Se
 			}
 		case "lastSeen":
 			out.Values[i] = ec._InsightsServiceStat_lastSeen(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transactionLimit":
+			out.Values[i] = ec._InsightsServiceStat_transactionLimit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transactionLimitReached":
+			out.Values[i] = ec._InsightsServiceStat_transactionLimitReached(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -93208,6 +109686,11 @@ func (ec *executionContext) _InsightsSystemCapacitySettings(ctx context.Context,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "maxTransactionsPerService":
+			out.Values[i] = ec._InsightsSystemCapacitySettings_maxTransactionsPerService(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -93712,6 +110195,85 @@ func (ec *executionContext) _InsightsTransactionStat(ctx context.Context, sel as
 			out.Values[i] = ec._InsightsTransactionStat_hasBaseline(ctx, field, obj)
 		case "promoted":
 			out.Values[i] = ec._InsightsTransactionStat_promoted(ctx, field, obj)
+		case "saturatedClasses":
+			out.Values[i] = ec._InsightsTransactionStat_saturatedClasses(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var instrumentationAgentImplementors = []string{"InstrumentationAgent"}
+
+func (ec *executionContext) _InstrumentationAgent(ctx context.Context, sel ast.SelectionSet, obj *model.InstrumentationAgent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, instrumentationAgentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InstrumentationAgent")
+		case "language":
+			out.Values[i] = ec._InstrumentationAgent_language(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "distroName":
+			out.Values[i] = ec._InstrumentationAgent_distroName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "distroDisplayName":
+			out.Values[i] = ec._InstrumentationAgent_distroDisplayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._InstrumentationAgent_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "runtimeEnvironment":
+			out.Values[i] = ec._InstrumentationAgent_runtimeEnvironment(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "supportedRuntimeVersions":
+			out.Values[i] = ec._InstrumentationAgent_supportedRuntimeVersions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sources":
+			out.Values[i] = ec._InstrumentationAgent_sources(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isDefault":
+			out.Values[i] = ec._InstrumentationAgent_isDefault(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -93910,6 +110472,11 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			}
 		case "profileName":
 			out.Values[i] = ec._InstrumentationRule_profileName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "managedBy":
+			out.Values[i] = ec._InstrumentationRule_managedBy(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -94224,6 +110791,12 @@ func (ec *executionContext) _JavaCustomProbe(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._JavaCustomProbe_className(ctx, field, obj)
 		case "methodName":
 			out.Values[i] = ec._JavaCustomProbe_methodName(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._JavaCustomProbe_notes(ctx, field, obj)
+		case "category":
+			out.Values[i] = ec._JavaCustomProbe_category(ctx, field, obj)
+		case "addedAt":
+			out.Values[i] = ec._JavaCustomProbe_addedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -95742,7 +112315,7 @@ func (ec *executionContext) _K8sWorkloadContainer(ctx context.Context, sel ast.S
 		case "containerName":
 			out.Values[i] = ec._K8sWorkloadContainer_containerName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "runtimeInfo":
 			out.Values[i] = ec._K8sWorkloadContainer_runtimeInfo(ctx, field, obj)
@@ -95756,6 +112329,39 @@ func (ec *executionContext) _K8sWorkloadContainer(ctx context.Context, sel ast.S
 			out.Values[i] = ec._K8sWorkloadContainer_collectorConfig(ctx, field, obj)
 		case "instrumentations":
 			out.Values[i] = ec._K8sWorkloadContainer_instrumentations(ctx, field, obj)
+		case "urlTemplatization":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkloadContainer_urlTemplatization(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -96177,6 +112783,48 @@ func (ec *executionContext) _K8sWorkloadContainerCollectorConfigTailSamplingNois
 	return out
 }
 
+var k8sWorkloadContainerLiveTrafficLearningImplementors = []string{"K8sWorkloadContainerLiveTrafficLearning"}
+
+func (ec *executionContext) _K8sWorkloadContainerLiveTrafficLearning(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadContainerLiveTrafficLearning) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadContainerLiveTrafficLearningImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadContainerLiveTrafficLearning")
+		case "unmatchedServerPaths":
+			out.Values[i] = ec._K8sWorkloadContainerLiveTrafficLearning_unmatchedServerPaths(ctx, field, obj)
+		case "unmatchedClientPaths":
+			out.Values[i] = ec._K8sWorkloadContainerLiveTrafficLearning_unmatchedClientPaths(ctx, field, obj)
+		case "serverRecommendedRules":
+			out.Values[i] = ec._K8sWorkloadContainerLiveTrafficLearning_serverRecommendedRules(ctx, field, obj)
+		case "clientRecommendedRules":
+			out.Values[i] = ec._K8sWorkloadContainerLiveTrafficLearning_clientRecommendedRules(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var k8sWorkloadContainerOverridesImplementors = []string{"K8sWorkloadContainerOverrides"}
 
 func (ec *executionContext) _K8sWorkloadContainerOverrides(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadContainerOverrides) graphql.Marshaler {
@@ -96199,6 +112847,75 @@ func (ec *executionContext) _K8sWorkloadContainerOverrides(ctx context.Context, 
 			out.Values[i] = ec._K8sWorkloadContainerOverrides_otelDistroName(ctx, field, obj)
 		case "allowConcurrentAgents":
 			out.Values[i] = ec._K8sWorkloadContainerOverrides_allowConcurrentAgents(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var k8sWorkloadContainerUrlTemplatizationImplementors = []string{"K8sWorkloadContainerUrlTemplatization"}
+
+func (ec *executionContext) _K8sWorkloadContainerUrlTemplatization(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadContainerURLTemplatization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadContainerUrlTemplatizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadContainerUrlTemplatization")
+		case "templatization":
+			out.Values[i] = ec._K8sWorkloadContainerUrlTemplatization_templatization(ctx, field, obj)
+		case "liveTrafficLearning":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkloadContainerUrlTemplatization_liveTrafficLearning(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -97087,6 +113804,366 @@ func (ec *executionContext) _LanguageConfig(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var liveTrafficLearningAutomaticRulesConfigImplementors = []string{"LiveTrafficLearningAutomaticRulesConfig"}
+
+func (ec *executionContext) _LiveTrafficLearningAutomaticRulesConfig(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningAutomaticRulesConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningAutomaticRulesConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningAutomaticRulesConfig")
+		case "enabled":
+			out.Values[i] = ec._LiveTrafficLearningAutomaticRulesConfig_enabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningConfigImplementors = []string{"LiveTrafficLearningConfig"}
+
+func (ec *executionContext) _LiveTrafficLearningConfig(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningConfig")
+		case "enabled":
+			out.Values[i] = ec._LiveTrafficLearningConfig_enabled(ctx, field, obj)
+		case "maxExamplePathsPerWorkload":
+			out.Values[i] = ec._LiveTrafficLearningConfig_maxExamplePathsPerWorkload(ctx, field, obj)
+		case "pathExampleIdleTTL":
+			out.Values[i] = ec._LiveTrafficLearningConfig_pathExampleIdleTTL(ctx, field, obj)
+		case "learningInterval":
+			out.Values[i] = ec._LiveTrafficLearningConfig_learningInterval(ctx, field, obj)
+		case "ruleComputation":
+			out.Values[i] = ec._LiveTrafficLearningConfig_ruleComputation(ctx, field, obj)
+		case "automaticRules":
+			out.Values[i] = ec._LiveTrafficLearningConfig_automaticRules(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningPatternBasedTemplatizationImplementors = []string{"LiveTrafficLearningPatternBasedTemplatization"}
+
+func (ec *executionContext) _LiveTrafficLearningPatternBasedTemplatization(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningPatternBasedTemplatization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningPatternBasedTemplatizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningPatternBasedTemplatization")
+		case "disabled":
+			out.Values[i] = ec._LiveTrafficLearningPatternBasedTemplatization_disabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "skipPolicy":
+			out.Values[i] = ec._LiveTrafficLearningPatternBasedTemplatization_skipPolicy(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningRecommendedRuleImplementors = []string{"LiveTrafficLearningRecommendedRule"}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedRule(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningRecommendedRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningRecommendedRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningRecommendedRule")
+		case "template":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedRule_template(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedRule_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "segments":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedRule_segments(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningRecommendedSegmentImplementors = []string{"LiveTrafficLearningRecommendedSegment"}
+
+func (ec *executionContext) _LiveTrafficLearningRecommendedSegment(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningRecommendedSegment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningRecommendedSegmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningRecommendedSegment")
+		case "templateName":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedSegment_templateName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "static":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedSegment_static(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "certainty":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedSegment_certainty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "examples":
+			out.Values[i] = ec._LiveTrafficLearningRecommendedSegment_examples(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningRuleComputationConfigImplementors = []string{"LiveTrafficLearningRuleComputationConfig"}
+
+func (ec *executionContext) _LiveTrafficLearningRuleComputationConfig(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningRuleComputationConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningRuleComputationConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningRuleComputationConfig")
+		case "minObservationsForRule":
+			out.Values[i] = ec._LiveTrafficLearningRuleComputationConfig_minObservationsForRule(ctx, field, obj)
+		case "minCardinalityForTemplating":
+			out.Values[i] = ec._LiveTrafficLearningRuleComputationConfig_minCardinalityForTemplating(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningTemplateImplementors = []string{"LiveTrafficLearningTemplate"}
+
+func (ec *executionContext) _LiveTrafficLearningTemplate(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningTemplate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningTemplateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningTemplate")
+		case "template":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_template(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "examples":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_examples(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "notes":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_notes(ctx, field, obj)
+		case "actionId":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_actionId(ctx, field, obj)
+		case "actionName":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_actionName(ctx, field, obj)
+		case "managedBy":
+			out.Values[i] = ec._LiveTrafficLearningTemplate_managedBy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var liveTrafficLearningTemplatizationImplementors = []string{"LiveTrafficLearningTemplatization"}
+
+func (ec *executionContext) _LiveTrafficLearningTemplatization(ctx context.Context, sel ast.SelectionSet, obj *model.LiveTrafficLearningTemplatization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liveTrafficLearningTemplatizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiveTrafficLearningTemplatization")
+		case "templates":
+			out.Values[i] = ec._LiveTrafficLearningTemplatization_templates(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "patternBasedTemplatization":
+			out.Values[i] = ec._LiveTrafficLearningTemplatization_patternBasedTemplatization(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var messagingPayloadCollectionImplementors = []string{"MessagingPayloadCollection"}
 
 func (ec *executionContext) _MessagingPayloadCollection(ctx context.Context, sel ast.SelectionSet, obj *model.MessagingPayloadCollection) graphql.Marshaler {
@@ -97643,6 +114720,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateGoOffsets":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateGoOffsets(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "checkGoOffsetsUpdates":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_checkGoOffsetsUpdates(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "promoteInsightsBaselineClass":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_promoteInsightsBaselineClass(ctx, field)
@@ -97800,6 +114891,83 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateInsightsSystemSettings":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateInsightsSystemSettings(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "applyInsightsRecommendations":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_applyInsightsRecommendations(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dismissInsightsRecommendations":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_dismissInsightsRecommendations(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "restoreInsightsRecommendations":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_restoreInsightsRecommendations(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "revertInsightsRecommendations":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_revertInsightsRecommendations(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "previewInsightsRecommendation":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_previewInsightsRecommendation(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recomputeInsightsRecommendations":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_recomputeInsightsRecommendations(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createInsightsIntegration":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createInsightsIntegration(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateInsightsIntegration":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateInsightsIntegration(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteInsightsIntegration":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteInsightsIntegration(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "testInsightsIntegration":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_testInsightsIntegration(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "retryInsightsIntegrationDeliveries":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_retryInsightsIntegrationDeliveries(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -98644,6 +115812,12 @@ func (ec *executionContext) _PhpCustomProbe(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._PhpCustomProbe_className(ctx, field, obj)
 		case "functionName":
 			out.Values[i] = ec._PhpCustomProbe_functionName(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._PhpCustomProbe_notes(ctx, field, obj)
+		case "category":
+			out.Values[i] = ec._PhpCustomProbe_category(ctx, field, obj)
+		case "addedAt":
+			out.Values[i] = ec._PhpCustomProbe_addedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -99458,6 +116632,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "goOffsets":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_goOffsets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "insights":
 			field := field
 
@@ -99468,6 +116664,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_insights(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "instrumentationAgents":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_instrumentationAgents(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -99679,28 +116897,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_instrumentationInstanceComponents(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "traceCorrelations":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_traceCorrelations(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -100075,6 +117271,11 @@ func (ec *executionContext) _RecommendationCatalogRemediation(ctx context.Contex
 			}
 		case "tooltip":
 			out.Values[i] = ec._RecommendationCatalogRemediation_tooltip(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "canApplyViaUi":
+			out.Values[i] = ec._RecommendationCatalogRemediation_canApplyViaUi(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -101459,6 +118660,8 @@ func (ec *executionContext) _TailSamplingConfig(ctx context.Context, sel ast.Sel
 			out.Values[i] = ec._TailSamplingConfig_disabled(ctx, field, obj)
 		case "traceAggregationWaitDuration":
 			out.Values[i] = ec._TailSamplingConfig_traceAggregationWaitDuration(ctx, field, obj)
+		case "noisyOperationsEnforcement":
+			out.Values[i] = ec._TailSamplingConfig_noisyOperationsEnforcement(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -101686,281 +118889,6 @@ func (ec *executionContext) _TestConnectionResponse(ctx context.Context, sel ast
 	return out
 }
 
-var traceCorrelationsImplementors = []string{"TraceCorrelations"}
-
-func (ec *executionContext) _TraceCorrelations(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelations) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TraceCorrelations")
-		case "workloads":
-			out.Values[i] = ec._TraceCorrelations_workloads(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var traceCorrelationsConfigImplementors = []string{"TraceCorrelationsConfig"}
-
-func (ec *executionContext) _TraceCorrelationsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsConfig) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsConfigImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TraceCorrelationsConfig")
-		case "serviceIO":
-			out.Values[i] = ec._TraceCorrelationsConfig_serviceIO(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var traceCorrelationsInputGroupImplementors = []string{"TraceCorrelationsInputGroup"}
-
-func (ec *executionContext) _TraceCorrelationsInputGroup(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsInputGroup) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsInputGroupImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TraceCorrelationsInputGroup")
-		case "attributes":
-			out.Values[i] = ec._TraceCorrelationsInputGroup_attributes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "outputs":
-			out.Values[i] = ec._TraceCorrelationsInputGroup_outputs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var traceCorrelationsOutputSeriesImplementors = []string{"TraceCorrelationsOutputSeries"}
-
-func (ec *executionContext) _TraceCorrelationsOutputSeries(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsOutputSeries) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsOutputSeriesImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TraceCorrelationsOutputSeries")
-		case "attributes":
-			out.Values[i] = ec._TraceCorrelationsOutputSeries_attributes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "connectionCount":
-			out.Values[i] = ec._TraceCorrelationsOutputSeries_connectionCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "firstDetectedAt":
-			out.Values[i] = ec._TraceCorrelationsOutputSeries_firstDetectedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var traceCorrelationsServiceIOConfigImplementors = []string{"TraceCorrelationsServiceIOConfig"}
-
-func (ec *executionContext) _TraceCorrelationsServiceIOConfig(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsServiceIOConfig) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsServiceIOConfigImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TraceCorrelationsServiceIOConfig")
-		case "enabled":
-			out.Values[i] = ec._TraceCorrelationsServiceIOConfig_enabled(ctx, field, obj)
-		case "inputSpanAttributes":
-			out.Values[i] = ec._TraceCorrelationsServiceIOConfig_inputSpanAttributes(ctx, field, obj)
-		case "outputSpanAttributes":
-			out.Values[i] = ec._TraceCorrelationsServiceIOConfig_outputSpanAttributes(ctx, field, obj)
-		case "metricsFlushInterval":
-			out.Values[i] = ec._TraceCorrelationsServiceIOConfig_metricsFlushInterval(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var traceCorrelationsWorkloadImplementors = []string{"TraceCorrelationsWorkload"}
-
-func (ec *executionContext) _TraceCorrelationsWorkload(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsWorkload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsWorkloadImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TraceCorrelationsWorkload")
-		case "namespace":
-			out.Values[i] = ec._TraceCorrelationsWorkload_namespace(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "kind":
-			out.Values[i] = ec._TraceCorrelationsWorkload_kind(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "name":
-			out.Values[i] = ec._TraceCorrelationsWorkload_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "containerName":
-			out.Values[i] = ec._TraceCorrelationsWorkload_containerName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "telemetrySdkLanguage":
-			out.Values[i] = ec._TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field, obj)
-		case "processRuntimeName":
-			out.Values[i] = ec._TraceCorrelationsWorkload_processRuntimeName(ctx, field, obj)
-		case "processRuntimeVersion":
-			out.Values[i] = ec._TraceCorrelationsWorkload_processRuntimeVersion(ctx, field, obj)
-		case "inputs":
-			out.Values[i] = ec._TraceCorrelationsWorkload_inputs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var uRLTemplatizationRuleImplementors = []string{"URLTemplatizationRule"}
 
 func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationRule) graphql.Marshaler {
@@ -101981,6 +118909,86 @@ func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.
 			out.Values[i] = ec._URLTemplatizationRule_notes(ctx, field, obj)
 		case "examples":
 			out.Values[i] = ec._URLTemplatizationRule_examples(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var unmatchedUrlPathImplementors = []string{"UnmatchedUrlPath"}
+
+func (ec *executionContext) _UnmatchedUrlPath(ctx context.Context, sel ast.SelectionSet, obj *model.UnmatchedURLPath) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, unmatchedUrlPathImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UnmatchedUrlPath")
+		case "path":
+			out.Values[i] = ec._UnmatchedUrlPath_path(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._UnmatchedUrlPath_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var urlTemplatizationCardinalityControlConfigImplementors = []string{"UrlTemplatizationCardinalityControlConfig"}
+
+func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationCardinalityControlConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, urlTemplatizationCardinalityControlConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UrlTemplatizationCardinalityControlConfig")
+		case "liveTrafficLearning":
+			out.Values[i] = ec._UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -104059,6 +121067,304 @@ func (ec *executionContext) marshalNGatewayDeploymentInfo2ᚖgithubᚗcomᚋodig
 	return ec._GatewayDeploymentInfo(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNGoOffsetMinorVersion2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetMinorVersionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.GoOffsetMinorVersion) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNGoOffsetMinorVersion2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetMinorVersion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGoOffsetMinorVersion2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetMinorVersion(ctx context.Context, sel ast.SelectionSet, v *model.GoOffsetMinorVersion) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoOffsetMinorVersion(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGoOffsetMinorVersionUpdate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetMinorVersionUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.GoOffsetMinorVersionUpdate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNGoOffsetMinorVersionUpdate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetMinorVersionUpdate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGoOffsetMinorVersionUpdate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetMinorVersionUpdate(ctx context.Context, sel ast.SelectionSet, v *model.GoOffsetMinorVersionUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoOffsetMinorVersionUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGoOffsetModule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetModuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.GoOffsetModule) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNGoOffsetModule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetModule(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGoOffsetModule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetModule(ctx context.Context, sel ast.SelectionSet, v *model.GoOffsetModule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoOffsetModule(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGoOffsetModuleUpdate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetModuleUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.GoOffsetModuleUpdate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNGoOffsetModuleUpdate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetModuleUpdate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGoOffsetModuleUpdate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetModuleUpdate(ctx context.Context, sel ast.SelectionSet, v *model.GoOffsetModuleUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoOffsetModuleUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGoOffsetVersionUpdate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetVersionUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.GoOffsetVersionUpdate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNGoOffsetVersionUpdate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetVersionUpdate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGoOffsetVersionUpdate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetVersionUpdate(ctx context.Context, sel ast.SelectionSet, v *model.GoOffsetVersionUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoOffsetVersionUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGoOffsets2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsets(ctx context.Context, sel ast.SelectionSet, v model.GoOffsets) graphql.Marshaler {
+	return ec._GoOffsets(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGoOffsets2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsets(ctx context.Context, sel ast.SelectionSet, v *model.GoOffsets) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoOffsets(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGoOffsetsUpdateCheck2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetsUpdateCheck(ctx context.Context, sel ast.SelectionSet, v model.GoOffsetsUpdateCheck) graphql.Marshaler {
+	return ec._GoOffsetsUpdateCheck(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGoOffsetsUpdateCheck2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGoOffsetsUpdateCheck(ctx context.Context, sel ast.SelectionSet, v *model.GoOffsetsUpdateCheck) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoOffsetsUpdateCheck(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNHeadSamplingQueryParamMatcher2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcher(ctx context.Context, sel ast.SelectionSet, v *model.HeadSamplingQueryParamMatcher) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -104976,6 +122282,189 @@ func (ec *executionContext) marshalNInsightsCatalogGuardrailRule2ᚖgithubᚗcom
 	return ec._InsightsCatalogGuardrailRule(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNInsightsCorrelationRelation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationRelation(ctx context.Context, v any) (model.InsightsCorrelationRelation, error) {
+	var res model.InsightsCorrelationRelation
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsCorrelationRelation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationRelation(ctx context.Context, sel ast.SelectionSet, v model.InsightsCorrelationRelation) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNInsightsCorrelationSelector2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSelector(ctx context.Context, sel ast.SelectionSet, v *model.InsightsCorrelationSelector) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsCorrelationSelector(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsCorrelationSelectorInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSelectorInput(ctx context.Context, v any) (*model.InsightsCorrelationSelectorInput, error) {
+	res, err := ec.unmarshalInputInsightsCorrelationSelectorInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsCorrelationSpec2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpec(ctx context.Context, sel ast.SelectionSet, v *model.InsightsCorrelationSpec) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsCorrelationSpec(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsCorrelationSpecInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecInput(ctx context.Context, v any) (model.InsightsCorrelationSpecInput, error) {
+	res, err := ec.unmarshalInputInsightsCorrelationSpecInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNInsightsCorrelationSpecInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecInput(ctx context.Context, v any) (*model.InsightsCorrelationSpecInput, error) {
+	res, err := ec.unmarshalInputInsightsCorrelationSpecInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsDelivery2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsDelivery) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsDelivery2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDelivery(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsDelivery2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDelivery(ctx context.Context, sel ast.SelectionSet, v *model.InsightsDelivery) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsDelivery(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsDeliveryAction2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAction(ctx context.Context, v any) (model.InsightsDeliveryAction, error) {
+	var res model.InsightsDeliveryAction
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsDeliveryAction2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAction(ctx context.Context, sel ast.SelectionSet, v model.InsightsDeliveryAction) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNInsightsDeliveryAttempt2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAttemptᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsDeliveryAttempt) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsDeliveryAttempt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAttempt(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsDeliveryAttempt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAttempt(ctx context.Context, sel ast.SelectionSet, v *model.InsightsDeliveryAttempt) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsDeliveryAttempt(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsDeliveryAttemptOutcome2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAttemptOutcome(ctx context.Context, v any) (model.InsightsDeliveryAttemptOutcome, error) {
+	var res model.InsightsDeliveryAttemptOutcome
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsDeliveryAttemptOutcome2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryAttemptOutcome(ctx context.Context, sel ast.SelectionSet, v model.InsightsDeliveryAttemptOutcome) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNInsightsDeliveryState2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryState(ctx context.Context, v any) (model.InsightsDeliveryState, error) {
+	var res model.InsightsDeliveryState
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsDeliveryState2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryState(ctx context.Context, sel ast.SelectionSet, v model.InsightsDeliveryState) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNInsightsDeviationClass2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClass(ctx context.Context, v any) (model.InsightsDeviationClass, error) {
 	var res model.InsightsDeviationClass
 	err := res.UnmarshalGQL(v)
@@ -105107,6 +122596,65 @@ func (ec *executionContext) unmarshalNInsightsFindingKind2githubᚗcomᚋodigos�
 
 func (ec *executionContext) marshalNInsightsFindingKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsFindingKind(ctx context.Context, sel ast.SelectionSet, v model.InsightsFindingKind) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNInsightsFindingKind2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsFindingKindᚄ(ctx context.Context, v any) ([]model.InsightsFindingKind, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]model.InsightsFindingKind, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInsightsFindingKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsFindingKind(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInsightsFindingKind2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsFindingKindᚄ(ctx context.Context, sel ast.SelectionSet, v []model.InsightsFindingKind) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsFindingKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsFindingKind(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNInsightsGuardrail2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsGuardrail(ctx context.Context, sel ast.SelectionSet, v model.InsightsGuardrail) graphql.Marshaler {
@@ -105303,6 +122851,222 @@ func (ec *executionContext) marshalNInsightsGuardrailViolation2ᚖgithubᚗcom�
 		return graphql.Null
 	}
 	return ec._InsightsGuardrailViolation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsIntegration2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegration(ctx context.Context, sel ast.SelectionSet, v model.InsightsIntegration) graphql.Marshaler {
+	return ec._InsightsIntegration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInsightsIntegration2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsIntegration) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsIntegration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegration(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsIntegration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegration(ctx context.Context, sel ast.SelectionSet, v *model.InsightsIntegration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsIntegration(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsIntegrationCapabilities2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationCapabilities(ctx context.Context, sel ast.SelectionSet, v *model.InsightsIntegrationCapabilities) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsIntegrationCapabilities(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsIntegrationDescriptor2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationDescriptorᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsIntegrationDescriptor) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsIntegrationDescriptor2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationDescriptor(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsIntegrationDescriptor2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationDescriptor(ctx context.Context, sel ast.SelectionSet, v *model.InsightsIntegrationDescriptor) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsIntegrationDescriptor(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsIntegrationFieldSpec2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFieldSpecᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsIntegrationFieldSpec) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsIntegrationFieldSpec2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFieldSpec(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsIntegrationFieldSpec2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFieldSpec(ctx context.Context, sel ast.SelectionSet, v *model.InsightsIntegrationFieldSpec) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsIntegrationFieldSpec(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsIntegrationFieldType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFieldType(ctx context.Context, v any) (model.InsightsIntegrationFieldType, error) {
+	var res model.InsightsIntegrationFieldType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsIntegrationFieldType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFieldType(ctx context.Context, sel ast.SelectionSet, v model.InsightsIntegrationFieldType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNInsightsIntegrationFilters2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFilters(ctx context.Context, sel ast.SelectionSet, v *model.InsightsIntegrationFilters) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsIntegrationFilters(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsIntegrationFiltersInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationFiltersInput(ctx context.Context, v any) (*model.InsightsIntegrationFiltersInput, error) {
+	res, err := ec.unmarshalInputInsightsIntegrationFiltersInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsIntegrationHealth2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationHealth(ctx context.Context, sel ast.SelectionSet, v *model.InsightsIntegrationHealth) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsIntegrationHealth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsIntegrationInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegrationInput(ctx context.Context, v any) (model.InsightsIntegrationInput, error) {
+	res, err := ec.unmarshalInputInsightsIntegrationInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNInsightsLearningCondition2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsLearningCondition(ctx context.Context, sel ast.SelectionSet, v *model.InsightsLearningCondition) graphql.Marshaler {
@@ -105542,6 +123306,266 @@ func (ec *executionContext) marshalNInsightsPromoteResult2ᚖgithubᚗcomᚋodig
 		return graphql.Null
 	}
 	return ec._InsightsPromoteResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendation2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsRecommendation) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsRecommendation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendation(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsRecommendation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendation(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsRecommendation(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsRecommendationApplyItemInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationApplyItemInputᚄ(ctx context.Context, v any) ([]*model.InsightsRecommendationApplyItemInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.InsightsRecommendationApplyItemInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInsightsRecommendationApplyItemInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationApplyItemInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNInsightsRecommendationApplyItemInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationApplyItemInput(ctx context.Context, v any) (*model.InsightsRecommendationApplyItemInput, error) {
+	res, err := ec.unmarshalInputInsightsRecommendationApplyItemInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationBulkResult2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationBulkResult(ctx context.Context, sel ast.SelectionSet, v model.InsightsRecommendationBulkResult) graphql.Marshaler {
+	return ec._InsightsRecommendationBulkResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationBulkResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationBulkResult(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendationBulkResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsRecommendationBulkResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationConfidence2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationConfidence(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendationConfidence) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsRecommendationConfidence(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsRecommendationConfidenceLevel2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationConfidenceLevel(ctx context.Context, v any) (model.InsightsRecommendationConfidenceLevel, error) {
+	var res model.InsightsRecommendationConfidenceLevel
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationConfidenceLevel2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationConfidenceLevel(ctx context.Context, sel ast.SelectionSet, v model.InsightsRecommendationConfidenceLevel) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationExample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationExampleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsRecommendationExample) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsRecommendationExample2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationExample(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationExample2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationExample(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendationExample) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsRecommendationExample(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationItemError2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationItemErrorᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsRecommendationItemError) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsRecommendationItemError2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationItemError(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationItemError2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationItemError(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendationItemError) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsRecommendationItemError(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsRecommendationKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationKind(ctx context.Context, v any) (model.InsightsRecommendationKind, error) {
+	var res model.InsightsRecommendationKind
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationKind(ctx context.Context, sel ast.SelectionSet, v model.InsightsRecommendationKind) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationPreview2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationPreview(ctx context.Context, sel ast.SelectionSet, v model.InsightsRecommendationPreview) graphql.Marshaler {
+	return ec._InsightsRecommendationPreview(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationPreview2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationPreview(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendationPreview) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsRecommendationPreview(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationRule(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendationRule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsRecommendationRule(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsRecommendationState2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationState(ctx context.Context, v any) (model.InsightsRecommendationState, error) {
+	var res model.InsightsRecommendationState
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsRecommendationState2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationState(ctx context.Context, sel ast.SelectionSet, v model.InsightsRecommendationState) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNInsightsRiskSignal2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRiskSignalᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsRiskSignal) graphql.Marshaler {
@@ -106276,6 +124300,60 @@ func (ec *executionContext) unmarshalNInstallationStatus2githubᚗcomᚋodigos�
 
 func (ec *executionContext) marshalNInstallationStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstallationStatus(ctx context.Context, sel ast.SelectionSet, v model.InstallationStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNInstrumentationAgent2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InstrumentationAgent) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInstrumentationAgent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgent(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInstrumentationAgent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationAgent(ctx context.Context, sel ast.SelectionSet, v *model.InstrumentationAgent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InstrumentationAgent(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNInstrumentationInstanceAnalyze2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationInstanceAnalyzeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InstrumentationInstanceAnalyze) graphql.Marshaler {
@@ -107301,9 +125379,137 @@ func (ec *executionContext) marshalNK8sWorkloadTelemetryMetricsExpectingTelemetr
 	return ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNLiveTrafficLearningRecommendedRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRule(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningRecommendedRule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningRecommendedRule(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLiveTrafficLearningRecommendedSegment2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedSegmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LiveTrafficLearningRecommendedSegment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiveTrafficLearningRecommendedSegment2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedSegment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLiveTrafficLearningRecommendedSegment2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedSegment(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningRecommendedSegment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningRecommendedSegment(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLiveTrafficLearningTemplate2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LiveTrafficLearningTemplate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiveTrafficLearningTemplate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLiveTrafficLearningTemplate2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplate(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningTemplate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningTemplate(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNLocalUiConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInput(ctx context.Context, v any) (model.LocalUIConfigInput, error) {
 	res, err := ec.unmarshalInputLocalUiConfigInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx context.Context, v any) (model.ManagedBy, error) {
+	var res model.ManagedBy
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNManagedBy2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManagedBy(ctx context.Context, sel ast.SelectionSet, v model.ManagedBy) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNMetricsSourceAgentRuntimeMetricConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceAgentRuntimeMetricConfig) graphql.Marshaler {
@@ -108059,16 +126265,6 @@ func (ec *executionContext) marshalNRecommendationCatalogRemediation2ᚖgithub�
 	return ec._RecommendationCatalogRemediation(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx context.Context, v any) (model.RecommendationType, error) {
-	var res model.RecommendationType
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx context.Context, sel ast.SelectionSet, v model.RecommendationType) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) unmarshalNRemoteConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfigInput(ctx context.Context, v any) (model.RemoteConfigInput, error) {
 	res, err := ec.unmarshalInputRemoteConfigInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -108667,182 +126863,6 @@ func (ec *executionContext) marshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋf
 	return v
 }
 
-func (ec *executionContext) marshalNTraceCorrelations2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelations(ctx context.Context, sel ast.SelectionSet, v model.TraceCorrelations) graphql.Marshaler {
-	return ec._TraceCorrelations(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNTraceCorrelations2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelations(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelations) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._TraceCorrelations(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNTraceCorrelationsInputGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsInputGroupᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TraceCorrelationsInputGroup) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTraceCorrelationsInputGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsInputGroup(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNTraceCorrelationsInputGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsInputGroup(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsInputGroup) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._TraceCorrelationsInputGroup(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNTraceCorrelationsOutputSeries2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsOutputSeriesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TraceCorrelationsOutputSeries) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTraceCorrelationsOutputSeries2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsOutputSeries(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNTraceCorrelationsOutputSeries2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsOutputSeries(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsOutputSeries) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._TraceCorrelationsOutputSeries(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNTraceCorrelationsWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsWorkloadᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TraceCorrelationsWorkload) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTraceCorrelationsWorkload2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsWorkload(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNTraceCorrelationsWorkload2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsWorkload(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsWorkload) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._TraceCorrelationsWorkload(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNURLTemplatizationRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationRule) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -108915,6 +126935,16 @@ func (ec *executionContext) unmarshalNURLTemplatizationRuleInput2ᚕᚖgithubᚗ
 func (ec *executionContext) unmarshalNURLTemplatizationRuleInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleInput(ctx context.Context, v any) (*model.URLTemplatizationRuleInput, error) {
 	res, err := ec.unmarshalInputURLTemplatizationRuleInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUnmatchedUrlPath2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPath(ctx context.Context, sel ast.SelectionSet, v *model.UnmatchedURLPath) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UnmatchedUrlPath(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUrlTemplatizationDefaultGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroup(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationDefaultGroup) graphql.Marshaler {
@@ -109309,6 +127339,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, v *model.CardinalityControlConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CardinalityControlConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOClusterAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐClusterAttributeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterAttribute) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -109526,6 +127563,80 @@ func (ec *executionContext) marshalOConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigo
 	return ec._Config(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOCppCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCppCustomProbe(ctx context.Context, sel ast.SelectionSet, v []*model.CppCustomProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOCppCustomProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCppCustomProbe(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOCppCustomProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCppCustomProbe(ctx context.Context, sel ast.SelectionSet, v *model.CppCustomProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CppCustomProbe(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOCppCustomProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCppCustomProbeInput(ctx context.Context, v any) ([]*model.CppCustomProbeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.CppCustomProbeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOCppCustomProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCppCustomProbeInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOCppCustomProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCppCustomProbeInput(ctx context.Context, v any) (*model.CppCustomProbeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCppCustomProbeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalOCustomFormatMasking2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomFormatMaskingᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CustomFormatMasking) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -109604,6 +127715,22 @@ func (ec *executionContext) unmarshalOCustomInstrumentationsInput2ᚖgithubᚗco
 	}
 	res, err := ec.unmarshalInputCustomInstrumentationsInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx context.Context, v any) (*model.CustomProbeCategory, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.CustomProbeCategory)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx context.Context, sel ast.SelectionSet, v *model.CustomProbeCategory) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOCustomRegexMasking2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomRegexMaskingᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CustomRegexMasking) graphql.Marshaler {
@@ -110285,6 +128412,117 @@ func (ec *executionContext) marshalOInsightsBaselineHistogram2ᚖgithubᚗcomᚋ
 	return ec._InsightsBaselineHistogram(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOInsightsCorrelationSpec2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsCorrelationSpec) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsCorrelationSpec2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpec(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOInsightsCorrelationSpec2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpec(ctx context.Context, sel ast.SelectionSet, v *model.InsightsCorrelationSpec) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InsightsCorrelationSpec(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInsightsCorrelationSpecInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecInputᚄ(ctx context.Context, v any) ([]*model.InsightsCorrelationSpecInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.InsightsCorrelationSpecInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInsightsCorrelationSpecInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOInsightsCorrelationSpecInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsCorrelationSpecInput(ctx context.Context, v any) (*model.InsightsCorrelationSpecInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputInsightsCorrelationSpecInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInsightsDeliverySettings2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliverySettings(ctx context.Context, sel ast.SelectionSet, v *model.InsightsDeliverySettings) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InsightsDeliverySettings(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInsightsDeliverySettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliverySettingsInput(ctx context.Context, v any) (*model.InsightsDeliverySettingsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputInsightsDeliverySettingsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOInsightsDeliveryState2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryState(ctx context.Context, v any) (*model.InsightsDeliveryState, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.InsightsDeliveryState)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInsightsDeliveryState2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeliveryState(ctx context.Context, sel ast.SelectionSet, v *model.InsightsDeliveryState) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalOInsightsDeviationClass2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClassᚄ(ctx context.Context, v any) ([]model.InsightsDeviationClass, error) {
 	if v == nil {
 		return nil, nil
@@ -110380,6 +128618,13 @@ func (ec *executionContext) marshalOInsightsGuardrailViolationDetail2ᚖgithub�
 	return ec._InsightsGuardrailViolationDetail(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOInsightsIntegration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsIntegration(ctx context.Context, sel ast.SelectionSet, v *model.InsightsIntegration) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InsightsIntegration(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOInsightsLearningCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsLearningConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsLearningCondition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -110452,6 +128697,155 @@ func (ec *executionContext) marshalOInsightsObservation2ᚖgithubᚗcomᚋodigos
 	return ec._InsightsObservation(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOInsightsPolicyScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsPolicyScope(ctx context.Context, v any) (*model.InsightsPolicyScope, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.InsightsPolicyScope)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInsightsPolicyScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsPolicyScope(ctx context.Context, sel ast.SelectionSet, v *model.InsightsPolicyScope) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) marshalOInsightsRecommendation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendation(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InsightsRecommendation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOInsightsRecommendationExample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationExampleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsRecommendationExample) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsRecommendationExample2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationExample(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOInsightsRecommendationKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationKind(ctx context.Context, v any) (*model.InsightsRecommendationKind, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.InsightsRecommendationKind)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInsightsRecommendationKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationKind(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendationKind) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) marshalOInsightsRecommendationRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsRecommendationRule) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsRecommendationRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationRule(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOInsightsRecommendationState2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationState(ctx context.Context, v any) (*model.InsightsRecommendationState, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.InsightsRecommendationState)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInsightsRecommendationState2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRecommendationState(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRecommendationState) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) marshalOInsightsRiskAssessment2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsRiskAssessment(ctx context.Context, sel ast.SelectionSet, v *model.InsightsRiskAssessment) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -110485,6 +128879,22 @@ func (ec *executionContext) unmarshalOInsightsSampleReason2ᚖgithubᚗcomᚋodi
 }
 
 func (ec *executionContext) marshalOInsightsSampleReason2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSampleReason(ctx context.Context, sel ast.SelectionSet, v *model.InsightsSampleReason) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOInsightsSeverity2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSeverity(ctx context.Context, v any) (*model.InsightsSeverity, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.InsightsSeverity)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInsightsSeverity2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSeverity(ctx context.Context, sel ast.SelectionSet, v *model.InsightsSeverity) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -111536,11 +129946,25 @@ func (ec *executionContext) marshalOK8sWorkloadContainerCollectorConfigTailSampl
 	return ret
 }
 
+func (ec *executionContext) marshalOK8sWorkloadContainerLiveTrafficLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerLiveTrafficLearning(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadContainerLiveTrafficLearning) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._K8sWorkloadContainerLiveTrafficLearning(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOK8sWorkloadContainerOverrides2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerOverrides(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadContainerOverrides) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._K8sWorkloadContainerOverrides(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOK8sWorkloadContainerUrlTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerURLTemplatization(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadContainerURLTemplatization) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._K8sWorkloadContainerUrlTemplatization(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOK8sWorkloadId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadIDᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sWorkloadID) graphql.Marshaler {
@@ -111752,6 +130176,88 @@ func (ec *executionContext) marshalOKarpenterConfig2ᚖgithubᚗcomᚋodigosᚑi
 	return ec._KarpenterConfig(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOLiveTrafficLearningAutomaticRulesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningAutomaticRulesConfig(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningAutomaticRulesConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningAutomaticRulesConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningConfig(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningPatternBasedTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningPatternBasedTemplatization(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningPatternBasedTemplatization) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningPatternBasedTemplatization(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LiveTrafficLearningRecommendedRule) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiveTrafficLearningRecommendedRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRecommendedRule(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningRuleComputationConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningRuleComputationConfig(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningRuleComputationConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningRuleComputationConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiveTrafficLearningTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningTemplatization(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningTemplatization) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiveTrafficLearningTemplatization(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOLocalUiConfigAllowConcurrentAgentsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigAllowConcurrentAgentsInput(ctx context.Context, v any) (*model.LocalUIConfigAllowConcurrentAgentsInput, error) {
 	if v == nil {
 		return nil, nil
@@ -111768,6 +130274,14 @@ func (ec *executionContext) unmarshalOLocalUiConfigAutoRollbackInput2ᚖgithub�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOLocalUiConfigCardinalityControlInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigCardinalityControlInput(ctx context.Context, v any) (*model.LocalUIConfigCardinalityControlInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigCardinalityControlInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOLocalUiConfigComponentLogLevelsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigComponentLogLevelsInput(ctx context.Context, v any) (*model.LocalUIConfigComponentLogLevelsInput, error) {
 	if v == nil {
 		return nil, nil
@@ -111781,6 +130295,30 @@ func (ec *executionContext) unmarshalOLocalUiConfigInstrumentorInput2ᚖgithub�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputLocalUiConfigInstrumentorInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigLiveTrafficLearningAutomaticRulesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningAutomaticRulesInput(ctx context.Context, v any) (*model.LocalUIConfigLiveTrafficLearningAutomaticRulesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigLiveTrafficLearningAutomaticRulesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigLiveTrafficLearningInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningInput(ctx context.Context, v any) (*model.LocalUIConfigLiveTrafficLearningInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigLiveTrafficLearningInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigLiveTrafficLearningRuleComputationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigLiveTrafficLearningRuleComputationInput(ctx context.Context, v any) (*model.LocalUIConfigLiveTrafficLearningRuleComputationInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigLiveTrafficLearningRuleComputationInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -111808,27 +130346,11 @@ func (ec *executionContext) unmarshalOLocalUiConfigSpanSamplingAttributesInput2�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOLocalUiConfigTraceCorrelationsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigTraceCorrelationsInput(ctx context.Context, v any) (*model.LocalUIConfigTraceCorrelationsInput, error) {
+func (ec *executionContext) unmarshalOLocalUiConfigUrlTemplatizationCardinalityControlInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigURLTemplatizationCardinalityControlInput(ctx context.Context, v any) (*model.LocalUIConfigURLTemplatizationCardinalityControlInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalInputLocalUiConfigTraceCorrelationsInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOLocalUiConfigTraceCorrelationsServiceIOInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigTraceCorrelationsServiceIOInput(ctx context.Context, v any) (*model.LocalUIConfigTraceCorrelationsServiceIOInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOLocalUiConfigWaspInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigWaspInput(ctx context.Context, v any) (*model.LocalUIConfigWaspInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputLocalUiConfigWaspInput(ctx, v)
+	res, err := ec.unmarshalInputLocalUiConfigUrlTemplatizationCardinalityControlInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -111955,6 +130477,22 @@ func (ec *executionContext) marshalOMetricsSourceSpanMetricsConfig2ᚖgithubᚗc
 		return graphql.Null
 	}
 	return ec._MetricsSourceSpanMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONoisyOperationsEnforcement2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationsEnforcement(ctx context.Context, v any) (*model.NoisyOperationsEnforcement, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.NoisyOperationsEnforcement)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalONoisyOperationsEnforcement2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationsEnforcement(ctx context.Context, sel ast.SelectionSet, v *model.NoisyOperationsEnforcement) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOOdigosComponent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosComponent(ctx context.Context, v any) (*model.OdigosComponent, error) {
@@ -112736,28 +131274,6 @@ func (ec *executionContext) unmarshalOTemplatizationWorkloadFilterInput2ᚕᚖgi
 	return res, nil
 }
 
-func (ec *executionContext) marshalOTraceCorrelationsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsConfig(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsConfig) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._TraceCorrelationsConfig(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOTraceCorrelationsServiceIOConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsServiceIOConfig(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsServiceIOConfig) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._TraceCorrelationsServiceIOConfig(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOTraceCorrelationsTimeRangeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsTimeRangeInput(ctx context.Context, v any) (*model.TraceCorrelationsTimeRangeInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputTraceCorrelationsTimeRangeInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx context.Context, v any) (*model.UIMode, error) {
 	if v == nil {
 		return nil, nil
@@ -112772,6 +131288,60 @@ func (ec *executionContext) marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigo
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UnmatchedURLPath) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUnmatchedUrlPath2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPath(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOUrlTemplatizationCardinalityControlConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationCardinalityControlConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UrlTemplatizationCardinalityControlConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOUrlTemplatizationDefaultGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroupᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationDefaultGroup) graphql.Marshaler {

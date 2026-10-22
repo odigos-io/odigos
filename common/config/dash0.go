@@ -37,7 +37,7 @@ func (j *Dash0) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authorization": "Bearer ${DASH0_TOKEN}",
+			"Authorization": "Bearer " + SecretEnvPlaceholder("DASH0_TOKEN", dest),
 		},
 	}
 

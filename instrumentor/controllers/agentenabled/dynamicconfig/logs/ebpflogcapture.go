@@ -3,19 +3,11 @@ package logs
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
-	"github.com/odigos-io/odigos/distros/distro"
 )
 
-func DistroSupportsEbpfLogCapture(d *distro.OtelDistro) bool {
-	return d.Logs != nil && d.Logs.EbpfLogCapture != nil && d.Logs.EbpfLogCapture.Supported
-}
-
-func CalculateEbpfLogCaptureConfig(d *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *instrumentationrules.EbpfLogCapture {
-
-	if !DistroSupportsEbpfLogCapture(d) {
-		return nil
-	}
-
+// eBPF log capture hooks write syscalls, so it applies to every container regardless of distro.
+// Trace correlation is best-effort and depends on the agent, not on this config.
+func CalculateEbpfLogCaptureConfig(irls *[]odigosv1.InstrumentationRule) *instrumentationrules.EbpfLogCapture {
 	var result *instrumentationrules.EbpfLogCapture
 	for _, irl := range *irls {
 		result = mergeEbpfLogCapture(result, irl.Spec.EbpfLogCapture)

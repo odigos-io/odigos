@@ -114,6 +114,8 @@ func newClusterCollectorMetrics() clusterCollectorMetrics {
 }
 
 func (dm *clusterCollectorMetrics) removeClusterCollector(clusterCollectorID string) {
+	dm.destinationsMu.Lock()
+	defer dm.destinationsMu.Unlock()
 	for _, d := range dm.destinations {
 		d.mu.Lock()
 		delete(d.clusterCollectorsTraffic, clusterCollectorID)
@@ -334,7 +336,9 @@ func (dm *clusterCollectorMetrics) handleClusterCollectorMetrics(senderPod strin
 }
 
 func (dm *clusterCollectorMetrics) metricsByID(dID string) (trafficMetrics, bool) {
+	dm.destinationsMu.Lock()
 	sdm, ok := dm.destinations[dID]
+	dm.destinationsMu.Unlock()
 	if !ok {
 		return trafficMetrics{}, false
 	}

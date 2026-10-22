@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	UIIDTokenEnvVarName                 = "ODIGOS_UI_ID_TOKEN"
 	CurrentNamespaceEnvVar              = "CURRENT_NS"
 	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
 	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
@@ -17,7 +18,6 @@ const (
 	OdigosEffectiveConfigName           = "effective-config"
 	OdigosRemoteConfigName              = "odigos-remote-config"   // backend/GraphQL overlay (e.g. rollout)
 	OdigosLocalUiConfigName             = "odigos-local-ui-config" // UI overlay (log level, sampling)
-	OdigosLegacyConfigName              = "odigos-config"          // Deprecated: only used for migrations
 	OdigosConfigurationFileName         = "config.yaml"
 	OTLPPort                            = 4317
 	OTLPHttpPort                        = 4318
@@ -48,7 +48,8 @@ const (
 	InstrumentationInstance = "InstrumentationInstance"
 	Destination             = "Destination"
 
-	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
+	GoOffsetsPublicBucketURL = "https://storage.googleapis.com/odigos-cloud/"
+	GoOffsetsPublicURL       = GoOffsetsPublicBucketURL + "offset_results_min.json"
 
 	LdPreloadEnvVarName = "LD_PRELOAD"
 	OdigosLoaderDirName = "loader"
@@ -65,11 +66,6 @@ const (
 	// build the blast-radius topology. Added as a second exporter on the existing
 	// metrics/servicegraph pipeline when insights is active.
 	ServiceGraphInsightsExporterName = "otlp_grpc/servicegraph-insights"
-
-	ServiceIOConnectorName                       = "serviceio"
-	TraceCorrelationsMetricsPipelineName         = "metrics/tracecorrelations"
-	TraceCorrelationsMetricsServiceName          = "odigos-correlations-metrics"
-	TraceCorrelationsVictoriaMetricsExporterName = "otlp_http/odigos-correlations-metrics"
 
 	// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
 	// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.
@@ -120,7 +116,6 @@ const (
 	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
 	EnableDataCompressionProperty      = "enable-data-compression"
 	ResourceSizePresetProperty         = "resource-size-preset"
-	WaspEnabledProperty                = "wasp-enabled"
 )
 
 var ErrorPodsNotFound = errors.New("could not find a ready pod")

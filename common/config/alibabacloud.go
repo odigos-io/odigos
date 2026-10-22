@@ -33,7 +33,7 @@ func (j *AlibabaCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authentication": "${ALIBABA_TOKEN}",
+			"Authentication": SecretEnvPlaceholder("ALIBABA_TOKEN", dest),
 		},
 		"tls": GenericMap{
 			"insecure": true,

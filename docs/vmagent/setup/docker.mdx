@@ -30,10 +30,11 @@ agent runs by entering the host's namespaces with `nsenter`.
 
 ## How the collector runs
 
-In the [package installation](/vmagent/setup/installation), the agent and
-collector are separate `systemd` units (`odigos-vmagent.service` and
-`odigos-otelcol.service`). In the Docker deployment there is no `systemd`
-inside the container, so the model is different:
+In a [root-mode package install](/vmagent/setup/installation#root-and-non-root),
+the agent manages `odigos-otelcol.service` as a separate systemd unit. A
+**non-root** package install (the default) runs `odigos-otelcol` as a supervised
+child of `odigos-vmagent` — the same model as this Docker deployment, where
+there is no `systemd` inside the container:
 
 - The agent process starts `odigos-otelcol` as a **supervised child process**
   when the container starts.
@@ -69,7 +70,7 @@ Create the agent's config directory on the host before starting the container.
 It persists the agent's identity and configuration across container upgrades:
 
 ```shell
-sudo mkdir -p /etc/odigos-vmagent
+sudo mkdir -p /var/lib/odigos-agent/config
 ```
 
 ## Step 2: Run the agent
@@ -115,7 +116,7 @@ sudo mkdir -p /etc/odigos-vmagent
             - /var/odigos:/var/odigos
             # Config and identity, persisted across upgrades (same path as the
             # package install — this is the same product in a different runtime).
-            - /etc/odigos-vmagent:/etc/odigos-vmagent
+            - /var/lib/odigos-agent/config:/var/lib/odigos-agent/config
             # Host systemd unit dir: instrumentation drop-ins for env-injection
             # systemd services land here. Omit on hosts that do not use systemd.
             - /etc/systemd/system:/etc/systemd/system
@@ -142,7 +143,7 @@ sudo mkdir -p /etc/odigos-vmagent
       -v /var/run/docker.sock:/var/run/docker.sock:ro \
       -v /var/lib/docker:/var/lib/docker:ro \
       -v /var/odigos:/var/odigos \
-      -v /etc/odigos-vmagent:/etc/odigos-vmagent \
+      -v /var/lib/odigos-agent/config:/var/lib/odigos-agent/config \
       -v /etc/systemd/system:/etc/systemd/system \
       -v /sys/kernel/debug:/sys/kernel/debug \
       odigos-vmagent:latest
@@ -165,7 +166,7 @@ The agent is configured entirely through environment variables at startup:
 
 | Variable | Required | Effect |
 |---|---|---|
-| `ODIGOS_ONPREM_TOKEN` | Yes, unless `license.jwt` is pre-provisioned in the config directory | Written to `/etc/odigos-vmagent/license.jwt` at startup. |
+| `ODIGOS_ONPREM_TOKEN` | Yes, unless `license.jwt` is pre-provisioned in the config directory | Written to `/var/lib/odigos-agent/config/license.jwt` at startup. |
 | `ODIGOS_CENTRAL_ENDPOINT` | No | Enables the Odigos Central connection and sets its endpoint (`host:port` or URL). Omit to run without Central. |
 | `ODIGOS_AGENT_NAME` | No | Agent name reported to Central. Defaults to the host's hostname. |
 
@@ -178,13 +179,13 @@ as in the package deployment:
 docker exec -it odigos-vmagent odictl
 ```
 
-The config tree is persisted on the host at `/etc/odigos-vmagent`, so the
+The config tree is persisted on the host at `/var/lib/odigos-agent/config`, so the
 agent keeps its deployment identity and configuration across container upgrades.
 Values written to `config.yaml` take precedence over the environment-derived
 defaults on later boots.
 
 <Note>
-  Pre-provisioning `license.jwt` in `/etc/odigos-vmagent` is an alternative
+  Pre-provisioning `license.jwt` in `/var/lib/odigos-agent/config` is an alternative
   to `ODIGOS_ONPREM_TOKEN`. When the token variable is set, it is the source of
   truth and overwrites an out-of-date license file.
 </Note>
@@ -213,14 +214,14 @@ mounts. Each is required for a specific capability:
 | `/var/run/docker.sock` (ro) | Container metadata: mapping PIDs to containers, service names, restart-based instrumentation. |
 | `/var/lib/docker` (ro) | Executable path resolution through overlay2, and container JSON logs for the [logs pipeline](/vmagent/setup/configuration/overview#log-collection). |
 | `/var/odigos` (rw) | Instrumentation files must live on the host so host processes can load them. |
-| `/etc/odigos-vmagent` (rw) | Agent configuration and identity, persisted across container upgrades. |
+| `/var/lib/odigos-agent/config` (rw) | Agent configuration and identity, persisted across container upgrades. |
 | `/etc/systemd/system` (rw) | Env-injection systemd instrumentation writes unit drop-ins here so the host's `systemd` picks them up. Omit on non-systemd hosts (direct-attach systemd services still work without it). |
 | `/sys/kernel/debug` | kprobes/tracepoints used by the eBPF instrumentations. |
 
 ## Upgrade
 
 Pull the new image and recreate the container. The persisted
-`/etc/odigos-vmagent` directory preserves the agent's identity and
+`/var/lib/odigos-agent/config` directory preserves the agent's identity and
 configuration across the upgrade.
 
 <Tabs>
@@ -251,7 +252,7 @@ docker rm odigos-vmagent
 To fully remove the deployment, also drop the persisted identity and configuration:
 
 ```shell
-sudo rm -rf /etc/odigos-vmagent
+sudo rm -rf /var/lib/odigos-agent
 ```
 
 ## Troubleshooting
@@ -274,7 +275,7 @@ list sources, add destinations, inspect instrumentation status, and so on:
 docker exec -it odigos-vmagent odictl
 ```
 
-Config changes are written under `/etc/odigos-vmagent` on the host and persist
+Config changes are written under `/var/lib/odigos-agent/config` on the host and persist
 across container restarts.
 
 ### Why do container processes show up as regular processes?

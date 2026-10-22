@@ -1,0 +1,40 @@
+{{- $existing := lookup "apiregistration.k8s.io/v1" "APIService" "" "v1beta1.custom.metrics.k8s.io" -}}
+{{- $shouldRender := true -}}
+{{- if $existing -}}
+  {{- $managedBy := dig "metadata" "labels" "app.kubernetes.io/managed-by" "" $existing -}}
+  {{- $existingService := dig "spec" "service" "name" "" $existing -}}
+  {{/* v1beta1.custom.metrics.k8s.io is a cluster-scoped singleton that another adapter
+       (Prometheus Adapter, KEDA, ...) may already own. Mirror IsOwnedByOdigos in
+       instrumentor/controllers/metricshandler/helpers.go and only claim the name when the
+       existing object already points at an Odigos service. A leftover Odigos APIService that
+       Helm does not own yet is skipped so the instrumentor can delete it first. */}}
+  {{- $odigosOwned := or (eq $existingService "odigos-autoscaler") (eq $existingService "odigos-instrumentor") -}}
+  {{- if or (not $odigosOwned) (ne $managedBy "Helm") -}}
+    {{- $shouldRender = false -}}
+  {{- end -}}
+{{- end -}}
+{{- if $shouldRender }}
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1beta1.custom.metrics.k8s.io
+  labels:
+    app.kubernetes.io/name: odigos-custom-metrics
+    odigos.io/system-object: "true"
+spec:
+  service:
+    name: odigos-instrumentor
+    namespace: {{ .Release.Namespace }}
+    port: 9443
+  group: custom.metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: false
+  groupPriorityMinimum: 100
+  versionPriority: 100
+  {{- if $existing }}
+    {{- $ca := dig "spec" "caBundle" "" $existing }}
+    {{- if $ca }}
+  caBundle: {{ $ca | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}

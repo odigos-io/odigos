@@ -13,13 +13,6 @@ ORG ?= $(OSS_ORG)
 ifeq ($(STAGING_ORG),true)
     ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
 endif
-GOLANGCI_LINT_VERSION ?= v2.10.1
-GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
-GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
-LINT_CMD = $(GOLANGCI_LINT) run -c ../.golangci.yml
-ifdef FIX_LINT
-    LINT_CMD += --fix
-endif
 DOCKERFILE=Dockerfile
 IMG_PREFIX?=
 IMG_SUFFIX?=
@@ -63,43 +56,32 @@ dev_image_repo = $(shell \
 	bash $(CURDIR)/scripts/resolve-dev-image.sh $(1))
 dev_image = $(or $(IMAGE),$(call dev_image_repo,$(1)):$(TAG))
 
-.PHONY: install-golangci-lint
-install-golangci-lint:
-	@if [ ! -x "$(GOLANGCI_LINT)" ] || [ "$$("$(GOLANGCI_LINT)" version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
-		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
-	else \
-		echo "golangci-lint $(GOLANGCI_LINT_VERSION) is already installed"; \
-	fi
+GOLANGCI_LINT_VERSION ?= v2.15.0
+# gofmt is compiled into golangci-lint and its output differs between Go releases,
+# so build and run it like CI: with CI's Go version and without the local go.work.
+LINT_GO_VERSION ?= 1.26.6
+# Versioned path so a version bump reinstalls.
+GOLANGCI_LINT := $(CURDIR)/.tools/golangci-lint-$(GOLANGCI_LINT_VERSION)-go$(LINT_GO_VERSION)
+LINT_MODULES ?= common k8sutils profiles destinations procdiscovery
 
-.PHONY: lint
-lint: install-golangci-lint
-ifdef MODULE
-	@echo "Running lint for module: $(MODULE)"
-	@if [ ! -d "$(MODULE)" ]; then \
-		echo "Error: Directory $(MODULE) does not exist"; \
-		exit 1; \
-	fi
-	@if [ ! -f "$(MODULE)/go.mod" ]; then \
-		echo "Error: $(MODULE) is not a Go module (no go.mod found)"; \
-		exit 1; \
-	fi
-	@cd $(MODULE) && $(LINT_CMD) ./...
-else
-	@echo "No MODULE specified, running lint for all Go modules..."
-	@for module in $(GO_MODULES); do \
-		echo "Running lint for $$module"; \
-		(cd $$module && $(LINT_CMD) ./...) || exit 1; \
+$(GOLANGCI_LINT):
+	GOTOOLCHAIN=go$(LINT_GO_VERSION) GOBIN=$(CURDIR)/.tools go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	@mv $(CURDIR)/.tools/golangci-lint $@
+	@# The results cache isn't keyed by the binary, so drop results from a previous build.
+	@$@ cache clean
+
+# Use MODULE=<dir> to lint a single module.
+.PHONY: lint lint-fix
+lint: export GOTOOLCHAIN := go$(LINT_GO_VERSION)
+lint: export GOWORK := off
+lint: $(GOLANGCI_LINT)
+	@for m in $(or $(MODULE),$(LINT_MODULES)); do \
+		echo "Linting $$m"; \
+		(cd $$m && $(GOLANGCI_LINT) run -c $(CURDIR)/.golangci.yml $(LINT_FLAGS) ./...) || exit 1; \
 	done
-endif
 
-.PHONY: lint-fix
-lint-fix:
-	MODULE=common make lint FIX_LINT=true
-	MODULE=k8sutils make lint FIX_LINT=true
-	MODULE=profiles make lint FIX_LINT=true
-	MODULE=destinations make lint FIX_LINT=true
-	MODULE=procdiscovery make lint FIX_LINT=true
+lint-fix: LINT_FLAGS := --fix
+lint-fix: lint
 
 .PHONY: rbac-docs
 rbac-docs:
@@ -158,15 +140,15 @@ build-agents:
 
 .PHONY: build-autoscaler
 build-autoscaler:
-	$(MAKE) build-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) build-image/autoscaler DOCKERFILE=autoscaler/Dockerfile SUMMARY="Autoscaler for Odigos" DESCRIPTION="Compatibility image. Autoscaler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: build-instrumentor
 build-instrumentor:
-	$(MAKE) build-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) build-image/instrumentor DOCKERFILE=instrumentor/Dockerfile SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: build-scheduler
 build-scheduler:
-	$(MAKE) build-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) build-image/scheduler DOCKERFILE=scheduler/Dockerfile SUMMARY="Scheduler for Odigos" DESCRIPTION="Compatibility image. Scheduler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: build-collector
 build-collector:
@@ -186,7 +168,7 @@ verify-nodejs-agent:
 .PHONY: build-images
 build-images:
 	# prefer to build timeconsuimg images first to make better use of parallelism
-	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: build-images-rhel
 build-images-rhel:
@@ -216,7 +198,7 @@ push-odiglet:
 
 .PHONY: push-autoscaler
 push-autoscaler:
-	$(MAKE) push-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/autoscaler DOCKERFILE=autoscaler/Dockerfile SUMMARY="Autoscaler for Odigos" DESCRIPTION="Compatibility image. Autoscaler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-instrumentor
 push-instrumentor:
@@ -224,7 +206,7 @@ push-instrumentor:
 
 .PHONY: push-scheduler
 push-scheduler:
-	$(MAKE) push-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/scheduler DOCKERFILE=scheduler/Dockerfile SUMMARY="Scheduler for Odigos" DESCRIPTION="Compatibility image. Scheduler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-collector
 push-collector:
@@ -236,11 +218,11 @@ push-ui:
 
 .PHONY: push-agents
 push-agents:
-	$(MAKE) push-image/agents DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=agents SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/agents DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=$(if $(filter true,$(RHEL)),agents-rhel,agents) SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-images
 push-images:
-	make push-autoscaler push-scheduler push-odiglet push-instrumentor push-collector push-ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make push-autoscaler push-odiglet push-instrumentor push-collector push-ui push-scheduler TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: push-images-rhel
 push-images-rhel:
@@ -279,9 +261,21 @@ load-to-kind-victoria-metrics:
 		-
 	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
 
+# odigos-cache is only published on release. Until then e2e re-hosts upstream Redis
+# (pin must match REDIS_VERSION in .github/workflows/release.yml).
+.PHONY: load-to-kind-cache
+load-to-kind-cache:
+	printf 'FROM docker.io/library/redis:8.10.2\n' | docker buildx build \
+		--platform=linux/$$(docker version -f '{{.Server.Arch}}') \
+		--pull \
+		-t $(ORG)/odigos-cache$(IMG_SUFFIX):$(TAG) \
+		--load \
+		-
+	kind load docker-image $(ORG)/odigos-cache$(IMG_SUFFIX):$(TAG)
+
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics load-to-kind-cache ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:
@@ -298,10 +292,6 @@ restart-autoscaler:
 .PHONY: restart-instrumentor
 restart-instrumentor:
 	-kubectl rollout restart deployment odigos-instrumentor -n $(ODIGOS_NS)
-
-.PHONY: restart-scheduler
-restart-scheduler:
-	-kubectl rollout restart deployment odigos-scheduler -n $(ODIGOS_NS)
 
 .PHONY: restart-collector
 restart-collector:
@@ -323,7 +313,7 @@ deploy-%:
 
 .PHONY: deploy
 deploy:
-	make deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-scheduler deploy-ui
+	make deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-ui
 
 .PHONY: debug-odiglet
 debug-odiglet:
@@ -546,9 +536,9 @@ publish-to-ecr:
 	fi
 	make ecr-login
 	make -j 3 build-tag-push-ecr-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-ecr-image/autoscaler DOCKERFILE=autoscaler/Dockerfile SUMMARY="Autoscaler for Odigos" DESCRIPTION="Compatibility image. Autoscaler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-ecr-image/scheduler DOCKERFILE=scheduler/Dockerfile SUMMARY="Scheduler for Odigos" DESCRIPTION="Compatibility image. Scheduler controllers now run in the instrumentor." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"

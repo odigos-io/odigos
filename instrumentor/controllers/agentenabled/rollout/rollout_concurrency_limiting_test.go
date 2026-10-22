@@ -110,7 +110,7 @@ func Test_Instrumentation_MultipleWorkloads_HigherLimitAllowsMore(t *testing.T) 
 	ics := make([]*odigosv1alpha1.InstrumentationConfig, 3)
 	pws := make([]k8sconsts.PodWorkload, 3)
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		deployments[i] = testutil.NewMockTestDeployment(s.ns, "deployment-"+string(rune('a'+i)))
 		ics[i] = mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployments[i]))
 		pws[i] = k8sconsts.PodWorkload{Name: deployments[i].Name, Namespace: deployments[i].Namespace, Kind: k8sconsts.WorkloadKindDeployment}
@@ -120,7 +120,7 @@ func Test_Instrumentation_MultipleWorkloads_HigherLimitAllowsMore(t *testing.T) 
 	limiter := newRolloutConcurrencyLimiterActive() // Fresh limiter
 
 	// Act & Assert: First two workloads succeed
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		rolloutResult, err := rollout.Do(s.ctx, fakeClient, ics[i], pws[i], s.conf, s.distroProvider, limiter)
 		assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 		assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ics[i].Status.Conditions[0].Reason,
@@ -216,7 +216,7 @@ func Test_NoRateLimit_AllWorkloadsProcessedImmediately(t *testing.T) {
 	ics := make([]*odigosv1alpha1.InstrumentationConfig, 5)
 	pws := make([]k8sconsts.PodWorkload, 5)
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		deployments[i] = testutil.NewMockTestDeployment(s.ns, "deployment-"+string(rune('a'+i)))
 		ics[i] = mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployments[i]))
 		pws[i] = k8sconsts.PodWorkload{Name: deployments[i].Name, Namespace: deployments[i].Namespace, Kind: k8sconsts.WorkloadKindDeployment}
@@ -226,7 +226,7 @@ func Test_NoRateLimit_AllWorkloadsProcessedImmediately(t *testing.T) {
 	limiter := newRolloutConcurrencyLimiterActive() // Limiter (limit comes from config)
 
 	// Act & Assert: All workloads succeed
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rolloutResult, err := rollout.Do(s.ctx, fakeClient, ics[i], pws[i], s.conf, s.distroProvider, limiter)
 		assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 		assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ics[i].Status.Conditions[0].Reason,

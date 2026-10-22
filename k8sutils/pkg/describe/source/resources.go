@@ -91,7 +91,7 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 			LabelSelector: podLabelSelector,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("error listing replicasets: %v", err)
+			return nil, fmt.Errorf("error listing replicasets: %w", err)
 		}
 
 		deploymentRevision := workloadObj.Annotations["deployment.kubernetes.io/revision"]
@@ -116,7 +116,7 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 					LabelSelector: metav1.FormatLabelSelector(rs.Spec.Selector),
 				})
 				if err != nil {
-					return nil, fmt.Errorf("error listing pods for replicaset: %v", err)
+					return nil, fmt.Errorf("error listing pods for replicaset: %w", err)
 				}
 
 				isLatestRevisionText := "false"

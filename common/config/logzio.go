@@ -1,10 +1,36 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/odigos-io/odigos/common"
 )
 
 type Logzio struct{}
+
+// logzioRegionCodes maps the listener hostnames offered by the LOGZIO_REGION
+// dropdown in destinations/data/logzio.yaml to the two letter region codes that
+// GetListenerUrl and the logzio exporter's "region" field both expect.
+var logzioRegionCodes = map[string]string{
+	"listener.logz.io":    "us",
+	"listener-au.logz.io": "au",
+	"listener-ca.logz.io": "ca",
+	"listener-eu.logz.io": "eu",
+	"listener-nl.logz.io": "nl",
+	"listener-uk.logz.io": "uk",
+	"listener-wa.logz.io": "wa",
+}
+
+// normalizeRegion accepts either a listener hostname, which is what the dropdown
+// stores, or a two letter region code, which is what a hand written Destination
+// may carry, and returns the two letter code.
+func (l *Logzio) normalizeRegion(region string) string {
+	region = strings.ToLower(strings.TrimSpace(region))
+	if code, ok := logzioRegionCodes[region]; ok {
+		return code
+	}
+	return region
+}
 
 // GetListenerUrl Generates logzio listener url based on aws region
 func (l *Logzio) GetListenerUrl(region string) string {
@@ -36,12 +62,12 @@ func (l *Logzio) DestType() common.DestinationType {
 
 func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	var pipelineNames []string
-	region := dest.GetConfig()["LOGZIO_REGION"]
+	region := l.normalizeRegion(dest.GetConfig()["LOGZIO_REGION"])
 	if isTracingEnabled(dest) {
 		exporterName := "logzio/tracing-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"region":        region,
-			"account_token": "${LOGZIO_TRACING_TOKEN}",
+			"account_token": SecretEnvPlaceholder("LOGZIO_TRACING_TOKEN", dest),
 		}
 		tracesPipelineName := "traces/logzio-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
@@ -59,7 +85,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 				"p8s_logzio_name": "odigos",
 			},
 			"headers": GenericMap{
-				"authorization": "Bearer ${LOGZIO_METRICS_TOKEN}",
+				"authorization": "Bearer " + SecretEnvPlaceholder("LOGZIO_METRICS_TOKEN", dest),
 			},
 		}
 		metricsPipelineName := "metrics/logzio-" + dest.GetID()
@@ -73,7 +99,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		exporterName := "logzio/logs-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"region":        region,
-			"account_token": "${LOGZIO_LOGS_TOKEN}",
+			"account_token": SecretEnvPlaceholder("LOGZIO_LOGS_TOKEN", dest),
 		}
 		currentConfig.Processors["attributes/logzio"] = GenericMap{
 			"actions": []GenericMap{

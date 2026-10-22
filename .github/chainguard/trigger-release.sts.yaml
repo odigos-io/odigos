@@ -1,5 +1,5 @@
 issuer: https://token.actions.githubusercontent.com
-subject_pattern: repo:odigos-io/(odigos|odigos-enterprise):ref:(refs/tags/.*|refs/heads/main|refs/heads/releases/.*)$
+subject_pattern: 'repo:odigos-io(@84347062)?/(odigos(@501095512)?|odigos-enterprise(@683608086)?):ref:(refs/tags/.*|refs/heads/main|refs/heads/releases/.*)$'
 
 permissions:
   contents: write # to trigger the release workflow

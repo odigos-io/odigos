@@ -37,11 +37,11 @@ Odigos is divided into three main segments:
 
 ## Pipeline
 
-### Auto Scaler (Pipeline Manager)
+### Instrumentor (Pipeline Manager)
 
-**Type**: Auto scaler is a Kubernetes operator<br />
-**Role**: The auto scaler component is responsible for managing the OpenTelemetry Collectors which implement the OpenTelemetry pipeline.<br />
-**K8s Resource**: `kubectl get deployments -n odigos-system odigos-autoscaler`
+**Type**: The instrumentor is a Kubernetes operator<br />
+**Role**: The instrumentor is responsible for managing the OpenTelemetry Collectors which implement the OpenTelemetry pipeline.<br />
+**K8s Resource**: `kubectl get deployments -n odigos-system odigos-instrumentor`
 
 - Start and stop Collectors when needed (e.g. when sources or destinations are added or removed).
 - Schedule the node collector to start only after the cluster collector is ready.
@@ -84,10 +84,12 @@ Odigos is divided into three main segments:
 
 - Create and manage `instrumentationconfig.odigos.io` objects
     - Trigger Odiglet to inspect runtime information of workloads.
-    - Trigger Scheduler to deploy the Odigos pipeline.
+    - Trigger deployment of the Odigos pipeline.
     - Merge Odigos instrumentation rules and config to a workload scope configuration for the agent.
 - Inject the instrumentation device into the workload manifest resource as virtual device.
 - Monitor the `source.odigos.io` CRD and cleanup any instrumentation related resources when a source is removed.
+- Monitor the Odigos sources and destinations to trigger deployment of the Odigos pipeline.
+- Reconcile Odigos configuration to run validations, set defaults, and apply Odigos Profiles (configuration presets) to the cluster.
 
 ### Odiglet
 
@@ -121,11 +123,3 @@ Odigos is divided into three main segments:
 - Provide a user interface for monitoring and managing the Odigos installation, including the sources, destinations, actions, and instrumentation rules.
 - Examine the current state of Odigos and show any errors.
 
-### Scheduler
-
-**Type**: Scheduler is a Kubernetes operator<br />
-**Role**: The scheduler is responsible for managing the Odigos installation itself.<br />
-**K8s Resource**: `kubectl get deployments -n odigos-system odigos-scheduler`
-
-- Monitor the Odigos sources and destinations to trigger deployment of the Odigos pipeline.
-- Reconcile Odigos configuration to run validations, set defaults, and apply Odigos Profiles (configuration presets) to the cluster.

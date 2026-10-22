@@ -30,11 +30,7 @@ type SamplingSpecApplyConfiguration struct {
 	Name *string `json:"name,omitempty"`
 	// a free-form text field that allows you to attach notes regardinag the rule for convenience.
 	// Odigos does not use or assume any meaning from this field.
-	Notes *string `json:"notes,omitempty"`
-	// if set to true, the sampling rules will be disabled,
-	// they will not be taken into account for any sampling decisions.
-	// useful if you want to temporarily disable the rules but re-enable them later,
-	Disabled                 *bool                                       `json:"disabled,omitempty"`
+	Notes                    *string                                     `json:"notes,omitempty"`
 	NoisyOperations          []NoisyOperationApplyConfiguration          `json:"noisyOperations,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperationApplyConfiguration `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRuleApplyConfiguration       `json:"costReductionRules,omitempty"`
@@ -59,14 +55,6 @@ func (b *SamplingSpecApplyConfiguration) WithName(value string) *SamplingSpecApp
 // If called multiple times, the Notes field is set to the value of the last call.
 func (b *SamplingSpecApplyConfiguration) WithNotes(value string) *SamplingSpecApplyConfiguration {
 	b.Notes = &value
-	return b
-}
-
-// WithDisabled sets the Disabled field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Disabled field is set to the value of the last call.
-func (b *SamplingSpecApplyConfiguration) WithDisabled(value bool) *SamplingSpecApplyConfiguration {
-	b.Disabled = &value
 	return b
 }
 

@@ -14,12 +14,12 @@ type DefaultTemplatizationSkipPolicyConfig struct {
 
 	// If set to true, default templatization will be skipped for any non-success HTTP status code (i.e., any code not in the 2xx range).
 	// When this is true, the StatusCodes list is ignored.
-	SkipForNonSuccessCodes bool `json:"skipForNonSuccessCodes,omitempty"`
+	SkipForNonSuccessCodes bool `json:"skipForNonSuccessCodes,omitempty" yaml:"skipForNonSuccessCodes,omitempty"`
 
 	// the http status codes for which the default templatization will be skipped.
 	// for example: [404, 401].
 	// advanced users can use to cherry pick specific codes for tailoring to specific use cases.
-	SkipHttpStatusCodes []int `json:"skipHttpStatusCodes,omitempty"`
+	SkipHttpStatusCodes []int `json:"skipHttpStatusCodes,omitempty" yaml:"skipHttpStatusCodes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -28,20 +28,20 @@ type DefaultTemplatizationConfig struct {
 
 	// if set to true, the default templatization will be disabled for the services in the scope.
 	// in case of conflict (if other action set this to false), the default templatization will be disabled.
-	Disabled bool `json:"disabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty" yaml:"disabled,omitempty"`
 
 	// config if default templatization should be skipped on error.
 	// use it when sources scope describes a service that is publicly accessible to the internet
 	// to filter garbage requests that can contaminate the url-templatization process.
-	SkipPolicy *DefaultTemplatizationSkipPolicyConfig `json:"skipPolicy,omitempty"`
+	SkipPolicy *DefaultTemplatizationSkipPolicyConfig `json:"skipPolicy,omitempty" yaml:"skipPolicy,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
 type UrlTemplatizationConfig struct {
 	// Template rules to apply to URLs
-	Templates []string `json:"templatizationRules,omitempty"`
+	Templates []string `json:"templatizationRules,omitempty" yaml:"templatizationRules,omitempty"`
 
 	// configurations for default templatization.
 	// default templatization is applied on a single http span if none of the custom templatization rules matched.
-	Default *DefaultTemplatizationConfig `json:"default,omitempty"`
+	Default *DefaultTemplatizationConfig `json:"default,omitempty" yaml:"default,omitempty"`
 }

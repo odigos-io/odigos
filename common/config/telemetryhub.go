@@ -18,7 +18,7 @@ func (j *TelemetryHub) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": "https://otlp.telemetryhub.com:4317",
 		"headers": GenericMap{
-			"x-telemetryhub-key": "${TELEMETRY_HUB_API_KEY}",
+			"x-telemetryhub-key": SecretEnvPlaceholder("TELEMETRY_HUB_API_KEY", dest),
 		},
 	}
 

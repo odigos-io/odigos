@@ -26,21 +26,17 @@ func FetchOdigosMetrics(ctx context.Context, client kubernetes.Interface, builde
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		if err := fetchMetricsFromOdigletPods(ctx, client, builder, odigosNamespace, metricsDir); err != nil {
 			klog.V(1).ErrorS(err, "Failed to get metrics from odiglet pods")
 		}
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		if err := fetchMetricsFromGatewayPods(ctx, client, builder, odigosNamespace, metricsDir); err != nil {
 			klog.V(1).ErrorS(err, "Failed to get metrics from gateway pods")
 		}
-	}()
+	})
 
 	wg.Wait()
 	return nil
@@ -78,9 +74,7 @@ func fetchMetricsFromOdigletPods(ctx context.Context, client kubernetes.Interfac
 				return err
 			}
 			ep := ep
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				defer lim.release()
 				klog.V(2).InfoS("Fetching metrics for odiglet pod", "podName", podName, "container", ep.fileSuffix)
 				data, err := captureMetrics(ctx, client, podName, namespace, ep.port)
@@ -92,7 +86,7 @@ func fetchMetricsFromOdigletPods(ctx context.Context, client kubernetes.Interfac
 				if err := builder.AddFile(metricsDir, filename, data); err != nil {
 					klog.V(1).ErrorS(err, "Failed to save metrics", "podName", podName, "filename", filename)
 				}
-			}()
+			})
 		}
 	}
 	wg.Wait()
@@ -121,9 +115,7 @@ func fetchMetricsFromGatewayPods(ctx context.Context, client kubernetes.Interfac
 		}
 		pod := &pods.Items[i]
 		podName := pod.Name
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			defer lim.release()
 			klog.V(2).InfoS("Fetching metrics for gateway pod", "podName", podName)
 			data, err := captureMetrics(ctx, client, podName, namespace, port)
@@ -134,7 +126,7 @@ func fetchMetricsFromGatewayPods(ctx context.Context, client kubernetes.Interfac
 			if err := builder.AddFile(metricsDir, podName, data); err != nil {
 				klog.V(1).ErrorS(err, "Failed to save metrics", "podName", podName)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 	return nil

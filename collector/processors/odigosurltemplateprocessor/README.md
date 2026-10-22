@@ -35,7 +35,7 @@ For spans that match the above constraints, the processor will calculate the tem
 
 ### Span Name
 
-If the span name equals the method (e.g. "GET"), and the processor is able to calculate a templated route, the span name will be set to `{method} {target}`. Otherwise, the span name will not be modified.
+If the span name equals the method (e.g. "GET"), and the processor is able to calculate a templated route, the span name will be set to `{method} {target}`. If the span name already contains the original URL path, that path is replaced with the templated target. Otherwise, the span name will not be modified.
 
 When `target` is empty string, for example `http://example.com`, the target will be set to `"/"` for enhanced usability (differentiate root path from missing target).
 

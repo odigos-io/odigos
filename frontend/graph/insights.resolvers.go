@@ -7,10 +7,42 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services/insights"
 )
+
+// IntegrationCatalog is the resolver for the integrationCatalog field.
+func (r *insightsResolver) IntegrationCatalog(ctx context.Context, obj *model.Insights) ([]*model.InsightsIntegrationDescriptor, error) {
+	return r.resolveIntegrationCatalog(ctx)
+}
+
+// Integrations is the resolver for the integrations field.
+func (r *insightsResolver) Integrations(ctx context.Context, obj *model.Insights) ([]*model.InsightsIntegration, error) {
+	return r.resolveIntegrations(ctx)
+}
+
+// Integration is the resolver for the integration field.
+func (r *insightsResolver) Integration(ctx context.Context, obj *model.Insights, id string) (*model.InsightsIntegration, error) {
+	return r.resolveIntegration(ctx, id)
+}
+
+// IntegrationDeliveries is the resolver for the integrationDeliveries field.
+func (r *insightsResolver) IntegrationDeliveries(ctx context.Context, obj *model.Insights, integrationID string, state *model.InsightsDeliveryState, limit *int) ([]*model.InsightsDelivery, error) {
+	return r.resolveIntegrationDeliveries(ctx, integrationID, state, limit)
+}
+
+// IntegrationAttempts is the resolver for the integrationAttempts field.
+func (r *insightsResolver) IntegrationAttempts(ctx context.Context, obj *model.Insights, integrationID string, limit *int) ([]*model.InsightsDeliveryAttempt, error) {
+	return r.resolveIntegrationAttempts(ctx, integrationID, limit)
+}
+
+// FindingDeliveries is the resolver for the findingDeliveries field.
+func (r *insightsResolver) FindingDeliveries(ctx context.Context, obj *model.Insights, findingKey string) ([]*model.InsightsDelivery, error) {
+	return r.resolveFindingDeliveries(ctx, findingKey)
+}
 
 // Services is the resolver for the services field.
 func (r *insightsResolver) Services(ctx context.Context, obj *model.Insights) ([]*model.InsightsServiceStat, error) {
@@ -311,6 +343,51 @@ func (r *insightsResolver) GuardrailViolation(ctx context.Context, obj *model.In
 		return nil, insights.GraphQLError(ctx, err)
 	}
 	return insights.GuardrailViolationDetailToModel(*detail), nil
+}
+
+// Recommendations is the resolver for the recommendations field.
+func (r *insightsResolver) Recommendations(ctx context.Context, obj *model.Insights, kind *model.InsightsRecommendationKind, state *model.InsightsRecommendationState, transactionID *string, service *string, namespace *string, includeStale *bool) ([]*model.InsightsRecommendation, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var transactionFilter *int64
+	if transactionID != nil {
+		parsed, parseErr := insights.ParseID(*transactionID)
+		if parseErr != nil {
+			return nil, insights.GraphQLError(ctx, parseErr)
+		}
+		transactionFilter = &parsed
+	}
+	recommendations, err := client.ListRecommendations(ctx, insights.ListRecommendationsParams{
+		Kind:          insights.RecommendationKindPtrFromModel(kind),
+		State:         insights.RecommendationStatePtrFromModel(state),
+		TransactionID: transactionFilter,
+		Service:       service,
+		Namespace:     namespace,
+		IncludeStale:  includeStale,
+	})
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.RecommendationsToModel(recommendations), nil
+}
+
+// Recommendation is the resolver for the recommendation field.
+func (r *insightsResolver) Recommendation(ctx context.Context, obj *model.Insights, id string) (*model.InsightsRecommendation, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	recommendation, err := client.GetRecommendation(ctx, id)
+	if err != nil {
+		// Nullable field, so an unknown id is null rather than an error.
+		if errors.Is(err, insights.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.RecommendationToModel(*recommendation), nil
 }
 
 // Catalog is the resolver for the catalog field.
@@ -621,12 +698,16 @@ func (r *mutationResolver) UpsertInsightsGuardrail(ctx context.Context, guardrai
 }
 
 // DeleteInsightsGuardrail is the resolver for the deleteInsightsGuardrail field.
-func (r *mutationResolver) DeleteInsightsGuardrail(ctx context.Context, scopeKey string) (bool, error) {
+func (r *mutationResolver) DeleteInsightsGuardrail(ctx context.Context, scopeKey string, scope *model.InsightsPolicyScope) (bool, error) {
 	client, err := r.insightsClient(ctx)
 	if err != nil {
 		return false, err
 	}
-	if err := client.DeleteGuardrail(ctx, scopeKey); err != nil {
+	policyScope := insights.PolicyScope("service")
+	if scope != nil {
+		policyScope = insights.PolicyScopeFromModel(*scope)
+	}
+	if err := client.DeleteGuardrail(ctx, policyScope, scopeKey); err != nil {
 		return false, insights.GraphQLError(ctx, err)
 	}
 	return true, nil
@@ -704,6 +785,141 @@ func (r *mutationResolver) UpdateInsightsSystemSettings(ctx context.Context, set
 		return nil, insights.GraphQLError(ctx, err)
 	}
 	return insights.SystemSettingsToModel(stored), nil
+}
+
+// ApplyInsightsRecommendations is the resolver for the applyInsightsRecommendations field.
+func (r *mutationResolver) ApplyInsightsRecommendations(ctx context.Context, items []*model.InsightsRecommendationApplyItemInput) (*model.InsightsRecommendationBulkResult, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.ApplyRecommendations(ctx, insights.RecommendationApplyItemsFromInput(items))
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.RecommendationBulkResultToModel(*result), nil
+}
+
+// DismissInsightsRecommendations is the resolver for the dismissInsightsRecommendations field.
+func (r *mutationResolver) DismissInsightsRecommendations(ctx context.Context, ids []string) (*model.InsightsRecommendationBulkResult, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.DismissRecommendations(ctx, ids)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.RecommendationBulkResultToModel(*result), nil
+}
+
+// RestoreInsightsRecommendations is the resolver for the restoreInsightsRecommendations field.
+func (r *mutationResolver) RestoreInsightsRecommendations(ctx context.Context, ids []string) (*model.InsightsRecommendationBulkResult, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.RestoreRecommendations(ctx, ids)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.RecommendationBulkResultToModel(*result), nil
+}
+
+// RevertInsightsRecommendations is the resolver for the revertInsightsRecommendations field.
+func (r *mutationResolver) RevertInsightsRecommendations(ctx context.Context, ids []string) (*model.InsightsRecommendationBulkResult, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.RevertRecommendations(ctx, ids)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.RecommendationBulkResultToModel(*result), nil
+}
+
+// PreviewInsightsRecommendation is the resolver for the previewInsightsRecommendation field.
+func (r *mutationResolver) PreviewInsightsRecommendation(ctx context.Context, transactionID string, spec model.InsightsCorrelationSpecInput) (*model.InsightsRecommendationPreview, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	preview, err := client.PreviewRecommendation(ctx, id, insights.CorrelationSpecFromInput(spec))
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.RecommendationPreviewToModel(*preview), nil
+}
+
+// RecomputeInsightsRecommendations is the resolver for the recomputeInsightsRecommendations field.
+func (r *mutationResolver) RecomputeInsightsRecommendations(ctx context.Context, transactionID *string, namespace *string, service *string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	// Omitted id means "sweep every promoted transaction with unmined samples
+	// and every fully-learned service", which the engine spells as 0.
+	var id int64
+	if transactionID != nil {
+		parsed, parseErr := insights.ParseID(*transactionID)
+		if parseErr != nil {
+			return false, insights.GraphQLError(ctx, parseErr)
+		}
+		id = parsed
+	}
+	request := insights.RecommendationRecomputeRequest{TransactionID: id}
+	if namespace != nil {
+		request.Namespace = strings.TrimSpace(*namespace)
+	}
+	if service != nil {
+		request.Service = strings.TrimSpace(*service)
+	}
+	// Rejected here rather than at the engine so the caller gets one clear
+	// message. A namespace without a service is a 400 upstream, and a service
+	// without its namespace is worse: the engine accepts it, then fails the
+	// background run looking for a service called "/<name>".
+	switch {
+	case request.TransactionID != 0 && (request.Namespace != "" || request.Service != ""):
+		return false, insights.GraphQLError(ctx, fmt.Errorf("%w: pass either transactionId or namespace and service, not both", insights.ErrBadRequest))
+	case request.Namespace != "" && request.Service == "":
+		return false, insights.GraphQLError(ctx, fmt.Errorf("%w: service is required with namespace", insights.ErrBadRequest))
+	case request.Service != "" && request.Namespace == "":
+		return false, insights.GraphQLError(ctx, fmt.Errorf("%w: namespace is required with service", insights.ErrBadRequest))
+	}
+	if err := client.RecomputeRecommendations(ctx, request); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
+// CreateInsightsIntegration is the resolver for the createInsightsIntegration field.
+func (r *mutationResolver) CreateInsightsIntegration(ctx context.Context, integration model.InsightsIntegrationInput) (*model.InsightsIntegration, error) {
+	return r.resolveCreateInsightsIntegration(ctx, integration)
+}
+
+// UpdateInsightsIntegration is the resolver for the updateInsightsIntegration field.
+func (r *mutationResolver) UpdateInsightsIntegration(ctx context.Context, id string, integration model.InsightsIntegrationInput) (*model.InsightsIntegration, error) {
+	return r.resolveUpdateInsightsIntegration(ctx, id, integration)
+}
+
+// DeleteInsightsIntegration is the resolver for the deleteInsightsIntegration field.
+func (r *mutationResolver) DeleteInsightsIntegration(ctx context.Context, id string) (bool, error) {
+	return r.resolveDeleteInsightsIntegration(ctx, id)
+}
+
+// TestInsightsIntegration is the resolver for the testInsightsIntegration field.
+func (r *mutationResolver) TestInsightsIntegration(ctx context.Context, id string) (bool, error) {
+	return r.resolveTestInsightsIntegration(ctx, id)
+}
+
+// RetryInsightsIntegrationDeliveries is the resolver for the retryInsightsIntegrationDeliveries field.
+func (r *mutationResolver) RetryInsightsIntegrationDeliveries(ctx context.Context, id string, findingKeys []string) (bool, error) {
+	return r.resolveRetryInsightsIntegrationDeliveries(ctx, id, findingKeys)
 }
 
 // Insights is the resolver for the insights field.

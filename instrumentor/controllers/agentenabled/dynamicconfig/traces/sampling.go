@@ -263,6 +263,9 @@ func CalculateSamplingCategoryRulesForContainer(samplingRules *[]odigosv1.Sampli
 	for _, samplingRule := range *samplingRules {
 		// Filter and convert NoisyOperations, HighlyRelevantOperations, CostReductionRules.
 		// Exclude SourceScopes and Notes from the rules because we want the instrumentationConfig to be more lightweight.
+		// Disabled rules are intentionally not filtered out. They are forwarded to the sampler (agent head
+		// sampling or collector tail sampling), which skips them for sampling decisions but still records
+		// metrics so they can be monitored.
 
 		for _, noisyOp := range samplingRule.Spec.NoisyOperations {
 			if scope.SourceScopeMatchesContainer(noisyOp.SourceScopes, pw, language) {

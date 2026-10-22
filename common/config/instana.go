@@ -35,7 +35,7 @@ func (m *Instana) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"x-instana-key": "${INSTANA_AGENT_KEY}",
+			"x-instana-key": SecretEnvPlaceholder("INSTANA_AGENT_KEY", dest),
 		},
 	}
 

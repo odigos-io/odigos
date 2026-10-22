@@ -2,6 +2,7 @@ package pipelinegen
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -66,9 +67,6 @@ type GatewayConfigOptions struct {
 	// for the OTLP exporter added to metrics/servicegraph; the exporter uses
 	// round_robin so traffic fans out across insights replicas.
 	InsightsOtlpEndpoint string
-
-	// Trace correlations configuration for the serviceio connector (service I/O metrics).
-	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
 }
 
 func GetGatewayConfig(
@@ -133,13 +131,9 @@ func CalculateGatewayConfig(
 	// Configure processors
 	processorsResults := config.CrdProcessorToConfig(processors)
 	if len(processorsResults.Errs) != 0 {
-		for processorKey, err := range processorsResults.Errs {
-			status.Processor[processorKey] = err
-		}
+		maps.Copy(status.Processor, processorsResults.Errs)
 	}
-	for processorKey, processorCfg := range processorsResults.ProcessorsConfig.Processors {
-		currentConfig.Processors[processorKey] = processorCfg
-	}
+	maps.Copy(currentConfig.Processors, processorsResults.ProcessorsConfig.Processors)
 
 	if traceAggregationNeeded(gatewayOptions) {
 		ensureGroupByTraceProcessor(currentConfig, &processorsResults, gatewayOptions)
@@ -234,9 +228,7 @@ func CalculateGatewayConfig(
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
 	dataStreamPipelines := buildDataStreamPipelines(dataStreamsDetails, destForwardConnectors)
-	for name, pipe := range dataStreamPipelines {
-		currentConfig.Service.Pipelines[name] = pipe
-	}
+	maps.Copy(currentConfig.Service.Pipelines, dataStreamPipelines)
 
 	// Create root pipelines for each signal and connectors
 	tracesPostForwardProcessors := processorsResults.TracesProcessorsPostSpanMetrics
@@ -266,9 +258,6 @@ func CalculateGatewayConfig(
 	// - ClusterMetricsEnabled: assume false (disabled) if nil
 	if tracesEnabled && (gatewayOptions.ServiceGraph.Disabled == nil || !*gatewayOptions.ServiceGraph.Disabled) {
 		insertServiceGraphPipeline(currentConfig, gatewayOptions)
-	}
-	if tracesEnabled {
-		insertTraceCorrelationsServiceIOPipeline(currentConfig, gatewayOptions)
 	}
 	if metricsEnabled && gatewayOptions.ClusterMetricsEnabled != nil && *gatewayOptions.ClusterMetricsEnabled {
 		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
@@ -535,66 +524,6 @@ func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *Ga
 	currentConfig.Service.Pipelines[tracesPipelineName] = pipeline
 }
 
-func insertTraceCorrelationsServiceIOPipeline(currentConfig *config.Config, gatewayOptions *GatewayConfigOptions) {
-	cfg := gatewayOptions.TraceCorrelationsServiceIO
-	if !common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
-		ServiceIO: cfg,
-	}) {
-		return
-	}
-
-	connectorCfg := config.GenericMap{}
-	if len(cfg.InputSpanAttributes) > 0 {
-		connectorCfg["input_span_attributes"] = cfg.InputSpanAttributes
-	}
-	if len(cfg.OutputSpanAttributes) > 0 {
-		connectorCfg["output_span_attributes"] = cfg.OutputSpanAttributes
-	}
-	if cfg.MetricsFlushInterval != "" {
-		connectorCfg["metrics_flush_interval"] = cfg.MetricsFlushInterval
-	}
-	if gatewayOptions.OdigosConfigExtensionName != nil {
-		connectorCfg["odigos_config_extension"] = *gatewayOptions.OdigosConfigExtensionName
-	}
-
-	currentConfig.Connectors[consts.ServiceIOConnectorName] = connectorCfg
-
-	exporterName := consts.TraceCorrelationsVictoriaMetricsExporterName
-	currentConfig.Exporters[exporterName] = traceCorrelationsVictoriaMetricsExporter(gatewayOptions.OdigosNamespace)
-
-	currentConfig.Service.Pipelines[consts.TraceCorrelationsMetricsPipelineName] = config.Pipeline{
-		Receivers: []string{consts.ServiceIOConnectorName},
-		Exporters: []string{exporterName},
-	}
-
-	tracesInPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
-	pipeline, exists := currentConfig.Service.Pipelines[tracesInPipelineName]
-	if !exists {
-		return
-	}
-	if !slices.Contains(pipeline.Exporters, consts.ServiceIOConnectorName) {
-		pipeline.Exporters = append(pipeline.Exporters, consts.ServiceIOConnectorName)
-	}
-	currentConfig.Service.Pipelines[tracesInPipelineName] = pipeline
-}
-
-func traceCorrelationsVictoriaMetricsExporter(odigosNamespace string) config.GenericMap {
-	endpoint := fmt.Sprintf(
-		"http://%s.%s:8428/opentelemetry",
-		consts.TraceCorrelationsMetricsServiceName,
-		odigosNamespace,
-	)
-	return config.GenericMap{
-		"endpoint": endpoint,
-		"retry_on_failure": config.GenericMap{
-			"enabled": false,
-		},
-		"tls": config.GenericMap{
-			"insecure": true,
-		},
-	}
-}
-
 func GetBasicConfig() *config.Config {
 	return &config.Config{
 		Connectors: config.GenericMap{},
@@ -642,7 +571,7 @@ func GetBasicConfig() *config.Config {
 				"endpoint": "0.0.0.0:1777",
 			},
 		},
-		Exporters: map[string]interface{}{},
+		Exporters: map[string]any{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
 			Extensions: []string{"health_check", "pprof"},
@@ -727,12 +656,6 @@ const defaultTraceAggregationWaitDuration = "30s"
 
 func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
 	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled {
-		return true
-	}
-
-	if common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
-		ServiceIO: gatewayOptions.TraceCorrelationsServiceIO,
-	}) {
 		return true
 	}
 

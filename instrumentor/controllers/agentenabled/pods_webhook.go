@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,6 +15,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -21,7 +23,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -29,6 +30,7 @@ import (
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -38,8 +40,8 @@ type PodsWebhook struct {
 	client.Client
 	DistrosGetter *distros.Getter
 	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
-	Decoder     admission.Decoder
-	WaspMutator func(*corev1.Pod, common.OdigosConfiguration) error
+	Decoder    admission.Decoder
+	K8sVersion *version.Version
 }
 
 var _ admission.Handler = &PodsWebhook{}
@@ -73,7 +75,7 @@ var (
 // If injection fails for any reason, the webhook returns an Allowed response with no changes,
 // ensuring user workloads are never blocked by instrumentation logic.
 func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	var pod corev1.Pod
 	if err := p.Decoder.Decode(req, &pod); err != nil {
@@ -108,7 +110,7 @@ func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admissi
 }
 
 func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req admission.Request) error {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	odigosNamespace := env.GetCurrentNamespace()
 
@@ -176,7 +178,6 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	}
 
 	volumeMounted := false
-	waspSupported := false
 
 	dirsToCopy := make(map[string]struct{})
 	for i := range pod.Spec.Containers {
@@ -203,10 +204,6 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			return err
 		}
 
-		if distroMetadata.RuntimeAgent != nil && distroMetadata.RuntimeAgent.WaspSupported {
-			waspSupported = true
-		}
-
 		volumeMounted = volumeMounted || containerVolumeMounted
 		dirsToCopy = mergeMaps(dirsToCopy, containerDirsToCopy)
 	}
@@ -222,19 +219,19 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		if len(dirsToCopy) > 0 {
 			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
 			createInitContainer(pod, dirsToCopy, odigosConfiguration)
+			// Pre-pull on odiglet is enough below 1.35. From 1.35 kubelet re-verifies
+			// credentials for cached images, so instrumented pods need the secret names.
+			if shouldInjectInitContainerPullSecrets(p.K8sVersion) {
+				for _, name := range odigosConfiguration.ImagePullSecrets {
+					injectImagePullSecret(pod, name)
+				}
+			}
 		}
 	}
 
 	if mountMethod == common.K8sCsiDriverMountMethod && volumeMounted {
 		// Use CSI driver for volume mounting
 		podswebhook.MountPodVolumeToCSI(pod)
-	}
-
-	if odigosConfiguration.WaspEnabled != nil && *odigosConfiguration.WaspEnabled && waspSupported && p.WaspMutator != nil {
-		err = p.WaspMutator(pod, odigosConfiguration)
-		if err != nil {
-			return fmt.Errorf("failed to do wasp mutation: %w", err)
-		}
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
@@ -255,9 +252,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 }
 
 func mergeMaps[T any](a, b map[string]T) map[string]T {
-	for k, v := range b {
-		a[k] = v
-	}
+	maps.Copy(a, b)
 	return a
 }
 
@@ -285,7 +280,7 @@ func (p *PodsWebhook) podWorkload(pod *corev1.Pod, req admission.Request) (*k8sc
 }
 
 func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
@@ -352,7 +347,8 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
 		tracesEnabled := containerConfig.Traces != nil
 		metricsEnabled := containerConfig.Metrics != nil
-		logsEnabled := containerConfig.Logs != nil
+		// eBPF log capture reads stdout/stderr, so it must not turn on SDK log export.
+		logsEnabled := containerConfig.Logs != nil && containerConfig.Logs.EbpfLogCapture == nil
 		existingEnvNames = podswebhook.InjectSignalsAsStaticOtelEnvVars(existingEnvNames, podContainerSpec, tracesEnabled, metricsEnabled, logsEnabled)
 	}
 	if distroMetadata.OwnDiagnostics != nil {
@@ -425,6 +421,17 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			return false, nil, fmt.Errorf("failed to marshal custom instrumentations config: %w", err)
 		}
 		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, k8sconsts.OdigosPhpAgentCustomInstrumentationsEnvVar, string(customInstrumentationsConfigJson))
+	}
+
+	// Payload collection configuration (native agents that receive config via env vars)
+	payloadCollectionEnabled := containerConfig.Traces != nil && containerConfig.Traces.PayloadCollection != nil
+	supportsPayloadCollection := distroMetadata.Traces != nil && distroMetadata.Traces.PayloadCollection != nil && distroMetadata.Traces.PayloadCollection.Supported
+	if payloadCollectionEnabled && supportsPayloadCollection && distroMetadata.ConfigAsEnvVars {
+		payloadCollectionConfigJson, err := json.Marshal(containerConfig.Traces.PayloadCollection)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to marshal payload collection config: %w", err)
+		}
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, k8sconsts.OdigosAgentPayloadCollectionEnvVar, string(payloadCollectionConfigJson))
 	}
 
 	volumeMounted := false
@@ -557,6 +564,22 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 		}
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
+}
+
+func shouldInjectInitContainerPullSecrets(k8sVersion *version.Version) bool {
+	return k8sVersion != nil && k8sVersion.AtLeast(k8sconsts.MinK8SVersionForInitContainerPullSecrets)
+}
+
+func injectImagePullSecret(pod *corev1.Pod, secretName string) {
+	if secretName == "" {
+		return
+	}
+	for _, existing := range pod.Spec.ImagePullSecrets {
+		if existing.Name == secretName {
+			return
+		}
+	}
+	pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secretName})
 }
 
 func getInitContainerImage(config common.OdigosConfiguration) string {

@@ -10,9 +10,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/recommendations"
@@ -20,13 +20,8 @@ import (
 
 // ApplyRecommendationRemediation looks up the remediation in the catalog manifest and applies
 // its steps (EditConfig to odigos-local-ui-config, ApplyOdigosAction from applyExamples).
-func ApplyRecommendationRemediation(ctx context.Context, c client.Client, recommendationType model.RecommendationType, remediationType string) error {
-	catalogType, err := toCommonRecommendationType(recommendationType)
-	if err != nil {
-		return err
-	}
-
-	catalog, ok := recommendations.GetByType(catalogType)
+func ApplyRecommendationRemediation(ctx context.Context, c client.Client, recommendationType string, remediationType string) error {
+	catalog, ok := recommendations.GetByType(common.RecommendationType(recommendationType))
 	if !ok {
 		return fmt.Errorf("recommendation type %q not found in catalog", recommendationType)
 	}
@@ -47,7 +42,7 @@ func ApplyRecommendationRemediation(ctx context.Context, c client.Client, recomm
 
 	if len(configSteps) > 0 {
 		var applyErr error
-		err = upsertLocalUiConfig(ctx, c, func(cfg *common.OdigosConfiguration) {
+		err := upsertLocalUiConfig(ctx, c, func(cfg *common.OdigosConfiguration) {
 			applyErr = recommendations.ApplyStepsToConfig(cfg, configSteps)
 		})
 		if err != nil {
@@ -85,6 +80,11 @@ func applyOdigosActionStep(ctx context.Context, remediation recommendations.Reme
 		return fmt.Errorf("OdigosAction YAML metadata.name is required")
 	}
 	action.Namespace = env.GetCurrentNamespace()
+	// Mark as UI-managed so the action stays editable from the UI, same as actions created via CreateAction.
+	if action.Labels == nil {
+		action.Labels = map[string]string{}
+	}
+	action.Labels[k8sconsts.OdigosProfilesManagedByLabel] = k8sconsts.OdigosUIManagedByValue
 
 	_, err := kube.DefaultClient.OdigosClient.Actions(action.Namespace).Create(ctx, &action, metav1.CreateOptions{})
 	if err != nil {
@@ -94,21 +94,4 @@ func applyOdigosActionStep(ctx context.Context, remediation recommendations.Reme
 		return fmt.Errorf("create Action %q: %w", action.Name, err)
 	}
 	return nil
-}
-
-func toCommonRecommendationType(t model.RecommendationType) (common.RecommendationType, error) {
-	switch t {
-	case model.RecommendationTypeInferDBAttributes:
-		return common.RecommendationTypeInferDBAttributes, nil
-	case model.RecommendationTypeAutoGoOffsetUpdater:
-		return common.RecommendationTypeAutoGoOffsetUpdater, nil
-	case model.RecommendationTypeEnableOwnMetrics:
-		return common.RecommendationTypeEnableOwnMetrics, nil
-	case model.RecommendationTypeSampleHealthProbes:
-		return common.RecommendationTypeSampleHealthProbes, nil
-	case model.RecommendationTypeURLTemplatization:
-		return common.RecommendationTypeUrlTemplatization, nil
-	default:
-		return "", fmt.Errorf("unknown recommendation type %q", t)
-	}
 }

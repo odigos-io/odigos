@@ -124,13 +124,6 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
 	TracesMap *cilumebpf.Map
 
-	// MetricsMap is the optional common eBPF map that is used to read metrics per Java process at each interval.
-	MetricsMap *cilumebpf.Map
-
-	// MetricsAttributesMap is the optional eBPF Hash map for UUID -> packed resource attributes.
-	// Used alongside MetricsMap to store resource attributes separately from the metrics hash key.
-	MetricsAttributesMap *cilumebpf.Map
-
 	// Logger is optional. When set, the manager uses it; otherwise it uses commonlogger.LoggerCompat().With("subsystem", "ebpfmanager").
 	Logger *commonlogger.OdigosLogger
 
@@ -174,10 +167,8 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 
 	metrics *managerMetrics
 
-	tracesMap            *cilumebpf.Map
-	metricsMap           *cilumebpf.Map
-	metricsAttributesMap *cilumebpf.Map
-	logsMap              *cilumebpf.Map
+	tracesMap *cilumebpf.Map
+	logsMap   *cilumebpf.Map
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -231,8 +222,6 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		requests:              options.InstrumentationRequests,
 		metrics:               managerMetrics,
 		tracesMap:             options.TracesMap,
-		metricsMap:            options.MetricsMap,
-		metricsAttributesMap:  options.MetricsAttributesMap,
 		logsMap:               options.LogsMap,
 	}, nil
 }
@@ -580,11 +569,6 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	settings.TracesMap = ReaderMap{
 		Map:            m.tracesMap,
 		ExternalReader: m.tracesMap != nil,
-	}
-
-	settings.MetricsMap = MetricsMap{
-		HashMapOfMaps: m.metricsMap,
-		AttributesMap: m.metricsAttributesMap,
 	}
 
 	settings.LogsMap = ReaderMap{

@@ -13,9 +13,9 @@ type pyroscopeTestDest struct {
 	signal []common.ObservabilitySignal
 }
 
-func (d pyroscopeTestDest) GetID() string                              { return d.id }
-func (d pyroscopeTestDest) GetType() common.DestinationType            { return common.PyroscopeDestinationType }
-func (d pyroscopeTestDest) GetConfig() map[string]string               { return d.cfg }
+func (d pyroscopeTestDest) GetID() string                   { return d.id }
+func (d pyroscopeTestDest) GetType() common.DestinationType { return common.PyroscopeDestinationType }
+func (d pyroscopeTestDest) GetConfig() map[string]string    { return d.cfg }
 func (d pyroscopeTestDest) GetSignals() []common.ObservabilitySignal {
 	return d.signal
 }

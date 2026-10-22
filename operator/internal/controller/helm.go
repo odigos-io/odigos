@@ -41,9 +41,11 @@ import (
 // RELATED_IMAGE_* environment variable names used in OpenShift operator deployments.
 // These env vars contain the full image URLs for certified container images.
 var relatedImageEnvVars = map[string]string{
+	"agents":                  "RELATED_IMAGE_AGENTS",
 	"autoscaler":              "RELATED_IMAGE_AUTOSCALER",
 	"cli":                     "RELATED_IMAGE_CLI",
 	"collector":               "RELATED_IMAGE_COLLECTOR",
+	"enterprise-agents":       "RELATED_IMAGE_ENTERPRISE_AGENTS",
 	"enterprise-collector":    "RELATED_IMAGE_ENTERPRISE_COLLECTOR",
 	"ui":                      "RELATED_IMAGE_FRONTEND",
 	"instrumentor":            "RELATED_IMAGE_INSTRUMENTOR",
@@ -51,7 +53,6 @@ var relatedImageEnvVars = map[string]string{
 	"enterprise-ui":           "RELATED_IMAGE_ENTERPRISE_UI",
 	"odiglet":                 "RELATED_IMAGE_ODIGLET",
 	"enterprise-odiglet":      "RELATED_IMAGE_ENTERPRISE_ODIGLET",
-	"scheduler":               "RELATED_IMAGE_SCHEDULER",
 }
 
 // restClientGetter implements genericclioptions.RESTClientGetter using an existing rest.Config.

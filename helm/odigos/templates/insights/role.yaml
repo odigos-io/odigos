@@ -12,4 +12,9 @@ rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get"]
+  # Singleton jobs (findings notifier, recommendation sweeps) run on exactly one
+  # replica, elected through a Lease (odigos-insights-leader).
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update"]
 {{- end }}

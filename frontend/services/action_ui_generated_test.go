@@ -5,6 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,6 +39,7 @@ func TestConvertActionToModelReportsUiGenerated(t *testing.T) {
 	modelAction, err := convertActionToModel(action)
 	require.NoError(t, err)
 	require.True(t, modelAction.UIGenerated)
+	require.Equal(t, model.ManagedByOdigosUI, modelAction.ManagedBy)
 
 	yamlAction := &v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{Name: "action-yaml"},
@@ -45,4 +47,5 @@ func TestConvertActionToModelReportsUiGenerated(t *testing.T) {
 	modelYaml, err := convertActionToModel(yamlAction)
 	require.NoError(t, err)
 	require.False(t, modelYaml.UIGenerated)
+	require.Equal(t, model.ManagedByUnknown, modelYaml.ManagedBy)
 }

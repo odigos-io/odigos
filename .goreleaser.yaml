@@ -30,6 +30,18 @@ archives:
       - none*
 checksum:
   name_template: "checksums.txt"
+# Keyless-sign the checksum file; the sigstore bundle is uploaded to the
+# GitHub release by default alongside the artifact it signs.
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - --yes
+      - --bundle
+      - ${signature}
+      - ${artifact}
+    artifacts: checksum
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 changelog:
@@ -40,6 +52,9 @@ changelog:
       - "^test:"
 release:
   prerelease: "auto"
+  # Re-running Release Odigos for an already-published tag used to 422 on
+  # already-uploaded archives. Delete the matching asset and retry the upload.
+  replace_existing_artifacts: true
 brews:
   - repository:
       owner: odigos-io

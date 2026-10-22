@@ -1,7 +1,7 @@
 package traces
 
 import (
-	"sort"
+	"slices"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -63,9 +63,7 @@ func CalculatePiiMaskingConfig(agentLevelActions *[]odigosv1.Action, language co
 		return nil
 	}
 
-	sort.Slice(cfg.PiiCategories, func(i, j int) bool {
-		return cfg.PiiCategories[i] < cfg.PiiCategories[j]
-	})
+	slices.Sort(cfg.PiiCategories)
 
 	return &cfg
 }

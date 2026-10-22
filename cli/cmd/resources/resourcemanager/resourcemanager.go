@@ -28,7 +28,6 @@ type ImageReferences struct {
 	InstrumentorImage   string
 	OdigletImage        string
 	KeyvalProxyImage    string
-	SchedulerImage      string
 	UIImage             string
 	CentralProxyImage   string
 	CentralBackendImage string

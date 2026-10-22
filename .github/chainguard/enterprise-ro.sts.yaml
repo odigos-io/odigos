@@ -1,5 +1,5 @@
 issuer: https://token.actions.githubusercontent.com
-subject_pattern: '^repo:odigos-io/odigos-enterprise:(pull_request|ref:.*)$'
+subject_pattern: '^repo:odigos-io(@84347062)?/odigos-enterprise(@683608086)?:(pull_request|ref:.*)$'
 
 permissions:
   contents: read

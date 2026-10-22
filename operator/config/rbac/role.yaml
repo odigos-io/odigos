@@ -150,6 +150,7 @@ rules:
   - apiservices
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
@@ -218,6 +219,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - argoproj.io
+  resources:
+  - rollouts/finalizers
+  verbs:
+  - update
+- apiGroups:
   - autoscaling
   resources:
   - horizontalpodautoscalers
@@ -241,6 +248,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs/finalizers
+  - jobs/finalizers
+  verbs:
+  - update
 - apiGroups:
   - batch
   resources:
@@ -320,6 +334,7 @@ rules:
 - apiGroups:
   - odigos.io
   resources:
+  - odigoscloudconnectors
   - recommendations
   - sampling
   verbs:

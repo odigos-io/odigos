@@ -35,6 +35,9 @@ kind: Application
 metadata:
   name: odigos
   namespace: <ARGOCD_NAMESPACE>  # <- Replace with your Argo CD namespace
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io/foreground  # <- # Cascade-delete managed resources when the Application is deleted (otherwise only the Application CR is removed).
+
 spec:
   project: default
   source:
@@ -50,12 +53,20 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: <ODIGOS_NAMESPACE>  # <- Replace with the desired namespace where you want Odigos to be installed
+  # Chart regenerates odigos-deployment-id on every Argo render; ignore it to avoid OutOfSync flaps.
+  ignoreDifferences:
+    - kind: ConfigMap
+      name: odigos-deployment
+      jsonPointers:
+        - /data/odigos-deployment-id
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # Without this, sync still overwrites ignored fields from the rendered manifest.
+      - RespectIgnoreDifferences=true
 ```
 
 ## Step 4: Apply the Application

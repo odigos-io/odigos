@@ -4,109 +4,26 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-scheduler
     odigos.io/system-object: "true"
-  name: {{ .Values.scheduler.deploymentName | default "odigos-scheduler" }}
+  name: odigos-scheduler
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: odigos-scheduler
   template:
     metadata:
-      annotations:
-        kubectl.kubernetes.io/default-container: manager
       labels:
         app.kubernetes.io/name: odigos-scheduler
     spec:
-      {{- if .Values.scheduler.nodeSelector }}
-      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
-      nodeSelector:
-      {{- toYaml .Values.scheduler.nodeSelector | nindent 8 }}
-      {{- else if .Values.nodeSelector }}
-      # Global nodeSelector from values.yaml
-      nodeSelector:
-      {{- toYaml .Values.nodeSelector | nindent 8 }}
-      {{- end }}
-      {{- if .Values.topologySpreadConstraints }}
-      topologySpreadConstraints:
-        {{- range .Values.topologySpreadConstraints }}
-        - maxSkew: {{ .maxSkew }}
-          topologyKey: {{ .topologyKey | quote }}
-          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: odigos-scheduler
-        {{- end }}
-      {{- end }}
-      {{- if .Values.scheduler.priorityClassName }}
-      priorityClassName: {{ .Values.scheduler.priorityClassName }}
-      {{- end }}
       containers:
-      - args:
-          - --health-probe-bind-address=:8081
-          - --metrics-bind-address=0.0.0.0:8080
-          - --leader-elect
-        command:
-          - /app
+      - name: manager
         {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
         image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "scheduler" "Tag" $imageTag) }}
-        env:
-          {{- if .Values.scheduler.deploymentName }}
-          - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
-            value: {{ .Values.scheduler.deploymentName | quote }}
-          {{- end }}
-          - name: OTEL_SERVICE_NAME
-            value: scheduler
-          - name: CURRENT_NS
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: ODIGOS_LOG_LEVEL
-            value: {{ .Values.scheduler.logLevel | default .Values.logLevel | default "info" | quote }}
-          - name: ODIGOS_TIER
-            valueFrom:
-              configMapKeyRef:
-                key: ODIGOS_TIER
-                name: odigos-deployment
-          - name: ODIGOS_VERSION
-            valueFrom:
-              configMapKeyRef:
-                key: ODIGOS_VERSION
-                name: odigos-deployment
-          - name: GOMEMLIMIT
-            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.scheduler.resources) }}
-        envFrom:
-          - configMapRef:
-              name: odigos-own-telemetry-otel-config
-              optional: true
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-          timeoutSeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          periodSeconds: 10
-          timeoutSeconds: 5
-        name: manager
-        resources:
-{{ toYaml .Values.scheduler.resources | indent 10 }}
         securityContext:
           allowPrivilegeEscalation: false
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: odigos-scheduler
+      automountServiceAccountToken: false
       terminationGracePeriodSeconds: 10
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
-{{- with .Values.scheduler }}
-  {{- if .tolerations }}
-      tolerations: {{ toYaml .tolerations | nindent 8 }}
-  {{- end }}
-  {{- if .affinity }}
-      affinity: {{ toYaml .affinity | nindent 8 }}
-  {{- end }}
-{{- end }}

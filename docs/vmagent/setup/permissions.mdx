@@ -1,0 +1,320 @@
+---
+title: "Linux Permissions"
+sidebarTitle: "Permissions"
+description: "Capabilities, Linux groups, and polkit rules the Odigos VM Agent needs when it runs as the unprivileged odigos user."
+---
+
+By default the VM Agent runs as the unprivileged `odigos` user, not as root. It still needs a small, fixed set of Linux capabilities, and — depending on which sources you instrument — membership in a few host groups. This page covers what is granted out of the box, why, and how to change it.
+
+<Info>
+  Root-mode installs (`ODIGOS_AGENT_USER_MODE=root`) already have every privilege. Skip this page unless you are tightening a non-root install or switching a host to non-root. See [Installation](/vmagent/setup/installation#root-and-non-root).
+</Info>
+
+## Linux capabilities
+
+The packaged drop-in `/etc/systemd/system/odigos-vmagent.service.d/nonroot.conf` grants the same capability set on every distribution that can run non-root.
+
+```ini
+AmbientCapabilities=CAP_SYS_ADMIN CAP_SYS_PTRACE CAP_DAC_READ_SEARCH CAP_SYSLOG CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_NET_RAW CAP_NET_ADMIN CAP_SETUID CAP_SETGID
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_SYS_PTRACE CAP_DAC_READ_SEARCH CAP_SYSLOG CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_NET_RAW CAP_NET_ADMIN CAP_SETUID CAP_SETGID
+```
+
+Ambient capabilities are inherited by child processes, so they also cover `odigos-otelcol` when the non-root agent runs it as a child.
+
+| Capability | Why the agent needs it |
+|---|---|
+| `CAP_SYS_ADMIN` | Load eBPF programs, call `perf_event_open` (uprobes and profiling), and read `/proc/<pid>/exe`. Covers the finer `CAP_BPF` / `CAP_PERFMON` / `CAP_CHECKPOINT_RESTORE` bits that `capabilities(7)` still attributes to it. |
+| `CAP_SYS_PTRACE` | Discover and instrument processes owned by other users. |
+| `CAP_DAC_READ_SEARCH` | Read root-owned `/sys/kernel/tracing` and other DAC-restricted `/proc` paths. Without it, process discovery fails and the `odictl` Sources list stays empty. |
+| `CAP_SYSLOG` | Read `/proc/kallsyms` addresses when `kptr_restrict=1` (the Debian/Ubuntu default), needed to resolve kernel symbols. |
+| `CAP_CHOWN` | Hand `odigos-otelcol` secret and log files to the `odigos` user. |
+| `CAP_DAC_OVERRIDE` | Write root-owned host files such as `/etc/ld.so.preload` (dynamic-loader instrumentation). |
+| `CAP_FOWNER` | Replace root-owned scratch left by an earlier root-mode agent in sticky (`1777`) directories: `/tmp/keeplist` and each container's `/tmp/ebpf-java-*-dynamic.json`. Only the owner may unlink or rename there; `CAP_DAC_OVERRIDE` does not lift that rule. |
+| `CAP_NET_RAW` | Open the `AF_PACKET` socket the eBPF instrumenter binds its socket filter to. Dropping this is not a partial loss: the instrumenter's pipelines share one error group, so it exits at startup and **no** eBPF traces are produced. `CAP_SYS_ADMIN` does not substitute for this. |
+| `CAP_NET_ADMIN` | Attach the TC programs that carry trace context across hops (TCP-option propagation). |
+| `CAP_SETUID` + `CAP_SETGID` | Match a target JVM's credentials for HotSpot dynamic attach, which the JVM accepts only from an identical euid/egid. Dropping them leaves JVMs owned by other users (including all containerized ones) instrumentable only by restarting them. If you choose to remove this capability, also set `use_dynamic_attach=false` in the VM Agent configuration (see [Configuration Sections](/vmagent/setup/configuration/odictl#configuration-sections)). |
+
+<Info>
+  The installer does **not** pick capabilities from `kernel.perf_event_paranoid`, and it never assigns `CAP_BPF`, `CAP_PERFMON`, or `CAP_CHECKPOINT_RESTORE`.
+</Info>
+
+<Note>
+  Provisioning `/var/exchange` still needs root. The drop-in handles that with `ExecStartPre=+/usr/bin/install ...` (the `+` prefix runs that line as root regardless of `User=odigos`).
+</Note>
+
+### Why `CAP_SYS_ADMIN` on every distro
+
+The capability **list** does not change between RHEL and Debian. `CAP_SYS_ADMIN` is always included because the narrower bits are not enough on the kernels and sysctl defaults these distributions ship:
+
+<Tabs>
+  <Tab title="RHEL / Rocky / Fedora">
+    | Distro | Typical kernel | Why `CAP_SYS_ADMIN` |
+    |---|---|---|
+    | RHEL 7, CentOS 7, Amazon Linux 2 | 3.10 / 4.14 | **Non-root is not available.** systemd is older than 229, so `AmbientCapabilities=` does not exist. The installer forces root even if you request non-root. Confirm with `/usr/lib/odigos/bin/odigos-vmagent-caps --explain`. |
+    | RHEL 8, Rocky 8 | 4.18 | `CAP_BPF` and `CAP_PERFMON` do not exist until Linux 5.8. eBPF load and `perf_event_open` still require `CAP_SYS_ADMIN`. |
+    | RHEL 9, Rocky 9, Amazon Linux 2023 | 5.14+ | The finer bits exist, but `capabilities(7)` still attributes those operations to `CAP_SYS_ADMIN`, and `perf_event_open` often still needs it. The package therefore grants `CAP_SYS_ADMIN` rather than `CAP_BPF` / `CAP_PERFMON`. |
+  </Tab>
+  <Tab title="Debian / Ubuntu">
+    | Distro | Typical kernel | Why `CAP_SYS_ADMIN` |
+    |---|---|---|
+    | Debian 11–13, Ubuntu 20.04 and later | 5.4+ | The default `kernel.perf_event_paranoid` is `3` or `4`. That sysctl requires `CAP_SYS_ADMIN` for `perf_event_open` (uprobes and profiling) even when `CAP_PERFMON` is present. Debian/Ubuntu also set `kptr_restrict=1`, which is why `CAP_SYSLOG` is in the set. |
+  </Tab>
+</Tabs>
+
+Inspect what the helper decided on this host:
+
+```shell
+/usr/lib/odigos/bin/odigos-vmagent-caps --explain
+```
+
+### Override, add, or remove capabilities
+
+<Warning>
+  Modifying Linux capabilities may impair or break VM Agent functionality. Alter these settings at your own risk or under the guidance of Odigos Support.
+</Warning>
+
+systemd **merges** `AmbientCapabilities=` and `CapabilityBoundingSet=` across drop-in files. A later drop-in can **add** capabilities; it cannot remove one that `nonroot.conf` already listed. To drop or replace capabilities, edit the packaged drop-in itself.
+
+<Steps>
+  <Step title="Edit the packaged drop-in">
+    ```shell
+    sudo systemctl cat odigos-vmagent.service
+    sudo vi /etc/systemd/system/odigos-vmagent.service.d/nonroot.conf
+    ```
+
+    Change `AmbientCapabilities=` and `CapabilityBoundingSet=` together so they stay in sync. To **remove** a capability, delete it from both lines. To **add** one, append it to both lines — or, if you only want to add, create a later drop-in instead:
+
+    ```ini
+    # /etc/systemd/system/odigos-vmagent.service.d/99-extra-caps.conf
+    [Service]
+    AmbientCapabilities=CAP_YOUR_EXTRA
+    CapabilityBoundingSet=CAP_YOUR_EXTRA
+    ```
+  </Step>
+  <Step title="Stop the package from overwriting your edit">
+    Package upgrades re-render `nonroot.conf` only while its first line is:
+
+    ```
+    # Managed by the odigos-vmagent package.
+    ```
+
+    Replace that header with your own comment (for example `# Operator-managed capabilities`) so the next upgrade leaves the file alone.
+  </Step>
+  <Step title="Restore the SELinux label (RHEL, Rocky, Fedora)">
+    Skip this on Debian and Ubuntu. A drop-in edited by hand can receive the wrong SELinux label, and systemd will refuse to read it:
+
+    ```shell
+    sudo restorecon -Rv /etc/systemd/system/odigos-vmagent.service.d
+    ```
+  </Step>
+  <Step title="Reload systemd and restart the agent">
+    ```shell
+    sudo systemctl daemon-reload
+    sudo systemctl restart odigos-vmagent
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  To restore the packaged set after experimenting, put the managed header back and run:
+
+  ```shell
+  sudo /usr/lib/odigos/bin/odigos-vmagent-caps --refresh
+  sudo systemctl daemon-reload
+  sudo systemctl restart odigos-vmagent
+  ```
+</Note>
+
+Dropping a capability does not prevent the agent from starting. The matching feature is disabled or degraded, and the agent logs which capability was missing at startup.
+
+## Additional permissions
+
+A non-root agent needs extra host rights to instrument and restart some sources. Root-mode installs do not need these steps.
+
+### Docker containers
+
+Instrumenting and controlling **Docker** sources requires access to `/var/run/docker.sock`. That socket is owned by `root:docker`. The package adds the `odigos` user to the `docker` group when the group already exists.
+
+If Docker was installed **after** the agent, or the group was missing at install time, add it yourself:
+
+```shell
+sudo usermod -aG docker odigos
+sudo systemctl restart odigos-vmagent
+```
+
+<Warning>
+  Group membership is applied when the process starts. `usermod` alone is not enough — restart `odigos-vmagent` so it picks up the new supplementary groups.
+</Warning>
+
+If the `docker` group does not exist yet:
+
+```shell
+sudo groupadd docker
+sudo usermod -aG docker odigos
+sudo systemctl restart odigos-vmagent
+```
+
+Confirm:
+
+```shell
+id odigos
+# uid=... gid=... groups=... docker
+```
+
+Without this group, Docker discovery fails with `EACCES` on the socket: the agent cannot list containers, instrument them, or restart them.
+
+### systemd services
+
+Instrumenting a systemd source writes a unit drop-in (`CAP_DAC_OVERRIDE` covers the write) and then asks systemd over D-Bus to `daemon-reload` and restart the unit. systemd asks **polkit** for that. A system service has no interactive session, so without a polkit rule those calls fail with:
+
+```
+Reload daemon failed: Interactive authentication required.
+```
+
+The package does **not** install a polkit rule. Until you add one, a non-root agent cannot complete systemd instrumentation on its own. Docker and plain-process sources are unaffected.
+
+Choose one of the following:
+
+<Tabs>
+  <Tab title="Install a polkit rule">
+    Check which polkit your host uses. RHEL 8+, Rocky, Fedora, Debian 12+, and Ubuntu 24.04 load **JavaScript** rules from `/etc/polkit-1/rules.d/`. Debian 11 and Ubuntu 20.04 / 22.04 still use **`.pkla`** files.
+
+    <Tabs>
+      <Tab title="RHEL / Rocky / Fedora">
+        Create `/etc/polkit-1/rules.d/49-odigos-vmagent.rules` owned by `root:root`, mode `0644`:
+
+        ```javascript
+        polkit.addRule(function(action, subject) {
+            if (subject.user !== "odigos") {
+                return;
+            }
+            if (action.id === "org.freedesktop.systemd1.reload-daemon") {
+                return polkit.Result.YES;
+            }
+            if (action.id === "org.freedesktop.systemd1.manage-units") {
+                var verb = action.lookup("verb");
+                if (verb === "start" || verb === "stop" || verb === "restart" ||
+                    verb === "try-restart" || verb === "reload" ||
+                    verb === "reload-or-restart") {
+                    return polkit.Result.YES;
+                }
+            }
+        });
+        ```
+
+        ```shell
+        sudo chmod 0644 /etc/polkit-1/rules.d/49-odigos-vmagent.rules
+        sudo restorecon -v /etc/polkit-1/rules.d/49-odigos-vmagent.rules
+        sudo systemctl restart polkit
+        ```
+      </Tab>
+      <Tab title="Debian / Ubuntu">
+        **Debian 12+ and Ubuntu 24.04** — JavaScript rules. Create `/etc/polkit-1/rules.d/49-odigos-vmagent.rules`:
+
+        ```javascript
+        polkit.addRule(function(action, subject) {
+            if (subject.user !== "odigos") {
+                return;
+            }
+            if (action.id === "org.freedesktop.systemd1.reload-daemon") {
+                return polkit.Result.YES;
+            }
+            if (action.id === "org.freedesktop.systemd1.manage-units") {
+                var verb = action.lookup("verb");
+                if (verb === "start" || verb === "stop" || verb === "restart" ||
+                    verb === "try-restart" || verb === "reload" ||
+                    verb === "reload-or-restart") {
+                    return polkit.Result.YES;
+                }
+            }
+        });
+        ```
+
+        ```shell
+        sudo chmod 0644 /etc/polkit-1/rules.d/49-odigos-vmagent.rules
+        sudo systemctl restart polkit
+        ```
+
+        **Debian 11 and Ubuntu 20.04 / 22.04** — `.pkla` files (polkit 0.105). Create `/etc/polkit-1/localauthority/50-local.d/49-odigos-vmagent.pkla`:
+
+        ```ini
+        [Allow odigos to reload systemd]
+        Identity=unix-user:odigos
+        Action=org.freedesktop.systemd1.reload-daemon
+        ResultAny=yes
+        ResultInactive=yes
+        ResultActive=yes
+
+        [Allow odigos to manage units]
+        Identity=unix-user:odigos
+        Action=org.freedesktop.systemd1.manage-units
+        ResultAny=yes
+        ResultInactive=yes
+        ResultActive=yes
+        ```
+
+        Then restart polkit (`sudo systemctl restart polkit` or `sudo systemctl restart polkitd`).
+      </Tab>
+    </Tabs>
+
+    The rule lets the `odigos` user reload systemd and start, stop, or restart units. Narrow the `verb` list further if your policy requires it. `.pkla` files cannot filter by verb; they grant the whole action.
+
+    <Warning>
+      This grants the `odigos` user the ability to restart **any** systemd unit, not only Odigos-managed sources. Scope or omit the rule if that is not acceptable, and use one of the alternatives instead.
+    </Warning>
+  </Tab>
+  <Tab title="Run the agent as root">
+    Root-mode agents talk to systemd without polkit:
+
+    ```shell
+    echo root | sudo tee /var/lib/odigos-agent/user-mode
+    sudo ODIGOS_AGENT_USER_MODE=root apt install --reinstall odigos   # Debian / Ubuntu
+    # sudo ODIGOS_AGENT_USER_MODE=root dnf reinstall odigos          # RHEL / Rocky
+    ```
+
+    See [Installation](/vmagent/setup/installation#root-and-non-root).
+  </Tab>
+  <Tab title="Restart units yourself">
+    Leave the agent non-root. After it writes the instrumentation drop-in, reload and restart the unit as an operator:
+
+    ```shell
+    sudo systemctl daemon-reload
+    sudo systemctl restart <unit>.service
+    ```
+  </Tab>
+</Tabs>
+
+#### journald permissions
+
+When a destination includes the `LOGS` signal, the collector reads **systemd** source logs from the journal (a shared `journald` receiver). A non-root `odigos` user cannot read the journal unless it is in a group that journald allows.
+
+Add `odigos` to an appropriate group below based on your Linux Distribution, then restart the agent:
+
+<Tabs>
+  <Tab title="Debian / Ubuntu">
+    Members of `adm` or `systemd-journal` can read the systemd journal:
+
+    ```shell
+    sudo usermod -aG adm,systemd-journal odigos
+    sudo systemctl restart odigos-vmagent
+    ```
+  </Tab>
+  <Tab title="RHEL / Rocky / Fedora">
+    journald grants read access to `systemd-journal`:
+
+    ```shell
+    sudo usermod -aG systemd-journal odigos
+    sudo systemctl restart odigos-vmagent
+    ```
+  </Tab>
+</Tabs>
+
+This is only required for `LOGS` on **systemd** sources. Process log files and Docker container logs do not use the journal.
+
+<Note>
+  The odictl **Logs** panel shows logs for the agent and collector units themselves. That is separate from application logs exported to your destination, and does not require these groups.
+</Note>
+
+### Processes
+
+No extra group or polkit rule is required. The capabilities in [Linux capabilities](#linux-capabilities) are enough to discover and instrument host processes, including restart-based instrumentation where the agent starts the process itself. Process log files are found via the process file descriptors; they do not use the systemd journal.

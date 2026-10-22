@@ -122,7 +122,8 @@ type RuntimeAgent struct {
 	// If true, the agent supports ld-preload injection of "append" environment variables.
 	LdPreloadInjectionSupported bool `yaml:"ldPreloadInjectionSupported,omitempty"`
 
-	// If true, the agent supports wasp
+	// If true, the agent supports wasp.
+	// This field used to be inspected by the pods webhook, it is currently no used - keep it for clarity and future use.
 	WaspSupported bool `yaml:"waspSupported,omitempty"`
 
 	// If true, the instrumentation applied by this agent does not require application restart.
@@ -213,13 +214,13 @@ type TraceVerbosity struct {
 	DisablingAnyScopeSupported bool `yaml:"disablingAnyScopeSupported,omitempty"`
 }
 
+// eBPF log capture itself works for every distro; this only documents what it adds per distro.
 type EbpfLogCapture struct {
-	// if true, the distro supports eBPF-based log capture.
-	Supported bool `yaml:"supported,omitempty"`
+	// if true, logs captured via eBPF carry the trace and span ids of the active span.
+	TraceCorrelation bool `yaml:"traceCorrelation,omitempty"`
 }
 
 type Logs struct {
-	// if set, the distro supports eBPF-based log capture instead of filelog.
 	EbpfLogCapture *EbpfLogCapture `yaml:"ebpfLogCapture,omitempty"`
 }
 

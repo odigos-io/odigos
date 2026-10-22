@@ -360,8 +360,8 @@ func TestOAuth2Configuration(t *testing.T) {
 
 			// Create initial config
 			config := &Config{
-				Extensions: make(map[string]interface{}),
-				Exporters:  make(map[string]interface{}),
+				Extensions: make(map[string]any),
+				Exporters:  make(map[string]any),
 				Service: Service{
 					Extensions: []string{},
 					Pipelines:  make(map[string]Pipeline),
@@ -400,8 +400,8 @@ func TestOAuth2Configuration(t *testing.T) {
 				assert.Equal(t, expectedInsecure, tlsConfig["insecure"].(bool))
 
 				if tt.config["OTLP_HTTP_MTLS_ENABLED"] == "true" {
-					assert.Equal(t, "${OTLP_HTTP_CLIENT_CERT_PEM}", tlsConfig["cert_pem"])
-					assert.Equal(t, "${OTLP_HTTP_CLIENT_KEY_PEM}", tlsConfig["key_pem"])
+					assert.Equal(t, "${ODIGOS_DEST_test_id_OTLP_HTTP_CLIENT_CERT_PEM}", tlsConfig["cert_pem"])
+					assert.Equal(t, "${ODIGOS_DEST_test_id_OTLP_HTTP_CLIENT_KEY_PEM}", tlsConfig["key_pem"])
 				} else {
 					assert.NotContains(t, tlsConfig, "cert_pem")
 					assert.NotContains(t, tlsConfig, "key_pem")
@@ -423,7 +423,7 @@ func TestOAuth2Configuration(t *testing.T) {
 				if tt.expectedExtName == "oauth2client/otlphttp-test-id" {
 					extConfig := config.Extensions[tt.expectedExtName].(GenericMap)
 					assert.Equal(t, tt.config["OTLP_HTTP_OAUTH2_CLIENT_ID"], extConfig["client_id"])
-					assert.Equal(t, "${OTLP_HTTP_OAUTH2_CLIENT_SECRET}", extConfig["client_secret"])
+					assert.Equal(t, "${ODIGOS_DEST_test_id_OTLP_HTTP_OAUTH2_CLIENT_SECRET}", extConfig["client_secret"])
 					assert.Equal(t, tt.config["OTLP_HTTP_OAUTH2_TOKEN_URL"], extConfig["token_url"])
 
 					if tt.expectedScopes != nil {

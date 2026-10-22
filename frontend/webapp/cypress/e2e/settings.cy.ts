@@ -203,7 +203,6 @@ describe('Settings CRUD', () => {
         selectDropdownOption('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
         clickToggle('allowConcurrentAgents.enabled');
         clickToggle('instrumentor.checkDeviceHealthBeforeInjection');
-        clickToggle('wasp.enabled');
 
         // ─ Rollout & Rollback ─
         clickToggle('rollout.automaticRolloutDisabled');
@@ -219,8 +218,6 @@ describe('Settings CRUD', () => {
 
         // ─ Component Log Levels ─
         selectDropdownOption('componentLogLevels.default', 'debug');
-        selectDropdownOption('componentLogLevels.autoscaler', 'debug');
-        selectDropdownOption('componentLogLevels.scheduler', 'debug');
         selectDropdownOption('componentLogLevels.instrumentor', 'debug');
         selectDropdownOption('componentLogLevels.odiglet', 'debug');
         selectDropdownOption('componentLogLevels.deviceplugin', 'debug');
@@ -264,7 +261,6 @@ describe('Settings CRUD', () => {
       expect(yaml).to.contain('agentEnvVarsInjectionMethod: pod-manifest');
       expect(yaml).to.contain('allowConcurrentAgents:');
       expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
-      expect(yaml).to.contain('waspEnabled:');
 
       // ─ Rollout & Rollback (inputs + toggles) ─
       expect(yaml).to.contain('automaticRolloutDisabled:');
@@ -302,7 +298,6 @@ describe('Settings CRUD', () => {
         expect(yaml).to.contain('agentEnvVarsInjectionMethod: pod-manifest');
         expect(yaml).to.contain('allowConcurrentAgents:');
         expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
-        expect(yaml).to.contain('waspEnabled:');
 
         // ─ Rollout & Rollback ─
         expect(yaml).to.contain('automaticRolloutDisabled:');
@@ -345,7 +340,6 @@ describe('Settings CRUD', () => {
         verifyDropdown('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
         verifyToggle('allowConcurrentAgents.enabled', true);
         verifyToggle('instrumentor.checkDeviceHealthBeforeInjection', true);
-        verifyToggle('wasp.enabled', true);
 
         // ─ Rollout & Rollback ─
         verifyToggle('rollout.automaticRolloutDisabled', true);
@@ -361,8 +355,6 @@ describe('Settings CRUD', () => {
 
         // ─ Component Log Levels ─
         verifyDropdown('componentLogLevels.default', 'debug');
-        verifyDropdown('componentLogLevels.autoscaler', 'debug');
-        verifyDropdown('componentLogLevels.scheduler', 'debug');
         verifyDropdown('componentLogLevels.instrumentor', 'debug');
         verifyDropdown('componentLogLevels.odiglet', 'debug');
         verifyDropdown('componentLogLevels.deviceplugin', 'debug');
@@ -415,7 +407,6 @@ describe('Settings CRUD', () => {
         expect(yaml).to.not.contain('cypress-test-container');
         expect(yaml).to.not.contain('maxConcurrentRollouts: 5');
         expect(yaml).to.not.contain('keepPercentage: 50');
-        expect(yaml).to.not.contain('waspEnabled:');
         expect(yaml).to.not.contain('allowConcurrentAgents:');
       });
     });

@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -113,8 +112,8 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 		// Client cert/key are stored in the Destination Secret and injected as env vars
 		if mtlsEnabled {
-			tlsConfig["cert_pem"] = fmt.Sprintf("${%s}", otlpHttpClientCertPemKey)
-			tlsConfig["key_pem"] = fmt.Sprintf("${%s}", otlpHttpClientKeyPemKey)
+			tlsConfig["cert_pem"] = SecretEnvPlaceholder(otlpHttpClientCertPemKey, dest)
+			tlsConfig["key_pem"] = SecretEnvPlaceholder(otlpHttpClientKeyPemKey, dest)
 		}
 	}
 	exporterConf["tls"] = tlsConfig
@@ -230,7 +229,7 @@ func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionCo
 	extensionName = "oauth2client/otlphttp-" + dest.GetID()
 	extensionConf = &GenericMap{
 		"client_id":     clientId,
-		"client_secret": fmt.Sprintf("${%s}", otlpHttpOAuth2ClientSecretKey),
+		"client_secret": SecretEnvPlaceholder(otlpHttpOAuth2ClientSecretKey, dest),
 		"token_url":     tokenUrl,
 	}
 
@@ -265,7 +264,7 @@ func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionCon
 	extensionConf = &GenericMap{
 		"client_auth": GenericMap{
 			"username": username,
-			"password": fmt.Sprintf("${%s}", otlpHttpBasicAuthPasswordKey),
+			"password": SecretEnvPlaceholder(otlpHttpBasicAuthPasswordKey, dest),
 		},
 	}
 

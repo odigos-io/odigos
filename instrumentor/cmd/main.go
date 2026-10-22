@@ -20,7 +20,6 @@ import (
 	"flag"
 	"os"
 
-	"github.com/odigos-io/odigos/actions"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor"
@@ -54,11 +53,6 @@ func main() {
 
 	logger.Info("Starting Odigos Community Instrumentor")
 
-	if err := actions.Load(); err != nil {
-		logger.Error("unable to load actions catalog", "err", err)
-		os.Exit(1)
-	}
-
 	distrosGetter, err := distros.NewCommunityGetter()
 	if err != nil {
 		logger.Error("Failed to initialize distro getter", "err", err)
@@ -70,7 +64,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	i, err := instrumentor.New(managerOptions, dp, nil)
+	i, err := instrumentor.New(instrumentor.Options{
+		ManagerOptions:  managerOptions,
+		DistrosProvider: dp,
+	})
 	if err != nil {
 		logger.Error("Failed to initialize instrumentor", "err", err)
 		os.Exit(1)

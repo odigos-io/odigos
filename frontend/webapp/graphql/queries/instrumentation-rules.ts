@@ -31,6 +31,7 @@ export const GET_INSTRUMENTATION_RULES = gql`
         disabled
         mutable
         profileName
+        managedBy
         conditions {
           status
           type

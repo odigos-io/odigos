@@ -42,7 +42,7 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 
 	exporterName := "coralogix/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
-		"private_key":      "${CORALOGIX_PRIVATE_KEY}",
+		"private_key":      SecretEnvPlaceholder("CORALOGIX_PRIVATE_KEY", dest),
 		"domain":           domain,
 		"application_name": appName,
 		"subsystem_name":   subName,

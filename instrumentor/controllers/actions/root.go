@@ -1,0 +1,64 @@
+package actions
+
+import (
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
+)
+
+func SetupWithManager(mgr ctrl.Manager) error {
+	err := ctrl.NewControllerManagedBy(mgr).
+		For(&odigosv1.Action{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&odigosv1.Processor{}, builder.MatchEveryOwner).
+		Complete(&ActionReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		Named("shared-url-templatization-processor").
+		For(&odigosv1.Processor{}).
+		WithEventFilter(predicate.And(
+			&predicate.GenerationChangedPredicate{},
+			&odigospredicate.OdigosURLTemplatizationProcessorPredicate,
+		)).
+		Complete(&SharedURLTemplatizationProcessorReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		Named("urltemplate-node-cg").
+		For(&odigosv1.CollectorsGroup{}).
+		WithEventFilter(predicate.And(
+			&predicate.GenerationChangedPredicate{},
+			&odigospredicate.OdigosCollectorsGroupNodePredicate,
+			&urlTemplateNodeCGSpanMetricsTogglePredicate{},
+		)).
+		Complete(&URLTemplateNodeCGReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RegisterWebhooks(mgr ctrl.Manager) error {
+	err := builder.WebhookManagedBy(mgr, &odigosv1.Action{}).
+		WithCustomValidator(&ActionsValidator{}).
+		Complete()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

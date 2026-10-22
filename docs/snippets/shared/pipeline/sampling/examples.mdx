@@ -343,7 +343,7 @@ A few details that aren't obvious from YAML alone but matter when authoring rule
   <Accordion title="`name` and `disabled` surface in observability data">
     The rule `name` is written as a **metric attribute** and stored as a **span attribute** on participating spans, so use a value that's safe for dashboards and queries—avoid PII or characters your backend doesn't index well.
 
-    `disabled: true` (per rule, or `spec.disabled` for the entire `Sampling` object) removes the rule from sampling decisions but **still emits metrics** for it. That's useful for tuning a rule and observing its would-be impact before re-enabling it, rather than deleting it outright.
+    `disabled: true` on a rule removes it from sampling decisions but **still emits metrics** for it. That's useful for tuning a rule and observing its would-be impact before re-enabling it, rather than deleting it outright.
   </Accordion>
 </AccordionGroup>
 
@@ -383,10 +383,7 @@ To take a rule out of sampling decisions without deleting it, you can either fli
     </div>
   </Tab>
   <Tab title="YAML">
-    The `disabled` flag exists at two levels:
-
-    - **Per rule** — set `disabled: true` on an individual entry in `noisyOperations`, `highlyRelevantOperations`, or `costReductionRules`. The other rules in the same `Sampling` object continue to apply. This is what the UI toggle writes.
-    - **Per `Sampling` object** — set `spec.disabled: true` on the resource. Every rule in that object is taken out of decisions in one step, leaving rules in other `Sampling` objects untouched.
+    Set `disabled: true` on an individual entry in `noisyOperations`, `highlyRelevantOperations`, or `costReductionRules`. The other rules in the same `Sampling` object continue to apply. This is what the UI toggle writes.
 
     ```yaml disable-a-rule.yaml
     apiVersion: odigos.io/v1alpha1

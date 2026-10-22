@@ -160,10 +160,6 @@ type SamplingSpec struct {
 	// Odigos does not use or assume any meaning from this field.
 	Notes string `json:"notes,omitempty"`
 
-	// if set to true, the sampling rules will be disabled,
-	// they will not be taken into account for any sampling decisions.
-	// useful if you want to temporarily disable the rules but re-enable them later,
-	Disabled                 bool                      `json:"disabled,omitempty"`
 	NoisyOperations          []NoisyOperation          `json:"noisyOperations,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRule       `json:"costReductionRules,omitempty"`

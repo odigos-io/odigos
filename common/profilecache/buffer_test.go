@@ -209,23 +209,19 @@ func TestBoundedBufferConcurrentAccess(t *testing.T) {
 	b := NewBoundedBuffer(1000)
 	var wg sync.WaitGroup
 	for range 8 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range 200 {
 				b.Add(chunkOfSize(100, 'a'))
 				b.Snapshot()
 				b.Size()
 			}
-		}()
+		})
 	}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for range 200 {
 			b.Resize(1000)
 		}
-	}()
+	})
 	wg.Wait()
 
 	if size := b.Size(); size > 1000 {

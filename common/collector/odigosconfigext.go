@@ -9,21 +9,21 @@ import (
 )
 
 // WorkloadConfigCacheCallback is notified when the extension's workload cache changes.
-// The callback receives generic container collector config; any processor that cares about config updates can implement this.
+// The callback receives the platform-agnostic collector config; any processor that cares about config updates can implement this.
 //
 // Key semantics: both OnSet and OnDeleteKey use the same full cache key format (e.g. "namespace/kind/name/containerName").
 // The extension applies new state first (OnSet for each current container), then calls OnDeleteKey for any key that was
 // removed so the consumer never sees a gap where the workload is briefly empty.
 type WorkloadConfigCacheCallback interface {
-	OnSet(key string, cfg *commonapi.ContainerCollectorConfig)
+	OnSet(key string, cfg *commonapi.SourceCollectorConfig)
 	OnDeleteKey(key string)
 }
 
 // OdigosConfigExtension is the interface that must be implemented by an extension that wants to provide Odigos configuration.
 // Every platform (k8s, vm) can implement this interface to provide it's own processor extension to fetch the config from where it is stored.
 type OdigosConfigExtension interface {
-	// GetFromResource returns the container collector config for the given resource if it exists.
-	GetFromResource(res pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool)
+	// GetFromResource returns the collector config for the given resource if it exists.
+	GetFromResource(res pcommon.Resource) (*commonapi.SourceCollectorConfig, bool)
 
 	// IsActiveSource reports whether the workload identified on the resource (namespace/kind/name)
 	// is an active Odigos Source i.e. the extension currently holds an InstrumentationConfig for it

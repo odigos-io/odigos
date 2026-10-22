@@ -75,7 +75,7 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to create gRPC connection: %v", err)
+		return fmt.Errorf("failed to create gRPC connection: %w", err)
 	}
 
 	// Create a new RuntimeService client
@@ -100,7 +100,7 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []string, containerID string) ([]odigosv1.EnvVar, error) {
 	envVars, err := rc.GetContainerImageEnvVars(ctx, containerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get container environment variables: %v", err)
+		return nil, fmt.Errorf("failed to get container environment variables: %w", err)
 	}
 
 	// Extract only requested environment variables
@@ -155,7 +155,7 @@ func (rc *CriClient) GetContainerImageEnvVars(ctx context.Context, containerID s
 		ContainerId: containerID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get container status: %v", err)
+		return nil, fmt.Errorf("failed to get container status: %w", err)
 	}
 	imageRef := statusResp.GetStatus().GetImage().GetImage()
 	if imageRef == "" {
@@ -180,7 +180,7 @@ func (rc *CriClient) getImageEnvVarsFromCRI(ctx context.Context, imageRef string
 		Verbose: true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get image status from CRI: %v", err)
+		return nil, fmt.Errorf("failed to get image status from CRI: %w", err)
 	}
 
 	infoMap := resp.GetInfo()
@@ -198,7 +198,7 @@ func (rc *CriClient) getImageEnvVarsFromCRI(ctx context.Context, imageRef string
 	}
 
 	if err := json.Unmarshal([]byte(infoRaw), &infoJSON); err != nil {
-		return nil, fmt.Errorf("failed to parse image info JSON: %v", err)
+		return nil, fmt.Errorf("failed to parse image info JSON: %w", err)
 	}
 	envVars := make(map[string]string, len(infoJSON.ImageSpec.Config.Env))
 	for _, env := range infoJSON.ImageSpec.Config.Env {

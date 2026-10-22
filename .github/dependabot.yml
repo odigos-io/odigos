@@ -10,7 +10,6 @@ updates:
   - package-ecosystem: gomod
     directories:
       - /api
-      - /autoscaler
       - /cli
       - /common
       - /config
@@ -28,7 +27,6 @@ updates:
       - /operator
       - /procdiscovery
       - /profiles
-      - /scheduler
       - /status
     schedule:
       day: sunday

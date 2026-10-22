@@ -4,11 +4,11 @@ export const ROUTES = {
   OVERVIEW: '/overview',
   INSIGHTS: '/insights',
   SERVICE_MAP: '/service-map',
-  PIPELINE_COLLECTORS: '/pipeline-collectors',
+  COLLECTORS: '/collectors',
   SETTINGS: '/settings',
   SAMPLING: '/sampling',
   URL_TEMPLATIZATION: '/url-templatization',
-  TRACE_CORRELATIONS: '/trace-correlations',
+  INSTRUMENTATION_AGENTS: '/instrumentation-agents',
 
   // legacy routes
   CHOOSE_STREAM: '/choose-stream',

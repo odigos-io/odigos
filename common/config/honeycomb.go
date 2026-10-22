@@ -7,7 +7,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-var ErrorHoneycombTracingDisabled = errors.New("attempting to configure Honeycomb tracing, but tracing is disabled")
+var ErrorHoneycombNoSignals = errors.New("Honeycomb destination does not have any signals to export")
 
 const (
 	honeycombEndpoint = "HONEYCOMB_ENDPOINT"
@@ -20,8 +20,8 @@ func (h *Honeycomb) DestType() common.DestinationType {
 }
 
 func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !isTracingEnabled(dest) {
-		return nil, ErrorHoneycombTracingDisabled
+	if !isTracingEnabled(dest) && !isMetricsEnabled(dest) && !isLoggingEnabled(dest) {
+		return nil, ErrorHoneycombNoSignals
 	}
 
 	endpoint, exists := dest.GetConfig()[honeycombEndpoint]
@@ -33,7 +33,7 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:443", endpoint),
 		"headers": GenericMap{
-			"x-honeycomb-team": "${HONEYCOMB_API_KEY}",
+			"x-honeycomb-team": SecretEnvPlaceholder("HONEYCOMB_API_KEY", dest),
 		},
 	}
 

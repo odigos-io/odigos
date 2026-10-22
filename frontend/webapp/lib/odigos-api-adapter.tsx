@@ -41,6 +41,12 @@ import type {
   ExtendedPodInfo,
   FetchedConfig,
   GatewayInfo,
+  GoOffsets,
+  GoOffsetsUpdateCheck,
+  InsightsIntegration,
+  InsightsIntegrationDescriptor,
+  InsightsDelivery,
+  InsightsDeliveryAttempt,
   InsightsAnomalyIssue,
   InsightsAnomalySummary,
   InsightsBaselineClass,
@@ -57,6 +63,9 @@ import type {
   InsightsObservationSummary,
   InsightsPolicy,
   InsightsPromoteResult,
+  InsightsRecommendation,
+  InsightsRecommendationBulkResult,
+  InsightsRecommendationPreview,
   InsightsServiceStat,
   InsightsServiceProfile,
   InsightsBlastRadiusSubgraph,
@@ -64,6 +73,7 @@ import type {
   InsightsSystemSettings,
   InsightsTransaction,
   InsightsTransactionStat,
+  InstrumentationAgent,
   Namespace,
   NodeCollectoInfo,
   PodInfo,
@@ -91,6 +101,10 @@ import {
   GET_METRICS,
   GET_NAMESPACES_WITH_WORKLOADS,
   GET_PEER_SOURCES,
+  GET_GO_OFFSETS,
+  CHECK_GO_OFFSETS_UPDATES,
+  UPDATE_GO_OFFSETS,
+  GET_INSTRUMENTATION_AGENTS,
   GET_POTENTIAL_DESTINATIONS,
   GET_PROFILING_SLOTS,
   GET_RECOMMENDATIONS,
@@ -108,6 +122,17 @@ import {
   GET_NODE_COLLECTOR_INFO,
   GET_NODE_COLLECTOR_PODS,
   GET_COLLECTOR_POD_INFO,
+  GET_INSIGHTS_INTEGRATION_CATALOG,
+  GET_INSIGHTS_INTEGRATIONS,
+  GET_INSIGHTS_INTEGRATION,
+  GET_INSIGHTS_INTEGRATION_DELIVERIES,
+  GET_INSIGHTS_INTEGRATION_ATTEMPTS,
+  GET_INSIGHTS_FINDING_DELIVERIES,
+  CREATE_INSIGHTS_INTEGRATION,
+  UPDATE_INSIGHTS_INTEGRATION,
+  DELETE_INSIGHTS_INTEGRATION,
+  TEST_INSIGHTS_INTEGRATION,
+  RETRY_INSIGHTS_INTEGRATION_DELIVERIES,
   GET_INSIGHTS_SERVICES,
   GET_INSIGHTS_SERVICE_NAMES,
   GET_INSIGHTS_SERVICE_PROFILE,
@@ -128,6 +153,8 @@ import {
   GET_INSIGHTS_CATALOG,
   GET_INSIGHTS_SYSTEM_SETTINGS,
   GET_INSIGHTS_STORAGE_HEALTH,
+  GET_INSIGHTS_RECOMMENDATIONS,
+  GET_INSIGHTS_RECOMMENDATION,
   DESCRIBE_ODIGOS,
   DESCRIBE_SOURCE,
   DOWNLOAD_DIAGNOSE,
@@ -189,6 +216,12 @@ import {
   DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,
   REOPEN_INSIGHTS_GUARDRAIL_VIOLATION,
   UPDATE_INSIGHTS_SYSTEM_SETTINGS,
+  APPLY_INSIGHTS_RECOMMENDATIONS,
+  DISMISS_INSIGHTS_RECOMMENDATIONS,
+  RESTORE_INSIGHTS_RECOMMENDATIONS,
+  REVERT_INSIGHTS_RECOMMENDATIONS,
+  PREVIEW_INSIGHTS_RECOMMENDATION,
+  RECOMPUTE_INSIGHTS_RECOMMENDATIONS,
 } from '@/graphql';
 
 // The CREATE_DATA_STREAM op is intentionally absent: the standalone backend
@@ -401,6 +434,24 @@ const operations: OdigosApiOperations = {
     transformResult: (raw: unknown) => (raw as { enableSourceProfiling?: EnableProfilingResult } | null | undefined)?.enableSourceProfiling,
   },
 
+  // instrumentation agents — bare-shape slots; flatten the per-field envelope.
+  GET_INSTRUMENTATION_AGENTS: {
+    document: GET_INSTRUMENTATION_AGENTS,
+    transformResult: (raw: unknown) => (raw as { instrumentationAgents?: InstrumentationAgent[] } | null | undefined)?.instrumentationAgents ?? [],
+  },
+  GET_GO_OFFSETS: {
+    document: GET_GO_OFFSETS,
+    transformResult: (raw: unknown) => (raw as { goOffsets?: GoOffsets } | null | undefined)?.goOffsets,
+  },
+  CHECK_GO_OFFSETS_UPDATES: {
+    document: CHECK_GO_OFFSETS_UPDATES,
+    transformResult: (raw: unknown) => (raw as { checkGoOffsetsUpdates?: GoOffsetsUpdateCheck } | null | undefined)?.checkGoOffsetsUpdates,
+  },
+  UPDATE_GO_OFFSETS: {
+    document: UPDATE_GO_OFFSETS,
+    transformResult: (raw: unknown) => !!(raw as { updateGoOffsets?: boolean } | null | undefined)?.updateGoOffsets,
+  },
+
   // pipeline collectors — bare-shape slots. The standalone backend's
   // GraphQL field names predate the kit's normalization: the gateway
   // is exposed as `gatewayDeploymentInfo` (it's a Deployment), the
@@ -470,6 +521,50 @@ const operations: OdigosApiOperations = {
   UPDATE_LOCAL_UI_SAMPLING_CONFIG: { document: UPDATE_LOCAL_UI_SAMPLING_CONFIG },
 
   // insights — wire nests under `insights { … }`; kit slots are bare.
+  GET_INSIGHTS_INTEGRATION_CATALOG: {
+    document: GET_INSIGHTS_INTEGRATION_CATALOG,
+    transformResult: (raw: unknown) => (raw as { insights?: { integrationCatalog?: InsightsIntegrationDescriptor[] } } | null | undefined)?.insights?.integrationCatalog ?? [],
+  },
+  GET_INSIGHTS_INTEGRATIONS: {
+    document: GET_INSIGHTS_INTEGRATIONS,
+    transformResult: (raw: unknown) => (raw as { insights?: { integrations?: InsightsIntegration[] } } | null | undefined)?.insights?.integrations ?? [],
+  },
+  GET_INSIGHTS_INTEGRATION: {
+    document: GET_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { insights?: { integration?: InsightsIntegration } } | null | undefined)?.insights?.integration,
+  },
+  GET_INSIGHTS_INTEGRATION_DELIVERIES: {
+    document: GET_INSIGHTS_INTEGRATION_DELIVERIES,
+    transformResult: (raw: unknown) => (raw as { insights?: { integrationDeliveries?: InsightsDelivery[] } } | null | undefined)?.insights?.integrationDeliveries ?? [],
+  },
+  GET_INSIGHTS_INTEGRATION_ATTEMPTS: {
+    document: GET_INSIGHTS_INTEGRATION_ATTEMPTS,
+    transformResult: (raw: unknown) => (raw as { insights?: { integrationAttempts?: InsightsDeliveryAttempt[] } } | null | undefined)?.insights?.integrationAttempts ?? [],
+  },
+  GET_INSIGHTS_FINDING_DELIVERIES: {
+    document: GET_INSIGHTS_FINDING_DELIVERIES,
+    transformResult: (raw: unknown) => (raw as { insights?: { findingDeliveries?: InsightsDelivery[] } } | null | undefined)?.insights?.findingDeliveries ?? [],
+  },
+  CREATE_INSIGHTS_INTEGRATION: {
+    document: CREATE_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { createInsightsIntegration?: InsightsIntegration } | null | undefined)?.createInsightsIntegration,
+  },
+  UPDATE_INSIGHTS_INTEGRATION: {
+    document: UPDATE_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { updateInsightsIntegration?: InsightsIntegration } | null | undefined)?.updateInsightsIntegration,
+  },
+  DELETE_INSIGHTS_INTEGRATION: {
+    document: DELETE_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { deleteInsightsIntegration?: boolean } | null | undefined)?.deleteInsightsIntegration ?? false,
+  },
+  TEST_INSIGHTS_INTEGRATION: {
+    document: TEST_INSIGHTS_INTEGRATION,
+    transformResult: (raw: unknown) => (raw as { testInsightsIntegration?: boolean } | null | undefined)?.testInsightsIntegration ?? false,
+  },
+  RETRY_INSIGHTS_INTEGRATION_DELIVERIES: {
+    document: RETRY_INSIGHTS_INTEGRATION_DELIVERIES,
+    transformResult: (raw: unknown) => (raw as { retryInsightsIntegrationDeliveries?: boolean } | null | undefined)?.retryInsightsIntegrationDeliveries ?? false,
+  },
   GET_INSIGHTS_SERVICES: {
     document: GET_INSIGHTS_SERVICES,
     transformResult: (raw: unknown) => (raw as { insights?: { services?: InsightsServiceStat[] } } | null | undefined)?.insights?.services ?? [],
@@ -642,6 +737,38 @@ const operations: OdigosApiOperations = {
   UPDATE_INSIGHTS_SYSTEM_SETTINGS: {
     document: UPDATE_INSIGHTS_SYSTEM_SETTINGS,
     transformResult: (raw: unknown) => (raw as { updateInsightsSystemSettings?: InsightsSystemSettings } | null | undefined)?.updateInsightsSystemSettings,
+  },
+  GET_INSIGHTS_RECOMMENDATIONS: {
+    document: GET_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { insights?: { recommendations?: InsightsRecommendation[] } } | null | undefined)?.insights?.recommendations,
+  },
+  GET_INSIGHTS_RECOMMENDATION: {
+    document: GET_INSIGHTS_RECOMMENDATION,
+    transformResult: (raw: unknown) => (raw as { insights?: { recommendation?: InsightsRecommendation } } | null | undefined)?.insights?.recommendation,
+  },
+  APPLY_INSIGHTS_RECOMMENDATIONS: {
+    document: APPLY_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { applyInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.applyInsightsRecommendations,
+  },
+  DISMISS_INSIGHTS_RECOMMENDATIONS: {
+    document: DISMISS_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { dismissInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.dismissInsightsRecommendations,
+  },
+  RESTORE_INSIGHTS_RECOMMENDATIONS: {
+    document: RESTORE_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { restoreInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.restoreInsightsRecommendations,
+  },
+  REVERT_INSIGHTS_RECOMMENDATIONS: {
+    document: REVERT_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { revertInsightsRecommendations?: InsightsRecommendationBulkResult } | null | undefined)?.revertInsightsRecommendations,
+  },
+  PREVIEW_INSIGHTS_RECOMMENDATION: {
+    document: PREVIEW_INSIGHTS_RECOMMENDATION,
+    transformResult: (raw: unknown) => (raw as { previewInsightsRecommendation?: InsightsRecommendationPreview } | null | undefined)?.previewInsightsRecommendation,
+  },
+  RECOMPUTE_INSIGHTS_RECOMMENDATIONS: {
+    document: RECOMPUTE_INSIGHTS_RECOMMENDATIONS,
+    transformResult: (raw: unknown) => (raw as { recomputeInsightsRecommendations?: boolean } | null | undefined)?.recomputeInsightsRecommendations,
   },
   // recommendations
   GET_RECOMMENDATIONS: { document: GET_RECOMMENDATIONS },
