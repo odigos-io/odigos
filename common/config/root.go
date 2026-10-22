@@ -19,6 +19,7 @@ var availableConfigers = []Configer{
 	&AzureMonitor{},
 	&BetterStack{},
 	&Bonree{},
+	&Bronto{},
 	&Causely{},
 	&Checkly{},
 	&Chronosphere{},
