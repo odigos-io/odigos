@@ -3,10 +3,14 @@ package agentenabled
 import (
 	"context"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -23,10 +27,11 @@ import (
 // ****************
 
 type syncTestSetup struct {
-	ctx    context.Context
-	scheme *runtime.Scheme
-	ns     *corev1.Namespace
-	logger *commonlogger.ContextLogger
+	ctx            context.Context
+	scheme         *runtime.Scheme
+	ns             *corev1.Namespace
+	logger         *commonlogger.ContextLogger
+	distroProvider *distros.Provider
 }
 
 func newSyncTestSetup() *syncTestSetup {
@@ -35,12 +40,17 @@ func newSyncTestSetup() *syncTestSetup {
 	_ = odigosv1alpha1.AddToScheme(scheme)
 	_ = appsv1.AddToScheme(scheme)
 	_ = batchv1.AddToScheme(scheme)
+	_ = argorolloutsv1alpha1.AddToScheme(scheme)
+
+	getter, _ := distros.NewCommunityGetter()
+	provider, _ := distros.NewProvider(distros.NewCommunityDefaulter(), getter)
 
 	return &syncTestSetup{
-		ctx:    context.Background(),
-		scheme: scheme,
-		ns:     testutil.NewMockNamespace(),
-		logger: commonlogger.WrapLogr(logr.Discard()),
+		ctx:            context.Background(),
+		scheme:         scheme,
+		ns:             testutil.NewMockNamespace(),
+		logger:         commonlogger.WrapLogr(logr.Discard()),
+		distroProvider: provider,
 	}
 }
 
@@ -129,6 +139,47 @@ func newCrashLoopBackOffPodWithOdigosLabel(ns *corev1.Namespace, deploymentName,
 					},
 				},
 			},
+		},
+	}
+}
+
+// newWorkloadRefArgoRollout creates an Argo Rollout that takes its pod template from a
+// workloadRef. argo-rollouts strips `spec.template` when it persists such a Rollout
+// (RolloutSpec.MarshalJSON), so the object stored in the api server has no containers.
+func newWorkloadRefArgoRollout(ns *corev1.Namespace, name string) *argorolloutsv1alpha1.Rollout {
+	return &argorolloutsv1alpha1.Rollout{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       name,
+			Namespace:  ns.Name,
+			Generation: 1,
+		},
+		Spec: argorolloutsv1alpha1.RolloutSpec{
+			WorkloadRef: &argorolloutsv1alpha1.ObjectRef{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       name,
+			},
+		},
+		Status: argorolloutsv1alpha1.RolloutStatus{
+			ObservedGeneration: "1",
+		},
+	}
+}
+
+// newReadyNodeCollectorsGroup creates a node collectors group which satisfies the
+// instrumentation prerequisites (ready and collecting at least one signal).
+func newReadyNodeCollectorsGroup() *odigosv1alpha1.CollectorsGroup {
+	return &odigosv1alpha1.CollectorsGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosNodeCollectorCollectorGroupName,
+			Namespace: consts.DefaultOdigosNamespace,
+		},
+		Spec: odigosv1alpha1.CollectorsGroupSpec{
+			Role: odigosv1alpha1.CollectorsGroupRoleNodeCollector,
+		},
+		Status: odigosv1alpha1.CollectorsGroupStatus{
+			Ready:           true,
+			ReceiverSignals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
 		},
 	}
 }
