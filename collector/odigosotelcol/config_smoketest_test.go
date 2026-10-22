@@ -109,6 +109,29 @@ func newSmoketestConfig() destinationconfig.Config {
 	}
 }
 
+func TestPostHogConfigLoads(t *testing.T) {
+	for _, compression := range []string{"none", "gzip"} {
+		t.Run(compression, func(t *testing.T) {
+			dest := &testconnection.TestConnectionConfig{
+				DestinationType: string(common.PostHogDestinationType), ID: "posthog-test",
+				Config:  map[string]string{"POSTHOG_REGION": "eu", "POSTHOG_COMPRESSION": compression},
+				Signals: []common.ObservabilitySignal{common.LogsObservabilitySignal, common.MetricsObservabilitySignal},
+			}
+			t.Setenv(destinationconfig.SecretEnvVarName("POSTHOG_PROJECT_TOKEN", dest.GetID()), "phc_test")
+			cfg := newSmoketestConfig()
+			cfg.Service.Telemetry.Metrics.Level = "none"
+			pipelines, err := (&destinationconfig.PostHog{}).ModifyConfig(dest, &cfg)
+			require.NoError(t, err)
+			require.Len(t, pipelines, 2)
+			for _, pipeline := range pipelines {
+				attachOtlpReceiver(&cfg, pipeline)
+			}
+			require.NoError(t, dryRunCollectorConfig(t, cfg))
+			require.NoError(t, runCollectorConfig(t, cfg))
+		})
+	}
+}
+
 func attachOtlpReceiver(cfg *destinationconfig.Config, pipelineName string) {
 	pipeline := cfg.Service.Pipelines[pipelineName]
 	pipeline.Receivers = []string{"otlp"}
