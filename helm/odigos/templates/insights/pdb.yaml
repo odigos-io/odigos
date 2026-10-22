@@ -1,5 +1,5 @@
 {{- if .Values.pdb.enabled }}
-{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+{{- if and (include "odigos.insightsEnabled" .) (include "odigos.secretExists" .) }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

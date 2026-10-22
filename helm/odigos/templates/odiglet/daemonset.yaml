@@ -63,7 +63,7 @@ spec:
         {{- /* GKE AppArmor blocks mkdir /sys/fs/bpf/otel unless data-collection is Unconfined.
              The profiling receiver pins traces_ctx_v1 there so probe-linked profile samples
              can carry span IDs. Same trigger as the host-bpffs mount. */}}
-        {{- if and .Values.gke.enabled (or .Values.profiling.enabled (include "odigos.interrogationEnabled" .)) (not .Values.odiglet.dataCollection.privileged) (semverCompare "<1.30.0" $k8sVersion) }}
+        {{- if and .Values.gke.enabled (include "odigos.profilingEnabled" .) (not .Values.odiglet.dataCollection.privileged) (semverCompare "<1.30.0" $k8sVersion) }}
         container.apparmor.security.beta.kubernetes.io/data-collection: unconfined
         {{- end }}
         kubectl.kubernetes.io/default-container: odiglet
@@ -293,7 +293,7 @@ spec:
             - name: hostproc
               mountPath: /hostproc
           {{- end }}
-          {{- if and .Values.profiling.enabled (not .Values.odiglet.noHostPathMounts) }}
+          {{- if and (include "odigos.profilingEnabled" .) (not .Values.odiglet.noHostPathMounts) }}
             - name: host-bpffs
               mountPath: /sys/fs/bpf
           {{- end }}
@@ -324,7 +324,7 @@ spec:
             capabilities:
               add:
               {{- $caps := .Values.odiglet.dataCollection.capabilities | default list }}
-              {{- if .Values.profiling.enabled }}
+              {{- if include "odigos.profilingEnabled" . }}
               {{- /* the eBPF profiler reads /proc/kallsyms addresses and raises RLIMIT_MEMLOCK */}}
               {{- if not (has "SYSLOG" $caps) }}{{- $caps = append $caps "SYSLOG" }}{{- end }}
               {{- if not (has "SYS_RESOURCE" $caps) }}{{- $caps = append $caps "SYS_RESOURCE" }}{{- end }}
@@ -337,7 +337,7 @@ spec:
               {{- toYaml $caps | nindent 14 }}
               drop:
                 - ALL
-            {{- if and .Values.gke.enabled (or .Values.profiling.enabled (include "odigos.interrogationEnabled" .)) (semverCompare ">=1.30.0" $k8sVersion) }}
+            {{- if and .Values.gke.enabled (include "odigos.profilingEnabled" .) (semverCompare ">=1.30.0" $k8sVersion) }}
             {{- with (.Values.odiglet.dataCollection.appArmorProfile | default (dict "type" "Unconfined")) }}
             appArmorProfile:
               {{ toYaml . | nindent 14 }}
@@ -427,13 +427,13 @@ spec:
               mountPath: /hostfs
               readOnly: true
             {{- end }}
-            {{- if .Values.profiling.enabled }}
+            {{- if include "odigos.profilingEnabled" . }}
             # the eBPF profiler attaches to tracepoints, which needs the host tracefs
             - name: sys-kernel
               mountPath: /sys/kernel
               readOnly: true
             {{- end }}
-            {{- if and .Values.profiling.enabled (not .Values.odiglet.noHostPathMounts) }}
+            {{- if and (include "odigos.profilingEnabled" .) (not .Values.odiglet.noHostPathMounts) }}
             # profiling receiver pins traces_ctx_v1 on the host bpffs for span-linked samples
             - name: host-bpffs
               mountPath: /sys/fs/bpf
@@ -638,7 +638,7 @@ spec:
             path: /sys/fs/cgroup
             type: Directory
       {{- end }}
-      {{- if and .Values.profiling.enabled (not .Values.odiglet.noHostPathMounts) }}
+      {{- if and (include "odigos.profilingEnabled" .) (not .Values.odiglet.noHostPathMounts) }}
         - name: host-bpffs
           hostPath:
             path: /sys/fs/bpf

@@ -1,4 +1,4 @@
-{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+{{- if and (include "odigos.insightsEnabled" .) (include "odigos.secretExists" .) }}
 {{- /*
 Schema migrations run from this Job rather than from serving replicas, so
 multiple Insights replicas never race on DDL.
@@ -148,8 +148,9 @@ spec:
             - name: CLICKHOUSE_DSN
               value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/odigos_insights"
             {{- if include "odigos.interrogationEnabled" . }}
-            # tx_runs lives in the interrogation database, so the same Job
-            # applies that migration set after the insights schema.
+            # Interrogation tables (tx_runs, tx_transactions,
+            # tx_call_trie_structure) live in the interrogation database, so
+            # the same Job applies that migration set after the insights schema.
             - name: INTERROGATION_CLICKHOUSE_DSN
               value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/interrogation"
             {{- end }}
