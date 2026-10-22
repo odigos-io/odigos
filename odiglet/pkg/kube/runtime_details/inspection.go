@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
@@ -342,18 +343,31 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 	// 2. LD_PRELOAD is identified in EnvFromContainerRuntime [DockerFile]
 	// 3. SecureExecutionMode is set to true.
 	// 4. RuntimeVersion changes
+	// 5. The container has no entry yet, because it was added to the workload pod template
+	//    after the initial detection. Detection is meant to run once per container, not once
+	//    per workload, so such a container is recorded instead of being dropped.
 	if len(currentConfig.Status.RuntimeDetailsByContainer) > 0 {
 		updated := false
+		podKey := strings.Join([]string{currentConfig.Namespace, currentConfig.Name}, "/")
+		var newContainers []odigosv1.RuntimeDetailsByContainer
 		for _, newDetail := range inspectionResults.containerNameToNewRuntimeDetails {
-			for j := range currentConfig.Status.RuntimeDetailsByContainer {
-				existingDetail := &currentConfig.Status.RuntimeDetailsByContainer[j]
-				if newDetail.ContainerName == existingDetail.ContainerName {
-					podKey := strings.Join([]string{currentConfig.Namespace, currentConfig.Name}, "/")
-					if mergeRuntimeDetails(existingDetail, newDetail, podKey) {
-						updated = true
-					}
-				}
+			existingDetail := findRuntimeDetailsForContainer(currentConfig.Status.RuntimeDetailsByContainer, newDetail.ContainerName)
+			if existingDetail == nil {
+				newContainers = append(newContainers, newDetail)
+				continue
 			}
+			if mergeRuntimeDetails(existingDetail, newDetail, podKey) {
+				updated = true
+			}
+		}
+		if len(newContainers) > 0 {
+			// appended only after all the merges are done, since appending may reallocate the
+			// slice that the merged entries point into.
+			slices.SortFunc(newContainers, func(a, b odigosv1.RuntimeDetailsByContainer) int {
+				return strings.Compare(a.ContainerName, b.ContainerName)
+			})
+			currentConfig.Status.RuntimeDetailsByContainer = append(currentConfig.Status.RuntimeDetailsByContainer, newContainers...)
+			updated = true
 		}
 		// Do not overwrite existing details if no updates are needed
 		if !updated {
@@ -371,6 +385,15 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		return err
 	}
 
+	return nil
+}
+
+func findRuntimeDetailsForContainer(details []odigosv1.RuntimeDetailsByContainer, containerName string) *odigosv1.RuntimeDetailsByContainer {
+	for i := range details {
+		if details[i].ContainerName == containerName {
+			return &details[i]
+		}
+	}
 	return nil
 }
 
