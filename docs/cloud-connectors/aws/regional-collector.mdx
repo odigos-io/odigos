@@ -101,7 +101,7 @@ The Collector mode is set **per connector**.
 | Mode | What you do | What Odigos does | What Odigos never does |
 | --- | --- | --- | --- |
 | **Off** | Nothing. | Nothing. Workloads export directly. | Create or read Collector infrastructure. |
-| **Manual (customer IaC)** | Deploy the Collector yourself from generated IaC. | Finds the Collector by its tags, observes it, pushes its configuration over OpAMP, and routes workloads to it once it is ready. | Create, repair, or delete any of your infrastructure. |
+| **Manual (customer IaC)** | Deploy the Collector yourself from generated IaC. | Finds the Collector by its tags, observes it, pushes its configuration (destinations and actions) over OpAMP, and routes workloads to it once it is ready. | Create, repair, or delete any of your infrastructure. |
 | **Automatic** | Create the execution role once, then run the install wizard. | Everything in Manual, plus creates and keeps in sync the ECS service, task definition, internal NLB, listeners, target groups, security group, log group, Secrets Manager secrets (the OpAMP credential, the license, and, when needed, a startup configuration), and autoscaling when it is enabled. | Create your ECS cluster, VPC, or execution role. |
 
 Both modes need an `ACTIVE` ECS cluster and an ECS task execution role that you provide.
@@ -429,8 +429,8 @@ bypass them.
 To change or remove an action, click **Edit** on its row. You can delete it from the drawer that opens.
 
 <Note>
-  Editing in the UI is available in **Automatic** mode only. In **Manual** mode, the **Actions** and
-  **Destinations** tabs are read-only.
+  Actions and destinations are Collector configuration, which Odigos pushes over OpAMP in both modes. You can
+  add and edit them in **Manual** and **Automatic** mode alike.
 </Note>
 
 <Note>
