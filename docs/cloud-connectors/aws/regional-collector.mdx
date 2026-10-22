@@ -1,0 +1,625 @@
+---
+title: 'Regional Collector'
+description: 'Run an Odigos-managed OpenTelemetry Collector in your own AWS account, one per region, so Fargate services and VPC-attached Lambda functions export in-VPC instead of each sending to the backend.'
+sidebarTitle: 'Regional Collector'
+---
+
+The **regional Collector** is an Odigos OpenTelemetry Collector that runs in **your** AWS account, with at
+most one per region. It runs as an ECS Fargate service behind an **internal** Network Load Balancer (NLB),
+and Odigos manages its configuration over OpAMP, so you never edit a Collector config file.
+
+Instrumented workloads in the same region export to the Collector inside your VPC instead of each sending
+directly to the backend. That gives you:
+
+- **A short, in-VPC hop.** Workloads export to a regional endpoint, not to the backend across the network.
+- **One place for backend credentials.** The Collector holds the credentials for its downstream destinations,
+  so workloads don't need them.
+- **A central place for routing.** You choose where a region's telemetry goes from the Collectors page in
+  Central, without touching the workloads.
+
+<Info>
+  The regional Collector is an AWS Connector capability. It is off by default, and your Odigos Central
+  installation must enable managed Collectors first. See
+  [Prerequisites](#prerequisites).
+</Info>
+
+## Which workloads use it
+
+A workload exports through the regional Collector when it is in the same region as the Collector and can
+reach it over the network:
+
+| Workload | Uses the Collector? |
+| --- | --- |
+| Fargate service | Yes, when it can reach the Collector. |
+| Lambda function attached to a VPC | Yes, when it can reach the Collector. |
+| Lambda function **not** attached to a VPC | Never. It always exports directly to your global destination. Odigos never attaches a function to a VPC or changes its `VpcConfig`. |
+
+A workload can reach the Collector when **all** of the following hold:
+
+- It runs in the **same VPC** as the Collector, or the two VPCs have an **active, same-region VPC peering
+  connection** with non-overlapping CIDR blocks and routes in every subnet on both sides.
+- The Collector's security group admits the workload's security group or subnet CIDR on TCP ports **4317**
+  (OTLP gRPC) and **4318** (OTLP HTTP).
+- The Collector's security group also admits **itself** on TCP **4317** and **4318**. Traffic from the load
+  balancer to the Collector tasks needs it.
+
+<Warning>
+  Odigos does not create VPC peering or any other network connection between your VPCs. If a workload runs in
+  a different VPC, set up the peering and routes yourself. Until Odigos can tell that a workload can reach the
+  Collector, the workload keeps exporting directly. See [Routing notes](#routing-notes).
+</Warning>
+
+## Prerequisites
+
+<Steps>
+  <Step title="Enable managed Collectors in Central">
+    The Odigos Central Helm chart must have cloud connectors and managed Collectors enabled, with an external
+    OpAMP endpoint that Collectors running in AWS can reach. See
+    [Managed Collectors](/cloud-connectors/enable#managed-collectors).
+  </Step>
+  <Step title="An ACTIVE ECS cluster">
+    The Collector runs as a service in an ECS cluster you already have. The cluster only needs to be
+    `ACTIVE`; it doesn't need other services or EC2 capacity. Odigos never creates a cluster.
+  </Step>
+  <Step title="A VPC with outbound access">
+    The Collector's tasks need egress to pull the image, read Secrets Manager, reach Odigos Central over
+    OpAMP, and reach the Collector's downstream destinations. That means a NAT gateway or other central
+    egress route for private subnets, or an internet gateway route for public subnets, depending on the
+    [outbound path](#install-a-collector-automatic) you choose.
+  </Step>
+  <Step title="An ECS task execution role">
+    The role that ECS uses to start the Collector tasks. **You create it, once per connector in each AWS
+    account.** Odigos never
+    creates IAM roles. The install wizard gives you a CloudFormation template for it; see step 1 of
+    [Install a Collector (automatic)](#install-a-collector-automatic).
+  </Step>
+  <Step title="IAM permissions on the connector identity">
+    The connector uses the credentials you already gave it; there is no separate role for the Collector.
+    Select the Collector access level when you add the connector and the permission preview shows exactly
+    what the connector needs. See
+    [IAM permissions](/cloud-connectors/add-connectors/add-aws-connector#iam-permissions).
+
+    In automatic mode, the connector's policy also needs `iam:PassRole` for the **ARN of your Collector execution role** (in addition to the `iam:PassRole` that Fargate instrumentation uses), with the condition
+    `iam:PassedToService` equal to `ecs-tasks.amazonaws.com`.
+
+    <Warning>
+      Never grant `iam:CreateRole`, `iam:PutRolePolicy`, `iam:TagRole`, or `iam:DeleteRole` to the connector.
+      It doesn't need them.
+    </Warning>
+  </Step>
+</Steps>
+
+<Note>
+  The connection test doesn't check Collector permissions. A connector can pass the test and still fail to
+  install or manage a Collector if the permissions for your chosen mode are missing.
+</Note>
+
+## Modes
+
+The Collector mode is set **per connector**.
+
+| Mode | What you do | What Odigos does | What Odigos never does |
+| --- | --- | --- | --- |
+| **Off** | Nothing. | Nothing. Workloads export directly. | Create or read Collector infrastructure. |
+| **Manual (customer IaC)** | Deploy the Collector yourself from generated IaC. | Finds the Collector by its tags, observes it, pushes its configuration (destinations and actions) over OpAMP, and routes workloads to it once it is ready. | Create, repair, or delete any of your infrastructure. |
+| **Automatic** | Create the execution role once, then run the install wizard. | Everything in Manual, plus creates and keeps in sync the ECS service, task definition, internal NLB, listeners, target groups, security group, log group, Secrets Manager secrets (the OpAMP credential, the license, and, when needed, a startup configuration), and autoscaling when it is enabled. | Create your ECS cluster, VPC, or execution role. |
+
+Both modes need an `ACTIVE` ECS cluster and an ECS task execution role that you provide.
+
+### Choose a mode when you create the connector
+
+In the access level step of the connector wizard:
+
+- Select **Discovery + instrumentation + collector** for **Automatic**.
+- Select **Custom** and use the **Collector** section for finer control. The **Management** and
+  **Installation** toggles map to the modes: Management alone is Manual, Management plus Installation is
+  Automatic.
+
+### Change the mode later
+
+<Steps>
+  <Step title="Open the row action">
+    On the **Connections** page, open the action menu on the connector's row and choose **Collector mode**.
+  </Step>
+  <Step title="Pick a mode">
+    In the **Regional Collector mode** drawer, choose **Off**, **Manual (customer IaC)**, or **Automatic**.
+  </Step>
+  <Step title="Save">
+    Click **Save and restart connector**.
+  </Step>
+</Steps>
+
+<Warning>
+  Changing the mode **restarts the connector**. Only Central administrators can change it.
+</Warning>
+
+## Install a Collector (automatic)
+
+In automatic mode, Odigos deploys the Collector for you. Select the connector on **Connections**, then open
+**Collectors** in the left navigation. The page is titled **Managed Collectors**. Click **Install new
+collector** (or **Install collector** from an empty state) to open the install wizard.
+
+The wizard has three phases, **Prepare**, **Configure**, and **Verify**, across nine steps. At the top, a
+method switch lets you view each step as an **Overview**, as **AWS CLI** commands, or as a
+**CloudFormation** template.
+
+<Steps>
+  <Step title="Pre-create the Collector task execution role">
+    The wizard gives you a CloudFormation template for the execution role. Deploy it, then paste the role ARN
+    from the stack output **`ExecutionRoleArn`**.
+
+    <img
+      src="/images/cloud-connectors/aws-collector-execution-role.png"
+      alt="Install collector wizard, step 1, showing the execution role CloudFormation template and the Execution role ARN field"
+    />
+
+    - Set the **`ConnectorName`** parameter to the **exact name of this connector**. The permissions in the
+      role are scoped by that name.
+    - Deploy the stack **once per connector in each AWS account**. IAM roles are account-wide, so a role you
+      already created for one region works for the others.
+    - The role can be assumed by `ecs-tasks.amazonaws.com`, restricted to your account. It can write to the
+      Collector's log group and read the Collector's secrets, and nothing else.
+    - If you pull the Collector image from a **private ECR** repository, the role also needs
+      `ecr:GetAuthorizationToken`, `ecr:BatchCheckLayerAvailability`, `ecr:BatchGetImage`, and
+      `ecr:GetDownloadUrlForLayer`.
+    - If your secrets are encrypted with a **customer-managed KMS key**, the role also needs `kms:Decrypt`
+      on that key.
+
+    Remember to allow the connector's `iam:PassRole` for this role's ARN (automatic mode). See
+    [Prerequisites](#prerequisites).
+  </Step>
+  <Step title="Select the Collector region">
+    Choose the region for this Collector. There is at most one Collector per region, and only workloads in
+    that region use it.
+  </Step>
+  <Step title="Choose the ECS cluster">
+    Enter the ARN of an existing `ACTIVE` ECS cluster. Odigos does not create the cluster, and the cluster
+    needs no other services or EC2 instances.
+  </Step>
+  <Step title="Choose the VPC">
+    Enter the VPC ID. Odigos picks the subnets itself: subnets with free IP addresses and a usable outbound
+    route, preferably spread over at least two Availability Zones. You can see the choice later on the Collector's
+    overview.
+  </Step>
+  <Step title="Choose the outbound path">
+    This controls how the Collector tasks reach the internet: for image registries, Secrets Manager, the
+    Odigos OpAMP endpoint, and the Collector's downstream destinations.
+
+    | Option | Task public IP | Your VPC needs |
+    | --- | --- | --- |
+    | **Private** | No | A default route to a NAT gateway or central egress. |
+    | **Public** | Yes | A route to an internet gateway. |
+
+    The Collector's load balancer is **internal** either way. Workloads never reach it from the internet.
+  </Step>
+  <Step title="Choose the Collector size">
+    Each task gets a fixed amount of CPU and memory. **Medium** is the default.
+
+    | Size | vCPU | Memory |
+    | --- | --- | --- |
+    | Small | 0.5 | 1 GiB |
+    | **Medium** (default) | 1 | 2 GiB |
+    | Large | 4 | 8 GiB |
+    | X-Large | 8 | 16 GiB |
+    | 2X-Large | 16 | 32 GiB |
+
+    <img
+      src="/images/cloud-connectors/aws-collector-size.png"
+      alt="Install collector wizard showing the Collector size options from Small to 2X-Large"
+    />
+
+    By default the service runs **2 tasks** and keeps Collector logs for **7 days**.
+  </Step>
+  <Step title="Prepare automatic scaling">
+    ECS autoscaling needs the Application Auto Scaling service-linked role for ECS. The wizard shows the
+    command that creates it if your account doesn't have it yet:
+
+    ```bash
+    aws iam create-service-linked-role \
+      --aws-service-name ecs.application-autoscaling.amazonaws.com
+    ```
+
+    You only need this role if the Collector uses automatic scaling. By default it runs a fixed number of
+    tasks, so you can skip the command.
+  </Step>
+  <Step title="Review and install">
+    Review the summary, then click **Install Collector**. This is the step that creates resources in your
+    AWS account.
+
+    <img
+      src="/images/cloud-connectors/aws-collector-review.png"
+      alt="Install collector wizard review step summarizing the execution role, region, cluster, VPC, outbound path, and size, with the Install Collector button"
+    />
+  </Step>
+  <Step title="Verify">
+    Odigos shows the Collector's progress until it reports **Healthy**. See
+    [Collector status](#collector-status).
+  </Step>
+</Steps>
+
+<Info>
+  By default the Collector gets its own security group. It admits OTLP traffic from the security groups of
+  the enabled Fargate services and VPC-attached Lambda functions that can reach it. Only if Odigos can't
+  resolve those security groups does it fall back to admitting the Collector VPC's CIDR range, and it
+  reports the Collector as degraded while that fallback is in effect. When
+  Odigos has to choose, it prefers subnets with private egress, at most one per Availability Zone, across up
+  to three zones. If only one Availability Zone is usable, the Collector runs with reduced availability.
+  Odigos also adds the rules that let the Collector security group admit itself on TCP 4317 and 4318, plus
+  13133, including on Collectors you installed earlier.
+</Info>
+
+## Install a Collector (manual)
+
+In manual mode you deploy the Collector with your own infrastructure-as-code. Odigos renders the IaC, issues
+the credential the Collector uses to connect to Central, and takes over configuration once the Collector
+connects. It never creates, repairs, or deletes your resources.
+
+<Steps>
+  <Step title="Open the install wizard">
+    On **Collectors**, click **Install new collector** (or **Install collector** from an empty state).
+    Choose the region, ECS cluster, and VPC as in the
+    automatic flow, and pre-create the [execution role](#install-a-collector-automatic).
+  </Step>
+  <Step title="Enter your subnets and security group">
+    Fill in **Collector subnet IDs** and **Collector security group ID**. Create the security group and the
+    CloudWatch log group (`/odigos/collector/<connector>`) yourself first.
+
+    <Warning>
+      On the Collector security group, allow inbound **TCP 4317 and 4318** from your workloads' security
+      groups or subnets **and from the Collector security group itself**, plus **TCP 13133** from itself.
+      Without these rules, workloads cannot reach the Collector and keep exporting directly. The wizard
+      doesn't add them for you, and the generated instructions currently only mention 13133, so add the
+      4317 and 4318 rules yourself.
+    </Warning>
+  </Step>
+  <Step title="Save the Collector configuration">
+    Click **Save Collector configuration**. This only records your choices in Odigos. **It creates nothing in
+    AWS.**
+  </Step>
+  <Step title="Create the credential secret">
+    Create an empty Secrets Manager secret named `odigos/collector/<connector>/<region>/credential`. Then
+    click **Issue credential** and put the value in the secret.
+
+    <Warning>
+      The credential is shown **once**. Copy the complete header and store it in the AWS secret before you
+      deploy the ECS service. It can't be retrieved after the wizard closes. Issuing a credential needs the
+      Central owner or admin role.
+    </Warning>
+  </Step>
+  <Step title="Create the license secret">
+    Create a second secret named `odigos/collector/<connector>/<region>/license` with this value, using your
+    on-prem token:
+
+    ```json
+    {"username":"odigos","password":"<ON_PREM_TOKEN>"}
+    ```
+  </Step>
+  <Step title="Deploy">
+    In **Deploy method**, choose **CloudFormation**, **AWS CLI**, or **Terraform**. The wizard renders the
+    document with your values. Fill in the remaining placeholders it lists under **Fill these in before
+    applying**. You can open the same documents later from **Download config** on the Collectors page.
+
+    Apply them with your own IaC principal, not the connector's.
+  </Step>
+  <Step title="Verify">
+    Wait for the Collector to connect and report **Healthy**. See [Collector status](#collector-status).
+  </Step>
+</Steps>
+
+Tag the resources you create so Odigos can find them:
+
+| Tag | Value |
+| --- | --- |
+| `odigos-component` | `collector` |
+| `odigos-connector` | The connector name |
+| `odigos-connector-id` | The connector ID |
+| `odigos-region` | The Collector's region |
+| `odigos-network` | The ID of the VPC the Collector runs in |
+| `odigos-iac` | `customer` |
+
+The rendered IaC includes these tags, so keep them as generated.
+
+## Route workloads to the Collector
+
+Creating a Collector doesn't move any traffic. Workloads switch over when you add a routing destination.
+
+<Steps>
+  <Step title="Add the destination">
+    On the connector, add a destination of type **Odigos Managed Regional Collector** and choose the
+    **Region**. The type is only offered once the Collector capability is on and a Collector in a region has
+    an endpoint.
+
+    <Tip>
+      Keep a **global OTLP destination** (OTLP gRPC or OTLP http) configured as well. Workloads that can't
+      reach the Collector fall back to it, including non-VPC Lambda functions and workloads in other
+      networks. This is recommended.
+    </Tip>
+  </Step>
+  <Step title="Wait for the Collector to be ready">
+    Odigos only routes to a Collector after it has reported ready at least once. After that, the decision is
+    remembered, so a later blip in readiness doesn't send everything back to direct export. Odigos
+    re-evaluates routing immediately when destinations or sources change or when a Collector becomes ready,
+    without waiting for the next discovery interval.
+  </Step>
+  <Step title="Workloads cut over">
+    Eligible workloads are updated to export through the Collector. How that happens depends on whether you
+    have a global destination.
+  </Step>
+</Steps>
+
+A workload goes through the Collector only when **all** of these are true:
+
+- A routing destination exists for the Collector's region.
+- The Collector has an endpoint.
+- The Collector has reported ready at least once.
+- The workload can [reach the Collector](#which-workloads-use-it).
+
+### Cutover behavior
+
+<Tabs>
+  <Tab title="With a global destination">
+    The cutover is gradual, so one bad rollout doesn't hit everything at once.
+
+    - Once the Collector is ready and there are eligible instrumented workloads, Odigos announces a
+      **one-minute warning window**. Nothing moves until it ends.
+    - Workloads then move in **batches of up to 10** per pass by default, shared between Fargate services
+      and Lambda functions.
+    - Each moved workload gets a **new revision**: a new task definition revision for a Fargate service, or an
+      updated configuration for a Lambda function.
+    - Failed cutovers are retried, oldest first. At most half of each batch is retries, so workloads that
+      haven't been tried yet are never starved.
+
+    Workloads waiting for their turn keep using the global destination.
+  </Tab>
+  <Tab title="Without a global destination">
+    There is nothing to fall back to, so there is no gradual cutover. Workloads route to the Collector
+    **immediately** after it first reports ready.
+  </Tab>
+</Tabs>
+
+To stop using the Collector, **disable** the routing destination. All workloads return to direct export.
+
+### Where the Collector sends data
+
+The routing destination only chooses the path *to* the Collector. Where the Collector sends telemetry next
+is configured separately, per region, on the Collectors page.
+
+<Steps>
+  <Step title="Open the Collector">
+    On **Collectors**, select the region.
+  </Step>
+  <Step title="Add a downstream destination">
+    In the **Destinations** card, click **Add destination** and choose the backend. The table shows each
+    destination's type, name, signals, and status.
+  </Step>
+</Steps>
+
+<Warning>
+  A Collector with **no downstream destination accepts telemetry and discards it.** Add at least one before
+  routing workloads to it. Profiles aren't accepted by the Collector.
+</Warning>
+
+## Collector actions
+
+Actions are processing steps that a region's Collector applies to telemetry before it sends it to **every**
+destination of that Collector. Each action belongs to one regional Collector, and removing the Collector
+deletes its actions.
+
+Actions only affect telemetry routed **through** the Collector. Workloads that export directly, such as
+non-VPC Lambda functions, workloads that can't reach the Collector, or workloads still waiting for cutover,
+bypass them.
+
+### Add an action
+
+<Steps>
+  <Step title="Open the Actions tab">
+    On **Collectors**, select the region. On the overview, switch from **Destinations** to **Actions**.
+    With no actions, the card shows **No actions** and "Add an action to configure this collector."
+  </Step>
+  <Step title="Add an action">
+    Click **Add action**. Pick an action type, using the categories (**All Actions**, **Enrichment**,
+    **Normalization**, **Privacy & Governance**) or the **Search by action name** box.
+  </Step>
+  <Step title="Configure and save">
+    Fill in the fields for the type and save. The region is preset and can't be changed. The table shows each
+    action's name, type, signals, and status (**Active** or **Disabled**).
+  </Step>
+</Steps>
+
+To change or remove an action, click **Edit** on its row. You can delete it from the drawer that opens.
+
+<Note>
+  Actions and destinations are Collector configuration, which Odigos pushes over OpAMP in both modes. You can
+  add and edit them in **Manual** and **Automatic** mode alike.
+</Note>
+
+<Note>
+  Collector actions require Odigos **v1.39 or later**: Central, the connector, and the Collector image.
+</Note>
+
+### Action types
+
+| Action | Signals | What it does | Key fields |
+| --- | --- | --- | --- |
+| **URL Templatization** | Traces | Creates stable routes from HTTP URLs. | **Rule groups**, each with **Templates** such as `/users/{id}`. At least one template is required. |
+| **Processor Addition** | Depends on the processor | Adds an OpenTelemetry processor to the pipeline. | **Processor type** (default `attributes`), **Processor name**, **Processor configuration (JSON)**. |
+| **Span Metrics** | Traces in, metrics out | Generates metrics from spans. | All optional: **Interval**, **Metrics expiration**, **Additional dimensions**, **Disable latency histogram**, **Explicit histogram buckets**, **Resource metric key attributes**, **Include process in dimensions**, **Excluded resource attributes**, **Disable span metrics**. |
+| **DB Query Templatization** | Traces | Replaces literals in database queries with placeholders. | **Templatize literals** (on by default), **Remove PostgreSQL cast operator**. At least one must be on. |
+| **Infer DB Attributes** | Traces | Infers `db.operation.name` and `db.collection.name` from the query. | None. |
+| **Extract Attribute** | Traces | Extracts values into a new span attribute. | **Extractions**: a preset (JSON, SQL, or resource path, with a lookup key) or a custom regex with exactly one capture group, and a **New span attribute name**. |
+| **Delete Attribute** | Traces, metrics, logs | Deletes attributes from resources, scopes, and records. | **Attributes to delete**. |
+| **Rename Attribute** | Traces, metrics, logs | Renames attributes. | **Old key** and **New key**, one pair per **Add rename**. No duplicates, and the old and new keys must differ. |
+
+DB Query Templatization and Infer DB Attributes need the database query text to be collected at the source.
+
+Span Metrics uses the default dimensions `http.method`, `http.request.method`, `http.status_code`,
+`http.response.status_code`, `http.route`, and `span.instrumentation.scope.name`, with cumulative temporality.
+
+#### Processor Addition processors
+
+| Processor | Signals |
+| --- | --- |
+| Attributes, Filter, Transform, Resource, Group by attributes | Traces, metrics, logs |
+| Span | Traces |
+| Redaction | Traces, logs |
+| Probabilistic sampler | Traces, logs |
+| Metrics transform, Cumulative to delta, Delta to rate, Metrics generation | Metrics |
+| Extract attribute | Traces |
+
+Values such as `${env:...}` and `${file:...}` in the processor JSON are treated literally, not expanded.
+
+### How actions run
+
+- In every destination pipeline, the order is: the Collector's built-in processors (memory limiting,
+  resource detection, and `cloud.region`), then your actions, then the destination's own processors, then
+  batching.
+- You can't control the order among actions. URL Templatization always runs last.
+- **Disabled** actions aren't applied.
+- Odigos pushes changes to the running Collector. There is no redeploy.
+
+### Limits
+
+<AccordionGroup>
+  <Accordion title="One Span Metrics action per region">
+    Only one enabled Span Metrics action can run per region, and it needs an active **metrics** destination
+    on that Collector. Otherwise it isn't applied, and traces still flow.
+  </Accordion>
+  <Accordion title="Processor names">
+    Two Processor Additions of the same type need different **Processor name** values. A Resource processor
+    always needs a name.
+  </Accordion>
+  <Accordion title="Not supported">
+    - PII masking
+    - Sampling, other than the probabilistic sampler through Processor Addition
+    - Profiles
+    - Targeting a single destination
+    - Scoping an action by source, service, or language
+    - Instrumentation rules
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  Actions that conflict with each other or can't be built are **left out silently**. The UI doesn't warn you.
+  If the Collector rejects a configuration, it becomes **Degraded** and keeps running its last accepted
+  configuration. Further changes in that region don't take effect until you fix or remove the action.
+</Warning>
+
+### Validation errors
+
+| Message | Fix |
+| --- | --- |
+| `Processor type is required.` | Choose a processor type. |
+| `Processor configuration must be valid JSON.` | Fix the JSON syntax. |
+| `Processor configuration must be a JSON object.` | Use an object, not an array or a value. |
+| `Enable literal templatization or PostgreSQL cast removal` | Turn on at least one option. |
+| `At least one row is required` | Add an attribute to delete, a rename, or an extraction. |
+| `All row fields are required` | Fill in or remove incomplete rows. |
+| `Each rename needs different, non-blank old and new names.` | Make the old and new keys different. |
+| `Each row needs a target attribute name and either a regex or both lookup key and data format` | Complete every extraction. |
+| `Each new span attribute name must be unique` | Use a different **New span attribute name** for each extraction. |
+| `Each rule group needs at least one non-blank template` | Add a template to every rule group. |
+| `resource processor additions need a processorName so they do not replace the Collector's built-in resource processor` | Set a **Processor name**. |
+| `processor type "<type>" does not support <SIGNAL>` | Select only the signals that processor supports. See [Processor Addition processors](#processor-addition-processors). |
+| `extraction regex must contain exactly one capture group` | Use a regex with a single capture group. |
+| `region <region> has no Collector; create one first` | Install a Collector in the region. |
+
+## Collector image
+
+By default, Collectors run `registry.odigos.io/odigos-enterprise-collector:<Central version>`. Set the image
+with the `cloudConnectors.managedCollectors.collectorImage` Helm value. See
+[Managed Collectors](/cloud-connectors/enable#managed-collectors).
+
+- **Upgrading Central** changes the expected image. Automatic Collectors roll to a new task definition
+  revision. Manual Collectors show image drift and report **Degraded** until you re-apply the artifacts from
+  **Download config**.
+- **ECR Public** is supported. Use a `public.ecr.aws/<alias>/<repo>` image. The pull is anonymous, so no
+  repository credentials are needed, but the Collector tasks need outbound HTTPS to ECR Public and the
+  license and OpAMP secrets are still required.
+- **Private ECR** needs the execution role's ECR permissions listed in
+  [Install a Collector (automatic)](#install-a-collector-automatic).
+- For immutable deployments, reference the image by **digest** rather than by tag.
+- To override the image for a single region, contact Odigos support.
+
+## Collector status
+
+Select a region on the Collectors page to see its status badge.
+
+| Status | Meaning |
+| --- | --- |
+| **Pending**, **Deploying**, **Deleting** | A change is in progress. |
+| **Awaiting customer** | Odigos is waiting for you to deploy the Collector (manual mode). |
+| **Healthy** | The Collector is ready and connected to Central. |
+| **Degraded** | The Collector isn't fully healthy, or it has stopped checking in. |
+| **Error** | The last operation failed. |
+
+If a Collector stops checking in, a banner explains the effect:
+
+> This collector has not checked in recently. It may still be exporting, but its configuration can no longer be changed.
+
+The region's overview shows:
+
+| Card | Contents |
+| --- | --- |
+| Gauges | **CPU** and **Queue depth** |
+| **Throughput** | Accepted spans, dropped spans, uptime |
+| **Resources** | CPU and memory size, memory in use, and whether the Collector is enabled |
+| **Placement** | Execution role, ECS cluster, VPC, public task IP, and subnets (**Selected by Odigos** or **Pinned**) |
+| **Runtime** | gRPC and HTTP endpoints, tasks, config, first ready time |
+| **Destinations** / **Actions** tabs | The Collector's downstream destinations, and the [actions](#collector-actions) it applies before sending to them |
+
+The action buttons on the overview are **Reconfigure** and **Uninstall**. Use **Refresh** at the top of the
+page to reload the status. **Download config** (manual mode only) opens the copyable IaC for the Collector.
+
+### Routing notes
+
+When a workload exports directly instead of through the Collector, its status shows a note that says why.
+
+| Note | Meaning |
+| --- | --- |
+| `Defaulting to the global OTLP destination: the Odigos Managed Regional Collector has not reported ready yet.` | The Collector hasn't been ready yet. The workload moves once it is. |
+| `Defaulting to the global OTLP destination: the Odigos Managed Regional Collector has no ingress endpoint yet.` | The Collector exists, but its load balancer endpoint isn't published yet. |
+| `Defaulting to the global OTLP destination: this Lambda has no VPC configuration, so it cannot reach the Odigos Managed Regional Collector. Odigos will not attach the function to a VPC or change its VpcConfig.` | A Lambda function without a VPC. This is permanent by design. |
+| `Defaulting to the global OTLP destination: no Odigos Managed Regional Collector is set up in this region.` | The routing destination exists, but this region has no Collector. |
+| `Workload VPC <vpc> cannot reach the regional Collector in VPC <vpc>. Verify active same-region VPC peering, reciprocal routes, workload ingress to the NLB, and NLB security-group ingress to Collector tasks on every published OTLP port. ...` | The workload runs in a different VPC from the Collector and Odigos can't confirm the path. See [Which workloads use it](#which-workloads-use-it). |
+| `Workload VPC <vpc> shares the Collector VPC, but the Collector ingress security group does not admit this workload on every published OTLP port. ...` | The workload is in the Collector's VPC, but the Collector security group doesn't admit it on 4317 and 4318, or doesn't admit itself on them. |
+| `Defaulting to the global OTLP destination: this VPC-attached Lambda cannot currently reach the Odigos Managed Regional Collector. ...` | The same for a VPC-attached Lambda function. The note goes on to list what to fix. |
+| `Continuing to use the global OTLP destination until this workload is admitted to the regional Collector rollout.` | The workload is eligible but waiting for its batch. |
+| `Cannot export telemetry through the Odigos Managed Regional Collector: <cause>, and no global OTLP destination is configured for fallback.` | There is no global destination, so the workload can't export at all. Fix the cause or add a global destination. |
+
+During a cutover, the Collector reports `N workload cutover(s) in <region> failed and will be retried. Examples: <workloads>.`
+when some workloads couldn't be moved yet. The one-minute warning shows as:
+
+> The regional Collector is ready. New workload cutovers are announced and will begin after the one-minute warning window, in bounded batches.
+
+## Uninstall
+
+<Tabs>
+  <Tab title="Automatic">
+    On the region's overview, click **Uninstall**. Odigos revokes the Collector's credentials, then deletes
+    the resources it created: the ECS service and its tasks, any autoscaling target and policies, the load
+    balancer and its listeners, the target groups, the security group, the Collector's secrets, and its log
+    group. It retries the security group while network interfaces release. **Deleting** can last up to 30
+    minutes. After that it moves to **Error** and Odigos keeps retrying. Task definition revisions, the
+    execution role, the cluster, and the VPC stay in your account.
+  </Tab>
+  <Tab title="Manual">
+    Click **Remove from Odigos**. Odigos revokes the Collector's credential and removes its declaration. **The
+    resources you deployed stay in your account.** Delete them with the same IaC you used to create them.
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Enable managed Collectors" icon="gear" href="/cloud-connectors/enable">
+    The Central settings that let Collectors in AWS connect back.
+  </Card>
+
+  <Card title="Add an AWS Connector" icon="aws" href="/cloud-connectors/add-connectors/add-aws-connector">
+    Choose the Collector access level and review the IAM permissions.
+  </Card>
+
+  <Card title="Instrument workloads" icon="bolt" href="/cloud-connectors/instrument-workloads">
+    Create Sources and choose the destination they export to.
+  </Card>
+</CardGroup>

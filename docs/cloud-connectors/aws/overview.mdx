@@ -27,6 +27,18 @@ This page is the map. For hands-on tasks, see:
     Self-managed Lambda instrumentation for Java, Python, Node.js, and Ruby.
   </Card>
 
+  <Card title="Lambda distros" icon="layer-group" href="/cloud-connectors/aws/workloads/lambda/distros">
+    Choose the full Java agent, a lightweight wrapper, or AWS ADOT for each function.
+  </Card>
+
+  <Card title="Regional Collector" icon="server" href="/cloud-connectors/aws/regional-collector">
+    Run an Odigos-managed Collector in your account for workloads in a region to export to.
+  </Card>
+
+  <Card title="Collector actions" icon="filter" href="/cloud-connectors/aws/regional-collector#collector-actions">
+    Modify telemetry on a regional Collector before it reaches your destinations.
+  </Card>
+
   <Card title="Instrument Fargate" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
     Self-managed Fargate instrumentation with CloudFormation for every supported language.
   </Card>
@@ -43,14 +55,16 @@ This page is the map. For hands-on tasks, see:
 ## Resource types
 
 The connector splits AWS resources into two domains — **workloads**, which it can instrument directly, and
-**compute platforms**, which it can only discover today:
+**compute platforms**, which are reported for coverage only. Compute-platform discovery is not offered by any
+access level in the Create Cloud Connector UI:
 
 | Type                  | Domain           | Discovery | Instrumentation                      |
 | --------------------- | ---------------- | --------- | ------------------------------------ |
 | `aws.lambda`          | Workload         | Yes       | Yes — Odigos-managed or self-managed |
 | `aws.fargate-task`    | Workload         | Yes       | Yes — Odigos-managed or self-managed |
-| `aws.ecs-cluster`     | Compute platform | Yes       | Coming soon (agent install)          |
+| `aws.ecs-cluster`     | Compute platform | Yes       | n/a (use the [Odigos ECS Agent](/vmagent/ecs/overview) for EC2) |
 | `aws.fargate-cluster` | Compute platform | Yes       | n/a (coverage only)                  |
+| `aws.fargate-collector` | Collector        | Observes a Collector you deploy (manual mode) | Installs and manages it (automatic mode) — see [Regional Collector](/cloud-connectors/aws/regional-collector) |
 
 <Info>
   `aws.fargate-task` means an ECS **service** running on Fargate — the service, not
@@ -65,8 +79,18 @@ The connector splits AWS resources into two domains — **workloads**, which it 
 Everything on this page and in the AWS Connector section covers **Fargate**-launch-type ECS. EC2-launch-type
 ECS clusters are discovered as `aws.ecs-cluster` compute platforms, but Fargate forbids the privileged
 containers eBPF instrumentation needs, so EC2-backed clusters are covered by a different, cluster-wide agent
-rather than the per-service sidecar described here. That agent's automatic deployment is not yet available —
-today `aws.ecs-cluster` gives you discovery and coverage only.
+rather than the per-service sidecar described here: the **Odigos ECS Agent**, which is the
+[VM Agent](/vmagent/overview) packaged as an ECS daemon service. It instruments tasks in place with eBPF — no
+task restarts and no task-definition changes — and reports to Odigos Central. See
+[Odigos on Amazon ECS](/vmagent/ecs/overview) for requirements and installation. The AWS connector does not
+deploy it, so `aws.ecs-cluster` gives you discovery and coverage only.
+
+<Info>
+  The two cover different launch types, so they don't overlap. The ECS Agent is only for ECS clusters on **EC2**
+  container instances. **Fargate** services, and Lambda functions, are instrumented through the connector.
+  On EC2 the agent uses eBPF, which gives deeper coverage than the per-language agents Fargate can run,
+  including Go and other eBPF-only languages.
+</Info>
 
 ## Odigos-managed vs. self-managed
 
@@ -78,8 +102,8 @@ specifically:
 
 | Mode                   | Lambda                                                                                                                         | Fargate                                                                                                                                                  |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Odigos-managed**     | The connector attaches the OpenTelemetry layer and sets the required environment directly on the function, and keeps it there. | The connector injects an `odigos-agent` sidecar into the service's task definition and rolls the service to the new revision, then keeps reconciling it. |
-| **Self-managed (IaC)** | You attach the layer and environment yourself via CloudFormation, the Odigos CDK construct, Terraform, or the AWS CLI.        | You add the sidecar and environment yourself via CloudFormation or the Odigos CDK construct (`@odigos/aws-cdk`).                                          |
+| **Odigos-managed**     | The connector attaches the distro's layer(s), sets `AWS_LAMBDA_EXEC_WRAPPER` and `ODIGOS_LAMBDA_CONFIG`, and tags the function, then keeps it that way. | The connector injects an `odigos-agent` sidecar into the service's task definition and rolls the service to the new revision, then keeps reconciling it. |
+| **Self-managed (IaC)** | You attach the layer(s), environment, and tags yourself via CloudFormation, the Odigos CDK construct, Terraform, or the AWS CLI. | You add the sidecar and environment yourself via CloudFormation, Terraform, or the Odigos CDK construct (`@odigos/aws-cdk`).                               |
 
 Self-managed is the default the moment you enable discovery without instrumentation for a type — nothing
 extra to configure. See [Instrument Lambda](/cloud-connectors/aws/workloads/lambda/instrument) and
@@ -92,8 +116,15 @@ account first if your organization requires that.
 
 | Workload                     | Languages                              | Notes                                                                                                                                                                         |
 | ---------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Lambda (`aws.lambda`)        | Java, Python, Node.js, Ruby            | Ruby: OTLP HTTP destinations only. Other runtimes (Go, .NET) are discovered but not instrumented.                                                                             |
+| Lambda (`aws.lambda`)        | Java, Python, Node.js, Ruby            | OTLP gRPC and HTTP destinations for every language. Choose a distro per function; Java, Node.js, and Python can also run AWS ADOT. See [Lambda distros](/cloud-connectors/aws/workloads/lambda/distros). Other runtimes (Go, .NET) are discovered but not instrumented. |
 | Fargate (`aws.fargate-task`) | Java, Python, Node.js, .NET, PHP, Ruby | PHP and Ruby: OTLP HTTP destinations only. .NET requires a glibc (not musl/Alpine) base image. Go and any other eBPF-based language cannot be instrumented on Fargate at all. |
+
+<Info>
+  **Fargate has no distro choice.** Each language has exactly one Odigos agent (Java, Python, Node.js, .NET, PHP,
+  Ruby), staged into the task by the `odigos-agent` container. Lambda is different: Java, Node.js, and Python
+  functions can switch between several distros. See [Lambda distros](/cloud-connectors/aws/workloads/lambda/distros).
+  Go and other eBPF-only languages can't be instrumented on Fargate at all.
+</Info>
 
 **If a task runs more than one container** — for example, an nginx or Envoy proxy sitting in front of your
 application — Odigos has to pick which one is the actual application to instrument. It does this by looking
@@ -117,6 +148,21 @@ Both Lambda and Fargate export OTLP only, and the destination must be reachable 
 * **Fargate** has no node-local collector — each instrumented task exports **directly** to the destination
   over its own network path. The destination endpoint must be reachable from the task's VPC (public IP or
   NAT for a registry pull, plus whatever egress the destination itself needs).
+* **Regional Collector (optional)** — an Odigos-managed Collector that runs in your account, one per
+  region. Fargate services and VPC-attached Lambda functions in that region can export to it instead of
+  directly to the destination. See [Regional Collector](/cloud-connectors/aws/regional-collector#which-workloads-use-it).
+
+The regional Collector also supports [actions](/cloud-connectors/aws/regional-collector#collector-actions), which modify the telemetry that passes through it before it is sent to destinations. They apply only to telemetry routed through that Collector. Instrumentation rules and workload-level actions are not available for cloud connectors.
+
+Which signals each workload exports (traces, metrics, logs) follows the signals enabled on the destination.
+See [Destination signals](/cloud-connectors/instrument-workloads#destination-signals).
+
+## Bootstrap region
+
+The connector makes its first API calls (the account identity check and listing enabled regions) through a
+**bootstrap region**, `us-east-1` by default. It doesn't limit discovery: every enabled region is still
+scanned. To change it, see
+[Bootstrap region (advanced)](/cloud-connectors/add-connectors/add-aws-connector#bootstrap-region-advanced).
 
 ## Next steps
 

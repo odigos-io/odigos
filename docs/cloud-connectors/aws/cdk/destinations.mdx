@@ -28,10 +28,13 @@ speaks:
   `https://otlp.example.com:4318`. Port 4318 is the convention.
 </ParamField>
 
-The two formats aren't interchangeable, and getting them mixed up is the most common mistake here — so the
-construct checks: a scheme in `endpoint`, or a missing one in `httpEndpoint`, stops the build immediately
-rather than deploying something that starts up fine and then quietly delivers nothing. Using a port that
-belongs to the other protocol (4318 with gRPC, or 4317 with HTTP) produces a warning.
+The two formats aren't interchangeable, and getting them mixed up is the most common mistake here. On
+Lambda the construct checks: a scheme in `endpoint`, or a missing one in `httpEndpoint`, stops the build
+immediately rather than deploying something that starts up fine and then quietly delivers nothing. On Fargate
+it doesn't check the format: `httpEndpoint` is written exactly as you give it, and `endpoint` is written as
+`https://host:port` (`http://host:port` when `insecure` is `true`), so double-check both. On both
+constructs, using a port that belongs to the other protocol (4318 with gRPC, or 4317 with HTTP) produces a
+warning.
 
 <Note>
   **How many endpoints to set differs between the two constructs.** Lambda takes
@@ -42,16 +45,29 @@ belongs to the other protocol (4318 with gRPC, or 4317 with HTTP) produces a war
 Two more optional settings:
 
 <ParamField path="destination.insecure" type="boolean" default="false">
-  Skip TLS verification. Applies to the gRPC `endpoint` only — the HTTP exporter takes its transport from
-  the URL scheme.
+  Connect to the gRPC `endpoint` without TLS. Applies to the gRPC `endpoint` only — the HTTP exporter takes
+  its transport from the URL scheme. On Fargate this is what makes the construct write `http://` instead of
+  `https://` in front of `endpoint`.
 </ParamField>
 
 <ParamField path="destination.headers" type="object">
   Headers sent with every request, which in practice means your destination's credential (an API key or
   token).
 
+  On Lambda they're stored in the `headers` field of the `ODIGOS_LAMBDA_CONFIG` environment variable. On Fargate
+  they're stored in `OTEL_EXPORTER_OTLP_HEADERS`, as a comma-separated `key=value` list sorted by key.
+
+  <Note>
+    **Fargate: pass header names and values already URL-encoded.** The construct writes them exactly as
+    given. Odigos compares `OTEL_EXPORTER_OTLP_HEADERS` against the destination's headers with names and values
+    URL-encoded (a space becomes `+`). Letters, digits, `-`, `_`, `.`, and `~` are the same either way, so a
+    plain API key needs nothing. A value with other characters, such as `Bearer <token>`, is reported as
+    drifted unless you give it in encoded form. If the destination in Odigos has no headers, don't set any
+    here.
+  </Note>
+
   <Warning>
-    These are stored as a plain environment variable on the workload — readable by
+    Both are plain-text environment variables on the workload — readable by
     anyone who can describe the function or task definition, and visible in the AWS
     console. For a long-lived credential, prefer a destination that authenticates by
     network position (a private VPC endpoint, or mTLS), or send telemetry to a
@@ -75,6 +91,11 @@ OpenTelemetry produces three kinds of data, and you choose which ones to send:
   Logs. **Off unless you turn it on.**
 </ParamField>
 
+<ParamField path="destination.profiles" type="boolean" default="false">
+  Profiles. No Lambda or Fargate agent produces profiles today, so setting this to `true` only adds a synth
+  **warning**; it doesn't activate a profiler, and your other selected signals stay enabled.
+</ParamField>
+
 ```typescript
 destination: {
   endpoint: 'otlp.example.com:4317',
@@ -89,13 +110,34 @@ batches are retried on a backoff, and on Lambda that retrying happens inside bil
 on when you want those signals and your destination is configured to accept them.
 
 <Warning>
-  **Match this to what your destination in Odigos has enabled.** Odigos compares
+  **Match this to what your destination in Odigos has enabled — exactly.** Odigos compares
   the workload's full telemetry configuration against what it expects, so a
+  missing signal *and* an extra one are both reported as *drifted*: a
   traces-only workload checked against a destination configured for all three
-  signals is reported as *drifted* — even though the workload is working fine.
+  signals, or the reverse, even though the workload is working fine.
   Read the enabled signals off the destination in Odigos and state the same ones
   here.
 </Warning>
+
+<Note>
+  The Application Signals distros (`*-adot-application-signals`) require both `destination.traces` and
+  `destination.metrics` to be `true`; the build fails otherwise. See
+  [ADOT and Application Signals](/cloud-connectors/aws/cdk/lambda#adot-and-application-signals).
+</Note>
+
+### Signals by language
+
+Odigos sends the signals your destination enables, as far as each language's agent can produce them. A
+signal that's off is switched off at the source, not just filtered.
+
+| Language | Lambda | Fargate |
+| --- | --- | --- |
+| Java, Node.js, Python | Traces, metrics, logs | Traces, metrics, logs |
+| .NET, PHP | Not available on Lambda | Traces, metrics, logs |
+| Ruby | Traces and function logs. **No metrics** — enabling `metrics` adds a synth warning. | **Traces only** — enabling `metrics` or `logs` adds a synth warning. |
+
+On Lambda, the Java lightweight wrappers and Ruby collect logs from the function's stdout and stderr. See
+[Lambda instrumentation distros](/cloud-connectors/aws/workloads/lambda/distros) for each distro's signals.
 
 <Note>
   Turning all three off stops the build — a workload with instrumentation but
@@ -106,7 +148,7 @@ on when you want those signals and your destination is configured to accept them
 
 <CardGroup cols={2}>
   <Card title="Lambda construct" icon="bolt" href="/cloud-connectors/aws/cdk/lambda">
-    Layer sources, web-server mode, Java handler interfaces.
+    Distros, ADOT, layer sources, web-server mode.
   </Card>
 
   <Card title="Fargate construct" icon="cubes" href="/cloud-connectors/aws/cdk/fargate">
