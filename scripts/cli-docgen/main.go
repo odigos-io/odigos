@@ -32,7 +32,7 @@ func main() {
 	}
 
 	rootCmd := cmd.RootCmd()
-	outputDir := "../../docs/snippets/shared/cli"
+	outputDir := "../../docs/snippets/oss/cli"
 
 	err := doc.GenMarkdownTreeCustom(&rootCmd, outputDir, filePrepender, linkHandler)
 	if err != nil {
@@ -54,6 +54,18 @@ func main() {
 		}
 
 		updatedContent := strings.Split(string(content), watermark)[0] // Remove everything after the watermark
+		// The public site does not publish odigos pro pages. Drop links to them
+		// so the parent command page does not point at a missing route.
+		var kept []string
+		for _, line := range strings.Split(updatedContent, "\n") {
+			// "/cli/odigos_pro" is a prefix of "/cli/odigos_profile"; match the
+			// closing link or a pro subcommand so profile stays.
+			if strings.Contains(line, "/cli/odigos_pro)") || strings.Contains(line, "/cli/odigos_pro_") {
+				continue
+			}
+			kept = append(kept, line)
+		}
+		updatedContent = strings.Join(kept, "\n")
 		err = ioutil.WriteFile(file, []byte(strings.TrimSpace(updatedContent)), 0644)
 		if err != nil {
 			log.Printf("Error writing file %s: %v", file, err)

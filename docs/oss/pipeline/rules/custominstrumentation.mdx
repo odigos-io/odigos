@@ -1,19 +1,21 @@
 ---
 title: "Custom Instrumentation"
-description: 'The "Custom Instrumentation" rule can be used to instrument specific functions in PHP applications, or (with Odigos Enterprise) arbitrary Go/Java functions via eBPF.'
+description: 'The "Custom Instrumentation" rule can be used to instrument specific functions in PHP applications.'
 sidebarTitle: "Custom Instrumentation"
 icon: "terminal"
 ---
 
-## Considerations
+<Info>
+  In Odigos open source, Custom Instrumentation is supported for **PHP** applications using the community native OpenTelemetry distro.
 
-In Odigos open source, Custom Instrumentation is supported for **PHP** applications using the community native OpenTelemetry distro.
-
-Custom eBPF-based instrumentations for Go and Java require [Odigos Enterprise](https://odigos.io/pricing).
+  Custom Instrumentation is also available for other languages with the Odigos **Enterprise** plan. [Contact us](https://odigos.io/) for more information.
+</Info>
 
 PHP probes are delivered as environment variables and require a pod restart to take effect.
 
 ## Configuration Options
+
+
 
 <AccordionGroup>
   <Accordion title="PHP">
