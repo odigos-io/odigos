@@ -33,6 +33,11 @@ for path in glob.glob(f"{output_dir}/*.mdx"):
     # Put the embedded-struct note on its own line so MDX doesn't choke on <td>(
     fixed = fixed.replace("<td>(Members of", "<td>\n(Members of")
     fixed = fixed.replace(SOURCES_SCOPES_LOCAL, SOURCES_SCOPES_EXTERNAL)
-    fixed = SOURCES_SCOPES_SECTION.sub("", fixed)
+    without_section = SOURCES_SCOPES_SECTION.sub("", fixed)
+    # genref ends the file with two spaces and no newline. Removing the alias
+    # section must keep that ending so Go 1.27 output matches the CI toolchain.
+    if without_section != fixed and without_section.endswith("</table>\n"):
+        without_section += "  "
+    fixed = without_section
     if fixed != content:
         open(path, "w").write(fixed)
