@@ -60,13 +60,6 @@ apis:
     package: github.com/odigos-io/odigos
     path: api/odigos/v1alpha1
 
-  # Cloud connector types share the odigos.io/v1alpha1 group but live in their own
-  # package (api/cloud-connectors/v1alpha1); documented as a separate reference page.
-  - name: cloud-connectors.odigos.io
-    title: odigos.io/v1alpha1 (Cloud Connectors)
-    package: github.com/odigos-io/odigos
-    path: api/cloud-connectors/v1alpha1
-
   - name: actions.odigos.io
     title: actions.odigos.io/v1alpha1
     package: github.com/odigos-io/odigos
