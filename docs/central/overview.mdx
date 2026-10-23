@@ -4,15 +4,13 @@ description: 'Odigos Central is the centralized deployment mode of Odigos, allow
 sidebarTitle: 'Overview'
 ---
 
-<Note>
-  This feature is available in Odigos Enterprise tier only. Please contact the
-  Odigos team to inquire about access to the Enterprise version.
-</Note>
+import EnterpriseTier from '/snippets/oss/enterprise-tier.mdx'
 
-Odigos Central is a centralized management layer for multi-environment observability. Instead of configuring instrumentation, [sampling rules](/enterprise/pipeline/sampling/rules/overview), and destinations separately in each place, Odigos Central provides a **single pane of glass** to manage:
+<EnterpriseTier />
 
-- [Remote Kubernetes clusters](/central/adding-connections/remote-clusters)
-- [VM Agent](/central/adding-connections/vmagent) hosts
+Odigos Central is a centralized management layer for multi-environment observability. Instead of configuring instrumentation and destinations separately in each place, Odigos Central provides a **single pane of glass** to manage:
+
+- [VM Agent](/vmagent/overview) hosts
 - [Cloud Connectors](/cloud-connectors/overview) for cloud accounts (AWS, GCP, and more)
 
 ## Why Use Odigos Central?
@@ -22,5 +20,3 @@ Odigos Central is a centralized management layer for multi-environment observabi
 - **Centralized Access Control** - Manage user authentication and authorization with support for SSO providers like Okta
 - **Consistent Configuration** - Apply the same sampling and instrumentation rules uniformly across environments
 - **Audit and Compliance** - Single point of control for observability configuration changes
-
-After [installation](/central/installation), use [port-forward](/central/ui) for local access, or expose Central with ingress for production ([Authentication](/central/authentication#production-ingress-configuration)).
