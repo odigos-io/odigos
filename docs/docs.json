@@ -36,13 +36,6 @@
             "href": "oss",
             "groups": [
               {
-                "group": "Additional Enterprise Features",
-                "pages": [
-                  "oss/mcp/overview",
-                  "oss/instrumentations/profiling/overview"
-                ]
-              },
-              {
                 "group": "Getting Started",
                 "pages": [
                   "oss/overview",
@@ -99,6 +92,13 @@
                       "oss/api-reference/operator.odigos.io.v1alpha1"
                     ]
                   }
+                ]
+              },
+              {
+                "group": "Additional Enterprise Features",
+                "pages": [
+                  "oss/mcp/overview",
+                  "oss/instrumentations/profiling/overview"
                 ]
               },
               {
@@ -410,7 +410,8 @@
   },
   "logo": {
     "light": "/logo/logo_black.svg",
-    "dark": "/logo/logo_white.svg"
+    "dark": "/logo/logo_white.svg",
+    "href": "/oss/overview"
   },
   "background": {
     "color": {
