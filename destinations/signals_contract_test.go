@@ -11,8 +11,9 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 )
 
-// The catalog file is what the UI offers and what docs/oss/backends/*.mdx is generated from, while
-// the common/config configurer is what actually renders the collector pipelines. Nothing ties the
+// The catalog file is what the UI offers and what the Open Source destination docs are generated from.
+// Pyroscope is in the catalog but is documented only in the enterprise docs.
+// The common/config configurer is what actually renders the collector pipelines. Nothing ties the
 // two together, and the pipeline names a configurer returns are also what CalculateGatewayConfig
 // derives the signals advertised back to the agents from, so a disagreement does not degrade one
 // destination: it stops the cluster producing that signal at all. Both halves of the disagreement

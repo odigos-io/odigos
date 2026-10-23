@@ -21,14 +21,15 @@ DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 CLI_RHEL_IMAGE_NAME ?= odigos-cli-rhel-certified
 CLI_RHEL_KO_BASE_IMAGE ?= $(ORG)/odigos-cli-rhel-ko-base:$(TAG)
 
-# Regenerate Mintlify CLI docs snippets under docs/snippets/shared/cli from cobra commands.
+# Regenerate Mintlify CLI docs snippets under docs/snippets/oss/cli from cobra commands.
 .PHONY: cli-docs
 cli-docs:
-	rm -rf docs/snippets/shared/cli/*
+	rm -rf docs/snippets/oss/cli/*
 	cd scripts/cli-docgen && KUBECONFIG=KUBECONFIG go run -tags embed_manifests main.go
-	for file in docs/snippets/shared/cli/*.md; do \
+	for file in docs/snippets/oss/cli/*.md; do \
 		mv $${file} $${file%.md}.mdx; \
 	done
+	rm -f docs/snippets/oss/cli/odigos_pro.mdx docs/snippets/oss/cli/odigos_pro_*.mdx
 
 # Install Odigos from local cli/ source (go run), reflecting local api/cli changes.
 #
