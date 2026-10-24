@@ -10,6 +10,9 @@ import (
 )
 
 const (
+	otlpProtoEncoding = "otlp_proto"
+	otlpJSONEncoding  = "otlp_json"
+
 	KAFKA_PROTOCOL_VERSION                         = "KAFKA_PROTOCOL_VERSION"
 	KAFKA_BROKERS                                  = "KAFKA_BROKERS"
 	KAFKA_RESOLVE_CANONICAL_BOOTSTRAP_SERVERS_ONLY = "KAFKA_RESOLVE_CANONICAL_BOOTSTRAP_SERVERS_ONLY"
@@ -44,11 +47,13 @@ func (m *Kafka) DestType() common.DestinationType {
 	return common.KafkaDestinationType
 }
 
-//nolint:funlen,gocyclo // This function is inherently complex due to Kafka config validation, refactoring is non-trivial
 func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+	return m.modifyConfig(dest, currentConfig, "kafka-"+dest.GetID())
+}
+
+//nolint:funlen,gocyclo // This function is inherently complex due to Kafka config validation, refactoring is non-trivial
+func (m *Kafka) modifyConfig(dest ExporterConfigurer, currentConfig *Config, uniqueUri string) ([]string, error) {
 	config := dest.GetConfig()
-	// To make sure that the exporter and pipeline names are unique, we'll need to define a unique ID
-	uniqueUri := "kafka-" + dest.GetID()
 
 	protocolVersion, exists := config[KAFKA_PROTOCOL_VERSION]
 	if !exists {
@@ -80,7 +85,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 	encoding, exists := config[KAFKA_ENCODING]
 	if !exists {
-		encoding = "otlp_proto"
+		encoding = otlpProtoEncoding
 	}
 	partitionTracesById, exists := config[KAFKA_PARTITION_TRACES_BY_ID]
 	if !exists {

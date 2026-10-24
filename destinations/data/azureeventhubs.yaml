@@ -1,0 +1,90 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: azureeventhubs
+  displayName: Azure Event Hubs
+  category: managed
+spec:
+  image: azureeventhubs.svg
+  note:
+    type: Note
+    content: |
+      Event Hubs transports OTLP telemetry; it does not provide an APM query interface. Profiles are unsupported.
+
+      Create a namespace on Standard, Premium or Dedicated tier (Basic has no Kafka endpoint). Pre-create one event hub per enabled signal, using the configured names (defaults: `otlp_spans`, `otlp_metrics`, `otlp_logs`). Kafka topic auto-creation is disabled. Allow outbound TCP port 9093.
+
+      In Azure Portal, open the namespace's **Shared access policies**, create a dedicated policy with **Send** permission, and copy its namespace-level connection string to the secret field. Do not use a generated SAS token. A namespace-level connection string without `EntityPath` can publish to all three hubs. This integration supports SASL/PLAIN over verified TLS 1.2 or newer; OAuth and managed identity are not exposed.
+
+      Use a downstream OpenTelemetry Collector with the Kafka receiver, a separate pipeline per signal, the same topics and encoding, TLS enabled and SASL/PLAIN authentication. Give the consumer its own **Listen** policy. Set `initial_offset: earliest` for initial verification and a unique `group_id`; consume all partitions before retention expires. Forward decoded telemetry to a queryable backend such as Jaeger for traces, Prometheus for metrics and an OTLP-capable logs backend. Each record contains the signal-specific OTLP export request, preserving resource attributes, including multi-resource batches; arbitrary JSON and raw log encodings are not used.
+
+      The producer limits each uncompressed message to 1,000,000 bytes and buffers one record at a time to keep requests below Azure's 1,046,528-byte limit. This favors compatibility over throughput. Use `none` on Standard tier. Kafka `gzip` compression requires Premium or Dedicated tier; Standard rejects compressed records. Other codecs are unsupported. Oversized records fail permanently; reduce upstream batches or oversized individual records. An oversized OTLP batch can drop all its items, including small records. The OTLP receiver can acknowledge a queued request before this export failure occurs. Retriable failures use queued retries for up to 120 seconds. Delivery is at least once, so consumers must tolerate duplicates. Kafka acknowledgments confirm transport, not downstream processing, and do not contain OTLP per-item partial-success counts.
+
+      For UI payload inspection, select `otlp_json`, open the namespace's **Data Explorer**, select the event hub and consumer group, select **Oldest position**, and choose **View events**. Select a received event to inspect its OTLP body. Alternatively, configure an Azure Data Explorer Event Hubs data connection with JSON format, mapping the signal's `resourceSpans`, `resourceMetrics` or `resourceLogs` into a dynamic column. Portal message-count charts alone do not prove each signal arrived. Bound downstream fetch sizes and allow sufficient request timeout for the namespace's throughput capacity.
+
+      References: [Kafka connectivity and authentication](https://learn.microsoft.com/en-us/azure/event-hubs/azure-event-hubs-apache-kafka-overview), [client constraints](https://learn.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations), [quotas](https://learn.microsoft.com/en-us/azure/event-hubs/event-hubs-quotas), and [Kafka receiver configuration](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.159.0/receiver/kafkareceiver).
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: AZURE_EVENT_HUBS_NAMESPACE
+      displayName: Namespace
+      componentType: input
+      componentProps:
+        required: true
+        placeholder: my-namespace
+        tooltip: "Event Hubs namespace name, without the .servicebus.windows.net suffix. Requires Standard, Premium or Dedicated tier; Basic does not support Kafka."
+    - name: AZURE_EVENT_HUBS_CONNECTION_STRING
+      displayName: Connection String
+      componentType: input
+      secret: true
+      componentProps:
+        required: true
+        type: password
+        tooltip: "Namespace-level SAS connection string with Send permission. Use a dedicated policy and omit EntityPath when exporting multiple signals."
+    - name: AZURE_EVENT_HUBS_TRACES_TOPIC
+      displayName: Traces Event Hub
+      componentType: input
+      initialValue: otlp_spans
+      componentProps:
+        required: false
+        tooltip: "Pre-create this event hub in Azure. Each signal requires a separate event hub for downstream OTLP decoding."
+    - name: AZURE_EVENT_HUBS_METRICS_TOPIC
+      displayName: Metrics Event Hub
+      componentType: input
+      initialValue: otlp_metrics
+      componentProps:
+        required: false
+        tooltip: "Pre-create this event hub in Azure."
+    - name: AZURE_EVENT_HUBS_LOGS_TOPIC
+      displayName: Logs Event Hub
+      componentType: input
+      initialValue: otlp_logs
+      componentProps:
+        required: false
+        tooltip: "Pre-create this event hub in Azure."
+    - name: AZURE_EVENT_HUBS_ENCODING
+      displayName: OTLP Encoding
+      componentType: dropdown
+      initialValue: otlp_proto
+      componentProps:
+        required: false
+        values:
+          - otlp_proto
+          - otlp_json
+        tooltip: "Use the same encoding in the downstream Kafka receiver. OTLP JSON allows payload inspection in Azure Data Explorer."
+    - name: AZURE_EVENT_HUBS_COMPRESSION
+      displayName: Compression
+      componentType: dropdown
+      initialValue: none
+      componentProps:
+        required: false
+        values:
+          - none
+          - gzip
+        tooltip: "Use none on Standard tier. Kafka gzip compression requires Premium or Dedicated tier."

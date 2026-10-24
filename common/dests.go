@@ -10,6 +10,7 @@ const (
 	AWSXRayDestinationType                DestinationType = "xray"
 	AxiomDestinationType                  DestinationType = "axiom"
 	AzureBlobDestinationType              DestinationType = "azureblob"
+	AzureEventHubsDestinationType         DestinationType = "azureeventhubs"
 	AzureMonitorDestinationType           DestinationType = "azuremonitor"
 	BetterStackDestinationType            DestinationType = "betterstack"
 	BonreeDestinationType                 DestinationType = "bonree"
