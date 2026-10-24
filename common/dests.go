@@ -4,6 +4,7 @@ type DestinationType string
 
 const (
 	AlibabaCloudDestinationType           DestinationType = "alibabacloud"
+	AlibabaCloudSLSDestinationType        DestinationType = "alibabacloudsls"
 	AppDynamicsDestinationType            DestinationType = "appdynamics"
 	AWSCloudWatchDestinationType          DestinationType = "cloudwatch"
 	AWSS3DestinationType                  DestinationType = "s3"

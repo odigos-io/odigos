@@ -263,6 +263,7 @@
                     "icon": "folder-tree",
                     "pages": [
                       "oss/backends/alibabacloud",
+                      "oss/backends/alibabacloudsls",
                       "oss/backends/appdynamics",
                       "oss/backends/awscloudwatch",
                       "oss/backends/awss3",
@@ -596,6 +597,7 @@
                     "icon": "folder-tree",
                     "pages": [
                       "enterprise/backends/alibabacloud",
+                      "enterprise/backends/alibabacloudsls",
                       "enterprise/backends/appdynamics",
                       "enterprise/backends/awscloudwatch",
                       "enterprise/backends/awss3",
