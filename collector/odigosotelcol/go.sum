@@ -34,8 +34,8 @@ github.com/Azure/azure-kusto-go/azkustodata v1.2.2 h1:N0wIf3Yg5hy2ZFoJbQG2oSsZ9S
 github.com/Azure/azure-kusto-go/azkustodata v1.2.2/go.mod h1:nVZRkSE5p7eT2k9jMWSo9Uosi/H6Lig2pxtETP+rX/U=
 github.com/Azure/azure-kusto-go/azkustoingest v1.2.2 h1:+wnhIqoQbEgyyGTWAGbQRkwuNwJFhiCE07CEg/p889s=
 github.com/Azure/azure-kusto-go/azkustoingest v1.2.2/go.mod h1:ttDjL9q6ldGul19cNa0NZf4zXjucNVSoWYrM8aTFQGo=
-github.com/Azure/azure-sdk-for-go/sdk/azcore v1.22.0 h1:aokoqcHvaGjiM3VpjKDfMMnF/8epJ+Q1HLJ7CudztqE=
-github.com/Azure/azure-sdk-for-go/sdk/azcore v1.22.0/go.mod h1:/WYEx9pcM9Y+Dd/APJaNlSvVSvzl54rrMdZT5+Oi2LM=
+github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.0 h1:4gRPBpN1f6xt88yi4WR26m7XaD9OlWtVT6bWPdGUIok=
+github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.0/go.mod h1:G7QVLxw1j1JVyrO1MA95S8m8HStaaleDZYTcfGgjB2o=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.0 h1:CU4+EJeJi3TKYWEcYuSdWsjzw0nVsK/H0MSQOiPcymU=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.0/go.mod h1:q0+UTSRvShwUCrR/s5HtyInYphN7Wvxb7snFM3u+SLA=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity/cache v0.4.0 h1:xFaZZ+IubdftrDHnGGwZ6QvQ3KHTtWl2MCK+GMt2vxs=
@@ -44,6 +44,8 @@ github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.4.1 h1:j0hhYS006eJ54vusoa
 github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.4.1/go.mod h1:AdtInaXmK8eYmbjezRWgLz+Qs46nc9Up9GWGwteWNfw=
 github.com/Azure/azure-sdk-for-go/sdk/internal v1.12.0 h1:fhqpLE3UEXi9lPaBRpQ6XuRW0nU7hgg4zlmZZa+a9q4=
 github.com/Azure/azure-sdk-for-go/sdk/internal v1.12.0/go.mod h1:7dCRMLwisfRH3dBupKeNCioWYUZ4SS09Z14H+7i8ZoY=
+github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.1.0 h1:Q+tp/BW0x11uAm5i9f2xEu3RZ3wy89KNYfDVCWFHUJQ=
+github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.1.0/go.mod h1:et3yi6OrdxM8YK0pfOwpHSLf4gWypxQVWh4T9wRzg3k=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5 v5.7.0 h1:LkHbJbgF3YyvC53aqYGR+wWQDn2Rdp9AQdGndf9QvY4=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5 v5.7.0/go.mod h1:QyiQdW4f4/BIfB8ZutZ2s+28RAgfa/pT+zS++ZHyM1I=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/internal/v2 v2.0.0 h1:PTFGRSlMKCQelWwxUyYVEUqseBJVemLyqWJjvMyt0do=
@@ -964,6 +966,12 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
+github.com/observiq/bindplane-otel-contrib/exporter/azureloganalyticsexporter v1.13.0 h1:jx4ytWM/QXx3z8jcU82u/R4uYquyWUUnufB6m+bQvcY=
+github.com/observiq/bindplane-otel-contrib/exporter/azureloganalyticsexporter v1.13.0/go.mod h1:ntQDL1jkm/PFotK1PgnexM1i8q0GJRrBJ6aL05jrC2g=
+github.com/observiq/bindplane-otel-contrib/internal/exporterutils v1.13.0 h1:9AxY+aRL0cJ9uJNw3iGfAidszEeFq3ldq7acLtA075M=
+github.com/observiq/bindplane-otel-contrib/internal/exporterutils v1.13.0/go.mod h1:LlVAAOHKeAwNMS0nOiCN6PLnFToHUgLQRhmV1Bw3eq8=
+github.com/observiq/bindplane-otel-contrib/pkg/expr v1.13.0 h1:XsEQ6jEqvCrt0E+K56in+RgwMWT/EcomPRRjrCQNUAY=
+github.com/observiq/bindplane-otel-contrib/pkg/expr v1.13.0/go.mod h1:0x/lck7LAhQgoOIoGxoaTyitFOl1xhwe6O/UnmyGDNY=
 github.com/odigos-io/go-rtml v0.0.1 h1:5w21AOXZGq/6UhECv5B9RCrW7R8PzA8YgwdxqtajD0w=
 github.com/odigos-io/go-rtml v0.0.1/go.mod h1:LqKwlorUKSNj1WQ0p/5e9+aOkirEiHQx+FOxdhku/cs=
 github.com/oklog/ulid/v2 v2.1.1 h1:suPZ4ARWLOJLegGFiZZ1dFAkqzhMjL3J1TzI+5wHz8s=
@@ -1470,8 +1478,8 @@ github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5t
 github.com/yusufpapurcu/wmi v1.2.2/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
 github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo0=
 github.com/yusufpapurcu/wmi v1.2.4/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
-github.com/zeebo/assert v1.3.0 h1:g7C04CbJuIDKNPFHmsk4hwZDO5O+kntRxzaUoNXj+IQ=
-github.com/zeebo/assert v1.3.0/go.mod h1:Pq9JiuJQpG8JLJdtkwrJESF0Foym2/D9XMU5ciN/wJ0=
+github.com/zeebo/assert v1.3.1 h1:vukIABvugfNMZMQO1ABsyQDJDTVQbn+LWSMy1ol1h6A=
+github.com/zeebo/assert v1.3.1/go.mod h1:Pq9JiuJQpG8JLJdtkwrJESF0Foym2/D9XMU5ciN/wJ0=
 github.com/zeebo/xxh3 v1.1.0 h1:s7DLGDK45Dyfg7++yxI0khrfwq9661w9EN78eP/UZVs=
 github.com/zeebo/xxh3 v1.1.0/go.mod h1:IisAie1LELR4xhVinxWS5+zf1lA4p0MW4T+w+W07F5s=
 go.elastic.co/fastjson v1.5.1 h1:zeh1xHrFH79aQ6Xsw7YxixvnOdAl3OSv0xch/jRDzko=
