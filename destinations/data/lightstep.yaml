@@ -2,9 +2,17 @@ apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
   type: lightstep
-  displayName: Lightstep
+  displayName: Lightstep (Deprecated)
   category: managed
 spec:
+  deprecated: true
+  note:
+    type: Warning
+    content: |
+      Lightstep / ServiceNow Cloud Observability is retired and unavailable for new setup in Odigos.
+      Support and access end on the contract term end date or March 1, 2026, whichever is later.
+      Existing configuration is retained for compatibility; ingestion depends on the account remaining active.
+      See the [retirement and migration guidance](/backends/lightstep).
   image: lightstep.svg
   signals:
     traces:
