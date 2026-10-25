@@ -13,6 +13,7 @@ const (
 	AzureMonitorDestinationType           DestinationType = "azuremonitor"
 	BetterStackDestinationType            DestinationType = "betterstack"
 	BonreeDestinationType                 DestinationType = "bonree"
+	BrontoDestinationType                 DestinationType = "bronto"
 	CauselyDestinationType                DestinationType = "causely"
 	ChecklyDestinationType                DestinationType = "checkly"
 	ChronosphereDestinationType           DestinationType = "chronosphere"

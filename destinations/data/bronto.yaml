@@ -1,0 +1,47 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: bronto
+  displayName: Bronto
+  category: managed
+spec:
+  image: bronto.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  fields:
+    - name: BRONTO_API_KEY
+      displayName: API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        tooltip: Create an API key with the Ingestion role in Bronto under `Settings > API Keys`.
+    - name: BRONTO_REGION
+      displayName: Region
+      componentType: dropdown
+      initialValue: eu
+      componentProps:
+        values:
+          - eu
+          - us
+        required: true
+        tooltip: The Bronto region your account is in. A region mismatch is rejected with the same 401 as an invalid API key.
+    - name: BRONTO_COLLECTION
+      displayName: Collection
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: prod-eu-west-1
+        tooltip: Optional. Groups the logs this cluster sends under one Bronto collection, overriding `service.namespace`.
+      renderCondition: ["SIGNALS", "INCLUDES", "logs"]
+      hideFromReadData: ["BRONTO_COLLECTION", "==", ""]
+  testConnectionSupported: true

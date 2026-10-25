@@ -1,0 +1,123 @@
+---
+title: 'Bronto'
+description: 'Configuring the Bronto backend (Managed)'
+sidebarTitle: 'Bronto'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/bronto.svg" alt="bronto" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+**Obtaining an API Key**<br />
+In [Bronto](https://app.bronto.io), go to **Settings > API Keys** and click **Create a new API Key**. Select the **Ingestion** role, which is all Odigos needs to send data. For details, see the [Bronto API keys documentation](https://docs.bronto.io/Account-Management/API-Keys).
+
+**Choosing the Region**<br />
+Pick the region your Bronto account is in: `eu` sends to `ingestion.eu.bronto.io`, `us` sends to `ingestion.us.bronto.io`. A region mismatch returns `401 Unauthorized`, the same as an invalid API key. Use **Test Connection** in the UI to catch both before saving the destination.
+
+**Grouping Logs in a Collection**<br />
+Bronto stores logs in datasets named after `service.name`, grouped in collections named after `service.namespace`. Set **Collection** to send all logs from this cluster to a single collection instead, for example to tell clusters apart. Traces and metrics are not affected.
+
+<Note>
+  Bronto supports sums, gauges, summaries, and explicit histograms. Exponential histograms are not supported. Bronto recommends delta temporality for sum and histogram metrics, see [Send Metrics to Bronto](https://docs.bronto.io/metrics/send-metrics).
+</Note>
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+  ❌ Profiles
+</Accordion>
+
+- **BRONTO_API_KEY** `string` : API Key. Create an API key with the Ingestion role in Bronto under `Settings > API Keys`.
+  - This field is required
+- **BRONTO_REGION** `string` : Region. The Bronto region your account is in. A region mismatch is rejected with the same 401 as an invalid API key.
+  - This field is required and defaults to `eu`
+- **BRONTO_COLLECTION** `string` : Collection. Optional. Groups the logs this cluster sends under one Bronto collection, overriding `service.namespace`.
+  - This field is optional
+  - Example: `prod-eu-west-1`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Bronto` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `bronto.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: bronto-example
+      namespace: odigos-system
+    spec:
+      data:
+        BRONTO_REGION: '<Region (default: eu) (options: [eu, us])>'
+        # Note: The commented fields below are optional.
+        # BRONTO_COLLECTION: <Collection>
+      destinationName: bronto
+      secretRef:
+        name: bronto-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: bronto
+
+    ---
+
+    apiVersion: v1
+    data:
+      BRONTO_API_KEY: <Base64 API Key>
+    kind: Secret
+    metadata:
+      name: bronto-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f bronto.yaml
+    ```
+  </Step>
+</Steps>
