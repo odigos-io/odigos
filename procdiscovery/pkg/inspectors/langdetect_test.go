@@ -1,6 +1,7 @@
 package inspectors
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/odigos-io/odigos/common"
@@ -74,7 +75,7 @@ func TestConflictWithoutCppReturnsError_QuickScan(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected conflict error, got nil")
 	}
-	if _, ok := err.(ErrLanguageDetectionConflict); !ok {
+	if !errors.As(err, new(ErrLanguageDetectionConflict)) {
 		t.Fatalf("expected ErrLanguageDetectionConflict, got %T", err)
 	}
 	if res.Language != common.UnknownProgrammingLanguage {

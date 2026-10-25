@@ -193,12 +193,13 @@ func TestCalculateConfigMapData(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+//go:fix inline
 func boolPtr(b bool) *bool {
-	return &b
+	return new(b)
 }
 
 func TestIsTracingLoadBalancingNeeded(t *testing.T) {
-	activeTailSampling := &sampling.TailSamplingConfiguration{Disabled: boolPtr(false)}
+	activeTailSampling := &sampling.TailSamplingConfiguration{Disabled: new(false)}
 
 	for _, tt := range []struct {
 		name string
@@ -212,13 +213,13 @@ func TestIsTracingLoadBalancingNeeded(t *testing.T) {
 		},
 		{
 			name: "service graph disabled and nothing else aggregates traces",
-			spec: odigosv1.CollectorsGroupSpec{ServiceGraphDisabled: boolPtr(true)},
+			spec: odigosv1.CollectorsGroupSpec{ServiceGraphDisabled: new(true)},
 			want: false,
 		},
 		{
 			name: "service graph disabled but tail sampling is active",
 			spec: odigosv1.CollectorsGroupSpec{
-				ServiceGraphDisabled: boolPtr(true),
+				ServiceGraphDisabled: new(true),
 				TailSampling:         activeTailSampling,
 			},
 			want: true,
@@ -226,8 +227,8 @@ func TestIsTracingLoadBalancingNeeded(t *testing.T) {
 		{
 			name: "service graph disabled and tail sampling is disabled",
 			spec: odigosv1.CollectorsGroupSpec{
-				ServiceGraphDisabled: boolPtr(true),
-				TailSampling:         &sampling.TailSamplingConfiguration{Disabled: boolPtr(true)},
+				ServiceGraphDisabled: new(true),
+				TailSampling:         &sampling.TailSamplingConfiguration{Disabled: new(true)},
 			},
 			want: false,
 		},
@@ -245,8 +246,8 @@ func TestIsTracingLoadBalancingNeeded(t *testing.T) {
 func TestNodeCollectorUsesLoadBalancingExporterForTailSampling(t *testing.T) {
 	clusterCollectorGroup := odigosv1.CollectorsGroup{
 		Spec: odigosv1.CollectorsGroupSpec{
-			ServiceGraphDisabled: boolPtr(true),
-			TailSampling:         &sampling.TailSamplingConfiguration{Disabled: boolPtr(false)},
+			ServiceGraphDisabled: new(true),
+			TailSampling:         &sampling.TailSamplingConfiguration{Disabled: new(false)},
 		},
 	}
 

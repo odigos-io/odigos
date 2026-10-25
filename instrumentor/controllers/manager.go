@@ -167,9 +167,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 			Setting the leader election params to 30s/20s/5s should provide a good balance between stability and quick failover.
 		*/
-		LeaseDuration:                 durationPointer(30 * time.Second),
-		RenewDeadline:                 durationPointer(20 * time.Second),
-		RetryPeriod:                   durationPointer(5 * time.Second),
+		LeaseDuration:                 new(30 * time.Second),
+		RenewDeadline:                 new(20 * time.Second),
+		RetryPeriod:                   new(5 * time.Second),
 		LeaderElectionReleaseOnCancel: true,
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
@@ -189,10 +189,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	}
 
 	return ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
-}
-
-func durationPointer(d time.Duration) *time.Duration {
-	return &d
 }
 
 type OdigosConfigurationOptions struct {
@@ -316,8 +312,8 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 	return nil
 }
 
-func podTransformFunc(odigosNs string) func(obj interface{}) (interface{}, error) {
-	return func(obj interface{}) (interface{}, error) {
+func podTransformFunc(odigosNs string) func(obj any) (any, error) {
+	return func(obj any) (any, error) {
 		pod, ok := obj.(*corev1.Pod)
 		if !ok {
 			return nil, fmt.Errorf("expected a Pod, got %T", obj)
@@ -359,8 +355,8 @@ func podTransformFunc(odigosNs string) func(obj interface{}) (interface{}, error
 	}
 }
 
-func workloadTransformFunc(odigosNs string) func(obj interface{}) (interface{}, error) {
-	return func(obj interface{}) (interface{}, error) {
+func workloadTransformFunc(odigosNs string) func(obj any) (any, error) {
+	return func(obj any) (any, error) {
 		clientObj, ok := obj.(client.Object)
 		if !ok {
 			return nil, fmt.Errorf("expected a client.Object, got %T", obj)

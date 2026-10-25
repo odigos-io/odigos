@@ -13,10 +13,10 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/nodecollector/collectorconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/pipeline"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -144,7 +144,7 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.
 }
 
 func (b *nodeCollectorBaseReconciler) logConfigMapDataIfChanged(ctx context.Context, cmName string, desiredData map[string]string) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	existing := &v1.ConfigMap{}
 	err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: cmName}, existing)
@@ -179,7 +179,7 @@ func calculateCollectorConfigDomains(
 	profiling *odigoscommon.ProfilingConfiguration,
 	tier odigoscommon.OdigosTier) (map[string]config.Config, string, error) {
 
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	// common config domains - always set and active
 	configDomains := map[string]config.Config{

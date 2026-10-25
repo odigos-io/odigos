@@ -53,9 +53,6 @@ func validateCauselyUrlInput(rawUrl string) (string, error) {
 	// allow the user specified port, but fallback to Causely default port 4317 if none provided
 	if parsedUrl.Port() == "" {
 		parsedUrl.Host = parsedUrl.Hostname() + ":4317"
-		if err != nil {
-			return "", err
-		}
 	}
 
 	return parsedUrl.String(), nil

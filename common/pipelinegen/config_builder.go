@@ -2,6 +2,7 @@ package pipelinegen
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -130,13 +131,9 @@ func CalculateGatewayConfig(
 	// Configure processors
 	processorsResults := config.CrdProcessorToConfig(processors)
 	if len(processorsResults.Errs) != 0 {
-		for processorKey, err := range processorsResults.Errs {
-			status.Processor[processorKey] = err
-		}
+		maps.Copy(status.Processor, processorsResults.Errs)
 	}
-	for processorKey, processorCfg := range processorsResults.ProcessorsConfig.Processors {
-		currentConfig.Processors[processorKey] = processorCfg
-	}
+	maps.Copy(currentConfig.Processors, processorsResults.ProcessorsConfig.Processors)
 
 	if traceAggregationNeeded(gatewayOptions) {
 		ensureGroupByTraceProcessor(currentConfig, &processorsResults, gatewayOptions)
@@ -231,9 +228,7 @@ func CalculateGatewayConfig(
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
 	dataStreamPipelines := buildDataStreamPipelines(dataStreamsDetails, destForwardConnectors)
-	for name, pipe := range dataStreamPipelines {
-		currentConfig.Service.Pipelines[name] = pipe
-	}
+	maps.Copy(currentConfig.Service.Pipelines, dataStreamPipelines)
 
 	// Create root pipelines for each signal and connectors
 	tracesPostForwardProcessors := processorsResults.TracesProcessorsPostSpanMetrics
@@ -576,7 +571,7 @@ func GetBasicConfig() *config.Config {
 				"endpoint": "0.0.0.0:1777",
 			},
 		},
-		Exporters: map[string]interface{}{},
+		Exporters: map[string]any{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
 			Extensions: []string{"health_check", "pprof"},

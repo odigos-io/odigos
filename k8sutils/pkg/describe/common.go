@@ -19,13 +19,10 @@ func wrapTextInYellow(text string) string {
 	return "\033[33m" + text + "\033[0m"
 }
 
-func describeText(sb *strings.Builder, indent int, isListKey bool, printftext string, args ...interface{}) {
+func describeText(sb *strings.Builder, indent int, isListKey bool, printftext string, args ...any) {
 	indentText := strings.Repeat("  ", indent)
 	if isListKey {
-		listKeyIndent := indent - 1
-		if listKeyIndent < 0 {
-			listKeyIndent = 0
-		}
+		listKeyIndent := max(indent-1, 0)
 		indentText = strings.Repeat("  ", listKeyIndent) + "- "
 	}
 	lineText := fmt.Sprintf(printftext, args...)

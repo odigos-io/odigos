@@ -153,11 +153,11 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 
 // DiscoveryHandler responds with the APIResourceList so the API server knows what metrics you offer
 func DiscoveryHandler(w http.ResponseWriter, r *http.Request) {
-	response := map[string]interface{}{
+	response := map[string]any{
 		"kind":         "APIResourceList",
 		"apiVersion":   "v1",
 		"groupVersion": "custom.metrics.k8s.io/v1beta1",
-		"resources": []map[string]interface{}{
+		"resources": []map[string]any{
 			{
 				"name":         "deployments.apps/odigos_gateway_rejections",
 				"singularName": "",

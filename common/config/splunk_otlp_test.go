@@ -1,6 +1,7 @@
 package config
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/odigos-io/odigos/common"
@@ -131,9 +132,7 @@ func TestSplunkOTLPExporterOptions(t *testing.T) {
 	}
 	withKeys := func(extra GenericMap) GenericMap {
 		out := base()
-		for k, v := range extra {
-			out[k] = v
-		}
+		maps.Copy(out, extra)
 		return out
 	}
 
@@ -262,9 +261,7 @@ func TestSplunkOTLPExporterOptions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			destConfig := map[string]string{splunkRealm: "eu0"}
-			for k, v := range tt.config {
-				destConfig[k] = v
-			}
+			maps.Copy(destConfig, tt.config)
 
 			cfg := spEmptyConfig()
 			_, err := (&SplunkOTLP{}).ModifyConfig(spDest(destConfig), &cfg)

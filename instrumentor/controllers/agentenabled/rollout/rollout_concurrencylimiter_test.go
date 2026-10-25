@@ -14,7 +14,7 @@ func Test_CustomValues(t *testing.T) {
 
 	// Assert: limiter is not nil, first 3 TryAcquire calls should succeed, 4th should fail
 	assert.NotNil(t, limiter)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		key := workloadKey("ns", "Deployment", i)
 		assert.True(t, limiter.TryAcquire(key, 3), "TryAcquire() should return true for workload %d", i+1)
 	}
@@ -54,7 +54,7 @@ func Test_RateLimitingEnabled(t *testing.T) {
 
 	// Assert: first 5 TryAcquire calls should succeed, 6th should fail
 	assert.NotNil(t, limiter)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		key := workloadKey("ns", "Deployment", i)
 		assert.True(t, limiter.TryAcquire(key, 5), "TryAcquire() should return true for workload %d", i+1)
 	}
@@ -67,7 +67,7 @@ func Test_RateLimitingDisabled_ZeroValue(t *testing.T) {
 
 	// Assert: all requests should succeed (no rate limiting when MaxConcurrentRollouts is 0)
 	assert.NotNil(t, limiter)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		key := workloadKey("ns", "Deployment", i)
 		assert.True(t, limiter.TryAcquire(key, 0), "TryAcquire() should return true for workload %d when rate limiting is disabled", i+1)
 	}
@@ -102,7 +102,7 @@ func Test_Release_MultipleSlots(t *testing.T) {
 	}
 
 	// Act: consume all 3 slots
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		assert.True(t, limiter.TryAcquire(keys[i], 3), "TryAcquire() %d should succeed", i+1)
 	}
 	assert.False(t, limiter.TryAcquire(keys[3], 3), "4th TryAcquire() should fail (exhausted)")

@@ -1,6 +1,8 @@
 package pod
 
 import (
+	"slices"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	corev1 "k8s.io/api/core/v1"
@@ -29,11 +31,9 @@ func AddOdigletInstalledAffinity(pod *corev1.Pod) {
 	for _, term := range pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
 		for _, expr := range term.MatchExpressions {
 			if expr.Key == odigletInstalledLabel && expr.Operator == corev1.NodeSelectorOpIn {
-				for _, val := range expr.Values {
-					if val == k8sconsts.OdigletInstalledLabelValue {
-						// return without adding a duplicate
-						return
-					}
+				if slices.Contains(expr.Values, k8sconsts.OdigletInstalledLabelValue) {
+					// return without adding a duplicate
+					return
 				}
 			}
 		}

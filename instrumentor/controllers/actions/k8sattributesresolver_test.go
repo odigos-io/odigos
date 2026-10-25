@@ -78,19 +78,19 @@ var _ = Describe("K8sAttributes Action", func() {
 				}
 
 				// Parse the processor config
-				var config map[string]interface{}
+				var config map[string]any
 				err = json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &config)
 				if err != nil {
 					return false
 				}
 
 				// Check that label attributes include entries for both pod and namespace sources
-				extract, ok := config["extract"].(map[string]interface{})
+				extract, ok := config["extract"].(map[string]any)
 				if !ok {
 					return false
 				}
 
-				labels, ok := extract["labels"].([]interface{})
+				labels, ok := extract["labels"].([]any)
 				if !ok {
 					return false
 				}
@@ -100,7 +100,7 @@ var _ = Describe("K8sAttributes Action", func() {
 				hasPodSource := false
 				hasNamespaceSource := false
 				for _, label := range labels {
-					if labelMap, ok := label.(map[string]interface{}); ok {
+					if labelMap, ok := label.(map[string]any); ok {
 						tagName, _ := labelMap["tag_name"].(string)
 						key, _ := labelMap["key"].(string)
 						from, _ := labelMap["from"].(string)
@@ -158,18 +158,18 @@ var _ = Describe("K8sAttributes Action", func() {
 				}
 
 				// Parse the processor config
-				var config map[string]interface{}
+				var config map[string]any
 				err = json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &config)
 				if err != nil {
 					return false
 				}
 
-				extract, ok := config["extract"].(map[string]interface{})
+				extract, ok := config["extract"].(map[string]any)
 				if !ok {
 					return false
 				}
 
-				labels, ok := extract["labels"].([]interface{})
+				labels, ok := extract["labels"].([]any)
 				if !ok || len(labels) < 2 {
 					return false
 				}
@@ -178,7 +178,7 @@ var _ = Describe("K8sAttributes Action", func() {
 				namespaceIdx := -1
 				podIdx := -1
 				for i, label := range labels {
-					if labelMap, ok := label.(map[string]interface{}); ok {
+					if labelMap, ok := label.(map[string]any); ok {
 						tagName, _ := labelMap["tag_name"].(string)
 						from, _ := labelMap["from"].(string)
 						if tagName == "k8s.app.label" {
@@ -233,25 +233,25 @@ var _ = Describe("K8sAttributes Action", func() {
 				}
 
 				// Parse the processor config
-				var config map[string]interface{}
+				var config map[string]any
 				err = json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &config)
 				if err != nil {
 					return false
 				}
 
-				extract, ok := config["extract"].(map[string]interface{})
+				extract, ok := config["extract"].(map[string]any)
 				if !ok {
 					return false
 				}
 
-				labels, ok := extract["labels"].([]interface{})
+				labels, ok := extract["labels"].([]any)
 				if !ok {
 					return false
 				}
 
 				// Check that the label is extracted from namespace
 				for _, label := range labels {
-					if labelMap, ok := label.(map[string]interface{}); ok {
+					if labelMap, ok := label.(map[string]any); ok {
 						tagName, _ := labelMap["tag_name"].(string)
 						from, _ := labelMap["from"].(string)
 						if tagName == "k8s.old.style.label" && from == "namespace" {

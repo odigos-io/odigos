@@ -13,13 +13,6 @@ ORG ?= $(OSS_ORG)
 ifeq ($(STAGING_ORG),true)
     ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
 endif
-GOLANGCI_LINT_VERSION ?= v2.10.1
-GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
-GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
-LINT_CMD = $(GOLANGCI_LINT) run -c ../.golangci.yml
-ifdef FIX_LINT
-    LINT_CMD += --fix
-endif
 DOCKERFILE=Dockerfile
 IMG_PREFIX?=
 IMG_SUFFIX?=
@@ -63,43 +56,32 @@ dev_image_repo = $(shell \
 	bash $(CURDIR)/scripts/resolve-dev-image.sh $(1))
 dev_image = $(or $(IMAGE),$(call dev_image_repo,$(1)):$(TAG))
 
-.PHONY: install-golangci-lint
-install-golangci-lint:
-	@if [ ! -x "$(GOLANGCI_LINT)" ] || [ "$$("$(GOLANGCI_LINT)" version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
-		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
-	else \
-		echo "golangci-lint $(GOLANGCI_LINT_VERSION) is already installed"; \
-	fi
+GOLANGCI_LINT_VERSION ?= v2.15.0
+# gofmt is compiled into golangci-lint and its output differs between Go releases,
+# so build and run it like CI: with CI's Go version and without the local go.work.
+LINT_GO_VERSION ?= 1.26.6
+# Versioned path so a version bump reinstalls.
+GOLANGCI_LINT := $(CURDIR)/.tools/golangci-lint-$(GOLANGCI_LINT_VERSION)-go$(LINT_GO_VERSION)
+LINT_MODULES ?= common k8sutils profiles destinations procdiscovery
 
-.PHONY: lint
-lint: install-golangci-lint
-ifdef MODULE
-	@echo "Running lint for module: $(MODULE)"
-	@if [ ! -d "$(MODULE)" ]; then \
-		echo "Error: Directory $(MODULE) does not exist"; \
-		exit 1; \
-	fi
-	@if [ ! -f "$(MODULE)/go.mod" ]; then \
-		echo "Error: $(MODULE) is not a Go module (no go.mod found)"; \
-		exit 1; \
-	fi
-	@cd $(MODULE) && $(LINT_CMD) ./...
-else
-	@echo "No MODULE specified, running lint for all Go modules..."
-	@for module in $(GO_MODULES); do \
-		echo "Running lint for $$module"; \
-		(cd $$module && $(LINT_CMD) ./...) || exit 1; \
+$(GOLANGCI_LINT):
+	GOTOOLCHAIN=go$(LINT_GO_VERSION) GOBIN=$(CURDIR)/.tools go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	@mv $(CURDIR)/.tools/golangci-lint $@
+	@# The results cache isn't keyed by the binary, so drop results from a previous build.
+	@$@ cache clean
+
+# Use MODULE=<dir> to lint a single module.
+.PHONY: lint lint-fix
+lint: export GOTOOLCHAIN := go$(LINT_GO_VERSION)
+lint: export GOWORK := off
+lint: $(GOLANGCI_LINT)
+	@for m in $(or $(MODULE),$(LINT_MODULES)); do \
+		echo "Linting $$m"; \
+		(cd $$m && $(GOLANGCI_LINT) run -c $(CURDIR)/.golangci.yml $(LINT_FLAGS) ./...) || exit 1; \
 	done
-endif
 
-.PHONY: lint-fix
-lint-fix:
-	MODULE=common make lint FIX_LINT=true
-	MODULE=k8sutils make lint FIX_LINT=true
-	MODULE=profiles make lint FIX_LINT=true
-	MODULE=destinations make lint FIX_LINT=true
-	MODULE=procdiscovery make lint FIX_LINT=true
+lint-fix: LINT_FLAGS := --fix
+lint-fix: lint
 
 .PHONY: rbac-docs
 rbac-docs:

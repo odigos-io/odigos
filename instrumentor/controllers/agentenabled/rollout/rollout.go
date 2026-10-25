@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -54,7 +55,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	if configErr != nil {
 		return RolloutResult{}, configErr
 	}
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
 	if getErr != nil {
@@ -308,7 +309,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 // https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/objectrestarter.go#L32
 func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c client.Client, ts time.Time) error {
 
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, ts.Format(time.RFC3339)))
 	switch obj := workloadObj.(type) {

@@ -2,6 +2,7 @@ package collectorconfig
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -93,9 +94,7 @@ func BuildResourceDetectors(cfg *common.ResourceDetectorsConfiguration, runningO
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool, detectors []string) config.GenericMap {
 
 	allProcessors := config.GenericMap{}
-	for k, v := range staticProcessors {
-		allProcessors[k] = v
-	}
+	maps.Copy(allProcessors, staticProcessors)
 
 	memoryLimiterConfig := GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 	allProcessors[memoryLimiterProcessorName] = memoryLimiterConfig

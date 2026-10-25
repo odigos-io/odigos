@@ -26,7 +26,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -267,7 +267,7 @@ func syncRegexSourceWorkloads(
 // If it is instrumented, it will attempt to create an InstrumentationConfig if one does not exist,
 // or update the existing InstrumentationConfig if necessary.
 func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, pw k8sconsts.PodWorkload) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
@@ -385,7 +385,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 }
 
 func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, rollbackRecoveryAtAnnotation string) (*odigosv1.InstrumentationConfig, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	annotations := map[string]string{}
 	if rollbackRecoveryAtAnnotation != "" {
@@ -424,7 +424,7 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 }
 
 func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodWorkload) error {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 
 	err := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{

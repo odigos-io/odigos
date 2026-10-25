@@ -11,8 +11,7 @@ func TestGetEnvVarOrDefault_Exists(t *testing.T) {
 	const envKey = "TEST_ENV_EXISTS"
 	const expectedVal = "exists"
 
-	os.Setenv(envKey, expectedVal)
-	defer os.Unsetenv(envKey)
+	t.Setenv(envKey, expectedVal)
 
 	if got := GetEnvVarOrDefault(envKey, "default"); got != expectedVal {
 		t.Errorf("GetEnvVarOrDefault(%q, %q) = %q, want %q", envKey, "default", got, expectedVal)
@@ -31,8 +30,7 @@ func TestGetEnvVarOrDefault_NotExists(t *testing.T) {
 // TestGetCurrentNamespace_EnvVarExists tests GetCurrentNamespace when the environment variable is set.
 func TestGetCurrentNamespace_EnvVarExists(t *testing.T) {
 	expectedNamespace := "test-namespace"
-	os.Setenv(consts.CurrentNamespaceEnvVar, expectedNamespace)
-	defer os.Unsetenv(consts.CurrentNamespaceEnvVar)
+	t.Setenv(consts.CurrentNamespaceEnvVar, expectedNamespace)
 
 	got := GetCurrentNamespace()
 	if got != expectedNamespace {
