@@ -427,3 +427,11 @@ these keys:
     Get the layer into your own account first, if your policy requires it.
   </Card>
 </CardGroup>
+
+## Published versions, aliases, and canaries
+
+Automatic instrumentation changes `$LATEST`. Published versions are immutable. Odigos checks each alias's
+primary version and every weighted canary version and reports a coverage error when their instrumentation
+differs from `$LATEST`; it never publishes a version or shifts production traffic for you. After `$LATEST`
+has settled, publish through your normal deployment process and update the aliases, including provisioned
+concurrency and SnapStart deployments as applicable. Validate telemetry on the versions receiving traffic.

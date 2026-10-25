@@ -71,7 +71,7 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       <Tab title="Discovery + instrumentation">
         The connector can discover resources and instrument supported workloads. Prefer this for a full setup in one step.
 
-        Includes all discovery actions, plus Odigos-managed instrumentation for Lambda and Fargate, including the actions used by the ADOT + Application Signals Lambda distro; see [IAM permissions](#iam-permissions).
+        Includes all discovery actions, plus Odigos-managed instrumentation for Lambda and Fargate, with optional IAM setup for the ADOT + Application Signals Lambda distro; see [IAM permissions](#iam-permissions).
 
         Odigos-managed instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online.
       </Tab>
@@ -118,7 +118,7 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
   </Step>
 
   <Step title="Setup credentials">
-    On the **Setup credentials** screen, apply the IAM policy from the previous step in your AWS account and enter the credentials Odigos will use.
+    On the **Setup credentials** screen, supply the role scopes, apply the final scoped policy preview in your AWS account, and enter the credentials Odigos will use.
 
     <img
       src="/images/cloud-connectors/aws-setup-credentials.png"
@@ -137,13 +137,13 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       <Tab title="Assume IAM role">
         The default. Odigos assumes a scoped IAM role in your account. Prefer this for production: you attach the permissions policy to the role, and Odigos does not rely on long-lived admin credentials in the connector.
 
-        You enter only the Role ARN and External ID. The connector pod's own identity provides the base credentials, which only need permission to call `sts:AssumeRole` on that role.
+        Choose the base authentication method: **Pod / workload identity** or **Access keys**. Enter the Role ARN and the same External ID used in its trust policy. The base identity needs `sts:AssumeRole` on that exact target role ARN. For workload identity, configure both Central backend and the connector service account as described below.
       </Tab>
       <Tab title="Access keys">
-        Odigos uses IAM user access keys that already have the permissions policy from the access level step attached. There is no role to create.
+        Odigos uses IAM user access keys that already have the final scoped permissions policy attached. There is no role to create.
       </Tab>
       <Tab title="Pod / workload identity">
-        Odigos uses the identity of the connector pod, for example IAM Roles for Service Accounts (IRSA) on EKS. Attach the permissions policy from the access level step to that identity. You do not enter any keys.
+        Odigos uses the identity of the connector pod, for example IAM Roles for Service Accounts (IRSA) on EKS. Attach the final scoped permissions policy to that identity. You do not enter any keys.
       </Tab>
     </Tabs>
 
@@ -154,14 +154,37 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
     - **CloudFormation**, **Terraform**, **AWS CLI**, or **Manual** create the IAM role for the **Assume IAM role** method. Each path ends with the same role (trust policy + access-level permissions) and a Role ARN to paste back into Odigos.
     - **IAM user (access keys)** creates an IAM user with the permissions policy attached, for the **Access keys** method.
 
-    #### 4. Create IAM role
+    #### 4. Configure the setup inputs
+
+    Enter the **Trusted source principal ARN** separately from the target AWS account ID. This is the IAM
+    role, IAM user, or source account that assumes the role. Central in account A managing account B must
+    trust the principal in A. An account principal delegates permission; base identities still need
+    `sts:AssumeRole` on the target role.
+
+    The wizard generates a customer-specific External ID and uses the same persisted value in the trust
+    policy and connection request. External IDs are not secrets. Use 2–1224 valid characters without
+    whitespace. Do not replace the value after creating the role unless you update its trust policy too.
+
+    Choose a unique **IAM role / user name**. For Fargate instrumentation or automatic Collector
+    deployment, list the exact allowed task/execution role ARNs. The generated policy limits PassRole to
+    those ARNs and `ecs-tasks.amazonaws.com`.
+
+    **Application Signals IAM setup** is optional and disabled by default. Enable it only when you want the
+    connector to attach the existing AWS-managed Application Signals policy, and list the exact Lambda
+    execution role ARNs it may modify. Without it, preconfigure those execution roles and Application
+    Signals discovery yourself before selecting the corresponding distro.
+
+    Use the final **Policy preview** in this step; it contains the scopes you supplied. The earlier access-level
+    preview uses a non-operational placeholder scope until these values are known.
+
+    #### 5. Create IAM role
 
     Follow the instructions the UI shows for the method you picked, then copy the **Role ARN**.
 
     <Tabs>
       <Tab title="CloudFormation">
         1. Set the **External ID** in the UI before you copy the template, so the template and the connector use the same value.
-        2. Save the template from the UI as `odigos-connector.yaml`. It creates a role named `OdigosConnectorRole` and takes an `OdigosExternalId` parameter, pre-filled with the External ID you entered (`odigos-connector` if you left it blank).
+        2. Save the template from the UI as `odigos-connector.yaml`. It creates a role named `OdigosConnectorRole` and takes an `OdigosExternalId` parameter, pre-filled with the External ID you entered (the generated customer-specific value).
         3. Deploy it in the target AWS account:
 
            ```bash
@@ -176,12 +199,12 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       <Tab title="Terraform">
         1. Open the Terraform snippet in the UI.
         2. Apply it in the target account or module.
-        3. Confirm the role was created with the UI trust policy and the permissions policy from the access level step.
+        3. Confirm the role was created with the UI trust policy and the final scoped permissions policy.
         4. Copy the **Role ARN** from the Terraform output or the IAM console.
       </Tab>
       <Tab title="AWS CLI">
         1. Open the AWS CLI commands in the UI.
-        2. Run them against the target account (creates the role, trust policy, and attaches permissions).
+        2. Run them against the target account. The script writes both policy files, creates or updates the named role, attaches its inline permissions policy, and verifies the attachment. There is no separate policy file to save.
         3. Confirm the commands completed successfully.
         4. Copy the **Role ARN** from the command output or the IAM console.
       </Tab>
@@ -189,13 +212,13 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
         1. Open the AWS Console → IAM → Roles → Create role.
         2. Select **Custom trust policy**.
         3. Paste the trust policy from the UI (it requires the External ID).
-        4. Attach the **permissions policy from the access level step**.
-        5. Name the role `OdigosConnectorRole` and create it.
+        4. First create a customer-managed policy in IAM → Policies → Create policy → JSON using the final scoped policy preview. Select it on the role permissions screen.
+        5. Use the IAM role name entered in the wizard and create it.
         6. Open the role summary and copy the **Role ARN**.
       </Tab>
       <Tab title="IAM user (access keys)">
         1. In AWS, create or select an IAM user.
-        2. Attach the **permissions policy from the access level step**.
+        2. Create a **customer-managed policy** from the final policy preview and attach it. Do not use an inline user policy: the Collector policy exceeds the 2,048-character aggregate user limit.
         3. Create an access key for that user.
       </Tab>
     </Tabs>
@@ -205,7 +228,7 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       alt="Create IAM role step showing CloudFormation instructions and the Enter connector credentials form with IAM Role ARN and External ID fields"
     />
 
-    #### 5. Enter connector credentials
+    #### 6. Enter connector credentials
 
     Paste the values from the previous step into the form.
 
@@ -213,13 +236,13 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
       ARN of the cross-account role Odigos assumes.
     </ParamField>
     <ParamField path="External ID" type="string">
-      Must match the External ID in the role trust policy (e.g. `odigos-connector`). Strongly recommended: set it before copying the setup snippet, since a role created with a blank external ID cannot be assumed.
+      Keep the customer-specific value generated by the wizard, or supply another valid value before copying the setup snippet. It must match the External ID in the role trust policy.
     </ParamField>
     <ParamField path="Access Key ID" type="string">
-      Shown only for the **Access keys** method.
+      Shown for the **Access keys** method and when using access keys as the base for **Assume IAM role**.
     </ParamField>
     <ParamField path="Secret Access Key" type="string">
-      Secret access key for that identity. Shown only for the **Access keys** method.
+      Secret access key for that identity. Shown for the **Access keys** method and when using access keys as the base for **Assume IAM role**.
     </ParamField>
 
     With **Pod / workload identity** there are no credentials to enter.
@@ -423,3 +446,28 @@ Collector deployment also uses `ecs:RegisterTaskDefinition`, `ecs:UpdateService`
     Self-managed instrumentation, artifact preloading, and CDK/CloudFormation for every language.
   </Card>
 </CardGroup>
+
+## Configure workload identity on EKS
+
+The Helm chart can bind one existing IRSA base role to both the verification process and AWS connector pods:
+
+```yaml
+cloudConnectors:
+  enabled: true
+  aws:
+    workloadIdentity:
+      roleArn: arn:aws:iam::<SOURCE_ACCOUNT_ID>:role/OdigosConnectorBase
+      serviceAccountName: odigos-aws-connectors
+```
+
+Configure the base role's OIDC trust for both `system:serviceaccount:<CENTRAL_NAMESPACE>:central-backend`
+and `system:serviceaccount:<CENTRAL_NAMESPACE>:odigos-aws-connectors`, with audience `sts.amazonaws.com`.
+Grant it `sts:AssumeRole` only on the target connector role ARN. The chart annotates both service accounts.
+This is an IRSA configuration; EKS Pod Identity instead needs associations for both service accounts.
+A per-connector `odigos.io/service-account-name` annotation can select an existing service account in the
+connector namespace. Its AWS identity must be allowed by the same target trust policy.
+
+Verification performs identity/account checks and representative discovery reads. Empty inventories cannot
+prove resource-scoped read access. Instrumentation writes, PassRole, task execution roles, Collector
+permissions, and actual network delivery are explicitly unverified by this read-only check. Verify the first
+real workload and Collector deployment before expanding rollout.

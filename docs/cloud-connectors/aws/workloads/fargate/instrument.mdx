@@ -482,3 +482,18 @@ Merge these properties into your task definition. Only the exact agent path, act
     Every option on the Fargate CDK construct, in depth.
   </Card>
 </CardGroup>
+
+## Existing environment and multiple containers
+
+Workload-level runtime overrides apply before automatic selection, including when the image language or
+PHP/Ruby major.minor version cannot be detected. For several application containers, use named container
+overrides. Mixed-language tasks receive container-specific reference instructions with one shared staging
+container and volume.
+
+Automatic injection preserves image `ENV` loader settings when image configuration can be read. When using
+ECS environment files, inline their values in the task definition and remove `environmentFiles` before
+automatic instrumentation. Odigos refuses hidden file contents because it cannot safely verify loader or
+per-signal transport settings. Remove image-level per-signal OTLP overrides as well. In CDK, use
+`existingLoaderValue` for values unavailable at synthesis. Values delivered through ECS secrets must be
+resolved explicitly rather than duplicated as ordinary environment variables. .NET instrumentation supports
+glibc images; Alpine/musl is rejected when detected.

@@ -77,8 +77,7 @@ contain the launcher that reads the version 2 `ODIGOS_LAMBDA_CONFIG`. See
 
     <Info>
       Layer versions are retained, never deleted, when a stack update supersedes them
-      — a function still pinned to an older version would break at cold start the
-      moment it disappeared. Clean up old versions yourself once nothing references
+      — existing functions retain access after deletion, but deleted versions cannot be attached to new functions. Clean up old versions yourself once nothing references
       them.
     </Info>
   </Tab>

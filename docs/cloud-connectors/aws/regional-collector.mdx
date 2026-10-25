@@ -38,8 +38,9 @@ A workload can reach the Collector when **all** of the following hold:
 
 - It runs in the **same VPC** as the Collector, or the two VPCs have an **active, same-region VPC peering
   connection** with non-overlapping CIDR blocks and routes in every subnet on both sides.
-- The Collector's security group admits the workload's security group or subnet CIDR on TCP ports **4317**
+- The workload security groups allow outbound OTLP traffic, and the Collector's security group admits the workload's security group or subnet CIDR on TCP ports **4317**
   (OTLP gRPC) and **4318** (OTLP HTTP).
+- Subnet network ACLs admit OTLP request traffic and ephemeral TCP return traffic in both directions; the source VPC has DNS support enabled.
 - The Collector's security group also admits **itself** on TCP **4317** and **4318**. Traffic from the load
   balancer to the Collector tasks needs it.
 
@@ -623,3 +624,17 @@ when some workloads couldn't be moved yet. The one-minute warning shows as:
     Create Sources and choose the destination they export to.
   </Card>
 </CardGroup>
+
+## Routing verification and delivery limits
+
+Routing admission checks inspect VPC DNS support, effective routes, same-region peering, workload
+security-group egress, Collector ingress, and ordered subnet network ACL rules. Unknown or blocked paths
+retain direct export when a global destination is configured. These configuration checks do not replace an
+end-to-end telemetry test from the workload; custom DNS resolvers, middleboxes, and destination health can
+still prevent delivery. Confirm telemetry after the first rollout.
+
+Collector queues live on ephemeral task storage. Deployments, Spot interruptions and task replacement can
+lose buffered telemetry. Keep at least two on-demand tasks for availability-sensitive deployments; this
+improves availability but does not provide durable queues or exactly-once delivery. Collector-side TLS
+termination is unavailable on AWS; use the supported load-balancer TLS option with your certificate and DNS.
+The supported task-size matrix includes AWS's 32-vCPU sizes.
