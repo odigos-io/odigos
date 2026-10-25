@@ -50,7 +50,7 @@ status:
         - name: PYTHONPATH
           value: /app # this env exists in the test image
       language: python
-      runtimeVersion: 3.11.17
+      runtimeVersion: 3.11.15
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -67,7 +67,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: membership
       language: go
-      runtimeVersion: 1.23.12
+      runtimeVersion: 1.21.4
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig

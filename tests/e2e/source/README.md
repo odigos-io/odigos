@@ -5,7 +5,7 @@ This e2e extensively tests the use of Source objects for instrumentation, uninst
 It has the following phases:
 
 1. **Setup** - Install Odigos, simple-trace-db, and the Demo app
-   ([simple-demo](https://github.com/odigos-io/simple-demo) `v0.1.43`). The demo app now
+   ([simple-demo](https://github.com/odigos-io/simple-demo) `v0.1.36`). The demo app now
    includes the C++ `shipping` service, which is instrumented in this test via the OBI
    container override.
 
