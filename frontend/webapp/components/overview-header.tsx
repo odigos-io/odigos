@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import styled, { css, keyframes } from 'styled-components';
+import styled, { css, keyframes, useTheme } from 'styled-components';
 import { useConfig } from '@/hooks';
 import { StatusType } from '@odigos/ui-kit/types';
-import { OdigosLogo, TerminalIcon } from '@odigos/ui-kit/icons';
-import { useOdigosApi } from '@odigos/ui-kit/contexts';
 import { StatusKeys, useStatusStore } from '../store';
-import { FORM_ALERTS, RECOMMENDATIONS_DRAWER_TITLE } from '@odigos/ui-kit/constants';
+import { useOdigosApi } from '@odigos/ui-kit/contexts';
 import { OdigosLogoTextByTier } from '@odigos/ui-kit/snippets';
+import { FORM_ALERTS, RECOMMENDATIONS_DRAWER_TITLE } from '@odigos/ui-kit/constants';
+import { ExclamationTriangleIcon, OdigosLogo, TerminalIcon } from '@odigos/ui-kit/icons';
 import { countRecommended, RecommendationsDrawer, SystemDrawer } from '@odigos/ui-kit/containers';
-import { IconButton, Badge as V2Badge, Header as V2Header, Tooltip, Typography, TypographyColor, TypographySize } from '@odigos/ui-kit/components';
+import { IconButton, Badge as V2Badge, Header as V2Header, Tooltip, Typography, TypographyColor, TypographySize, WarningModal, ButtonVariants } from '@odigos/ui-kit/components';
 
 const RECOMMENDATIONS_INTRO_SESSION_KEY = 'odigos.recommendations.button.introSeen';
 const RECOMMENDATIONS_INTRO_MS = 5000;
@@ -34,7 +34,12 @@ const RecommendationsButton = styled.button<{ $emphasized: boolean; $animating: 
       ? `linear-gradient(90deg, ${theme.v2.colors.pink['500']} 0%, ${theme.v2.colors.purple['400']} 25%, ${theme.v2.colors.green['500']} 50%, ${theme.v2.colors.purple['400']} 75%, ${theme.v2.colors.pink['500']} 100%)`
       : 'transparent'};
   background-size: 200% 100%;
-  animation: ${({ $animating }) => ($animating ? css`${colorfulBorderAnimation} 4s linear infinite` : 'none')};
+  animation: ${({ $animating }) =>
+    $animating
+      ? css`
+          ${colorfulBorderAnimation} 4s linear infinite
+        `
+      : 'none'};
   cursor: pointer;
 
   &:hover > span {
@@ -69,6 +74,7 @@ const markRecommendationsIntroSeen = () => {
 };
 
 export const OverviewHeader = () => {
+  const theme = useTheme();
   const { isReadonly } = useConfig();
   const { recommendationsApi, capabilities } = useOdigosApi();
   const { items: recommendations } = recommendationsApi.useRecommendations();
@@ -102,8 +108,6 @@ export const OverviewHeader = () => {
   }, [hasPendingRecommendations]);
 
   const tokenStatus = useStatusStore((state) => state[StatusKeys.Token]);
-  const backendStatus = useStatusStore((state) => state[StatusKeys.Backend]);
-  const instrumentationStatus = useStatusStore((state) => state[StatusKeys.Instrumentation]);
 
   const left = useMemo(() => {
     const arr = [
@@ -120,27 +124,9 @@ export const OverviewHeader = () => {
         </div>,
       );
     }
-    if (backendStatus) {
-      arr.push(
-        <div key='backend-status' data-id='backend-status'>
-          <Tooltip text={backendStatus.tooltip}>
-            <V2Badge {...backendStatus} />
-          </Tooltip>
-        </div>,
-      );
-    }
-    if (instrumentationStatus) {
-      arr.push(
-        <div key='instrumentation-status' data-id='instrumentation-status'>
-          <Tooltip text={instrumentationStatus.tooltip}>
-            <V2Badge {...instrumentationStatus} />
-          </Tooltip>
-        </div>,
-      );
-    }
 
     return arr;
-  }, [isReadonly, backendStatus, instrumentationStatus]);
+  }, [isReadonly]);
 
   const right = useMemo(() => {
     const arr = [];
@@ -148,18 +134,13 @@ export const OverviewHeader = () => {
     if (tokenStatus) {
       arr.push(
         <div key='token-status' data-id='token-status'>
-          <Tooltip text={tokenStatus.tooltip}>
-            <V2Badge {...tokenStatus} />
-          </Tooltip>
+          <V2Badge {...tokenStatus} />
         </div>,
       );
     }
 
     if (capabilities.canManageRecommendations) {
-      const label =
-        recommendationsTotal > 0
-          ? `${RECOMMENDATIONS_DRAWER_TITLE} (${recommendedCount}/${recommendationsTotal})`
-          : RECOMMENDATIONS_DRAWER_TITLE;
+      const label = recommendationsTotal > 0 ? `${RECOMMENDATIONS_DRAWER_TITLE} (${recommendedCount}/${recommendationsTotal})` : RECOMMENDATIONS_DRAWER_TITLE;
       arr.push(
         <RecommendationsButton
           key='recommendations-drawer'
@@ -192,8 +173,21 @@ export const OverviewHeader = () => {
     <>
       <V2Header left={left} right={right} />
       <SystemDrawer isOpen={isSystemDrawerOpen} onClose={toggleSystemDrawer} />
-      {capabilities.canManageRecommendations && (
-        <RecommendationsDrawer isOpen={isRecommendationsDrawerOpen} onClose={toggleRecommendationsDrawer} />
+      {capabilities.canManageRecommendations && <RecommendationsDrawer isOpen={isRecommendationsDrawerOpen} onClose={toggleRecommendationsDrawer} />}
+
+      {tokenStatus && !tokenStatus.modalDismissed && (
+        <WarningModal
+          isOpen
+          onClose={() => useStatusStore.getState().dismissModal(StatusKeys.Token)}
+          visual={() => <ExclamationTriangleIcon size={50} fill={tokenStatus.status === StatusType.Warning ? theme.v2.colors.yellow[500] : theme.v2.colors.red[500]} />}
+          title={tokenStatus.status === StatusType.Warning ? 'Token about to expire' : 'Token expired'}
+          description={tokenStatus.label?.toString() || ''}
+          denyButton={{
+            label: 'Dismiss',
+            variant: ButtonVariants.Secondary,
+            onClick: () => useStatusStore.getState().dismissModal(StatusKeys.Token),
+          }}
+        />
       )}
     </>
   );
