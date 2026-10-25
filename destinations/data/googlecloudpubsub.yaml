@@ -1,0 +1,81 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: googlecloudpubsub
+  displayName: Google Cloud Pub/Sub
+  category: managed
+spec:
+  image: gcp.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: false
+  note:
+    type: Note
+    content: Publishes OTLP protobuf messages to an existing Pub/Sub topic. A subscription consumer must decode the messages; this does not ingest data into Cloud Monitoring or Cloud Trace.
+  fields:
+    - name: GCP_PUBSUB_TOPIC
+      displayName: Topic
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: projects/my-project/topics/odigos-otlp
+        tooltip: Fully qualified name of a pre-created topic. The collector requires Pub/Sub Publisher permission on this topic.
+    - name: GCP_PROJECT_ID
+      displayName: Project ID
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: my-project
+        tooltip: Project used by the Pub/Sub client. Defaults to the project in the topic name.
+    - name: GCP_APPLICATION_CREDENTIALS
+      displayName: Application Credentials
+      componentType: textarea
+      secret: true
+      componentProps:
+        type: text
+        required: false
+        tooltip: Optional Workload Identity Federation configuration or service account JSON key. Leave empty to use Application Default Credentials. Only one explicit Google credential file is supported per gateway.
+    - name: GCP_PUBSUB_COMPRESSION
+      displayName: Payload Compression
+      componentType: dropdown
+      initialValue: none
+      componentProps:
+        required: false
+        tooltip: Gzip compresses each OTLP message. Consumers must decompress when content-encoding is gzip.
+        options:
+          - label: None
+            value: none
+          - label: Gzip
+            value: gzip
+    - name: GCP_PUBSUB_ORDERING_KEY
+      displayName: Ordering Resource Attribute
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: service.name
+        tooltip: Optional resource attribute used as a message ordering key. Missing or empty values publish unordered messages. Enable message ordering when creating the subscription.
+    - name: GCP_PUBSUB_ENDPOINT
+      displayName: Regional Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: us-east1-pubsub.googleapis.com:443
+        tooltip: Optional regional Pub/Sub endpoint. TLS and Google authentication remain enabled.
+    - name: GCP_TIMEOUT
+      displayName: Timeout
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 12s
+        tooltip: Positive request timeout duration. Defaults to 12 seconds.

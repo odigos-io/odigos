@@ -1015,8 +1015,6 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter 
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.159.0/go.mod h1:0yd2TRqTYpl2eDk4zMX8ozH4tXnc7I4/5p1t3mD4q/c=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.159.0 h1:Ha3lJwswr8751pyesNSn8SoUK35ycRFyQNBOKsbOIaE=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.159.0/go.mod h1:WQpMgp2fQu0umEX6n2zJ64NvMbkxJ83gz6nERtXHfeg=
-github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudpubsubexporter v0.159.0 h1:N6HWHMMiX4XhgRIZL8HdE+HvPXMAyoVpASf8MMuTJBE=
-github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudpubsubexporter v0.159.0/go.mod h1:aKpw8vPj7aOLUDvzD8PSPvcthbRWkAQ1fpdNimBcK0E=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlemanagedprometheusexporter v0.159.0 h1:6RdklxQ0GLYCJ9E8HNBri7kmpgXBe76FzjDxflckDHs=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlemanagedprometheusexporter v0.159.0/go.mod h1:C/OXfa5pH9zk8FAxII1/6D6TXYVDvarQcDAlAPIa758=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/honeycombmarkerexporter v0.159.0 h1:zVxjnPAx4bgC2404KseZLVUBjjHWeK2o2hesp+xSJIE=
