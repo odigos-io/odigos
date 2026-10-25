@@ -59,7 +59,7 @@ func fullContainer(name string) v1.Container {
 		ReadinessProbe: httpGetProbe("/ready"),
 		StartupProbe:   tcpProbe(8080),
 		SecurityContext: &v1.SecurityContext{
-			RunAsNonRoot: boolPtr(true),
+			RunAsNonRoot: new(true),
 		},
 	}
 }
@@ -99,8 +99,6 @@ func templateAnnotations() map[string]string {
 		"prometheus.io/scrape":      "true",
 	}
 }
-
-func boolPtr(b bool) *bool { return &b }
 
 func assertStrippedContainers(t *testing.T, containers []v1.Container) {
 	t.Helper()

@@ -82,15 +82,12 @@ func FetchOdigosCRDs(
 	errChan := make(chan error, len(gvrs))
 
 	for _, gvr := range gvrs {
-		gvr := gvr // capture range variable
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if err := collectCRD(ctx, dynamicClient, builder, rootDir, odigosNamespace, gvr); err != nil {
 				klog.V(1).ErrorS(err, "Failed to collect CRD", "resource", gvr.Resource)
 				errChan <- err
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

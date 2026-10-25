@@ -7,8 +7,8 @@ import (
 
 	odigosapply "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	recommendationcatalog "github.com/odigos-io/odigos/recommendations"
 )
 
@@ -77,7 +77,7 @@ func conditionHolds(ctx context.Context, c client.Client, condition recommendati
 	case recommendationcatalog.ConditionTypeGoEnterpriseSources:
 		return hasGoEnterpriseSource(ctx, c)
 	default:
-		commonlogger.FromContext(ctx).WithName("recommendations").
+		k8slogger.FromContext(ctx).WithName("recommendations").
 			Info("unknown recommendation condition type", "type", condition.Type)
 		return false, nil
 	}

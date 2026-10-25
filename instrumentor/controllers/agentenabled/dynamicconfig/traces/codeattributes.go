@@ -49,9 +49,10 @@ func merge2RuleBooleans(value1 *bool, value2 *bool) *bool {
 	} else if value2 == nil {
 		return value1
 	}
-	return boolPtr(*value1 || *value2)
+	return new(*value1 || *value2)
 }
 
+//go:fix inline
 func boolPtr(b bool) *bool {
-	return &b
+	return new(b)
 }

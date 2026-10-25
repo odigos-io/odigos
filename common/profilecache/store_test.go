@@ -304,9 +304,7 @@ func TestStoreConcurrentAccess(t *testing.T) {
 	keys := []string{"a", "b", "c", "d", "e", "f"}
 	var wg sync.WaitGroup
 	for _, key := range keys {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range 200 {
 				s.EnsureSlot(key)
 				s.AddProfileData(key, chunkOfSize(100, 'a'))
@@ -315,7 +313,7 @@ func TestStoreConcurrentAccess(t *testing.T) {
 				s.MemoryStats()
 				s.SweepNow()
 			}
-		}()
+		})
 	}
 	wg.Wait()
 

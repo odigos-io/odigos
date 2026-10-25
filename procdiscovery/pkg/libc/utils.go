@@ -42,7 +42,7 @@ func InspectType(pd *process.Details) (*common.LibCType, error) {
 		return nil, err
 	}
 
-	defer f.Close() // nolint:errcheck // we can't do anything if it fails
+	defer f.Close() //nolint:errcheck // we can't do anything if it fails
 	for _, prog := range f.Progs {
 		if prog.Type != elf.PT_INTERP {
 			continue

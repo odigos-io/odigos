@@ -31,11 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common/consts"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	operatorv1alpha1 "github.com/odigos-io/odigos/operator/api/v1alpha1"
 )
 
@@ -104,7 +104,7 @@ type OdigosReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *OdigosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx).WithValues("controller", "odigos", "namespace", req.Namespace, "name", req.Name)
+	logger := k8slogger.FromContext(ctx).WithValues("controller", "odigos", "namespace", req.Namespace, "name", req.Name)
 
 	odigos := &operatorv1alpha1.Odigos{}
 	err := r.Client.Get(ctx, req.NamespacedName, odigos)
@@ -147,7 +147,7 @@ func (r *OdigosReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos, originalOdigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	ns := odigos.GetNamespace()
 
@@ -171,7 +171,7 @@ func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Clien
 
 // install Odigos based on the config passed in odigos
 func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos, originalOdigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	if !controllerutil.ContainsFinalizer(odigos, operatorFinalizer) {
 		controllerutil.AddFinalizer(odigos, operatorFinalizer)

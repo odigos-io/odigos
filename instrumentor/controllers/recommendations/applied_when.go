@@ -93,7 +93,7 @@ func actionExistsAppliedWhen(actions []odigosv1.Action, check recommendationcata
 
 func actionHasType(action *odigosv1.Action, actionType string) bool {
 	field := reflect.ValueOf(action.Spec).FieldByName(actionType)
-	return field.IsValid() && field.Kind() == reflect.Ptr && !field.IsNil()
+	return field.IsValid() && field.Kind() == reflect.Pointer && !field.IsNil()
 }
 
 func effectiveConfigAppliedWhen(cfgData any, check recommendationcatalog.AppliedWhenCheck) (bool, error) {

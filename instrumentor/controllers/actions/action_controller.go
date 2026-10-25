@@ -15,9 +15,9 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonactions "github.com/odigos-io/odigos/common/api/actions"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	actionutil "github.com/odigos-io/odigos/k8sutils/pkg/action"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/status"
 	actionstatus "github.com/odigos-io/odigos/status/action/generated"
@@ -192,7 +192,7 @@ func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, acti
 	})
 
 	if changed {
-		logger := commonlogger.FromContext(ctx)
+		logger := k8slogger.FromContext(ctx)
 		logger.Info("Action reconciled successfully")
 		err := r.Status().Update(ctx, action)
 		if err != nil {
@@ -260,7 +260,7 @@ func (r *ActionReconciler) clearAddedToCollectorConfig(ctx context.Context, acti
 }
 
 func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
+	logger := k8slogger.FromContext(ctx)
 
 	action := &odigosv1.Action{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -307,7 +307,7 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if statusErr == nil {
 			return utils.K8SUpdateErrorHandler(err)
 		} else {
-			logger := commonlogger.FromContext(ctx)
+			logger := k8slogger.FromContext(ctx)
 			logger.Error(statusErr, "Failed to set status on action")
 			return utils.K8SUpdateErrorHandler(err)
 		}

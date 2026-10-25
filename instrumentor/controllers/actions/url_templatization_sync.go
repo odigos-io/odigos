@@ -15,8 +15,8 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8slogger "github.com/odigos-io/odigos/k8sutils/pkg/logger"
 )
 
 // URLTemplatizationSyncMode selects how SyncUrlTemplatizationProcessor reconciles the shared Processor CR.
@@ -50,7 +50,7 @@ func hasAnyUrlTemplatizationAction(ctx context.Context, c client.Client, namespa
 
 func buildUrlTemplatizationProcessor(namespace string, spanMetricsEnabled bool) (*odigosv1.Processor, error) {
 	cfg := actions.URLTemplatizationConfig{}
-	configJSON, err := json.Marshal(map[string]interface{}{
+	configJSON, err := json.Marshal(map[string]any{
 		"odigos_config_extension": k8sconsts.OdigosConfigK8sExtensionType,
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ func buildUrlTemplatizationProcessor(namespace string, spanMetricsEnabled bool) 
 // When mode is URLTemplatizationSyncApplyFull: always builds and applies (or deletes)
 // so the CR matches the desired state for URL templatization.
 func SyncUrlTemplatizationProcessor(ctx context.Context, c client.Client, mode URLTemplatizationSyncMode) error {
-	logger := commonlogger.FromContext(ctx).WithName("url-templatization")
+	logger := k8slogger.FromContext(ctx).WithName("url-templatization")
 	ns := env.GetCurrentNamespace()
 	need, err := hasAnyUrlTemplatizationAction(ctx, c, ns)
 	if err != nil {

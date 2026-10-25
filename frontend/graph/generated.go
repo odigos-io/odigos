@@ -1460,6 +1460,7 @@ type ComplexityRoot struct {
 		Disabled                 func(childComplexity int) int
 		HeadersCollection        func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
+		KernelTraces             func(childComplexity int) int
 		ManagedBy                func(childComplexity int) int
 		Mutable                  func(childComplexity int) int
 		NetworkMetrics           func(childComplexity int) int
@@ -1836,6 +1837,24 @@ type ComplexityRoot struct {
 
 	KarpenterConfig struct {
 		Enabled func(childComplexity int) int
+	}
+
+	KernelCpuDelayTraces struct {
+		Enabled func(childComplexity int) int
+	}
+
+	KernelFilesystemTraces struct {
+		Enabled func(childComplexity int) int
+	}
+
+	KernelSubprocessTraces struct {
+		RecordCommandArgs func(childComplexity int) int
+	}
+
+	KernelTraces struct {
+		CPUDelay     func(childComplexity int) int
+		Filesystem   func(childComplexity int) int
+		Subprocesses func(childComplexity int) int
 	}
 
 	LanguageConfig struct {
@@ -9392,6 +9411,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.InstrumentationLibraries(childComplexity), true
 
+	case "InstrumentationRule.kernelTraces":
+		if e.complexity.InstrumentationRule.KernelTraces == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.KernelTraces(childComplexity), true
+
 	case "InstrumentationRule.managedBy":
 		if e.complexity.InstrumentationRule.ManagedBy == nil {
 			break
@@ -11036,6 +11062,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KarpenterConfig.Enabled(childComplexity), true
+
+	case "KernelCpuDelayTraces.enabled":
+		if e.complexity.KernelCpuDelayTraces.Enabled == nil {
+			break
+		}
+
+		return e.complexity.KernelCpuDelayTraces.Enabled(childComplexity), true
+
+	case "KernelFilesystemTraces.enabled":
+		if e.complexity.KernelFilesystemTraces.Enabled == nil {
+			break
+		}
+
+		return e.complexity.KernelFilesystemTraces.Enabled(childComplexity), true
+
+	case "KernelSubprocessTraces.recordCommandArgs":
+		if e.complexity.KernelSubprocessTraces.RecordCommandArgs == nil {
+			break
+		}
+
+		return e.complexity.KernelSubprocessTraces.RecordCommandArgs(childComplexity), true
+
+	case "KernelTraces.cpuDelay":
+		if e.complexity.KernelTraces.CPUDelay == nil {
+			break
+		}
+
+		return e.complexity.KernelTraces.CPUDelay(childComplexity), true
+
+	case "KernelTraces.filesystem":
+		if e.complexity.KernelTraces.Filesystem == nil {
+			break
+		}
+
+		return e.complexity.KernelTraces.Filesystem(childComplexity), true
+
+	case "KernelTraces.subprocesses":
+		if e.complexity.KernelTraces.Subprocesses == nil {
+			break
+		}
+
+		return e.complexity.KernelTraces.Subprocesses(childComplexity), true
 
 	case "LanguageConfig.enabled":
 		if e.complexity.LanguageConfig.Enabled == nil {
@@ -14368,6 +14436,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputK8sNamespaceId,
 		ec.unmarshalInputK8sSourceId,
 		ec.unmarshalInputK8sWorkloadIdInput,
+		ec.unmarshalInputKernelCpuDelayTracesInput,
+		ec.unmarshalInputKernelFilesystemTracesInput,
+		ec.unmarshalInputKernelSubprocessTracesInput,
+		ec.unmarshalInputKernelTracesInput,
 		ec.unmarshalInputLocalUiConfigAllowConcurrentAgentsInput,
 		ec.unmarshalInputLocalUiConfigAutoRollbackInput,
 		ec.unmarshalInputLocalUiConfigCardinalityControlInput,
@@ -25500,6 +25572,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
 			case "networkMetrics":
 				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
+			case "kernelTraces":
+				return ec.fieldContext_InstrumentationRule_kernelTraces(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -62937,6 +63011,55 @@ func (ec *executionContext) fieldContext_InstrumentationRule_networkMetrics(_ co
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_kernelTraces(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_kernelTraces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KernelTraces, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.KernelTraces)
+	fc.Result = res
+	return ec.marshalOKernelTraces2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelTraces(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_kernelTraces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "filesystem":
+				return ec.fieldContext_KernelTraces_filesystem(ctx, field)
+			case "subprocesses":
+				return ec.fieldContext_KernelTraces_subprocesses(ctx, field)
+			case "cpuDelay":
+				return ec.fieldContext_KernelTraces_cpuDelay(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KernelTraces", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRuleFieldYamlProperties_name(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRuleFieldYamlProperties) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRuleFieldYamlProperties_name(ctx, field)
 	if err != nil {
@@ -73453,6 +73576,264 @@ func (ec *executionContext) fieldContext_KarpenterConfig_enabled(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _KernelCpuDelayTraces_enabled(ctx context.Context, field graphql.CollectedField, obj *model.KernelCPUDelayTraces) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KernelCpuDelayTraces_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KernelCpuDelayTraces_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KernelCpuDelayTraces",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KernelFilesystemTraces_enabled(ctx context.Context, field graphql.CollectedField, obj *model.KernelFilesystemTraces) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KernelFilesystemTraces_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KernelFilesystemTraces_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KernelFilesystemTraces",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KernelSubprocessTraces_recordCommandArgs(ctx context.Context, field graphql.CollectedField, obj *model.KernelSubprocessTraces) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KernelSubprocessTraces_recordCommandArgs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecordCommandArgs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KernelSubprocessTraces_recordCommandArgs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KernelSubprocessTraces",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KernelTraces_filesystem(ctx context.Context, field graphql.CollectedField, obj *model.KernelTraces) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KernelTraces_filesystem(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filesystem, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.KernelFilesystemTraces)
+	fc.Result = res
+	return ec.marshalOKernelFilesystemTraces2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelFilesystemTraces(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KernelTraces_filesystem(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KernelTraces",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_KernelFilesystemTraces_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KernelFilesystemTraces", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KernelTraces_subprocesses(ctx context.Context, field graphql.CollectedField, obj *model.KernelTraces) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KernelTraces_subprocesses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Subprocesses, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.KernelSubprocessTraces)
+	fc.Result = res
+	return ec.marshalOKernelSubprocessTraces2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelSubprocessTraces(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KernelTraces_subprocesses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KernelTraces",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "recordCommandArgs":
+				return ec.fieldContext_KernelSubprocessTraces_recordCommandArgs(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KernelSubprocessTraces", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KernelTraces_cpuDelay(ctx context.Context, field graphql.CollectedField, obj *model.KernelTraces) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KernelTraces_cpuDelay(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CPUDelay, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.KernelCPUDelayTraces)
+	fc.Result = res
+	return ec.marshalOKernelCpuDelayTraces2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelCPUDelayTraces(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KernelTraces_cpuDelay(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KernelTraces",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_KernelCpuDelayTraces_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KernelCpuDelayTraces", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LanguageConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.LanguageConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LanguageConfig_enabled(ctx, field)
 	if err != nil {
@@ -79062,6 +79443,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
 			case "networkMetrics":
 				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
+			case "kernelTraces":
+				return ec.fieldContext_InstrumentationRule_kernelTraces(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -79151,6 +79534,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
 			case "networkMetrics":
 				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
+			case "kernelTraces":
+				return ec.fieldContext_InstrumentationRule_kernelTraces(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -98257,7 +98642,7 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations", "networkMetrics"}
+	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations", "networkMetrics", "kernelTraces"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -98341,6 +98726,13 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.NetworkMetrics = data
+		case "kernelTraces":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kernelTraces"))
+			data, err := ec.unmarshalOKernelTracesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelTracesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.KernelTraces = data
 		}
 	}
 
@@ -98751,6 +99143,128 @@ func (ec *executionContext) unmarshalInputK8sWorkloadIdInput(ctx context.Context
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputKernelCpuDelayTracesInput(ctx context.Context, obj any) (model.KernelCPUDelayTracesInput, error) {
+	var it model.KernelCPUDelayTracesInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputKernelFilesystemTracesInput(ctx context.Context, obj any) (model.KernelFilesystemTracesInput, error) {
+	var it model.KernelFilesystemTracesInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputKernelSubprocessTracesInput(ctx context.Context, obj any) (model.KernelSubprocessTracesInput, error) {
+	var it model.KernelSubprocessTracesInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"recordCommandArgs"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "recordCommandArgs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("recordCommandArgs"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RecordCommandArgs = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputKernelTracesInput(ctx context.Context, obj any) (model.KernelTracesInput, error) {
+	var it model.KernelTracesInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"filesystem", "subprocesses", "cpuDelay"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "filesystem":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filesystem"))
+			data, err := ec.unmarshalOKernelFilesystemTracesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelFilesystemTracesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Filesystem = data
+		case "subprocesses":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subprocesses"))
+			data, err := ec.unmarshalOKernelSubprocessTracesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelSubprocessTracesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Subprocesses = data
+		case "cpuDelay":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cpuDelay"))
+			data, err := ec.unmarshalOKernelCpuDelayTracesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelCPUDelayTracesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CPUDelay = data
 		}
 	}
 
@@ -110496,6 +111010,8 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_customInstrumentations(ctx, field, obj)
 		case "networkMetrics":
 			out.Values[i] = ec._InstrumentationRule_networkMetrics(ctx, field, obj)
+		case "kernelTraces":
+			out.Values[i] = ec._InstrumentationRule_kernelTraces(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -113740,6 +114256,154 @@ func (ec *executionContext) _KarpenterConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = graphql.MarshalString("KarpenterConfig")
 		case "enabled":
 			out.Values[i] = ec._KarpenterConfig_enabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var kernelCpuDelayTracesImplementors = []string{"KernelCpuDelayTraces"}
+
+func (ec *executionContext) _KernelCpuDelayTraces(ctx context.Context, sel ast.SelectionSet, obj *model.KernelCPUDelayTraces) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, kernelCpuDelayTracesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KernelCpuDelayTraces")
+		case "enabled":
+			out.Values[i] = ec._KernelCpuDelayTraces_enabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var kernelFilesystemTracesImplementors = []string{"KernelFilesystemTraces"}
+
+func (ec *executionContext) _KernelFilesystemTraces(ctx context.Context, sel ast.SelectionSet, obj *model.KernelFilesystemTraces) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, kernelFilesystemTracesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KernelFilesystemTraces")
+		case "enabled":
+			out.Values[i] = ec._KernelFilesystemTraces_enabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var kernelSubprocessTracesImplementors = []string{"KernelSubprocessTraces"}
+
+func (ec *executionContext) _KernelSubprocessTraces(ctx context.Context, sel ast.SelectionSet, obj *model.KernelSubprocessTraces) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, kernelSubprocessTracesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KernelSubprocessTraces")
+		case "recordCommandArgs":
+			out.Values[i] = ec._KernelSubprocessTraces_recordCommandArgs(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var kernelTracesImplementors = []string{"KernelTraces"}
+
+func (ec *executionContext) _KernelTraces(ctx context.Context, sel ast.SelectionSet, obj *model.KernelTraces) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, kernelTracesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KernelTraces")
+		case "filesystem":
+			out.Values[i] = ec._KernelTraces_filesystem(ctx, field, obj)
+		case "subprocesses":
+			out.Values[i] = ec._KernelTraces_subprocesses(ctx, field, obj)
+		case "cpuDelay":
+			out.Values[i] = ec._KernelTraces_cpuDelay(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -130174,6 +130838,66 @@ func (ec *executionContext) marshalOKarpenterConfig2ᚖgithubᚗcomᚋodigosᚑi
 		return graphql.Null
 	}
 	return ec._KarpenterConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOKernelCpuDelayTraces2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelCPUDelayTraces(ctx context.Context, sel ast.SelectionSet, v *model.KernelCPUDelayTraces) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._KernelCpuDelayTraces(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKernelCpuDelayTracesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelCPUDelayTracesInput(ctx context.Context, v any) (*model.KernelCPUDelayTracesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputKernelCpuDelayTracesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOKernelFilesystemTraces2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelFilesystemTraces(ctx context.Context, sel ast.SelectionSet, v *model.KernelFilesystemTraces) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._KernelFilesystemTraces(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKernelFilesystemTracesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelFilesystemTracesInput(ctx context.Context, v any) (*model.KernelFilesystemTracesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputKernelFilesystemTracesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOKernelSubprocessTraces2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelSubprocessTraces(ctx context.Context, sel ast.SelectionSet, v *model.KernelSubprocessTraces) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._KernelSubprocessTraces(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKernelSubprocessTracesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelSubprocessTracesInput(ctx context.Context, v any) (*model.KernelSubprocessTracesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputKernelSubprocessTracesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOKernelTraces2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelTraces(ctx context.Context, sel ast.SelectionSet, v *model.KernelTraces) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._KernelTraces(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKernelTracesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐKernelTracesInput(ctx context.Context, v any) (*model.KernelTracesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputKernelTracesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOLiveTrafficLearningAutomaticRulesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLiveTrafficLearningAutomaticRulesConfig(ctx context.Context, sel ast.SelectionSet, v *model.LiveTrafficLearningAutomaticRulesConfig) graphql.Marshaler {

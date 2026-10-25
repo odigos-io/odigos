@@ -6,17 +6,17 @@ package sampling
 // +kubebuilder:object:generate=true
 type HeadSamplingOperationMatcher struct {
 	// match http server operation (trace that starts with an http endpoint)
-	HttpServer *HeadSamplingHttpServerOperationMatcher `json:"httpServer,omitempty"`
+	HttpServer *HeadSamplingHttpServerOperationMatcher `json:"httpServer,omitempty" yaml:"httpServer,omitempty"`
 
 	// match http client operation (trace that starts with an http client operation)
 	// common for agents that are internally calling home over http, and exporting data.
-	HttpClient *HeadSamplingHttpClientOperationMatcher `json:"httpClient,omitempty"`
+	HttpClient *HeadSamplingHttpClientOperationMatcher `json:"httpClient,omitempty" yaml:"httpClient,omitempty"`
 
 	// match grpc server operation (trace that starts with an incoming grpc call)
-	GrpcServer *HeadSamplingGrpcServerOperationMatcher `json:"grpcServer,omitempty"`
+	GrpcServer *HeadSamplingGrpcServerOperationMatcher `json:"grpcServer,omitempty" yaml:"grpcServer,omitempty"`
 
 	// match grpc client operation (trace that starts with an outgoing grpc call).
-	GrpcClient *HeadSamplingGrpcClientOperationMatcher `json:"grpcClient,omitempty"`
+	GrpcClient *HeadSamplingGrpcClientOperationMatcher `json:"grpcClient,omitempty" yaml:"grpcClient,omitempty"`
 }
 
 // match http server operations for noisy operations matching (only attributes available at span start time)
@@ -24,19 +24,19 @@ type HeadSamplingOperationMatcher struct {
 type HeadSamplingHttpServerOperationMatcher struct {
 
 	// match route exactly
-	Route string `json:"route,omitempty"`
+	Route string `json:"route,omitempty" yaml:"route,omitempty"`
 
 	// match prefix of route
-	RoutePrefix string `json:"routePrefix,omitempty"`
+	RoutePrefix string `json:"routePrefix,omitempty" yaml:"routePrefix,omitempty"`
 
 	// match method exactly, can be empty to match any method
-	Method string `json:"method,omitempty"`
+	Method string `json:"method,omitempty" yaml:"method,omitempty"`
 
 	// match url query parameters.
 	// ignored if empty.
 	// if set, all the specified query parameters matchers must match for the operation to be matched.
 	// any query param in the request url that is not specified in the matchers will not be considered for the matching.
-	QueryParams []QueryParamMatcher `json:"queryParams,omitempty"`
+	QueryParams []QueryParamMatcher `json:"queryParams,omitempty" yaml:"queryParams,omitempty"`
 }
 
 // match http client operations for noisy operations matching (only attributes available at span start time)
@@ -44,13 +44,13 @@ type HeadSamplingHttpServerOperationMatcher struct {
 // +kubebuilder:object:generate=true
 type HeadSamplingHttpClientOperationMatcher struct {
 	// match server address exactly (e.g. collector.my.vendor.com)
-	ServerAddress string `json:"serverAddress,omitempty"`
+	ServerAddress string `json:"serverAddress,omitempty" yaml:"serverAddress,omitempty"`
 	// match templated path exactly
-	TemplatedPath string `json:"templatedPath,omitempty"`
+	TemplatedPath string `json:"templatedPath,omitempty" yaml:"templatedPath,omitempty"`
 	// match preffix of templated path
-	TemplatedPathPrefix string `json:"templatedPathPrefix,omitempty"`
+	TemplatedPathPrefix string `json:"templatedPathPrefix,omitempty" yaml:"templatedPathPrefix,omitempty"`
 	// match method exactly, can be empty to match any method
-	Method string `json:"method,omitempty"`
+	Method string `json:"method,omitempty" yaml:"method,omitempty"`
 }
 
 // match grpc server operations for noisy operations matching (only attributes available at span start time).
@@ -60,11 +60,11 @@ type HeadSamplingHttpClientOperationMatcher struct {
 // +kubebuilder:object:generate=true
 type HeadSamplingGrpcServerOperationMatcher struct {
 	// match the bare gRPC method name exactly (e.g. "ListItems"). leave empty to match any method.
-	Method string `json:"method,omitempty"`
+	Method string `json:"method,omitempty" yaml:"method,omitempty"`
 	// match the fully-qualified gRPC service name exactly (e.g. "my.example.com.InventoryService").
 	// leave empty to match any service. setting only Service is the canonical way to scope a rule
 	// to every method of a single gRPC service.
-	Service string `json:"service,omitempty"`
+	Service string `json:"service,omitempty" yaml:"service,omitempty"`
 }
 
 // match grpc client operations for noisy operations matching (only attributes available at span start time).
@@ -72,10 +72,10 @@ type HeadSamplingGrpcServerOperationMatcher struct {
 // +kubebuilder:object:generate=true
 type HeadSamplingGrpcClientOperationMatcher struct {
 	// match the bare gRPC method name exactly (e.g. "ListItems"). leave empty to match any method.
-	Method string `json:"method,omitempty"`
+	Method string `json:"method,omitempty" yaml:"method,omitempty"`
 	// match the fully-qualified gRPC service name exactly (e.g. "my.example.com.InventoryService").
 	// leave empty to match any service.
-	Service string `json:"service,omitempty"`
+	Service string `json:"service,omitempty" yaml:"service,omitempty"`
 	// match server address exactly (e.g. collector.my.vendor.com)
-	ServerAddress string `json:"serverAddress,omitempty"`
+	ServerAddress string `json:"serverAddress,omitempty" yaml:"serverAddress,omitempty"`
 }

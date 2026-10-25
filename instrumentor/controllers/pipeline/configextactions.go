@@ -66,7 +66,7 @@ func extractConfigExtActions(action *odigosv1.Action) []string {
 
 func actionToConfigExtensionProcessor(processorType string, signals []odigoscommon.ObservabilitySignal) odigosv1.Processor {
 
-	configJSON, _ := json.Marshal(map[string]interface{}{
+	configJSON, _ := json.Marshal(map[string]any{
 		"odigos_config_extension": k8sconsts.OdigosConfigK8sExtensionType,
 	})
 

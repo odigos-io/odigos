@@ -30,6 +30,18 @@ archives:
       - none*
 checksum:
   name_template: "checksums.txt"
+# Keyless-sign the checksum file; the sigstore bundle is uploaded to the
+# GitHub release by default alongside the artifact it signs.
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - --yes
+      - --bundle
+      - ${signature}
+      - ${artifact}
+    artifacts: checksum
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 changelog:

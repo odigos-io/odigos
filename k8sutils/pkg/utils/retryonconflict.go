@@ -16,6 +16,7 @@ func K8SUpdateErrorHandler(err error) (reconcile.Result, error) {
 	if errors.IsConflict(err) {
 		// For conflict errors, requeue without returning an error.
 		// this is so that we don't have errors and stack traces in the logs for valid scenario
+		//nolint:staticcheck // RequeueAfter would replace the rate-limited backoff with a fixed delay
 		return reconcile.Result{Requeue: true}, nil
 	}
 	if errors.IsNotFound(err) {

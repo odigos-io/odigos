@@ -12,6 +12,7 @@
 - Generated files are read-only. Never hand-edit them.
 - If the task is unclear or not descriptive enough, ask for clarification before making changes.
 - Do not introduce new implementations when equivalent functionality already exists in the repository or its dependencies. Search for and reuse existing utilities, helpers, or patterns — including those provided by external libraries already in use. Extend or adapt existing code instead of duplicating functionality.
+- Changes to a module listed in `LINT_MODULES` in the root `Makefile` must pass `make lint MODULE=<module>` before you suggest them. Fix what it reports in the code you changed. Use `//nolint:<linter> // <reason>` only for a false positive or a constraint you can't change, such as an exported API.
 
 ### Comments
 
