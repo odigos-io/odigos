@@ -1003,6 +1003,13 @@
               "required": [],
               "title": "litellm"
             },
+            "maxProbesPerWorkload": {
+              "default": 20,
+              "description": "Maximum number of custom function probes that may apply to a single\nworkload (across all InstrumentationRules that affect it). The\ninterrogation loop will not add probes past this cap. Per-request\nrecommendations are still capped at 5 per category.",
+              "minimum": 1,
+              "title": "maxProbesPerWorkload",
+              "type": "integer"
+            },
             "mode": {
               "default": "auto",
               "description": "Interrogation loop mode. Applies only when enabled is true, and can also\nbe changed from the UI. off does not analyze transactions. auto analyzes\nthem. This does not install or remove interrogation.",

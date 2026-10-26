@@ -1530,6 +1530,17 @@ insights:
       autoApply: false
 
     # @schema
+    # type: integer
+    # minimum: 1
+    # description: |-
+    #   Maximum number of custom function probes that may apply to a single
+    #   workload (across all InstrumentationRules that affect it). The
+    #   interrogation loop will not add probes past this cap. Per-request
+    #   recommendations are still capped at 5 per category.
+    # @schema
+    maxProbesPerWorkload: 20
+
+    # @schema
     # description: Internal LiteLLM deployment (image/resources/scheduling). Not user-facing except mirrors.
     # @schema
     litellm:
