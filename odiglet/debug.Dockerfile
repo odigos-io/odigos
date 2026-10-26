@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.22
+ARG ODIGLET_BASE_IMAGE=docker.io/keyval/odiglet-base:v1.22
 
 
 ######### python Native Community Agent #########

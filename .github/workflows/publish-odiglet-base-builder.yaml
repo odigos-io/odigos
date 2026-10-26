@@ -170,8 +170,8 @@ jobs:
 
       - name: Update Odiglet Base Builder image in dockerfiles
         run: |
-          sed -i "s|registry.odigos.io/odiglet-base:.*|registry.odigos.io/odiglet-base:${{ github.event.inputs.image_tag }}|g" odiglet/Dockerfile
-          sed -i "s|registry.odigos.io/odiglet-base:.*|registry.odigos.io/odiglet-base:${{ github.event.inputs.image_tag }}|g" odiglet/debug.Dockerfile
+          sed -i "s|^ARG ODIGLET_BASE_IMAGE=.*|ARG ODIGLET_BASE_IMAGE=docker.io/keyval/odiglet-base:${{ github.event.inputs.image_tag }}|" odiglet/Dockerfile
+          sed -i "s|^ARG ODIGLET_BASE_IMAGE=.*|ARG ODIGLET_BASE_IMAGE=docker.io/keyval/odiglet-base:${{ github.event.inputs.image_tag }}|" odiglet/debug.Dockerfile
 
       - name: Create PR token
         id: create-pr-sts

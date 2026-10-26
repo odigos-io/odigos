@@ -42,7 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-const defaultCollectorImage = "registry.odigos.io/odigos-collector"
+const defaultCollectorImage = "docker.io/keyval/odigos-collector"
 
 type Instrumentor struct {
 	mgr                controllerruntime.Manager

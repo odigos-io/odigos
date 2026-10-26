@@ -187,7 +187,7 @@ See the [Frontend README.md](https://github.com/odigos-io/odigos/blob/main/front
 
 ### builder base image
 
-Odiglet Dockerfile uses a base image for the builder, which saves up lots of time during builds. The Dockerfile for the base image can be found in `./odiglet/base.Dockerfile` and is consumed like so: `FROM keyval/odiglet-base:v1.0 as builder`
+Odiglet Dockerfile uses a base image for the builder, which saves up lots of time during builds. The Dockerfile for the base image can be found in `./odiglet/base.Dockerfile` and is consumed like so: `FROM docker.io/keyval/odiglet-base:v1.22 AS builder`
 If you need to add additional packages to the build, update this file. Then publish the new base image to dockerhub with the github action named `Publish Odiglet Base Builder` in the `Actions` tab.
 You will need to specify the new image tag as a version in the format `v1.0`.
 After the image is published, update the dependency in `./odiglet/Dockerfile` to use the new image tag.
