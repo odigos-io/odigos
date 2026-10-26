@@ -44,6 +44,11 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 			if scope.SourceScopeMatchesContainer(rules.Scopes, pw, language) {
 				participating = true
 				templates = append(templates, rules.Templates...)
+				// DocumentedTemplates carry the same template strings as Templates, with
+				// example paths and notes attached. They must be applied the same way.
+				for _, documented := range rules.DocumentedTemplates {
+					templates = append(templates, documented.Template)
+				}
 			}
 		}
 	}

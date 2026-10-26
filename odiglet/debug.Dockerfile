@@ -81,11 +81,11 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 
 # python-community/python-community3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8@sha256:661308cb08d293f4ff3e1823cc7ebc0537ba53dd1fff72f61b411637d62ec3d4 /instrumentations/python3.8 /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.90@sha256:26be5a681e6cde7585f0bff6714fd74dbc90515a239d4759f5b6225591a78185 /instrumentations/python /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.91@sha256:ae8761929dc588b90c95178451fe90c8e57239ee8b8b3ba2c5919328b0874fda /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.17.0@sha256:c8e0f4c3ceb33a3be3120d32220ecfd6a43e813c3e8dc8a5ea87b885cf356da1 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.17.0@sha256:c8e0f4c3ceb33a3be3120d32220ecfd6a43e813c3e8dc8a5ea87b885cf356da1 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.17.1@sha256:a151b894516bd2ea31c9ff39ce2df68246e3f1fe90d78678d33c3425e7a727e5 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.17.1@sha256:a151b894516bd2ea31c9ff39ce2df68246e3f1fe90d78678d33c3425e7a727e5 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198ee74c61539f39614ec96b4ef9c7069140079e121541231f11f8b13863283 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198ee74c61539f39614ec96b4ef9c7069140079e121541231f11f8b13863283 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
