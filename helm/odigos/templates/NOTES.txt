@@ -9,7 +9,7 @@ odigos ui
 
 Then, go to: http://localhost:3000
 
-{{ if and .Values.insights.enabled (eq .Values.insights.clickhouse.storage.persistence false) }}
+{{ if and (include "odigos.insightsEnabled" .) (eq .Values.insights.clickhouse.storage.persistence false) }}
 {{- $existingPVC := lookup "v1" "PersistentVolumeClaim" .Release.Namespace "odigos-insights-clickhouse" }}
 
 WARNING: Insights persistence is disabled.

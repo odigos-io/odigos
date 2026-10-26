@@ -247,9 +247,13 @@ logLevel: "info"
 # @schema
 profiling:
   # @schema
-  # description: When true, enables profiling pipelines on the node collector and cluster gateway.
+  # description: |-
+  #   When true, enables profiling pipelines on the node collector and cluster
+  #   gateway. Unset/empty is off, unless insights.interrogation.enabled is
+  #   true, which enables profiling automatically. Explicit false conflicts
+  #   with interrogation and fails the install.
   # @schema
-  enabled: false
+  enabled:
   # @schema
   # description: OTLP settings for profiling exporters (node → gateway, gateway → UI). Omitted from config when profiling.enabled is false.
   # @schema
@@ -1062,7 +1066,7 @@ odiglet:
     # @schema
     # description: |-
     #   AppArmor profile for data-collection when gke.enabled and the profiling
-    #   pipeline is on (profiling.enabled or insights.interrogation.enabled).
+    #   pipeline is on (profiling.enabled, including when interrogation implies it).
     #   GKE's default profile denies mkdir /sys/fs/bpf/otel, which the eBPF
     #   profiler needs to pin traces_ctx_v1 for profile↔span links.
     #   Ignored when privileged, or when gke.enabled is false.
@@ -1385,9 +1389,12 @@ insights:
 
   # @schema
   # description: |-
-  #   When true, deploys the insights service. Default false (off).
+  #   When true, deploys the insights service. Unset/empty is off, unless
+  #   insights.interrogation.enabled is true, which enables insights
+  #   automatically. Explicit false conflicts with interrogation and fails
+  #   the install.
   # @schema
-  enabled: false
+  enabled:
 
   # @schema
   # description: |-
@@ -1460,18 +1467,25 @@ insights:
   # description: |-
   #   Interrogation (off by default): an insights feature that correlates traces
   #   and profiles in ClickHouse, analyzes per-transaction call tries with an
-  #   LLM, and suggests function probes as InstrumentationRules. Requires
-  #   insights.enabled. The loop runs inside the insights pods (only the replica
-  #   holding the leader lease analyzes), so it shares insights resources and
-  #   scheduling. When enabled, the gateway taps traces for interrogation and
-  #   the chart deploys bundled LiteLLM (odigos-litellm) and the shared cache
-  #   (cacheDb; default Burstable 25m/128Mi requests, 100m/500Mi limits when
-  #   cacheDb.resources is unset). Configure a cloud provider under model, or
-  #   set model.apiBase to point LiteLLM at a BYO inference endpoint.
+  #   LLM, and suggests function probes as InstrumentationRules. Enabling it
+  #   also enables insights, profiling, and the insights profile when those
+  #   values are unset. Explicit insights.enabled=false, profiling.enabled=false,
+  #   or a profiles list that omits "insights" fails the install. The loop runs
+  #   inside the insights pods (only the replica holding the leader lease
+  #   analyzes), so it shares insights resources and scheduling. When enabled,
+  #   the gateway taps traces for interrogation and the chart deploys bundled
+  #   LiteLLM (odigos-litellm) and the shared cache (cacheDb; default Burstable
+  #   25m/128Mi requests, 100m/500Mi limits when cacheDb.resources is unset).
+  #   Configure a cloud provider under model, or set model.apiBase to point
+  #   LiteLLM at a BYO inference endpoint.
   # @schema
   interrogation:
     # @schema
-    # description: When true (and insights.enabled is true), enables interrogation in the insights service and deploys odigos-litellm.
+    # description: |-
+    #   When true, enables interrogation in the insights service and deploys
+    #   odigos-litellm. Also enables insights, profiling, and the insights
+    #   profile when those values are unset. Explicit conflicting values fail
+    #   the install.
     # @schema
     enabled: false
 
@@ -1786,7 +1800,11 @@ resourceDetectors:
     enabled: true
 
 # @schema
-# description: "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}"
+# description: |-
+#   List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] |
+#   (CLI): --set profiles={PROFILE_NAME}. When insights.interrogation.enabled
+#   is true and this is empty, the chart adds "insights". A non-empty list
+#   that omits "insights" fails the install.
 # @schema
 profiles: []
 

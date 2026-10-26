@@ -1,4 +1,4 @@
-{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+{{- if and (include "odigos.insightsEnabled" .) (include "odigos.secretExists" .) }}
 # Headless companion Service (clusterIP: None) for the insights OTLP gRPC port.
 # The cluster gateway exports to this name via the dns:/// resolver so its gRPC
 # client can round_robin across every insights pod IP. A regular ClusterIP

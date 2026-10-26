@@ -108,21 +108,82 @@ true
 {{- end -}}
 
 {{/*
-  Bundled ClickHouse backs insights (including interrogation).
+  Interrogation is enabled by insights.interrogation.enabled. That flag
+  implies insights, profiling, and the insights profile (see
+  odigos.validateInterrogationDeps).
 */}}
-{{- define "odigos.clickhouseEnabled" -}}
-{{- if .Values.insights.enabled -}}
+{{- define "odigos.interrogationEnabled" -}}
+{{- if .Values.insights.interrogation.enabled -}}
 true
 {{- end -}}
 {{- end -}}
 
 {{/*
-  Interrogation is a feature of insights: it runs inside the insights service,
-  so it is only active when insights itself is enabled.
+  Insights is on when insights.enabled is true, or when interrogation
+  implies it (unset insights.enabled).
 */}}
-{{- define "odigos.interrogationEnabled" -}}
-{{- if and .Values.insights.enabled .Values.insights.interrogation.enabled -}}
+{{- define "odigos.insightsEnabled" -}}
+{{- if or .Values.insights.enabled (include "odigos.interrogationEnabled" .) -}}
 true
+{{- end -}}
+{{- end -}}
+
+{{/*
+  Bundled ClickHouse backs insights (including interrogation).
+*/}}
+{{- define "odigos.clickhouseEnabled" -}}
+{{- include "odigos.insightsEnabled" . -}}
+{{- end -}}
+
+{{/*
+  Profiling is on when profiling.enabled is true, or when interrogation
+  implies it (unset profiling.enabled).
+*/}}
+{{- define "odigos.profilingEnabled" -}}
+{{- if or .Values.profiling.enabled (include "odigos.interrogationEnabled" .) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+  Effective profiles list. Interrogation adds "insights" when profiles is
+  empty; a non-empty list that omits "insights" is rejected by
+  odigos.validateInterrogationDeps.
+*/}}
+{{- define "odigos.profiles" -}}
+{{- $profiles := .Values.profiles | default list -}}
+{{- if and $profiles (not (kindIs "slice" $profiles)) -}}
+{{- fail "Invalid 'profiles' value: must be a list. Example (YAML): profiles: [PROFILE_NAME]  |  CLI: --set profiles={PROFILE_NAME}" -}}
+{{- end -}}
+{{- if and (include "odigos.interrogationEnabled" .) (not (has "insights" $profiles)) -}}
+{{- $profiles = prepend $profiles "insights" -}}
+{{- end -}}
+{{- if $profiles -}}
+{{- toYaml $profiles -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+  Fail install/upgrade when interrogation is on and a dependency is
+  explicitly set to a conflicting value. Unset dependencies are enabled
+  automatically (see odigos.insightsEnabled, odigos.profilingEnabled,
+  odigos.profiles).
+*/}}
+{{- define "odigos.validateInterrogationDeps" -}}
+{{- if include "odigos.interrogationEnabled" . }}
+{{- if and (kindIs "bool" .Values.insights.enabled) (not .Values.insights.enabled) -}}
+{{- fail "insights.interrogation.enabled=true requires insights. insights.enabled is set to false, which conflicts. Omit insights.enabled (enabled automatically) or set insights.enabled=true." -}}
+{{- end -}}
+{{- if and (kindIs "bool" .Values.profiling.enabled) (not .Values.profiling.enabled) -}}
+{{- fail "insights.interrogation.enabled=true requires profiling. profiling.enabled is set to false, which conflicts. Omit profiling.enabled (enabled automatically) or set profiling.enabled=true." -}}
+{{- end -}}
+{{- $profiles := .Values.profiles | default list -}}
+{{- if and $profiles (not (kindIs "slice" $profiles)) -}}
+{{- fail "Invalid 'profiles' value: must be a list. Example (YAML): profiles: [PROFILE_NAME]  |  CLI: --set profiles={PROFILE_NAME}" -}}
+{{- end -}}
+{{- if and $profiles (not (has "insights" $profiles)) -}}
+{{- fail (printf "insights.interrogation.enabled=true requires the insights profile. profiles is set to %v, which does not include \"insights\". Omit profiles (defaults to [insights]) or add \"insights\" to the list." $profiles) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
