@@ -1,4 +1,4 @@
-import { ROUTES } from '../constants';
+import { DATA_IDS, ROUTES } from '../constants';
 import { aliasQuery, awaitToast, handleExceptions, hasOperationName, visitPage, waitForGraphqlOperation } from '../functions';
 
 const mockTokenQuery = (expiresAt: number, message?: string) => {
@@ -28,6 +28,12 @@ const mockTokenQuery = (expiresAt: number, message?: string) => {
   handleExceptions();
 };
 
+const dismissTokenModal = (title: string, message: string) => {
+  cy.get(DATA_IDS.MODAL).should('contain.text', title).and('contain.text', message);
+  cy.get(DATA_IDS.MODAL).find(DATA_IDS.DENY).click();
+  cy.get(DATA_IDS.MODAL).should('not.exist');
+};
+
 describe('Token Tracker', () => {
   it('Should track a "valid" token, and not show any notifications', () => {
     // in 30 days
@@ -35,6 +41,7 @@ describe('Token Tracker', () => {
 
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get('[data-id=token-status]').should('not.exist');
+      cy.get(DATA_IDS.MODAL).should('not.exist');
       cy.get('[data-id=system-drawer]').children().first().click(); // testing that the UI does not crash
     });
   });
@@ -46,6 +53,7 @@ describe('Token Tracker', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       waitForGraphqlOperation('GetTokens').then(() => {
         awaitToast({ message: 'The token is about to expire in 1 day.' });
+        dismissTokenModal('Token about to expire', 'The token is about to expire in 1 day.');
         cy.get('[data-id=token-status]').should('contain.text', 'The token is about to expire in 1 day.');
         cy.get('[data-id=system-drawer]').children().first().click(); // testing that the UI does not crash
       });
@@ -60,6 +68,7 @@ describe('Token Tracker', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       waitForGraphqlOperation('GetTokens').then(() => {
         awaitToast({ message: expiredMessage });
+        dismissTokenModal('Token expired', expiredMessage);
         cy.get('[data-id=token-status]').should('contain.text', expiredMessage);
         cy.get('[data-id=system-drawer]').children().first().click(); // testing that the UI does not crash
       });

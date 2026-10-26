@@ -1,0 +1,33 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: InstrumentationRule
+metadata:
+  type: KernelTraces
+  displayName: Kernel Traces
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/rules
+  description: The "Kernel Traces" rule adds spans for the operating system work of the application.
+  supportedLanguages:
+    - "*"
+  fields:
+    - name: kernelTraces
+      displayName: Kernel operations to trace
+      componentType: checkboxList
+      initialValue: '{"filesystem":{},"subprocesses":{},"cpuDelay":{}}'
+      componentProps:
+        checkedValue: emptyObject
+        options:
+          - id: filesystem
+            label: Files
+            tooltip: Adds a span for each file the application opens or changes the permissions of.
+          - id: subprocesses
+            label: Subprocesses
+            tooltip: Adds a span for each process the application starts, like curl or a script.
+            fields:
+              - name: recordCommandArgs
+                displayName: Record command arguments
+                componentType: checkbox
+                componentProps:
+                  tooltip: Records the command line arguments of each process. They can contain secrets like passwords or tokens, so enable with caution.
+          - id: cpuDelay
+            label: CPU delay
+            tooltip: Adds a span when a thread handling a traced request was ready to run but waited 1 ms or more for a CPU, named "cpu throttling" when the container's CPU limit caused it, or "cpu contention" otherwise.

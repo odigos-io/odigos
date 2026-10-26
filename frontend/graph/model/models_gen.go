@@ -2008,6 +2008,7 @@ type InstrumentationRule struct {
 	PayloadCollection        *PayloadCollection                 `json:"payloadCollection,omitempty"`
 	CustomInstrumentations   *CustomInstrumentations            `json:"customInstrumentations,omitempty"`
 	NetworkMetrics           *bool                              `json:"networkMetrics,omitempty"`
+	KernelTraces             *KernelTraces                      `json:"kernelTraces,omitempty"`
 }
 
 type InstrumentationRuleFieldYamlProperties struct {
@@ -2031,6 +2032,7 @@ type InstrumentationRuleInput struct {
 	PayloadCollection        *PayloadCollectionInput                                    `json:"payloadCollection,omitempty"`
 	CustomInstrumentations   *CustomInstrumentationsInput                               `json:"customInstrumentations,omitempty"`
 	NetworkMetrics           *bool                                                      `json:"networkMetrics,omitempty"`
+	KernelTraces             *KernelTracesInput                                         `json:"kernelTraces,omitempty"`
 }
 
 type InstrumentationRuleSourcesScope struct {
@@ -2449,6 +2451,42 @@ type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 
 type KarpenterConfig struct {
 	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type KernelCPUDelayTraces struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type KernelCPUDelayTracesInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type KernelFilesystemTraces struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type KernelFilesystemTracesInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type KernelSubprocessTraces struct {
+	RecordCommandArgs *bool `json:"recordCommandArgs,omitempty"`
+}
+
+type KernelSubprocessTracesInput struct {
+	RecordCommandArgs *bool `json:"recordCommandArgs,omitempty"`
+}
+
+type KernelTraces struct {
+	Filesystem   *KernelFilesystemTraces `json:"filesystem,omitempty"`
+	Subprocesses *KernelSubprocessTraces `json:"subprocesses,omitempty"`
+	CPUDelay     *KernelCPUDelayTraces   `json:"cpuDelay,omitempty"`
+}
+
+type KernelTracesInput struct {
+	Filesystem   *KernelFilesystemTracesInput `json:"filesystem,omitempty"`
+	Subprocesses *KernelSubprocessTracesInput `json:"subprocesses,omitempty"`
+	CPUDelay     *KernelCPUDelayTracesInput   `json:"cpuDelay,omitempty"`
 }
 
 type LanguageConfig struct {
@@ -4907,6 +4945,7 @@ const (
 	InstrumentationRuleTypePayloadCollection     InstrumentationRuleType = "PayloadCollection"
 	InstrumentationRuleTypeCustomInstrumentation InstrumentationRuleType = "CustomInstrumentation"
 	InstrumentationRuleTypeNetworkMetrics        InstrumentationRuleType = "NetworkMetrics"
+	InstrumentationRuleTypeKernelTraces          InstrumentationRuleType = "KernelTraces"
 	InstrumentationRuleTypeUnknownType           InstrumentationRuleType = "UnknownType"
 )
 
@@ -4916,12 +4955,13 @@ var AllInstrumentationRuleType = []InstrumentationRuleType{
 	InstrumentationRuleTypePayloadCollection,
 	InstrumentationRuleTypeCustomInstrumentation,
 	InstrumentationRuleTypeNetworkMetrics,
+	InstrumentationRuleTypeKernelTraces,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeNetworkMetrics, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeNetworkMetrics, InstrumentationRuleTypeKernelTraces, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false
