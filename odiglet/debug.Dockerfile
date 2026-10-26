@@ -81,7 +81,7 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 
 # python-community/python-community3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8@sha256:661308cb08d293f4ff3e1823cc7ebc0537ba53dd1fff72f61b411637d62ec3d4 /instrumentations/python3.8 /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.90@sha256:26be5a681e6cde7585f0bff6714fd74dbc90515a239d4759f5b6225591a78185 /instrumentations/python /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.91@sha256:ae8761929dc588b90c95178451fe90c8e57239ee8b8b3ba2c5919328b0874fda /instrumentations/python /instrumentations/python
 
 # nodejs-community
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.16.1@sha256:16a56a0f06f666149286d0179edf66d67bdd6b106a10be5b0cf60fab74f1fef8 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
