@@ -26,6 +26,15 @@ jobs:
     permissions:
       id-token: write
     steps:
+      - name: Reject main enterprise ref
+        env:
+          ENTERPRISE_BRANCH: ${{ inputs.enterprise_branch || 'main' }}
+        run: |
+          if [[ "$ENTERPRISE_BRANCH" == "main" ]]; then
+            echo "Error: enterprise_branch must not point to main for a feature release"
+            exit 1
+          fi
+
       - name: Get sts tokens
         id: sts-create-feature
         uses: odigos-io/ci-core/sts@main
