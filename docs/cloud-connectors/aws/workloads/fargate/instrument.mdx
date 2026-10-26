@@ -10,6 +10,12 @@ and reports its status once your changes are in place; see
 [Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation)
 for how that works. 
 
+<Tip>
+  You don't have to assemble these values by hand. In Central, open the service's drawer and use the
+  **How to instrument this workload** panel — it generates these snippets for the selected service,
+  with your destination's endpoint, protocol, and signals filled in.
+</Tip>
+
 <Info>
   Prefer the Odigos CDK construct? See
   [CDK: Fargate](/cloud-connectors/aws/cdk/fargate). This page is the
@@ -32,8 +38,9 @@ environment variables on your application container. Here's what happens each ti
 
 <Info>
   There's no intermediate collector inside the task — each Fargate task sends
-  telemetry **directly** to your OTLP destination, so that destination's endpoint
-  must be reachable from the task's network. See
+  telemetry **directly** to its OTLP endpoint (your destination, or the regional
+  Collector when one serves the service), so that endpoint must be reachable from
+  the task's network. See
   [Telemetry export](/cloud-connectors/aws/overview#telemetry-export).
 </Info>
 
@@ -66,7 +73,7 @@ Merge these properties into your task definition. Only the exact agent path, act
             Condition: SUCCESS
         Environment:
           - Name: ODIGOS_IAC
-            Value: '{"v":1,"lang":"java"}'
+            Value: '{"v":1,"lang":"java","image":"registry.odigos.io/odigos-fargate-agents:<version>"}'
           - Name: OTEL_SERVICE_NAME
             Value: "<YOUR_SERVICE_NAME>"
           - Name: OTEL_RESOURCE_ATTRIBUTES
@@ -75,6 +82,9 @@ Merge these properties into your task definition. Only the exact agent path, act
             Value: "<OTLP_ENDPOINT_URL>"
           - Name: OTEL_EXPORTER_OTLP_PROTOCOL
             Value: "http/protobuf"   # or "grpc" — must match your destination; see note below
+          - Name: OTEL_SDK_DISABLED
+            Value: "false"
+          # "otlp" for each signal the destination enables, "none" for each it doesn't
           - Name: OTEL_TRACES_EXPORTER
             Value: "otlp"
           - Name: OTEL_METRICS_EXPORTER
@@ -111,7 +121,7 @@ Merge these properties into your task definition. Only the exact agent path, act
             Condition: SUCCESS
         Environment:
           - Name: ODIGOS_IAC
-            Value: '{"v":1,"lang":"python"}'
+            Value: '{"v":1,"lang":"python","image":"registry.odigos.io/odigos-fargate-agents:<version>"}'
           - Name: OTEL_SERVICE_NAME
             Value: "<YOUR_SERVICE_NAME>"
           - Name: OTEL_RESOURCE_ATTRIBUTES
@@ -120,6 +130,9 @@ Merge these properties into your task definition. Only the exact agent path, act
             Value: "<OTLP_ENDPOINT_URL>"
           - Name: OTEL_EXPORTER_OTLP_PROTOCOL
             Value: "http/protobuf"
+          - Name: OTEL_SDK_DISABLED
+            Value: "false"
+          # "otlp" for each signal the destination enables, "none" for each it doesn't
           - Name: OTEL_TRACES_EXPORTER
             Value: "otlp"
           - Name: OTEL_METRICS_EXPORTER
@@ -128,6 +141,9 @@ Merge these properties into your task definition. Only the exact agent path, act
             Value: "otlp"
           - Name: OTEL_PYTHON_CONFIGURATOR
             Value: "odigos-python-configurator"
+          # "true" if the destination enables logs, otherwise "false"
+          - Name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+            Value: "true"
           # APPEND after any existing value, joined by ":" — assigning discards yours.
           - Name: PYTHONPATH
             Value: "<YOUR_EXISTING_VALUE>:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"
@@ -158,7 +174,7 @@ Merge these properties into your task definition. Only the exact agent path, act
             Condition: SUCCESS
         Environment:
           - Name: ODIGOS_IAC
-            Value: '{"v":1,"lang":"nodejs"}'
+            Value: '{"v":1,"lang":"nodejs","image":"registry.odigos.io/odigos-fargate-agents:<version>"}'
           - Name: OTEL_SERVICE_NAME
             Value: "<YOUR_SERVICE_NAME>"
           - Name: OTEL_RESOURCE_ATTRIBUTES
@@ -167,6 +183,9 @@ Merge these properties into your task definition. Only the exact agent path, act
             Value: "<OTLP_ENDPOINT_URL>"
           - Name: OTEL_EXPORTER_OTLP_PROTOCOL
             Value: "http/protobuf"
+          - Name: OTEL_SDK_DISABLED
+            Value: "false"
+          # "otlp" for each signal the destination enables, "none" for each it doesn't
           - Name: OTEL_TRACES_EXPORTER
             Value: "otlp"
           - Name: OTEL_METRICS_EXPORTER
@@ -203,7 +222,7 @@ Merge these properties into your task definition. Only the exact agent path, act
             Condition: SUCCESS
         Environment:
           - Name: ODIGOS_IAC
-            Value: '{"v":1,"lang":"dotnet"}'
+            Value: '{"v":1,"lang":"dotnet","image":"registry.odigos.io/odigos-fargate-agents:<version>"}'
           - Name: OTEL_SERVICE_NAME
             Value: "<YOUR_SERVICE_NAME>"
           - Name: OTEL_RESOURCE_ATTRIBUTES
@@ -212,6 +231,9 @@ Merge these properties into your task definition. Only the exact agent path, act
             Value: "<OTLP_ENDPOINT_URL>"
           - Name: OTEL_EXPORTER_OTLP_PROTOCOL
             Value: "http/protobuf"
+          - Name: OTEL_SDK_DISABLED
+            Value: "false"
+          # "otlp" for each signal the destination enables, "none" for each it doesn't
           - Name: OTEL_TRACES_EXPORTER
             Value: "otlp"
           - Name: OTEL_METRICS_EXPORTER
@@ -229,17 +251,18 @@ Merge these properties into your task definition. Only the exact agent path, act
             Value: "/var/odigos/dotnet"
           - Name: DOTNET_STARTUP_HOOKS
             Value: "/var/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
-          - Name: DOTNET_ADDITIONAL_DEPS
-            Value: "/var/odigos/dotnet/AdditionalDeps"
-          - Name: DOTNET_SHARED_STORE
-            Value: "/var/odigos/dotnet/store"
     ```
 
     <Warning>
-      The .NET agent is **glibc-only**. A musl-based image (Alpine) can't be
+      The .NET agent needs **.NET 8 or later** and is **glibc-only**. A musl-based image (Alpine) can't be
       instrumented this way — the profiler shared object won't load, and the
       container starts uninstrumented with no error.
     </Warning>
+
+    <Note>
+      Older versions of this page also set `DOTNET_ADDITIONAL_DEPS` and `DOTNET_SHARED_STORE`. The current
+      agent doesn't ship the files they point to, so remove both from your task definition.
+    </Note>
   </Tab>
 
   <Tab title="PHP">
@@ -266,7 +289,7 @@ Merge these properties into your task definition. Only the exact agent path, act
             Condition: SUCCESS
         Environment:
           - Name: ODIGOS_IAC
-            Value: '{"v":1,"lang":"php"}'
+            Value: '{"v":1,"lang":"php","image":"registry.odigos.io/odigos-fargate-agents:<version>"}'
           - Name: OTEL_SERVICE_NAME
             Value: "<YOUR_SERVICE_NAME>"
           - Name: OTEL_RESOURCE_ATTRIBUTES
@@ -275,6 +298,9 @@ Merge these properties into your task definition. Only the exact agent path, act
             Value: "<OTLP_ENDPOINT_URL>"     # must be an OTLP/HTTP endpoint — see note below
           - Name: OTEL_EXPORTER_OTLP_PROTOCOL
             Value: "http/protobuf"
+          - Name: OTEL_SDK_DISABLED
+            Value: "false"
+          # "otlp" for each signal the destination enables, "none" for each it doesn't
           - Name: OTEL_TRACES_EXPORTER
             Value: "otlp"
           - Name: OTEL_METRICS_EXPORTER
@@ -323,7 +349,7 @@ Merge these properties into your task definition. Only the exact agent path, act
             Condition: SUCCESS
         Environment:
           - Name: ODIGOS_IAC
-            Value: '{"v":1,"lang":"ruby"}'
+            Value: '{"v":1,"lang":"ruby","image":"registry.odigos.io/odigos-fargate-agents:<version>"}'
           - Name: OTEL_SERVICE_NAME
             Value: "<YOUR_SERVICE_NAME>"
           - Name: OTEL_RESOURCE_ATTRIBUTES
@@ -332,6 +358,9 @@ Merge these properties into your task definition. Only the exact agent path, act
             Value: "<OTLP_ENDPOINT_URL>"     # must be an OTLP/HTTP endpoint — see note below
           - Name: OTEL_EXPORTER_OTLP_PROTOCOL
             Value: "http/protobuf"
+          - Name: OTEL_SDK_DISABLED
+            Value: "false"
+          # "otlp" for each signal the destination enables, "none" for each it doesn't
           - Name: OTEL_TRACES_EXPORTER
             Value: "otlp"
           - Name: OTEL_METRICS_EXPORTER
@@ -354,6 +383,11 @@ Merge these properties into your task definition. Only the exact agent path, act
       override on the Source so Odigos judges the container against the path you
       actually mounted.
     </Warning>
+
+    <Info>
+      The Ruby agent produces **traces only**. Keep `OTEL_METRICS_EXPORTER` and `OTEL_LOGS_EXPORTER` matched to
+      your destination as described under **Signals** in the rules below — Ruby just won't emit metrics or logs.
+    </Info>
   </Tab>
 </Tabs>
 
@@ -361,16 +395,44 @@ Merge these properties into your task definition. Only the exact agent path, act
 
 <AccordionGroup>
   <Accordion title="ODIGOS_IAC is per container">
-    It's the only thing marking a container as instrumented, and its recorded language is what the
-    activation environment is checked against. Never set `ODIGOS_MANAGED` — that's the connector's own
-    rollback record, written only when you hand the workload to Odigos-managed instrumentation instead.
+    It's the only thing marking a container as instrumented: its presence, with a valid JSON value, is what counts.
+    Odigos reads two fields from it. `lang` names the agent you staged, and Odigos uses it as the container's language;
+    a runtime override on the Source takes precedence, and a `lang` that disagrees with it is reported as drift. Leave
+    `lang` out and Odigos detects the language from the container itself. `image` records the agents image you staged from — Odigos holds the
+    task to *that* image, so pinning or mirroring the image isn't reported as out of date; leave it out and the
+    `odigos-agent` container is checked for being present, non-essential, and staging the right agents, whatever its tag.
+    `v` is the schema version (`1`). All marked containers in one task definition must record the same `image`. Use
+    the same value as the `odigos-agent` container's `Image`. Never set `ODIGOS_MANAGED` — that's the
+    connector's own rollback record, written only when you hand the workload to Odigos-managed
+    instrumentation instead.
+  </Accordion>
+
+  <Accordion title="Signals">
+    Odigos compares the three `OTEL_*_EXPORTER` variables with the signals your destination has enabled, and
+    expects each to be exactly `otlp` (enabled) or `none` (disabled). A missing signal and an extra one are
+    both reported as drift, so always set all three. `OTEL_SDK_DISABLED` must be `false`, and Python's
+    `OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED` must be `true` when logs are enabled and `false`
+    otherwise. Ruby produces traces only, and no Fargate agent produces profiles.
+  </Accordion>
+
+  <Accordion title="Never set per-signal exporter variables">
+    Don't set `OTEL_EXPORTER_OTLP_TRACES_*`, `OTEL_EXPORTER_OTLP_METRICS_*`, or `OTEL_EXPORTER_OTLP_LOGS_*`
+    variables (`ENDPOINT`, `PROTOCOL`, `HEADERS`, or `INSECURE`) on an instrumented container. They override the
+    destination, and Odigos reports their presence as drift. Use the shared `OTEL_EXPORTER_OTLP_ENDPOINT` and
+    `OTEL_EXPORTER_OTLP_PROTOCOL` shown above.
   </Accordion>
 
   <Accordion title="Endpoint and protocol are one decision">
-    Both are compared exactly against what your OTLP destination resolves to on this connector. If it only
-    offers OTLP/gRPC, use the gRPC endpoint (standard port 4317) and `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`
-    instead of the `http/protobuf` shown above (except PHP and Ruby, which support HTTP only — see their
-    tabs). Pairing an endpoint with the wrong transport fails at runtime as an opaque connection reset.
+    Both are compared exactly against what your OTLP destination resolves to on this connector. If the
+    destination offers OTLP/HTTP, every language is expected to use it with `http/protobuf`; if it only
+    offers OTLP/gRPC, use the gRPC endpoint written as a URL with a scheme (for example `https://<host>:4317`) and
+    `OTEL_EXPORTER_OTLP_PROTOCOL=grpc` instead of the `http/protobuf` shown above (except PHP and Ruby, which
+    support HTTP only — see their tabs). Pairing an endpoint with the wrong transport fails at runtime as an
+    opaque connection reset. Copy the exact endpoint from the **How to instrument this workload** panel.
+
+    If your destination needs headers (for example an API key), set `OTEL_EXPORTER_OTLP_HEADERS` to a
+    comma-separated `key=value` list, sorted by key, with both names and values URL-encoded (a space becomes
+    `+`). It's compared exactly like the endpoint. If the destination has no headers, don't set the variable.
   </Accordion>
 
   <Accordion title="One odigos-agent container serves the whole task">
@@ -378,6 +440,17 @@ Merge these properties into your task definition. Only the exact agent path, act
     one language needs a chained `&& cp -r /instrumentations/<lang> /var/odigos/<lang>` for each, in
     alphabetical order — Odigos compares the command exactly against the union of every marked container's
     language.
+  </Accordion>
+
+  <Accordion title="OTEL_SERVICE_NAME is the ECS service name">
+    Set `<YOUR_SERVICE_NAME>` to your ECS service's name — not the task definition family, the container name, or
+    the cluster-prefixed name the source is listed under in Odigos. If you've set a reported service name on the
+    source, use that. A different value is reported as drift.
+  </Accordion>
+
+  <Accordion title="Debug logging">
+    Leave `OTEL_LOG_LEVEL` unset. Odigos expects it absent, and reports it as drift, unless debug telemetry is
+    enabled on the connector — in which case it expects `OTEL_LOG_LEVEL=debug`.
   </Accordion>
 
   <Accordion title="Roll the service, not just the revision">
@@ -392,7 +465,7 @@ Merge these properties into your task definition. Only the exact agent path, act
   </Accordion>
 
   <Accordion title="Registry reachability">
-    The image is pulled by the task's execution role at every task start. If your task's subnet can't reach
+    The image is pulled at every task start. If your task's subnet can't reach
     `registry.odigos.io`, mirror the image into a registry it can — see
     [Preload artifacts](/cloud-connectors/aws/workloads/fargate/preload).
   </Accordion>
@@ -409,3 +482,18 @@ Merge these properties into your task definition. Only the exact agent path, act
     Every option on the Fargate CDK construct, in depth.
   </Card>
 </CardGroup>
+
+## Existing environment and multiple containers
+
+Workload-level runtime overrides apply before automatic selection, including when the image language or
+PHP/Ruby major.minor version cannot be detected. For several application containers, use named container
+overrides. Mixed-language tasks receive container-specific reference instructions with one shared staging
+container and volume.
+
+Automatic injection preserves image `ENV` loader settings when image configuration can be read. When using
+ECS environment files, inline their values in the task definition and remove `environmentFiles` before
+automatic instrumentation. Odigos refuses hidden file contents because it cannot safely verify loader or
+per-signal transport settings. Remove image-level per-signal OTLP overrides as well. In CDK, use
+`existingLoaderValue` for values unavailable at synthesis. Values delivered through ECS secrets must be
+resolved explicitly rather than duplicated as ordinary environment variables. .NET instrumentation supports
+glibc images; Alpine/musl is rejected when detected.

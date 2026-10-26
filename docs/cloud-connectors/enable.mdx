@@ -20,6 +20,7 @@ When `cloudConnectors.enabled` is `true` and the Central install secret exists, 
 - The `OdigosCloudConnector` CRD
 - The `connector-runtime` controller
 - Bundled PostgreSQL (`odigos-connector-postgres`) and a PVC when persistence is enabled
+- The `connector-opamp-gateway` Deployment and Service, only when [Managed Collectors](#managed-collectors) are enabled
 
 <Warning>
   A **StorageClass** must be defined for the Postgres PVC. Bundled Postgres
@@ -161,6 +162,153 @@ Cloud Connectors use a bundled PostgreSQL instance under `cloudConnectors.postgr
   </Accordion>
 </AccordionGroup>
 
+## Managed Collectors
+
+The AWS [regional Collector](/cloud-connectors/aws/regional-collector) runs in your AWS account and connects back to Central over OpAMP. To use it, enable Managed Collectors and give Collectors a public URL to reach Central:
+
+- `cloudConnectors.managedCollectors.enabled=true` deploys `connector-opamp-gateway`, the component that serves that URL.
+- `cloudConnectors.managedCollectors.externalEndpoint` is the public URL Collectors connect to, normally `wss://<central-host>/v1/opamp`.
+
+<Tabs>
+  <Tab title="CLI">
+    ```bash
+    odigos pro central upgrade \
+      --set cloudConnectors.managedCollectors.enabled=true \
+      --set cloudConnectors.managedCollectors.externalEndpoint=wss://<central-host>/v1/opamp
+    ```
+  </Tab>
+
+  <Tab title="Helm">
+    ```bash
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --reuse-values \
+      --set cloudConnectors.managedCollectors.enabled=true \
+      --set cloudConnectors.managedCollectors.externalEndpoint=wss://<central-host>/v1/opamp
+    ```
+
+    Or in `values.yaml`:
+
+    ```yaml
+    cloudConnectors:
+      enabled: true
+      managedCollectors:
+        enabled: true
+        externalEndpoint: "wss://<central-host>/v1/opamp"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  Odigos does not expose the gateway for you. Publish the `connector-opamp-gateway`
+  Service (ClusterIP, port `8080`, path `/v1/opamp`) through your own ingress or
+  load balancer at the `externalEndpoint` URL, so Collectors running in AWS can
+  reach it.
+</Warning>
+
+- The URL must use `wss://` (or `https://`) for any host that is not loopback.
+- If `externalEndpoint` is empty, no Collector is deployed.
+- Changing `externalEndpoint` does not move Collectors that are already deployed. Redeploy them to pick up the new URL.
+
+<ParamField path="cloudConnectors.managedCollectors.enabled" type="boolean" default="false">
+  Deploy the `connector-opamp-gateway`.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.externalEndpoint" type="string" default="">
+  Public URL Collectors connect to, for example `wss://<central-host>/v1/opamp`. Empty means no Collector is deployed.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.replicas" type="integer" default="2">
+  Number of gateway replicas.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.port" type="integer" default="8080">
+  Port the gateway listens on.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.path" type="string" default="/v1/opamp">
+  Path the gateway serves. Change it only together with `externalEndpoint`.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.revalidateInterval" type="string" default="">
+  How long a revoked Collector credential may keep an already-open session. Empty uses the default.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.reference" type="string" default="">
+  Full Collector image reference. When set, it is used verbatim and overrides every other `collectorImage` field. It must include a tag or a digest.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.registry" type="string" default="">
+  Registry to pull the Collector image from. Empty follows `imagePrefix`, then `registry.odigos.io`.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.repository" type="string" default="odigos-enterprise-collector">
+  Repository name of the Collector image.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.tag" type="string" default="">
+  Image tag. Empty follows `image.tag`, then the chart's `appVersion`.
+</ParamField>
+
+<ParamField path="cloudConnectors.managedCollectors.collectorImage.digest" type="string" default="">
+  Image digest, for example `sha256:...`. Takes precedence over `tag`.
+</ParamField>
+
+### Collector image
+
+Cloud Collectors run an Odigos Collector image that the chart configures. By default this is `registry.odigos.io/odigos-enterprise-collector:<Central version>`. `collectorImage` is separate from `managedCollectors.image`, which overrides the `connector-opamp-gateway` image.
+
+The image is resolved in this order:
+
+1. `reference`, used as-is.
+2. `registry/repository@digest`, when `digest` is set.
+3. `registry/repository:tag`.
+
+For the registry, an empty `registry` uses `imagePrefix`, then `registry.odigos.io`. For the tag, an empty `tag` uses `image.tag`, then the chart's `appVersion`.
+
+<Warning>
+  Odigos v1.39 and later connectors need a Collector image configured by the
+  chart. Without one, no Collector is deployed and the connector reports: `no
+  Collector is deployed on <vpc>: no managed-Collector image is configured; set
+  cloudConnectors.managedCollectors.collectorImage in Helm or
+  collector.defaults.image at runtime`. Update the chart together with the
+  connector.
+
+  Upgrading Central changes the expected Collector image. Collectors in
+  automatic mode roll to the new image. Collectors in manual mode report image
+  drift until you re-apply their artifacts, see
+  [Collector image](/cloud-connectors/aws/regional-collector#collector-image).
+</Warning>
+
+<Tabs>
+  <Tab title="Private mirror">
+    ```yaml
+    cloudConnectors:
+      managedCollectors:
+        collectorImage:
+          registry: "registry.example.com/odigos"
+          tag: "<tag>"
+    ```
+  </Tab>
+
+  <Tab title="ECR Public">
+    ```yaml
+    cloudConnectors:
+      managedCollectors:
+        collectorImage:
+          reference: "public.ecr.aws/<alias>/<repo>:<tag>"
+    ```
+
+    ECR Public images are pulled anonymously, so the task definition needs no registry credentials. The Collector's subnets need outbound HTTPS to ECR Public; a private ECR VPC endpoint is not enough. The license and OpAMP secrets are still required.
+  </Tab>
+</Tabs>
+
+<Tip>
+  A tag alone cannot detect a republished image under the same tag. Prefer a
+  digest for immutability, either `collectorImage.digest` or a `reference` ending in
+  `@sha256:...`.
+</Tip>
+
 ## Verify
 
 After enablement, confirm the subsystem is running in the Central namespace (default `odigos-central`):
@@ -171,9 +319,30 @@ kubectl get pods -n odigos-central -l 'app in (connector-runtime,odigos-connecto
 
 You should see `connector-runtime` and `odigos-connector-postgres` in a Running state.
 
+If you enabled [Managed Collectors](#managed-collectors), also check the gateway:
+
+```bash
+kubectl get pods -n odigos-central -l app=connector-opamp-gateway
+```
+
+You should see `connector-opamp-gateway` in a Running state.
+
 <Check>
   Once both pods are Running, you are ready to add a cloud provider connector.
 </Check>
+
+## Upgrading
+
+The `connector-runtime` Deployment uses the `Recreate` update strategy, so two controller versions never run at the same time during an upgrade.
+
+A plain `helm upgrade` or `odigos pro central upgrade` needs no extra step. If you apply the chart with server-side apply (Argo CD with `ServerSideApply`, Flux, or `kubectl apply --server-side`), run this once **before** upgrading:
+
+```bash
+kubectl -n odigos-central patch deployment connector-runtime --type=merge \
+  --patch '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}'
+```
+
+Replace `odigos-central` with your Central namespace.
 
 ## Next steps
 
@@ -200,3 +369,6 @@ You should see `connector-runtime` and `odigos-connector-postgres` in a Running 
     Create Sources after a connector is online.
   </Card>
 </CardGroup>
+
+For AWS workload identity, configure both Central's verification identity and the connector pod identity.
+See [Configure workload identity on EKS](/cloud-connectors/add-connectors/add-aws-connector#configure-workload-identity-on-eks).

@@ -50,8 +50,8 @@ The construct sets up four things that work together:
   All four are one mechanism, which is why they're one construct call rather than
   four options. A container can have a perfectly correct set of environment
   variables while the copy step is missing — the application then starts, finds
-  nothing at `/var/odigos`, and sends no telemetry while still *reporting* as
-  instrumented.
+  nothing at `/var/odigos`, and sends no telemetry. Odigos reports the missing
+  piece as drift, but nothing stops the deploy.
 </Warning>
 
 ## Where telemetry goes
@@ -61,7 +61,9 @@ so your application's own OpenTelemetry exporter is what makes the network call 
 unreachable destination is felt by the application itself.
 
 Two practical consequences: the destination endpoint has to be reachable from the task's network, and it's
-worth pointing it somewhere with headroom, since your application is doing the sending.
+worth pointing it somewhere with headroom, since your application is doing the sending. If an Odigos regional
+Collector serves your service, the endpoint Odigos expects is that Collector's — see
+[Regional Collector](/cloud-connectors/aws/regional-collector#which-workloads-use-it).
 
 ## Stating the language
 
@@ -74,7 +76,7 @@ worth pointing it somewhere with headroom, since your application is doing the s
 | `JAVA` — also Kotlin, Scala | `JAVA_TOOL_OPTIONS` | Ignored — one agent covers the supported JVM range |
 | `PYTHON` | `PYTHONPATH` | Ignored — one agent covers the supported Python range |
 | `NODEJS` | `NODE_OPTIONS` | Ignored — one agent covers the supported Node.js range |
-| `DOTNET` | `CORECLR_*` / `DOTNET_*` | Ignored — one agent covers the supported .NET range |
+| `DOTNET` | `CORECLR_*` / `DOTNET_*` | Ignored — one agent covers .NET 8 and later |
 | `PHP` | `PHP_INI_SCAN_DIR` | **Required** — picks the per-version agent folder |
 | `RUBY` | `RUBYOPT` | **Required** — picks the per-version agent folder |
 
@@ -90,16 +92,27 @@ out would mean downloading and inspecting the image, which is network I/O a buil
 
 <ParamField path="runtimeVersion" type="string">
   Your application's language version as `major.minor` — for example `"8.3"` or `"3.3"`. Required for PHP
-  and Ruby (their agents are laid out per version in the bundle). Ignored for Java, Python, Node.js, and
+  and Ruby (their agents are laid out per version in the bundle). Not used for Java, Python, Node.js, and
   .NET — those ship one agent that covers a range of runtime versions, so you don't declare which one.
 
   <Warning>
     PHP and Ruby agents are stored per version inside the bundle, and this value
-    selects the folder the loader points at. Anything other than an exact
-    `major.minor` names a folder that doesn't exist, and the container starts with
-    no agent at all.
+    selects the folder the loader points at. A missing `runtimeVersion` for PHP or
+    Ruby, or any value that isn't exactly `major.minor` (`"8.3.4"` and `"php8.3"`
+    both fail), stops the build, because it would name a folder that doesn't exist.
+    The same check applies if you pass a value for another language.
   </Warning>
 </ParamField>
+
+<Info>
+  **There's no distro to choose on Fargate.** Each language has exactly one agent, from the agents image. The
+  [`distro` option](/cloud-connectors/aws/cdk/lambda#choosing-a-distro) is Lambda-only.
+</Info>
+
+<Info>
+  **.NET needs .NET 8 or later on a glibc image.** Alpine (musl) images can't load the .NET profiler, and the
+  container starts uninstrumented with no error.
+</Info>
 
 <Info>
   **Go can't be instrumented on Fargate at all** — not an omission, a platform
@@ -111,8 +124,9 @@ out would mean downloading and inspecting the image, which is network I/O a buil
 ## Naming your service
 
 `OTEL_SERVICE_NAME` here **must be the ECS service's name** — not the task definition family, and not the
-container name. Odigos compares it against the workload's name, and a mismatch is reported as drift rather
-than treated as a naming preference. There's no default, so you set one of these two:
+container name. (If you've set a reported service name on the source in Odigos, use that instead.) Odigos
+compares it against the workload's name, and a mismatch is reported as drift rather than treated as a
+naming preference. There's no default, so you set one of these two:
 
 <ParamField path="service" type="ecs.BaseService">
   The ECS service running this task definition. Only its name is read.
@@ -151,11 +165,47 @@ taskDefinition.addContainer('App', {
 </ParamField>
 
 <Warning>
-  **PHP and Ruby work differently.** Odigos compares `PHP_INI_SCAN_DIR` and
-  `RUBYOPT` exactly, so they're set outright rather than added to. If your container
-  already sets one, you get a build warning — fold whatever your application needs
-  into the value Odigos sets.
+  **Every other activation variable is set outright, not added to** — for example
+  `PHP_INI_SCAN_DIR` and `RUBYOPT`, and also `OTEL_PROPAGATORS`, `ODIGOS_GEM_PATH`,
+  Python's `OTEL_PYTHON_CONFIGURATOR`, and the .NET `CORECLR_*`, `OTEL_DOTNET_AUTO_HOME`,
+  and `DOTNET_STARTUP_HOOKS` variables. Odigos compares them exactly. If your container
+  already sets one of them to a different value, you get a build warning and the construct's
+  value wins — fold whatever your application needs into the value Odigos sets.
 </Warning>
+
+## Telemetry environment
+
+Besides loading the agent, the construct sets the same OpenTelemetry environment on every instrumented
+container so that exactly the signals your [destination](/cloud-connectors/aws/cdk/destinations) enables are
+exported:
+
+| Variable | Value |
+| --- | --- |
+| `OTEL_SERVICE_NAME` | The ECS service name, as above. Set outright, replacing any value on the container |
+| `OTEL_RESOURCE_ATTRIBUTES` | `cloud.provider=aws,cloud.platform=aws_ecs,cloud.region=<region>`. Set outright, replacing any value on the container |
+| `OTEL_SDK_DISABLED` | `false`, always |
+| `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER`, `OTEL_LOGS_EXPORTER` | `otlp` for an enabled signal, `none` for a disabled one. Always written, for all three |
+| `OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED` | Python only: `true` when logs are enabled, `false` otherwise |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL` | Your destination and its transport |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Only when `destination.headers` is set. See [Destinations](/cloud-connectors/aws/cdk/destinations) for how to encode the values |
+| `OTEL_LOG_LEVEL` | `debug`, only when `debug` is `true` |
+
+<Warning>
+  **Don't set per-signal exporter variables on the container.** If a container sets any
+  `OTEL_EXPORTER_OTLP_<SIGNAL>_ENDPOINT`, `_PROTOCOL`, `_HEADERS`, or `_INSECURE` (where `<SIGNAL>` is `TRACES`,
+  `METRICS`, or `LOGS`), it overrides the configured destination, so the build stops with:
+
+  ```text
+  Odigos: remove OTEL_EXPORTER_OTLP_TRACES_ENDPOINT; it overrides the configured destination.
+  ```
+
+  The message names the variable it found. Remove it and use `destination` instead.
+</Warning>
+
+<Info>
+  **Ruby produces traces only.** The Ruby agent bundles the trace SDK, so enabling `metrics` or `logs` on the
+  destination produces a build warning, and only traces are exported from Ruby containers.
+</Info>
 
 ## Transport
 
@@ -169,12 +219,13 @@ destination: {
 ```
 
 Every agent in the bundle prefers HTTP. Java, Python, Node.js, and .NET will fall back to gRPC if that's all
-you provide. Giving both lets each language use what it prefers.
+you provide. Giving both lets each language use what it prefers. The gRPC `endpoint` is written to
+`OTEL_EXPORTER_OTLP_ENDPOINT` as a URL — `https://host:port`, or `http://host:port` when `insecure` is `true`.
 
 <Warning>
-  **PHP and Ruby can only speak HTTP** —
-  Instrumenting a PHP or Ruby container against a gRPC-only destination stops the
-  build, rather than deploying a task that silently sends nothing.
+  **PHP and Ruby can only speak HTTP.** Instrumenting a PHP or Ruby container
+  against a gRPC-only destination stops the build, rather than deploying a task
+  that silently sends nothing.
 </Warning>
 
 ## Instrumenting several containers
@@ -205,7 +256,7 @@ registry — the construct defaults to `registry.odigos.io/odigos-fargate-agents
 release ships (multi-arch: Intel and ARM/Graviton).
 
 <Warning>
-  **This image is pulled by your task's execution role every time a task starts.** A
+  **This image is pulled every time a task starts.** A
   task in a private subnet with no NAT gateway and no registry endpoint can't reach
   the default public registry, and the pull failure will block your application
   container from starting.
@@ -216,7 +267,7 @@ release ships (multi-arch: Intel and ARM/Graviton).
   registry you own). Point the copy step at your own mirror:
 
   ```typescript
-  agentsImage: '111122223333.dkr.ecr.eu-west-1.amazonaws.com/odigos-fargate-agents:v0.0.15',
+  agentsImage: '111122223333.dkr.ecr.eu-west-1.amazonaws.com/odigos-fargate-agents:v0.0.19',
   ```
 
   See [Preload the Fargate agents image](/cloud-connectors/aws/workloads/fargate/preload) for how to build
@@ -238,8 +289,8 @@ Whichever image you use is recorded in the `ODIGOS_IAC` marker, and Odigos holds
 rather than to whatever the connector's own build happens to use. Two useful consequences:
 
 - Your mirror is judged against itself, not flagged for differing from the default.
-- Upgrading this package ahead of the connector isn't drift either — the service stays conformant until you
-  redeploy.
+- Upgrading this package ahead of the connector isn't drift either, and neither is upgrading the connector
+  ahead of this package — each service is held to the image its own deployment recorded.
 
 <Note>
   What *is* reported: two containers in the same task definition recording different
@@ -250,7 +301,7 @@ rather than to whatever the connector's own build happens to use. Two useful con
 
 | Export | What it is |
 | --- | --- |
-| `OdigosFargateInstrumentation` | The construct. Methods: `instrument(target)`, `instrumentAll(targets)`. |
+| `OdigosFargateInstrumentation` | The construct. Props: `destination`, `agentsImage`, `debug`, and optionally `targets` (containers to instrument on construction). Methods: `instrument(target)`, `instrumentAll(targets)`. |
 | `OdigosFargateTarget` | One container to instrument: `container`, `language`, `service` or `serviceName`, `runtimeVersion`, `existingLoaderValue`. |
 | `OdigosFargateLanguage` | `JAVA` \| `PYTHON` \| `NODEJS` \| `DOTNET` \| `PHP` \| `RUBY` |
 | `sidecarCommand`, `evaluateAppendPattern`, `appendSeparator` | The copy-step command and loader-value rendering, if you want to inspect what they produce. |
