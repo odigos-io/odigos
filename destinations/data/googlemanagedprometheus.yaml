@@ -1,0 +1,59 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: googlemanagedprometheus
+  displayName: Google Cloud Managed Service for Prometheus
+  category: managed
+spec:
+  image: gcp.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: false
+    profiles:
+      supported: false
+  fields:
+    - name: GCP_PROJECT_ID
+      displayName: Project ID
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: project-id
+        tooltip: Google Cloud project with the Cloud Monitoring API enabled. Defaults to the project detected from Application Default Credentials.
+    - name: GCP_APPLICATION_CREDENTIALS
+      displayName: Application Credentials
+      componentType: textarea
+      secret: true
+      componentProps:
+        type: text
+        required: false
+        placeholder: Credentials JSON (optional)
+        tooltip: Workload Identity Federation configuration or service account key JSON. Leave empty to use Application Default Credentials. Requires Monitoring Metric Writer permissions.
+    - name: GMP_LOCATION
+      displayName: Location
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: us-central1
+        tooltip: Google Cloud region or zone for prometheus_target. Required outside GCP when resource location, cloud availability zone, and cloud region are absent. The value global is not supported. Existing resource location takes precedence.
+    - name: GMP_CLUSTER
+      displayName: Cluster
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: my-cluster
+        tooltip: Fallback prometheus_target cluster name. Set a unique value for each cluster outside GCP. Existing resource cluster takes precedence.
+    - name: GCP_TIMEOUT
+      displayName: Timeout
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 12s
+        tooltip: Positive duration for Cloud Monitoring API requests. Defaults to 12s.
