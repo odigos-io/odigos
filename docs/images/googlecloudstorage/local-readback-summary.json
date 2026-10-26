@@ -1,0 +1,107 @@
+{
+  "bucket": "core36-gcs-e2e",
+  "collector_commit": "96581d412bafe3da447da6604f2ee2f9648df655",
+  "emulator_image": "fsouza/fake-gcs-server@sha256:797ce226d62f947c009dc40246b30cfb456b8473d8241407f9d6f2c04e4d69ef",
+  "environment": "local fake-gcs-server emulator; not Google Cloud",
+  "results": {
+    "otlp_json/logs": {
+      "objects": 3,
+      "records": 12,
+      "batch_sizes": [
+        5,
+        2,
+        5
+      ]
+    },
+    "otlp_json/traces": {
+      "objects": 3,
+      "records": 12,
+      "batch_sizes": [
+        2,
+        5,
+        5
+      ]
+    },
+    "otlp_proto/logs": {
+      "objects": 3,
+      "records": 12,
+      "batch_sizes": [
+        5,
+        2,
+        5
+      ]
+    },
+    "otlp_proto/traces": {
+      "objects": 3,
+      "records": 12,
+      "batch_sizes": [
+        5,
+        2,
+        5
+      ]
+    }
+  },
+  "validation": "All records read back; service.name, timestamps, record contents and uniqueness verified",
+  "object_manifest": [
+    {
+      "name": "core36/otlp_json/year=2026/month=10/day=13/hour=13/minute=30/logs_575356178.json",
+      "size": 1292
+    },
+    {
+      "name": "core36/otlp_json/year=2026/month=10/day=13/hour=13/minute=30/logs_738010631.json",
+      "size": 666
+    },
+    {
+      "name": "core36/otlp_json/year=2026/month=10/day=13/hour=13/minute=30/logs_782250036.json",
+      "size": 1292
+    },
+    {
+      "name": "core36/otlp_json/year=2026/month=10/day=13/hour=13/minute=30/traces_308544665.json",
+      "size": 803
+    },
+    {
+      "name": "core36/otlp_json/year=2026/month=10/day=13/hour=13/minute=30/traces_332123758.json",
+      "size": 1639
+    },
+    {
+      "name": "core36/otlp_json/year=2026/month=10/day=13/hour=13/minute=30/traces_701533269.json",
+      "size": 1639
+    },
+    {
+      "name": "core36/otlp_proto/year=2026/month=10/day=13/hour=13/minute=30/logs_271286392.proto",
+      "size": 535
+    },
+    {
+      "name": "core36/otlp_proto/year=2026/month=10/day=13/hour=13/minute=30/logs_698928784.proto",
+      "size": 273
+    },
+    {
+      "name": "core36/otlp_proto/year=2026/month=10/day=13/hour=13/minute=30/logs_766858010.proto",
+      "size": 535
+    },
+    {
+      "name": "core36/otlp_proto/year=2026/month=10/day=13/hour=13/minute=30/traces_136538707.proto",
+      "size": 620
+    },
+    {
+      "name": "core36/otlp_proto/year=2026/month=10/day=13/hour=13/minute=30/traces_598361179.proto",
+      "size": 307
+    },
+    {
+      "name": "core36/otlp_proto/year=2026/month=10/day=13/hour=13/minute=30/traces_907983871.proto",
+      "size": 620
+    }
+  ],
+  "tested_at": "2026-10-13T10:30:57Z",
+  "batch_processor": {
+    "send_batch_size": 5,
+    "send_batch_max_size": 5,
+    "timeout": "1s"
+  },
+  "exporter_options": "Default Collector sending_queue and retry_on_failure enabled",
+  "not_validated": [
+    "Google Cloud IAM success",
+    "GKE Workload Identity",
+    "Google Cloud Console persisted-data screenshots"
+  ]
+}

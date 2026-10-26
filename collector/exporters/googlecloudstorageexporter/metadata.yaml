@@ -7,3 +7,10 @@ status:
   distributions: [contrib]
   codeowners:
     active: [edeNFed]
+
+tests:
+  # Upload lifecycle requires ADC and a bucket; exporter_test.go supplies a local storage endpoint.
+  skip_lifecycle: true
+  config:
+    gcs:
+      bucket: test-bucket

@@ -7,6 +7,7 @@ import (
 	"cloud.google.com/go/storage"
 	"go.opentelemetry.io/collector/exporter"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -18,6 +19,7 @@ type GCSExporter struct {
 	dataWriter DataWriter
 	logger     *zap.Logger
 	marshaler  Marshaler
+	client     *storage.Client
 }
 
 func NewGCSExporter(config *Config,
@@ -27,31 +29,16 @@ func NewGCSExporter(config *Config,
 		return nil, errors.New("gcs exporter config is nil")
 	}
 
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 	logger := params.Logger
-	expConfig := config
-	expConfig.logger = logger
-
-	//validateConfig := expConfig.Validate()
-	//
-	//if validateConfig != nil {
-	//	return nil, validateConfig
-	//}
-
-	gcs, err := storage.NewClient(context.Background())
+	marshaler, err := NewMarshaler(config.MarshalerName, logger)
 	if err != nil {
 		return nil, err
 	}
-
-	marshaler, err := NewMarshaler(expConfig.MarshalerName, logger)
-	if err != nil {
-		return nil, errors.New("unknown marshaler")
-	}
-
 	gcsExporter := &GCSExporter{
-		config: config,
-		dataWriter: &GCSWriter{
-			gcsClient: gcs,
-		},
+		config:    config,
 		logger:    logger,
 		marshaler: marshaler,
 	}
@@ -79,4 +66,21 @@ func (e *GCSExporter) ConsumeTraces(ctx context.Context, traces ptrace.Traces) e
 	}
 
 	return e.dataWriter.WriteBuffer(ctx, buf, e.config, "traces", e.marshaler.Format())
+}
+
+func (e *GCSExporter) Start(ctx context.Context, _ component.Host) error {
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return err
+	}
+	e.client = client
+	e.dataWriter = &GCSWriter{gcsClient: client, logger: e.logger}
+	return nil
+}
+
+func (e *GCSExporter) Shutdown(context.Context) error {
+	if e.client == nil {
+		return nil
+	}
+	return e.client.Close()
 }

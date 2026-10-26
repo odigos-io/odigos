@@ -1,0 +1,111 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "core36-gcs-e2e"
+            }
+          },
+          {
+            "key": "validation.ticket",
+            "value": {
+              "stringValue": "CORE-36"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "logRecords": [
+            {
+              "attributes": [
+                {
+                  "key": "validation.record",
+                  "value": {
+                    "intValue": "5"
+                  }
+                }
+              ],
+              "body": {
+                "stringValue": "CORE-36 GCS archive validation log 5"
+              },
+              "severityNumber": 9,
+              "severityText": "INFO",
+              "timeUnixNano": "1791887456347405005"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "validation.record",
+                  "value": {
+                    "intValue": "6"
+                  }
+                }
+              ],
+              "body": {
+                "stringValue": "CORE-36 GCS archive validation log 6"
+              },
+              "severityNumber": 9,
+              "severityText": "INFO",
+              "timeUnixNano": "1791887456347405006"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "validation.record",
+                  "value": {
+                    "intValue": "7"
+                  }
+                }
+              ],
+              "body": {
+                "stringValue": "CORE-36 GCS archive validation log 7"
+              },
+              "severityNumber": 9,
+              "severityText": "INFO",
+              "timeUnixNano": "1791887456347405007"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "validation.record",
+                  "value": {
+                    "intValue": "8"
+                  }
+                }
+              ],
+              "body": {
+                "stringValue": "CORE-36 GCS archive validation log 8"
+              },
+              "severityNumber": 9,
+              "severityText": "INFO",
+              "timeUnixNano": "1791887456347405008"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "validation.record",
+                  "value": {
+                    "intValue": "9"
+                  }
+                }
+              ],
+              "body": {
+                "stringValue": "CORE-36 GCS archive validation log 9"
+              },
+              "severityNumber": 9,
+              "severityText": "INFO",
+              "timeUnixNano": "1791887456347405009"
+            }
+          ],
+          "scope": {
+            "name": "core36-validation"
+          }
+        }
+      ]
+    }
+  ]
+}
