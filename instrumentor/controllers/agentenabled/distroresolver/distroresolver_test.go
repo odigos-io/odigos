@@ -210,6 +210,42 @@ func TestResolveDistroForContainer_supportedRubyVersionKeepsNativeDistro(t *test
 	require.Equal(t, "ruby-community", d.Name)
 }
 
+func TestResolveDistroForContainer_rubySupportedVersionRange(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	dpl := map[common.ProgrammingLanguage]string{
+		common.RubyProgrammingLanguage: "ruby-community",
+	}
+
+	tests := []struct {
+		runtimeVersion string
+		majorMinor     string
+		wantDistro     string
+	}{
+		{runtimeVersion: "3.1.0", majorMinor: "3.1", wantDistro: "ruby-community"},
+		{runtimeVersion: "3.4.7", majorMinor: "3.4", wantDistro: "ruby-community"},
+		{runtimeVersion: "4.0.9", majorMinor: "4.0", wantDistro: "ruby-community"},
+		{runtimeVersion: "4.1.0", majorMinor: "4.1", wantDistro: obiDistroName},
+	}
+	for _, tt := range tests {
+		t.Run(tt.runtimeVersion, func(t *testing.T) {
+			rt := &odigosv1.RuntimeDetailsByContainer{
+				Language:       common.RubyProgrammingLanguage,
+				RuntimeVersion: tt.runtimeVersion,
+			}
+
+			d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
+			require.Nil(t, info)
+			require.NotNil(t, d)
+			require.Equal(t, tt.wantDistro, d.Name)
+
+			majorMinor, err := common.MajorMinorStringOnly(common.ParseRuntimeVersion(tt.runtimeVersion))
+			require.NoError(t, err)
+			require.Equal(t, tt.majorMinor, majorMinor)
+		})
+	}
+}
+
 func TestResolveDistroForContainer_nonWildcardEnforcesRuntimeSemver(t *testing.T) {
 	g := mustNewCommunityGetter(t)
 	config := &common.OdigosConfiguration{}
