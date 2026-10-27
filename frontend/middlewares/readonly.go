@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"log"
+	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -30,6 +31,11 @@ const (
 	proxyTokenReviewTimeout = 5 * time.Second
 	proxyTokenCacheTTL      = time.Minute
 	proxyTokenMaxLength     = 4096
+
+	proxyTokenReviewsPerSecond = 5
+	proxyTokenReviewBurst      = 10
+	proxyTokenReviewClientIdle = time.Minute
+	maxProxyTokenReviewClients = 4096
 )
 
 // Successful reviews keyed by the token's SHA-256, never the raw token.
@@ -37,10 +43,16 @@ var (
 	proxyTokenCacheMu sync.Mutex
 	proxyTokenCache   = map[[sha256.Size]byte]time.Time{}
 
-	// Caps TokenReviews from uncached tokens so a flood of forged tokens can't
-	// exhaust the UI's own Kubernetes client rate limit.
-	proxyTokenReviewLimiter = rate.NewLimiter(10, 20)
+	// Caps TokenReviews of uncached tokens per client, so one client flooding forged
+	// tokens can neither exhaust the UI's Kubernetes client nor starve central-proxy.
+	proxyTokenReviewLimitersMu sync.Mutex
+	proxyTokenReviewLimiters   = map[string]*proxyTokenReviewLimiter{}
 )
+
+type proxyTokenReviewLimiter struct {
+	limiter  *rate.Limiter
+	lastUsed time.Time
+}
 
 // WithAdminOverrideFromRequest marks the request context with the admin override
 // when the request carries the override header and a central-proxy token that
@@ -49,13 +61,46 @@ func WithAdminOverrideFromRequest(c *gin.Context) {
 	if c.GetHeader(AdminOverrideHeader) != "true" {
 		return
 	}
-	if !isCentralProxyToken(c.Request.Context(), c.GetHeader(ProxyTokenHeader)) {
+	if !isCentralProxyToken(c.Request.Context(), reviewClientKey(c.Request), c.GetHeader(ProxyTokenHeader)) {
 		return
 	}
 	c.Request = c.Request.WithContext(WithAdminOverride(c.Request.Context()))
 }
 
-func isCentralProxyToken(ctx context.Context, token string) bool {
+// reviewClientKey identifies the connection's peer. It deliberately ignores
+// X-Forwarded-For, which any caller can set to dodge the per-client limit.
+func reviewClientKey(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+func allowProxyTokenReview(client string, now time.Time) bool {
+	proxyTokenReviewLimitersMu.Lock()
+	defer proxyTokenReviewLimitersMu.Unlock()
+
+	l, ok := proxyTokenReviewLimiters[client]
+	if !ok {
+		if len(proxyTokenReviewLimiters) >= maxProxyTokenReviewClients {
+			for k, v := range proxyTokenReviewLimiters {
+				if now.Sub(v.lastUsed) > proxyTokenReviewClientIdle {
+					delete(proxyTokenReviewLimiters, k)
+				}
+			}
+		}
+		if len(proxyTokenReviewLimiters) >= maxProxyTokenReviewClients {
+			return false
+		}
+		l = &proxyTokenReviewLimiter{limiter: rate.NewLimiter(proxyTokenReviewsPerSecond, proxyTokenReviewBurst)}
+		proxyTokenReviewLimiters[client] = l
+	}
+	l.lastUsed = now
+	return l.limiter.AllowN(now, 1)
+}
+
+func isCentralProxyToken(ctx context.Context, client, token string) bool {
 	// A ServiceAccount token is a JWT: three dot-separated parts.
 	if token == "" || len(token) > proxyTokenMaxLength || strings.Count(token, ".") != 2 {
 		return false
@@ -70,8 +115,7 @@ func isCentralProxyToken(ctx context.Context, token string) bool {
 		return true
 	}
 
-	if !proxyTokenReviewLimiter.Allow() {
-		log.Printf("central-proxy token review skipped: too many reviews")
+	if !allowProxyTokenReview(client, now) {
 		return false
 	}
 	if !reviewCentralProxyToken(ctx, token) {

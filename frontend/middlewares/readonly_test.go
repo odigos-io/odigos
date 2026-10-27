@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
-	"golang.org/x/time/rate"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,12 +85,19 @@ func resetProxyTokenCache(t *testing.T) {
 	proxyTokenCacheMu.Lock()
 	proxyTokenCache = map[[sha256.Size]byte]time.Time{}
 	proxyTokenCacheMu.Unlock()
-	proxyTokenReviewLimiter = rate.NewLimiter(10, 20)
+	proxyTokenReviewLimitersMu.Lock()
+	proxyTokenReviewLimiters = map[string]*proxyTokenReviewLimiter{}
+	proxyTokenReviewLimitersMu.Unlock()
 }
 
 func requestAdminOverride(token string) bool {
+	return requestAdminOverrideFrom("10.0.0.1:41000", token)
+}
+
+func requestAdminOverrideFrom(remoteAddr, token string) bool {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest(http.MethodPost, "/graphql", nil)
+	c.Request.RemoteAddr = remoteAddr
 	c.Request.Header.Set(AdminOverrideHeader, "true")
 	c.Request.Header.Set(ProxyTokenHeader, token)
 	WithAdminOverrideFromRequest(c)
@@ -207,21 +214,33 @@ func TestWithAdminOverrideFromRequestFailsClosed(t *testing.T) {
 		}
 	})
 
-	t.Run("once the review rate limit is spent", func(t *testing.T) {
+	t.Run("a client flooding forged tokens doesn't block central-proxy", func(t *testing.T) {
 		resetProxyTokenCache(t)
 		reviews := 0
 		kube.SetDefaultClient(&kube.Client{Interface: newFakeClientWithTokenReviews(t, "uiMode: readonly\n", &reviews)})
 		t.Cleanup(func() { kube.SetDefaultClient(nil) })
-		proxyTokenReviewLimiter = rate.NewLimiter(0, 1)
 
-		if requestAdminOverride("forged.proxy.token") {
-			t.Fatal("forged token granted the override")
+		for i := 0; i < 10*proxyTokenReviewBurst; i++ {
+			// A spoofed X-Forwarded-For must not buy the flooder a fresh budget.
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = httptest.NewRequest(http.MethodPost, "/graphql", nil)
+			c.Request.RemoteAddr = "10.0.0.66:" + strconv.Itoa(40000+i)
+			c.Request.Header.Set("X-Forwarded-For", "203.0.113."+strconv.Itoa(i%250))
+			c.Request.Header.Set(AdminOverrideHeader, "true")
+			c.Request.Header.Set(ProxyTokenHeader, "forged.proxy.token"+strconv.Itoa(i))
+			WithAdminOverrideFromRequest(c)
+			if AdminOverrideFromContext(c.Request.Context()) {
+				t.Fatal("forged token granted the override")
+			}
 		}
-		if requestAdminOverride(validProxyToken) {
-			t.Fatal("override granted without a token review")
+		if reviews > proxyTokenReviewBurst {
+			t.Fatalf("token reviews = %d for one flooding client, want at most %d", reviews, proxyTokenReviewBurst)
 		}
-		if reviews != 1 {
-			t.Fatalf("token reviews = %d, want 1", reviews)
+		if requestAdminOverrideFrom("10.0.0.66:50000", validProxyToken) {
+			t.Fatal("the flooding client's own budget was not spent")
+		}
+		if !requestAdminOverrideFrom("10.0.0.7:41000", validProxyToken) {
+			t.Fatal("central-proxy's token was refused while another client flooded forged tokens")
 		}
 	})
 
