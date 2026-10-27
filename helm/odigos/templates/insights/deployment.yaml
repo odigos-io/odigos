@@ -89,6 +89,8 @@ spec:
                   key: master-key
             - name: INTERROGATION_AUTO_APPLY
               value: {{ .Values.insights.interrogation.model.autoApply | default false | quote }}
+            - name: INTERROGATION_MAX_PROBES_PER_WORKLOAD
+              value: {{ .Values.insights.interrogation.maxProbesPerWorkload | default 20 | quote }}
             # cacheDb Redis (logical DB 1) — profile stacks from the
             # odigos_interrogation_profiles exporter; insights expands them
             # into interrogation.tx_call_trie.
