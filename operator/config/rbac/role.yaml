@@ -225,6 +225,12 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
   - autoscaling
   resources:
   - horizontalpodautoscalers
