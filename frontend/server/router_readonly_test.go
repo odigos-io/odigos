@@ -26,7 +26,7 @@ import (
 // reaching its handler otherwise.
 func TestRouter_ReadonlyGuardsRestWrites(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	const centralProxyToken = "central-proxy-token"
+	const centralProxyToken = "central.proxy.token"
 	// handlerRan reports whether the route's handler was reached: the token handler
 	// rejects the malformed token, the source handlers call the Odigos API.
 	routes := []struct {

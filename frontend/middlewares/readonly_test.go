@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
+	"golang.org/x/time/rate"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +24,7 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 )
 
-const validProxyToken = "valid-proxy-token"
+const validProxyToken = "valid.proxy.token"
 
 // newFakeClientWithTokenReviews answers TokenReviews like an audience-aware API
 // server where only validProxyToken is central-proxy's token for audience odigos-ui.
@@ -44,25 +45,32 @@ func newFakeClientWithTokenReviews(t *testing.T, config string, reviews *int) *k
 				User:          authenticationv1.UserInfo{Username: "system:serviceaccount:" + env.GetCurrentNamespace() + ":central-proxy"},
 				Audiences:     review.Spec.Audiences,
 			}
-		case "other-sa-token":
+		case "other.sa.token":
 			review.Status = authenticationv1.TokenReviewStatus{
 				Authenticated: true,
 				User:          authenticationv1.UserInfo{Username: "system:serviceaccount:" + env.GetCurrentNamespace() + ":odigos-ui"},
 				Audiences:     review.Spec.Audiences,
 			}
-		case "other-namespace-token":
+		case "other.namespace.token":
 			review.Status = authenticationv1.TokenReviewStatus{
 				Authenticated: true,
 				User:          authenticationv1.UserInfo{Username: "system:serviceaccount:other:central-proxy"},
 				Audiences:     review.Spec.Audiences,
 			}
-		case "api-server-audience-token":
+		case "api.server-audience.token":
 			review.Status = authenticationv1.TokenReviewStatus{
 				Authenticated: true,
 				User:          authenticationv1.UserInfo{Username: "system:serviceaccount:" + env.GetCurrentNamespace() + ":central-proxy"},
 				Audiences:     []string{"https://kubernetes.default.svc"},
 			}
-		case "review-error-token":
+		case "authenticated.with-error.token":
+			review.Status = authenticationv1.TokenReviewStatus{
+				Authenticated: true,
+				User:          authenticationv1.UserInfo{Username: "system:serviceaccount:" + env.GetCurrentNamespace() + ":central-proxy"},
+				Audiences:     review.Spec.Audiences,
+				Error:         "token has been invalidated",
+			}
+		case "review.error.token":
 			return true, nil, errors.New("tokenreviews.authentication.k8s.io is forbidden")
 		default:
 			review.Status = authenticationv1.TokenReviewStatus{Error: "invalid bearer token"}
@@ -77,6 +85,16 @@ func resetProxyTokenCache(t *testing.T) {
 	proxyTokenCacheMu.Lock()
 	proxyTokenCache = map[[sha256.Size]byte]time.Time{}
 	proxyTokenCacheMu.Unlock()
+	proxyTokenReviewLimiter = rate.NewLimiter(10, 20)
+}
+
+func requestAdminOverride(token string) bool {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/graphql", nil)
+	c.Request.Header.Set(AdminOverrideHeader, "true")
+	c.Request.Header.Set(ProxyTokenHeader, token)
+	WithAdminOverrideFromRequest(c)
+	return AdminOverrideFromContext(c.Request.Context())
 }
 
 func TestReadonlyGuardMiddleware(t *testing.T) {
@@ -94,11 +112,13 @@ func TestReadonlyGuardMiddleware(t *testing.T) {
 		{"readonly mode with override and central-proxy token", "uiMode: readonly\n", "true", validProxyToken, http.StatusOK, true},
 		{"readonly mode with central-proxy token but no override header", "uiMode: readonly\n", "", validProxyToken, http.StatusForbidden, false},
 		{"readonly mode with non-true override", "uiMode: readonly\n", "1", validProxyToken, http.StatusForbidden, false},
-		{"readonly mode with invalid token", "uiMode: readonly\n", "true", "forged-token", http.StatusForbidden, false},
-		{"readonly mode with another service account's token", "uiMode: readonly\n", "true", "other-sa-token", http.StatusForbidden, false},
-		{"readonly mode with central-proxy token from another namespace", "uiMode: readonly\n", "true", "other-namespace-token", http.StatusForbidden, false},
-		{"readonly mode with token for another audience", "uiMode: readonly\n", "true", "api-server-audience-token", http.StatusForbidden, false},
-		{"readonly mode when the token review fails", "uiMode: readonly\n", "true", "review-error-token", http.StatusForbidden, false},
+		{"readonly mode with invalid token", "uiMode: readonly\n", "true", "forged.proxy.token", http.StatusForbidden, false},
+		{"readonly mode with another service account's token", "uiMode: readonly\n", "true", "other.sa.token", http.StatusForbidden, false},
+		{"readonly mode with central-proxy token from another namespace", "uiMode: readonly\n", "true", "other.namespace.token", http.StatusForbidden, false},
+		{"readonly mode with token for another audience", "uiMode: readonly\n", "true", "api.server-audience.token", http.StatusForbidden, false},
+		{"readonly mode when the token review fails", "uiMode: readonly\n", "true", "review.error.token", http.StatusForbidden, false},
+		{"readonly mode when the token review reports an error", "uiMode: readonly\n", "true", "authenticated.with-error.token", http.StatusForbidden, false},
+		{"readonly mode with a token that is not a JWT", "uiMode: readonly\n", "true", "not-a-jwt", http.StatusForbidden, false},
 		{"default mode", "uiMode: default\n", "", "", http.StatusOK, true},
 		{"unset mode", "clusterName: prod\n", "", "", http.StatusOK, true},
 	}
@@ -146,14 +166,7 @@ func TestWithAdminOverrideFromRequestCachesOnlySuccessfulReviews(t *testing.T) {
 	kube.SetDefaultClient(&kube.Client{Interface: newFakeClientWithTokenReviews(t, "uiMode: readonly\n", &reviews)})
 	t.Cleanup(func() { kube.SetDefaultClient(nil) })
 
-	override := func(token string) bool {
-		c, _ := gin.CreateTestContext(httptest.NewRecorder())
-		c.Request = httptest.NewRequest(http.MethodPost, "/graphql", nil)
-		c.Request.Header.Set(AdminOverrideHeader, "true")
-		c.Request.Header.Set(ProxyTokenHeader, token)
-		WithAdminOverrideFromRequest(c)
-		return AdminOverrideFromContext(c.Request.Context())
-	}
+	override := requestAdminOverride
 
 	for i := 0; i < 2; i++ {
 		if !override(validProxyToken) {
@@ -165,7 +178,7 @@ func TestWithAdminOverrideFromRequestCachesOnlySuccessfulReviews(t *testing.T) {
 	}
 
 	for i := 0; i < 2; i++ {
-		if override("forged-token") {
+		if override("forged.proxy.token") {
 			t.Fatalf("request %d: forged token granted the override", i)
 		}
 	}
@@ -181,4 +194,50 @@ func TestWithAdminOverrideFromRequestCachesOnlySuccessfulReviews(t *testing.T) {
 	if !override(validProxyToken) || reviews != 4 {
 		t.Fatalf("expired cache entry was not re-reviewed (reviews = %d, want 4)", reviews)
 	}
+}
+
+func TestWithAdminOverrideFromRequestFailsClosed(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("without a Kubernetes client", func(t *testing.T) {
+		resetProxyTokenCache(t)
+		kube.SetDefaultClient(nil)
+		if requestAdminOverride(validProxyToken) {
+			t.Fatal("override granted without a client to review the token")
+		}
+	})
+
+	t.Run("once the review rate limit is spent", func(t *testing.T) {
+		resetProxyTokenCache(t)
+		reviews := 0
+		kube.SetDefaultClient(&kube.Client{Interface: newFakeClientWithTokenReviews(t, "uiMode: readonly\n", &reviews)})
+		t.Cleanup(func() { kube.SetDefaultClient(nil) })
+		proxyTokenReviewLimiter = rate.NewLimiter(0, 1)
+
+		if requestAdminOverride("forged.proxy.token") {
+			t.Fatal("forged token granted the override")
+		}
+		if requestAdminOverride(validProxyToken) {
+			t.Fatal("override granted without a token review")
+		}
+		if reviews != 1 {
+			t.Fatalf("token reviews = %d, want 1", reviews)
+		}
+	})
+
+	t.Run("does not review tokens that are not JWTs", func(t *testing.T) {
+		resetProxyTokenCache(t)
+		reviews := 0
+		kube.SetDefaultClient(&kube.Client{Interface: newFakeClientWithTokenReviews(t, "uiMode: readonly\n", &reviews)})
+		t.Cleanup(func() { kube.SetDefaultClient(nil) })
+
+		for _, token := range []string{"not-a-jwt", "a.b.c.d", strings.Repeat("a", proxyTokenMaxLength) + ".b.c"} {
+			if requestAdminOverride(token) {
+				t.Fatalf("token %.20q granted the override", token)
+			}
+		}
+		if reviews != 0 {
+			t.Fatalf("token reviews = %d, want 0", reviews)
+		}
+	})
 }

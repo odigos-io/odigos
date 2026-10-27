@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
+	"golang.org/x/time/rate"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,12 +29,17 @@ const (
 	proxyTokenAudience      = "odigos-ui"
 	proxyTokenReviewTimeout = 5 * time.Second
 	proxyTokenCacheTTL      = time.Minute
+	proxyTokenMaxLength     = 4096
 )
 
 // Successful reviews keyed by the token's SHA-256, never the raw token.
 var (
 	proxyTokenCacheMu sync.Mutex
 	proxyTokenCache   = map[[sha256.Size]byte]time.Time{}
+
+	// Caps TokenReviews from uncached tokens so a flood of forged tokens can't
+	// exhaust the UI's own Kubernetes client rate limit.
+	proxyTokenReviewLimiter = rate.NewLimiter(10, 20)
 )
 
 // WithAdminOverrideFromRequest marks the request context with the admin override
@@ -49,7 +56,8 @@ func WithAdminOverrideFromRequest(c *gin.Context) {
 }
 
 func isCentralProxyToken(ctx context.Context, token string) bool {
-	if token == "" {
+	// A ServiceAccount token is a JWT: three dot-separated parts.
+	if token == "" || len(token) > proxyTokenMaxLength || strings.Count(token, ".") != 2 {
 		return false
 	}
 	key := sha256.Sum256([]byte(token))
@@ -62,6 +70,10 @@ func isCentralProxyToken(ctx context.Context, token string) bool {
 		return true
 	}
 
+	if !proxyTokenReviewLimiter.Allow() {
+		log.Printf("central-proxy token review skipped: too many reviews")
+		return false
+	}
 	if !reviewCentralProxyToken(ctx, token) {
 		return false
 	}
