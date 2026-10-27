@@ -131,3 +131,11 @@ rules:
       - get
       - list
       - watch
+  {{- if .Values.centralProxy.centralBackendURL }}
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  {{- end }}
