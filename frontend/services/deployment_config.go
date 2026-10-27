@@ -102,7 +102,9 @@ func GetOdigosConfiguration(ctx context.Context) (*common.OdigosConfiguration, e
 func IsReadonlyMode(ctx context.Context) bool {
 	config, err := GetOdigosConfiguration(ctx)
 	if err != nil {
-		return false
+		// fail closed: if the mode can't be determined, treat the UI as readonly
+		log.Printf("Failed to read Odigos configuration, assuming readonly mode: %v\n", err)
+		return true
 	}
 
 	return config.UiMode == common.UiModeReadonly
