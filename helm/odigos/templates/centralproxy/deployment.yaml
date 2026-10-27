@@ -102,8 +102,11 @@ spec:
             - name: MAX_MESSAGE_SIZE
               value: {{ .Values.centralProxy.maxMessageSize | quote }}
             {{- end }}
-          {{- if or .Values.centralProxy.tls.caSecretName .Values.centralProxy.tls.clientCertSecretName }}
           volumeMounts:
+            # Sent to the UI so it can verify admin requests come from central-proxy.
+            - name: ui-token
+              mountPath: /var/run/secrets/odigos/ui-token
+              readOnly: true
             {{- if .Values.centralProxy.tls.caSecretName }}
             - name: tls-ca
               mountPath: /etc/tls/ca
@@ -114,7 +117,6 @@ spec:
               mountPath: /etc/tls/client
               readOnly: true
             {{- end }}
-          {{- end }}
           resources:
             requests:
               cpu: {{ .Values.centralProxy.resources.requests.cpu }}
@@ -128,8 +130,14 @@ spec:
       {{- with .Values.centralProxy.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
-      {{- if or .Values.centralProxy.tls.caSecretName .Values.centralProxy.tls.clientCertSecretName }}
       volumes:
+        - name: ui-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: odigos-ui
+                  expirationSeconds: 3600
         {{- if .Values.centralProxy.tls.caSecretName }}
         - name: tls-ca
           secret:
@@ -142,7 +150,6 @@ spec:
             secretName: {{ .Values.centralProxy.tls.clientCertSecretName }}
             defaultMode: 420
         {{- end }}
-      {{- end }}
 
 
 {{- end }}

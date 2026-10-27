@@ -131,3 +131,12 @@ rules:
       - get
       - list
       - watch
+  {{- /* Verifies central-proxy's token on admin requests; same condition as the central-proxy Deployment. */}}
+  {{- if and .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .) }}
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  {{- end }}

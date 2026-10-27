@@ -7,9 +7,12 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 
 	odigosfake "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/fake"
 	"github.com/odigos-io/odigos/common/consts"
@@ -23,6 +26,7 @@ import (
 // reaching its handler otherwise.
 func TestRouter_ReadonlyGuardsRestWrites(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	const centralProxyToken = "central.proxy.token"
 	// handlerRan reports whether the route's handler was reached: the token handler
 	// rejects the malformed token, the source handlers call the Odigos API.
 	routes := []struct {
@@ -43,11 +47,13 @@ func TestRouter_ReadonlyGuardsRestWrites(t *testing.T) {
 		name          string
 		config        string
 		adminOverride bool
+		proxyToken    string
 		wantBlocked   bool
 	}{
-		{"readonly", "uiMode: readonly\n", false, true},
-		{"readonly with admin override", "uiMode: readonly\n", true, false},
-		{"default", "uiMode: default\n", false, false},
+		{"readonly", "uiMode: readonly\n", false, "", true},
+		{"readonly with admin override header only", "uiMode: readonly\n", true, "", true},
+		{"readonly with admin override from central-proxy", "uiMode: readonly\n", true, centralProxyToken, false},
+		{"default", "uiMode: default\n", false, "", false},
 	}
 	for _, mode := range modes {
 		for _, route := range routes {
@@ -55,6 +61,17 @@ func TestRouter_ReadonlyGuardsRestWrites(t *testing.T) {
 				clientset := k8sfake.NewSimpleClientset(&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{Name: consts.OdigosEffectiveConfigName, Namespace: env.GetCurrentNamespace()},
 					Data:       map[string]string{consts.OdigosConfigurationFileName: mode.config},
+				})
+				clientset.PrependReactor("create", "tokenreviews", func(action k8stesting.Action) (bool, runtime.Object, error) {
+					review := action.(k8stesting.CreateAction).GetObject().(*authenticationv1.TokenReview).DeepCopy()
+					if review.Spec.Token == centralProxyToken {
+						review.Status = authenticationv1.TokenReviewStatus{
+							Authenticated: true,
+							User:          authenticationv1.UserInfo{Username: "system:serviceaccount:" + env.GetCurrentNamespace() + ":central-proxy"},
+							Audiences:     review.Spec.Audiences,
+						}
+					}
+					return true, review, nil
 				})
 				odigosClient := odigosfake.NewSimpleClientset()
 				previous := kube.DefaultClient
@@ -69,6 +86,9 @@ func TestRouter_ReadonlyGuardsRestWrites(t *testing.T) {
 				req.Header.Set("Content-Type", "application/json")
 				if mode.adminOverride {
 					req.Header.Set(middlewares.AdminOverrideHeader, "true")
+				}
+				if mode.proxyToken != "" {
+					req.Header.Set(middlewares.ProxyTokenHeader, mode.proxyToken)
 				}
 				w := httptest.NewRecorder()
 				r.ServeHTTP(w, req)
