@@ -24,13 +24,13 @@ import (
 func TestRouter_ReadonlyGuardsRestWrites(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	// handlerRan reports whether the route's handler was reached: the token handler
-	// rejects the malformed token with a 500, the source handlers call the Odigos API.
+	// rejects the malformed token, the source handlers call the Odigos API.
 	routes := []struct {
 		method, path, body string
 		handlerRan         func(w *httptest.ResponseRecorder, odigosClient *odigosfake.Clientset) bool
 	}{
 		{http.MethodPost, "/token/update", `{"token":"not-a-token"}`, func(w *httptest.ResponseRecorder, _ *odigosfake.Clientset) bool {
-			return w.Code == http.StatusInternalServerError
+			return w.Code == http.StatusInternalServerError && strings.Contains(w.Body.String(), "invalid JWT token format")
 		}},
 		{http.MethodPost, "/source/namespace/default/kind/deployment/name/app", "", func(_ *httptest.ResponseRecorder, odigosClient *odigosfake.Clientset) bool {
 			return len(odigosClient.Actions()) > 0
