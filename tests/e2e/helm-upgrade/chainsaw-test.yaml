@@ -102,7 +102,7 @@ spec:
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
-            file: ../../common/assert/simple-demo-instrumented.yaml
+            file: simple-demo-instrumented-pre-upgrade.yaml
 
     - name: Upgrade to HEAD version with local Helm chart
       try:
@@ -174,7 +174,7 @@ spec:
       try:
         - assert:
             timeout: 3m
-            file: ../../common/assert/simple-demo-instrumented.yaml
+            file: simple-demo-instrumented-post-upgrade.yaml
 
     - name: Generate Traffic
       try:
