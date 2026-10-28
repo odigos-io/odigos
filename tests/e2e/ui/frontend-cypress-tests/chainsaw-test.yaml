@@ -64,7 +64,7 @@ spec:
               cd ../../../../frontend/webapp
               # chainsaw's timeout kills only this shell, and then waits forever on child processes (yarn, Cypress)
               # that still hold its output pipe. `timeout` kills the whole process group, so a stall fails here.
-              timeout --kill-after=15s 5m30s sh -c '
+              timeout --kill-after=15s 330s sh -c '
                 yarn install
                 yarn add -D cypress@16
                 # Ensure yarn global bin dir is on PATH (not always default in CI).
