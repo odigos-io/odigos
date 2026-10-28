@@ -62,9 +62,9 @@ spec:
             - name: MAX_MESSAGE_SIZE
               value: {{ .Values.centralBackend.maxMessageSize | quote }}
             {{- end }}
-            {{- with .Values.centralBackend.connectionTokens.permissiveUntil }}
-            - name: PROXY_AUTH_PERMISSIVE_UNTIL
-              value: {{ . | quote }}
+            {{- if .Values.centralBackend.connectionTokens.requireForAll }}
+            - name: PROXY_AUTH_REQUIRE_TOKEN
+              value: "true"
             {{- end }}
           ports:
             - containerPort: 8081

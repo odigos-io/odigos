@@ -24,13 +24,9 @@ centralBackend:
   #    (default 33554432 = 32Mi). Raise for very large RemoteFetch payloads.
   maxMessageSize: '33554432'
   connectionTokens:
-    # -- Optional RFC 3339 timestamp (e.g. "2026-12-31T00:00:00Z") that opens a time-boxed
-    #    permissive window for clusters connecting to /ws/proxy without a connection token.
-    #    Empty (default) enforces tokens: a connection without a valid token is rejected.
-    #    Before this date, a cluster that presents no token is accepted and shown as Unverified,
-    #    but only if its proxyID has no token bound to it. A wrong token is always rejected.
-    #    After this date, enforcement applies automatically, without a redeploy.
-    permissiveUntil: ''
+    # -- Refuse every cluster, VM agent and connector that connects without a valid connection token.
+    #    Turn on once all connections are secured; unsecured ones disconnect.
+    requireForAll: false
   resources:
     requests:
       cpu: 100m
