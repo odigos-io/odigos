@@ -97,7 +97,7 @@ COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 COPY --from=public.ecr.aws/odigos/agents/php-community:v0.9.0@sha256:dd1469ad9d8551a647dcc072bb2f8adb683e0484124e261ad0972ed24eef50c3 /instrumentations/php /instrumentations/php
 
 # ruby-community
-COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.9@sha256:5177737aba83e507ee968223fbd821d76e2df4e74bd1711e2d49e8d59f671d8c /instrumentations/ruby /instrumentations/ruby
+COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.11@sha256:1cb067fa84fdd24316b0c9e0fbfc057bb7055263d92fe1f31a898a8e55edcf67 /instrumentations/ruby /instrumentations/ruby
 
 # loader
 ARG ODIGOS_LOADER_VERSION=v0.0.8
