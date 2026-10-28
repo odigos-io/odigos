@@ -38,6 +38,20 @@ func kindToGql(kind string) model.K8sResourceKind {
 	return ""
 }
 
+func namespacesToPersistSources(namespaces []*model.PersistNamespaceItemInput) []*model.PersistNamespaceSourceInput {
+	persistObjects := []*model.PersistNamespaceSourceInput{}
+	for _, namespace := range namespaces {
+		persistObjects = append(persistObjects, &model.PersistNamespaceSourceInput{
+			Namespace:         namespace.Namespace,
+			Name:              namespace.Namespace,
+			Kind:              model.K8sResourceKind(services.WorkloadKindNamespace),
+			Selected:          namespace.Selected,
+			CurrentStreamName: namespace.CurrentStreamName,
+		})
+	}
+	return persistObjects
+}
+
 func getContainerAgentInfo(ic *v1alpha1.InstrumentationConfig, containerName string) (bool, string, string) {
 	for _, specContainer := range ic.Spec.Containers {
 		if specContainer.ContainerName == containerName {

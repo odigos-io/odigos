@@ -136,15 +136,38 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 	return namespaceToAppsCount, nil
 }
 
+// SyncWorkloadsInNamespace applies workload sources before namespace sources, so a workload excluded from a
+// namespace that is being selected already has its excluding source when the namespace source is created.
 func SyncWorkloadsInNamespace(ctx context.Context, workloads []*model.PersistNamespaceSourceInput) error {
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
-
+	namespaceSelected := map[string]*bool{}
+	namespaces := []*model.PersistNamespaceSourceInput{}
+	sources := []*model.PersistNamespaceSourceInput{}
 	for _, workload := range workloads {
-		g.Go(func() error {
-			return ToggleSourceCRD(ctx, workload.Namespace, workload.Name, workload.Kind, workload.Selected, workload.CurrentStreamName)
-		})
+		if workload.Kind == WorkloadKindNamespace {
+			namespaceSelected[workload.Namespace] = &workload.Selected
+			namespaces = append(namespaces, workload)
+		} else {
+			sources = append(sources, workload)
+		}
 	}
 
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
+	for _, workload := range sources {
+		g.Go(func() error {
+			return toggleSourceCRD(gctx, workload.Namespace, workload.Name, workload.Kind, workload.Selected, workload.CurrentStreamName, namespaceSelected[workload.Namespace])
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return err
+	}
+
+	g, gctx = errgroup.WithContext(ctx)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
+	for _, namespace := range namespaces {
+		g.Go(func() error {
+			return ToggleSourceCRD(gctx, namespace.Namespace, namespace.Name, namespace.Kind, namespace.Selected, namespace.CurrentStreamName)
+		})
+	}
 	return g.Wait()
 }

@@ -2012,7 +2012,7 @@ type ComplexityRoot struct {
 		ForcePromoteInsightsService         func(childComplexity int, namespace string, service string) int
 		PauseOdigos                         func(childComplexity int) int
 		PersistK8sNamespaces                func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
-		PersistK8sSources                   func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
+		PersistK8sSources                   func(childComplexity int, sources []*model.PersistNamespaceSourceInput, namespaces []*model.PersistNamespaceItemInput) int
 		PreviewInsightsRecommendation       func(childComplexity int, transactionID string, spec model.InsightsCorrelationSpecInput) int
 		PromoteInsightsBaselineClass        func(childComplexity int, transactionID string, class model.InsightsDeviationClass) int
 		PromoteInsightsTransactionBaselines func(childComplexity int, transactionID string) int
@@ -2685,7 +2685,7 @@ type MutationResolver interface {
 	UpdateCostReductionRule(ctx context.Context, samplingID string, ruleID string, rule model.CostReductionRuleInput) (*model.CostReductionRule, error)
 	DeleteCostReductionRule(ctx context.Context, samplingID string, ruleID string) (bool, error)
 	PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error)
-	PersistK8sSources(ctx context.Context, sources []*model.PersistNamespaceSourceInput) (bool, error)
+	PersistK8sSources(ctx context.Context, sources []*model.PersistNamespaceSourceInput, namespaces []*model.PersistNamespaceItemInput) (bool, error)
 	UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error)
 	RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error)
 	RecoverFromRollbackForWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error)
@@ -11953,7 +11953,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["sources"].([]*model.PersistNamespaceSourceInput)), true
+		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["sources"].([]*model.PersistNamespaceSourceInput), args["namespaces"].([]*model.PersistNamespaceItemInput)), true
 
 	case "Mutation.previewInsightsRecommendation":
 		if e.complexity.Mutation.PreviewInsightsRecommendation == nil {
@@ -17431,6 +17431,11 @@ func (ec *executionContext) field_Mutation_persistK8sSources_args(ctx context.Co
 		return nil, err
 	}
 	args["sources"] = arg0
+	arg1, err := ec.field_Mutation_persistK8sSources_argsNamespaces(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespaces"] = arg1
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_persistK8sSources_argsSources(
@@ -17448,6 +17453,24 @@ func (ec *executionContext) field_Mutation_persistK8sSources_argsSources(
 	}
 
 	var zeroVal []*model.PersistNamespaceSourceInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_persistK8sSources_argsNamespaces(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*model.PersistNamespaceItemInput, error) {
+	if _, ok := rawArgs["namespaces"]; !ok {
+		var zeroVal []*model.PersistNamespaceItemInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespaces"))
+	if tmp, ok := rawArgs["namespaces"]; ok {
+		return ec.unmarshalOPersistNamespaceItemInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceItemInputᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*model.PersistNamespaceItemInput
 	return zeroVal, nil
 }
 
@@ -80795,7 +80818,7 @@ func (ec *executionContext) _Mutation_persistK8sSources(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PersistK8sSources(rctx, fc.Args["sources"].([]*model.PersistNamespaceSourceInput))
+		return ec.resolvers.Mutation().PersistK8sSources(rctx, fc.Args["sources"].([]*model.PersistNamespaceSourceInput), fc.Args["namespaces"].([]*model.PersistNamespaceItemInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -131285,6 +131308,24 @@ func (ec *executionContext) unmarshalOPayloadCollectionInput2ᚖgithubᚗcomᚋo
 	}
 	res, err := ec.unmarshalInputPayloadCollectionInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOPersistNamespaceItemInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceItemInputᚄ(ctx context.Context, v any) ([]*model.PersistNamespaceItemInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.PersistNamespaceItemInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPersistNamespaceItemInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceItemInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalOPhpCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPhpCustomProbe(ctx context.Context, sel ast.SelectionSet, v []*model.PhpCustomProbe) graphql.Marshaler {

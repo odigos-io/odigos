@@ -152,18 +152,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 
 // PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
 func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
-	persistObjects := []*model.PersistNamespaceSourceInput{}
-	for _, namespace := range namespaces {
-		persistObjects = append(persistObjects, &model.PersistNamespaceSourceInput{
-			Namespace:         namespace.Namespace,
-			Name:              namespace.Namespace,
-			Kind:              model.K8sResourceKind(services.WorkloadKindNamespace),
-			Selected:          namespace.Selected,
-			CurrentStreamName: namespace.CurrentStreamName,
-		})
-	}
-
-	err := services.SyncWorkloadsInNamespace(ctx, persistObjects)
+	err := services.SyncWorkloadsInNamespace(ctx, namespacesToPersistSources(namespaces))
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
@@ -172,8 +161,8 @@ func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces 
 }
 
 // PersistK8sSources is the resolver for the persistK8sSources field.
-func (r *mutationResolver) PersistK8sSources(ctx context.Context, sources []*model.PersistNamespaceSourceInput) (bool, error) {
-	err := services.SyncWorkloadsInNamespace(ctx, sources)
+func (r *mutationResolver) PersistK8sSources(ctx context.Context, sources []*model.PersistNamespaceSourceInput, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
+	err := services.SyncWorkloadsInNamespace(ctx, append(sources, namespacesToPersistSources(namespaces)...))
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
