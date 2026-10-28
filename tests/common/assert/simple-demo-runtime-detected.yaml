@@ -119,5 +119,5 @@ metadata:
 status:
   (runtimeDetailsByContainer[?containerName=='geolocation']):
     - language: ruby
-      runtimeVersion: 3.4.4
+      runtimeVersion: 4.0.9
       secureExecutionMode: false
