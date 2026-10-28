@@ -332,9 +332,9 @@ spec:
       (env[?name == 'OTEL_PROPAGATORS']):
         - value: 'tracecontext,baggage'
       (env[?name == 'RUBYOPT']):
-        - value: '-r/var/odigos/ruby/3.4/index.rb'
+        - value: '-r/var/odigos/ruby/4.0/index.rb'
       (env[?name == 'ODIGOS_GEM_PATH']):
-        - value: '/var/odigos/ruby/3.4/bundle'
+        - value: '/var/odigos/ruby/4.0/bundle'
 status:
   containerStatuses:
     - name: geolocation
@@ -393,7 +393,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: inventory
       language: python
-      runtimeVersion: 3.11.17
+      runtimeVersion: 3.11.18
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -462,7 +462,7 @@ metadata:
 status:
   (runtimeDetailsByContainer[?containerName=='geolocation']):
     - language: ruby
-      runtimeVersion: 3.4.4
+      runtimeVersion: 4.0.9
       secureExecutionMode: false
 ---
 ### Instrumentation Instances ###
