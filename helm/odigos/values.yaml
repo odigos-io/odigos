@@ -1283,6 +1283,18 @@ centralProxy:
       memory: 512Mi
 
   # @schema
+  # description: |-
+  #   Odigos Central connection token (odct_<id>_<secret>) the proxy presents when connecting to Central.
+  #   Stored in the Secret 'central-proxy-connection-token' (key: 'token'). Ignored when connectionTokenSecretName is set.
+  # @schema
+  connectionToken: ''
+
+  # @schema
+  # description: "Name of an existing Secret containing the Central connection token (key: 'token'). Takes precedence over connectionToken."
+  # @schema
+  connectionTokenSecretName: ''
+
+  # @schema
   # description: TLS Configuration
   # @schema
   tls:

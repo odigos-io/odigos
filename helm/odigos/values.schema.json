@@ -168,6 +168,18 @@
           "required": [],
           "title": "centralBackendURL"
         },
+        "connectionToken": {
+          "default": "",
+          "description": "Odigos Central connection token (odct_\u003cid\u003e_\u003csecret\u003e) the proxy presents when connecting to Central.\nStored in the Secret 'central-proxy-connection-token' (key: 'token'). Ignored when connectionTokenSecretName is set.",
+          "required": [],
+          "title": "connectionToken"
+        },
+        "connectionTokenSecretName": {
+          "default": "",
+          "description": "Name of an existing Secret containing the Central connection token (key: 'token'). Takes precedence over connectionToken.",
+          "required": [],
+          "title": "connectionTokenSecretName"
+        },
         "maxMessageSize": {
           "default": "33554432",
           "description": "Maximum WebSocket message size in bytes for the central-proxy ↔ central-backend\nlink (default 33554432 = 32Mi). Must match central-backend maxMessageSize.",
