@@ -55,6 +55,8 @@ const config: Cypress.ConfigOptions = {
             const { stdout, stderr } = await execAsync(command, {
               shell: '/bin/bash',
               maxBuffer: 10 * 1024 * 1024,
+              // Stay under Cypress' 60s taskTimeout, so a stuck command (e.g. `kubectl delete` waiting on finalizers) can't outlive its test.
+              timeout: 50000,
             });
             return { code: 0, stdout: normalize(stdout), stderr: normalize(stderr) };
           } catch (error: unknown) {

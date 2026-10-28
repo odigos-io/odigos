@@ -214,7 +214,7 @@ runs:
       continue-on-error: true
 
     - name: Upload UI screenshots artifact
-      if: failure() && inputs.test-scenario == 'ui'
+      if: (failure() || cancelled()) && inputs.test-scenario == 'ui'
       uses: actions/upload-artifact@v4
       with:
         name: ui-screenshots-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }}
@@ -222,7 +222,7 @@ runs:
       continue-on-error: true
 
     - name: Upload UI videos artifact
-      if: failure() && inputs.test-scenario == 'ui'
+      if: (failure() || cancelled()) && inputs.test-scenario == 'ui'
       uses: actions/upload-artifact@v4
       with:
         name: ui-videos-${{ inputs.test-scenario }}-${{ inputs.kubernetes-version }}
