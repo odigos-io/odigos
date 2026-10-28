@@ -17,6 +17,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: central-proxy
+      {{- if and .Values.centralProxy.connectionToken (not .Values.centralProxy.connectionTokenSecretName) }}
+      annotations:
+        checksum/connection-token: {{ .Values.centralProxy.connectionToken | sha256sum }}
+      {{- end }}
     spec:
       serviceAccountName: central-proxy
       {{- if .Values.topologySpreadConstraints }}

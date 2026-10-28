@@ -176,7 +176,7 @@
         },
         "connectionTokenSecretName": {
           "default": "",
-          "description": "Name of an existing Secret containing the Central connection token (key: 'token'). Takes precedence over connectionToken.",
+          "description": "Name of an existing Secret containing the Central connection token (key: 'token'). Takes precedence over connectionToken. Restart central-proxy after rotating the Secret.",
           "required": [],
           "title": "connectionTokenSecretName"
         },
