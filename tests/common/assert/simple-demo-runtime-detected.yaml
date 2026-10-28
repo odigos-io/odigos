@@ -50,7 +50,7 @@ status:
         - name: PYTHONPATH
           value: /app # this env exists in the test image
       language: python
-      runtimeVersion: 3.11.17
+      runtimeVersion: 3.11.18
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
