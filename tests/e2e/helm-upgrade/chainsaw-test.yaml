@@ -102,7 +102,7 @@ spec:
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
-            file: ../../common/assert/simple-demo-instrumented.yaml
+            file: simple-demo-instrumented-pre-upgrade.yaml
 
     - name: Upgrade to HEAD version with local Helm chart
       try:
