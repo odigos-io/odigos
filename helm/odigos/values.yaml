@@ -1295,6 +1295,11 @@ centralProxy:
   connectionTokenSecretName: ''
 
   # @schema
+  # description: Allow sending the Central connection token over unencrypted ws:// to a non-cluster host; prefer an https centralBackendURL
+  # @schema
+  allowInsecureToken: false
+
+  # @schema
   # description: TLS Configuration
   # @schema
   tls:

@@ -162,6 +162,12 @@
           "required": [],
           "title": "affinity"
         },
+        "allowInsecureToken": {
+          "default": "false",
+          "description": "Allow sending the Central connection token over unencrypted ws:// to a non-cluster host; prefer an https centralBackendURL",
+          "required": [],
+          "title": "allowInsecureToken"
+        },
         "centralBackendURL": {
           "default": "",
           "description": "Central backend URL where this proxy will forward data",

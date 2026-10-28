@@ -95,6 +95,10 @@ spec:
                   key: token
                   optional: true
             {{- end }}
+            {{- if .Values.centralProxy.allowInsecureToken }}
+            - name: CENTRAL_ALLOW_INSECURE_TOKEN
+              value: "true"
+            {{- end }}
             {{- if .Values.centralProxy.tls.skipVerify }}
             - name: CENTRAL_SKIP_TLS_VERIFY
               value: "true"
