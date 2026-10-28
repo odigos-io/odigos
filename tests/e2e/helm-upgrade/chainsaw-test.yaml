@@ -174,7 +174,7 @@ spec:
       try:
         - assert:
             timeout: 3m
-            file: ../../common/assert/simple-demo-instrumented.yaml
+            file: simple-demo-instrumented-post-upgrade.yaml
 
     - name: Generate Traffic
       try:
