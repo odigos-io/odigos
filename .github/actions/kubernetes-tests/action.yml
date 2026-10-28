@@ -80,6 +80,22 @@ runs:
     - name: Install chainsaw
       uses: kyverno/action-install-chainsaw@v0.2.13
 
+    - name: Get yarn cache directory
+      if: inputs.test-scenario == 'ui'
+      id: yarn-cache-dir
+      shell: bash
+      run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+
+    # The UI test installs webapp dependencies from the npm registry, which can stall for minutes.
+    - name: Cache webapp dependencies
+      if: inputs.test-scenario == 'ui'
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.yarn-cache-dir.outputs.dir }}
+        key: ui-e2e-yarn-${{ runner.os }}-${{ hashFiles('frontend/webapp/yarn.lock') }}
+        restore-keys: |
+          ui-e2e-yarn-${{ runner.os }}-
+
     - name: Create kind cluster
       uses: helm/kind-action@v1.14.0
       with:
