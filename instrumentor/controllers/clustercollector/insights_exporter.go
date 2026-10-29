@@ -52,6 +52,18 @@ func addInsightsGatewayExporter(c *config.Config, odigosNs string, insights *com
 		"retry_on_failure": config.GenericMap{
 			"enabled": false,
 		},
+		// groupbytrace releases each trace as its own ConsumeTraces call, so
+		// without batching every trace becomes a separate Export RPC. max_size
+		// is left unset (0) on purpose: a positive value splits requests by span
+		// count and can cut a trace across two Exports, which insights needs whole.
+		// https://github.com/open-telemetry/opentelemetry-collector/blob/v0.159.0/exporter/exporterhelper/internal/queuebatch/traces_batch.go#L37-L40
+		"sending_queue": config.GenericMap{
+			"batch": config.GenericMap{
+				"sizer":         "items",
+				"min_size":      1000,
+				"flush_timeout": "200ms",
+			},
+		},
 	}
 
 	rootPipeline.Exporters = append(rootPipeline.Exporters, pipeline.InsightsGatewayExporter)
