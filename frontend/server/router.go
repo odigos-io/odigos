@@ -91,12 +91,8 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 	gqlExecutor := executor.New(gqlSchema)
 	r.POST("/graphql", func(c *gin.Context) {
 		loader := loaders.NewLoaders(deps.Logger, deps.K8sCacheClient)
-		baseCtx := c.Request.Context()
-		if c.GetHeader(middlewares.AdminOverrideHeader) == "true" {
-			baseCtx = middlewares.WithAdminOverride(baseCtx)
-		}
-		baseCtx = loaders.WithLoaders(baseCtx, loader)
-		c.Request = c.Request.WithContext(baseCtx)
+		middlewares.WithAdminOverrideFromRequest(c)
+		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loader))
 		graph.GetGQLHandler(c.Request.Context(), gqlSchema).ServeHTTP(c.Writer, c.Request)
 	})
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
@@ -104,8 +100,12 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 	// SSE.
 	r.GET("/api/events", sse.HandleSSEConnections)
 
+	// Every non-GET REST route goes through readonlyGuard; GraphQL mutations are
+	// checked by OperationInterceptor instead.
+	readonlyGuard := middlewares.ReadonlyGuardMiddleware()
+
 	// Remote CLI handlers.
-	r.POST("/token/update", services.UpdateToken)
+	r.POST("/token/update", readonlyGuard, services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
 	r.GET("/workload", func(c *gin.Context) {
@@ -130,8 +130,8 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 		services.DescribeWorkload(c, deps.Logger, gqlExecutor, &v, deps.K8sCacheClient)
 	})
 
-	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
-	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
+	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", readonlyGuard, services.CreateSourceWithAPI)
+	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", readonlyGuard, services.DeleteSourceWithAPI)
 
 	// Diagnose download endpoint (paired with the GraphQL diagnose mutation).
 	r.GET("/diagnose/download", services.DiagnoseDownload)
