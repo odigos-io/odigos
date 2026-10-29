@@ -244,6 +244,7 @@
                           "oss/pipeline/sampling/rules/cost-reduction"
                         ]
                       },
+                      "oss/pipeline/sampling/trace-surges",
                       "oss/pipeline/sampling/configuration",
                       "oss/pipeline/sampling/examples",
                       "oss/pipeline/sampling/considerations",

@@ -18,7 +18,7 @@ A matching trace is either:
 - **Sampled down** — kept at a configured percentage. The kept fraction also skips later categories.
 
 <Note>
-  Dropped traces do not continue to other categories. If you need a noisy route to remain visible when something goes wrong (for example a failing health check), replace the Noisy rule with a **Highly Relevant** rule on errors and use a **Cost Reduction** rule to cap the successful traffic.
+  Dropped traces do not continue to other categories. If you need a noisy route to remain visible when something goes wrong (for example a failing health check), replace the Noisy rule with a **Highly Relevant** rule on errors and use a **Cost Reduction** rule to cap the successful traffic. To keep more of a rule's traces only while a service is failing or slow, add a [trace surge](../trace-surges) to the rule.
 </Note>
 
 ## Built-in rule: Kubernetes Health Probes
