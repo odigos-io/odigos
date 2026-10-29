@@ -484,8 +484,8 @@ func dslEffectiveConfig(uiMode string) *k8s.ConfigMap {
 
 // The read-only UI mode is the only thing keeping the stored credentials out of the
 // destinations query response, and it is decided per request from the effective
-// config. Note the gate fails OPEN: if the effective config cannot be read the
-// secrets are served.
+// config. The gate fails closed: if the effective config cannot be read the
+// secrets are withheld.
 func TestDestinationsQueryServesSecretValuesOnlyWhenTheUIIsWritable(t *testing.T) {
 	for _, tt := range []struct {
 		name             string
@@ -494,7 +494,7 @@ func TestDestinationsQueryServesSecretValuesOnlyWhenTheUIIsWritable(t *testing.T
 	}{
 		{name: "writable ui serves the secret", configMap: dslEffectiveConfig("default"), wantSecretServed: true},
 		{name: "readonly ui withholds the secret", configMap: dslEffectiveConfig("readonly"), wantSecretServed: false},
-		{name: "an unreadable effective config fails open", configMap: nil, wantSecretServed: true},
+		{name: "an unreadable effective config fails closed", configMap: nil, wantSecretServed: false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			objects := []runtime.Object{
