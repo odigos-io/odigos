@@ -1,0 +1,79 @@
+**Trace surges** raise the sampling of a [Noisy Operation](./rules/noisy-operation) rule while one of a service's RED metrics spikes, and put it back once the metric recovers. A rule can keep 1% of a service's traces on normal days and keep 80% of them, for that service and the services that call it, while its error rate is above 5%.
+
+<Info>
+  Trace surges need Odigos Insights (`insights.enabled`) and an on-prem token. They are off by default.
+</Info>
+
+## How it works
+
+1. **Agents count every request.** The agents of the workloads a surge rule covers record each server span's duration and status **before head sampling**, so the counts include the traces the rule drops. They export these span metrics every evaluation interval (10 seconds by default).
+2. **Node collectors send them to Odigos Insights.** Only server-span duration histograms go, with their service, workload, span name and status.
+3. **The instrumentor evaluates the rules.** Every evaluation interval, the leader instrumentor reads each service's error rate, p95 latency and request rate over the evaluation window (60 seconds by default) from Odigos Insights.
+4. **A surge starts** once a service's metric has stayed above the rule's threshold for `sustainedSeconds`. The rule's percentage is raised to `boostPercent` for the service and the in-scope workloads that call it, as the service graph shows them. The surge is listed in the `Sampling` status and in the UI.
+5. **The surge ends** once the metric has stayed at or below `recoveryThreshold` for `recoverySeconds`, and at least `minimumBoostSeconds` after it started. The rule's normal percentage comes back, and Odigos Insights keeps the surge as the rule's history.
+
+## Turn it on
+
+```yaml
+# values.yaml
+insights:
+  enabled: true
+sampling:
+  traceSurge:
+    enabled: true
+```
+
+Then add surge settings to a Noisy Operation rule, in the rule's **Trace Surge** section in the UI, or on the `Sampling` resource:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: default
+  namespace: odigos-system
+spec:
+  noisyOperations:
+    - name: shop
+      sourceScopes:
+        namespaces: [shop]
+      percentageAtMost: 1
+      surge:
+        metric: error_rate        # error_rate (percent), latency_p95 (ms) or request_rate (requests per second)
+        threshold: 5
+        sustainedSeconds: 30
+        minimumRequests: 100      # services with fewer server calls in the window are not evaluated
+        boostPercent: 80
+        recoveryThreshold: 2
+        recoverySeconds: 60
+        minimumBoostSeconds: 120
+```
+
+## Limits
+
+Surges send more data to your destinations, so Odigos bounds them. A surge that would go over a limit is **Limited**: it raises nothing until the others leave room, while its metric is still above the threshold.
+
+| Setting (`sampling.traceSurge.*`) | Default | What it bounds |
+|---|---|---|
+| `maxActiveSurges` | 10 | surges that raise sampling at the same time |
+| `maxBoostedWorkloads` | 50 | workloads sampling at a raised percentage, across all surges |
+| `maxDuration` | 30m | how long one surge lasts; its service must recover before it can surge again |
+| `evaluationWindow` | 60s | the window each evaluation measures (10s to 5m) |
+| `evaluationInterval` | 10s | how often rules are evaluated and agents report (2s to 1m) |
+
+Odigos Insights bounds the span metrics it stores with `insights.spanMetricsMaxSeries` (50,000 series per replica per 10-second slot) and `insights.spanMetricsMaxSizeMiB` (2 GiB on disk).
+
+## Supported agents
+
+A service is evaluated only when its agent records span metrics:
+
+| Language | Agent |
+|---|---|
+| Python | the `python-ebpf` distro (select it at install with the `python-ebpf` profile) |
+
+Other agents don't record span metrics for trace surges yet, so their services are not evaluated. Their traces are still raised when they call a surging service and the rule's scope covers them.
+
+## Considerations
+
+- **Downstream services are evaluated only when the rule covers them.** A service is evaluated only if its agent records span metrics, which happens when a surge rule's scope covers it.
+- **Destination RED metrics follow sampling.** In its default sampled-spans mode, the span metrics connector computes your destinations' RED metrics from sampled traces, so they rise while a surge raises sampling. Use the connector's all-spans mode to keep them steady.
+- **Python series cap.** A Python process records at most 2,048 metric series. Calls to operations past the cap are not counted toward its service.
