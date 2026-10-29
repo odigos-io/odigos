@@ -38,6 +38,7 @@ var AllProfiles = []profile.Profile{
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
 	instrumentation.PodManifestEnvVarInjection,
+	instrumentation.PythonEbpfProfile,
 
 	// golang
 	instrumentation.DisableGinProfile,

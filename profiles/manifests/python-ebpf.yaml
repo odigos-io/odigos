@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: python-ebpf
+spec:
+  ruleName: "python ebpf"
+  notes: "Auto generated rule from python-ebpf profile. Do not edit."
+  otelDistros:
+    otelDistroNames:
+    - "python-ebpf"
