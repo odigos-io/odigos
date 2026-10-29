@@ -17,7 +17,7 @@ RUN set -e && \
     done && \
     helm package helm/odigos helm/odigos-central -d /workspace/chart-artifacts
 
-FROM --platform=$BUILDPLATFORM golang:1.26.6 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.9 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION

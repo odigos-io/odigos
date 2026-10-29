@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.20
-FROM --platform=$BUILDPLATFORM golang:1.26.6-trixie AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.9-trixie AS builder
 # install the required tooling for calling `setcap` on the compiled binary
 RUN apt-get update && apt-get install -y --no-install-recommends libcap2-bin
 WORKDIR /go/src
