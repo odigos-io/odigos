@@ -212,6 +212,40 @@ type NoisyOperationRule {
   # percentage (0-100) of matching traces to keep. unset defaults to 0% (drop all).
   percentageAtMost: Float
   notes: String
+  # raises percentageAtMost while a service the rule's traces reach has a spike.
+  surge: HeadSamplingSurge
+}
+
+# a trace surge of a noisy operation rule.
+# every service the rule's traces reach is evaluated on its own (evaluation "per_service", includeDownstream),
+# from the span metrics agents record before sampling.
+type HeadSamplingSurge {
+  # a new random version on every save, to detect concurrent edits.
+  version: String!
+  includeDownstream: Boolean!
+  evaluation: String!
+  # error_rate (percent), latency_p95 (ms) or request_rate (requests per second).
+  metric: String!
+  threshold: Float!
+  sustainedSeconds: Int!
+  minimumRequests: Int!
+  boostPercent: Float!
+  recoveryThreshold: Float!
+  recoverySeconds: Int!
+  minimumBoostSeconds: Int!
+}
+
+input HeadSamplingSurgeInput {
+  includeDownstream: Boolean!
+  evaluation: String!
+  metric: String!
+  threshold: Float!
+  sustainedSeconds: Int!
+  minimumRequests: Int!
+  boostPercent: Float!
+  recoveryThreshold: Float!
+  recoverySeconds: Int!
+  minimumBoostSeconds: Int!
 }
 
 type HighlyRelevantOperationRule {
@@ -313,6 +347,16 @@ extend type Mutation {
     rule: NoisyOperationRuleInput!
   ): NoisyOperationRule!
   deleteNoisyOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
+  # create (no ruleId) or update a noisy operation rule together with its surge. a null surge
+  # removes it, also while trace surges cannot run. surgeVersion is the version of the rule's surge
+  # the edit started from, empty when it had none: the save fails if the stored surge changed since.
+  saveHeadSamplingRule(
+    samplingId: ID!
+    ruleId: ID
+    rule: NoisyOperationRuleInput!
+    surge: HeadSamplingSurgeInput
+    surgeVersion: String!
+  ): NoisyOperationRule!
 
   # ---- Highly relevant operations CRUD ----
   createHighlyRelevantOperationRule(

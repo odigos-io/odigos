@@ -1,6 +1,8 @@
 package sampling
 
 import (
+	"fmt"
+
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -133,6 +135,7 @@ func convertNoisyOperationToModel(rule *v1alpha1.NoisyOperation) *model.NoisyOpe
 		Operation:        headSamplingOperationMatcherCRDToModel(rule.Operation),
 		PercentageAtMost: rule.PercentageAtMost,
 		Notes:            services.StringPtrIfNotEmpty(rule.Notes),
+		Surge:            convertSurgeToModel(rule.Surge),
 	}
 }
 
@@ -289,4 +292,74 @@ func tailSamplingOperationMatcherCRDToModel(matcher *commonapisampling.TailSampl
 		}
 	}
 	return result
+}
+
+// trace surges are evaluated per service, including the services the rule's traces reach.
+const (
+	surgeEvaluationPerService = "per_service"
+)
+
+func convertSurgeToModel(surge *v1alpha1.TraceSurgeSettings) *model.HeadSamplingSurge {
+	if surge == nil {
+		return nil
+	}
+	return &model.HeadSamplingSurge{
+		Version:             surge.Version,
+		IncludeDownstream:   true,
+		Evaluation:          surgeEvaluationPerService,
+		Metric:              string(surge.Metric),
+		Threshold:           surge.Threshold,
+		SustainedSeconds:    surge.SustainedSeconds,
+		MinimumRequests:     surge.MinimumRequests,
+		BoostPercent:        surge.BoostPercent,
+		RecoveryThreshold:   surge.RecoveryThreshold,
+		RecoverySeconds:     surge.RecoverySeconds,
+		MinimumBoostSeconds: surge.MinimumBoostSeconds,
+	}
+}
+
+func surgeFromInput(input *model.HeadSamplingSurgeInput, version string) *v1alpha1.TraceSurgeSettings {
+	if input == nil {
+		return nil
+	}
+	return &v1alpha1.TraceSurgeSettings{
+		Version:             version,
+		Metric:              v1alpha1.TraceSurgeMetric(input.Metric),
+		Threshold:           input.Threshold,
+		SustainedSeconds:    input.SustainedSeconds,
+		MinimumRequests:     input.MinimumRequests,
+		BoostPercent:        input.BoostPercent,
+		RecoveryThreshold:   input.RecoveryThreshold,
+		RecoverySeconds:     input.RecoverySeconds,
+		MinimumBoostSeconds: input.MinimumBoostSeconds,
+	}
+}
+
+// validateSurge mirrors the UI's validation of a surge for a rule whose normal percentage is normalPercent.
+func validateSurge(input *model.HeadSamplingSurgeInput, normalPercent float64) error {
+	if !input.IncludeDownstream || input.Evaluation != surgeEvaluationPerService {
+		return fmt.Errorf("a trace surge evaluates every service separately, including downstream services")
+	}
+	switch v1alpha1.TraceSurgeMetric(input.Metric) {
+	case v1alpha1.TraceSurgeMetricErrorRate:
+		if input.Threshold > 100 {
+			return fmt.Errorf("an error rate threshold is at most 100%%")
+		}
+	case v1alpha1.TraceSurgeMetricLatencyP95, v1alpha1.TraceSurgeMetricRequestRate:
+	default:
+		return fmt.Errorf("unknown trace surge metric %q", input.Metric)
+	}
+	switch {
+	case normalPercent <= 0 || normalPercent > 100:
+		return fmt.Errorf("a rule with a trace surge needs a normal percentage above 0%% and at most 100%%")
+	case input.Threshold <= 0:
+		return fmt.Errorf("the trace surge threshold must be above 0")
+	case input.RecoveryThreshold < 0 || input.RecoveryThreshold > input.Threshold:
+		return fmt.Errorf("the recovery threshold must be at least 0 and at most the threshold")
+	case input.BoostPercent <= normalPercent || input.BoostPercent > 100:
+		return fmt.Errorf("the surge percentage must be above the normal percentage and at most 100%%")
+	case input.SustainedSeconds <= 0 || input.RecoverySeconds <= 0 || input.MinimumBoostSeconds <= 0 || input.MinimumRequests <= 0:
+		return fmt.Errorf("the trace surge durations and minimum requests must be positive")
+	}
+	return nil
 }
