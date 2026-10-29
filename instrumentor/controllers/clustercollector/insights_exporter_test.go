@@ -83,6 +83,11 @@ func TestAddInsightsGatewayExporter_EnabledAppendsExporterToRootPipeline(t *test
 	assert.Equal(t, "none", exp["compression"])
 	tls, _ := exp["tls"].(config.GenericMap)
 	assert.Equal(t, true, tls["insecure"])
+	// max_size must stay unset so a trace is never split across requests.
+	queue, _ := exp["sending_queue"].(config.GenericMap)
+	batch, _ := queue["batch"].(config.GenericMap)
+	assert.Equal(t, 1000, batch["min_size"])
+	assert.NotContains(t, batch, "max_size")
 
 	// The root pipeline must have the new exporter appended after the
 	// existing destination router, and its processor chain must be untouched.

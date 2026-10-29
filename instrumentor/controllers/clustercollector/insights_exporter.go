@@ -52,6 +52,14 @@ func addInsightsGatewayExporter(c *config.Config, odigosNs string, insights *com
 		"retry_on_failure": config.GenericMap{
 			"enabled": false,
 		},
+		// groupbytrace emits one trace per call; batch them into fewer Exports.
+		// min_size is below the 8192 default because insights handles each Export
+		// serially. max_size stays unset so a trace is never split across Exports.
+		"sending_queue": config.GenericMap{
+			"batch": config.GenericMap{
+				"min_size": 1000,
+			},
+		},
 	}
 
 	rootPipeline.Exporters = append(rootPipeline.Exporters, pipeline.InsightsGatewayExporter)
