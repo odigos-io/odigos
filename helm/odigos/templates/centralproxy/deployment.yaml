@@ -17,6 +17,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: central-proxy
+      {{- if and .Values.centralProxy.connectionToken (not .Values.centralProxy.connectionTokenSecretName) }}
+      annotations:
+        checksum/connection-token: {{ .Values.centralProxy.connectionToken | sha256sum }}
+      {{- end }}
     spec:
       serviceAccountName: central-proxy
       {{- if .Values.topologySpreadConstraints }}
@@ -82,6 +86,19 @@ spec:
               value: {{ .Values.clusterName | quote }}
             - name: CENTRAL_BACKEND_URL
               value: {{ .Values.centralProxy.centralBackendURL | quote }}
+            {{- $connectionTokenSecretName := .Values.centralProxy.connectionTokenSecretName | default (ternary "central-proxy-connection-token" "" (not (empty .Values.centralProxy.connectionToken))) }}
+            {{- if $connectionTokenSecretName }}
+            - name: CENTRAL_CONNECTION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $connectionTokenSecretName }}
+                  key: token
+                  optional: true
+            {{- end }}
+            {{- if .Values.centralProxy.allowInsecureToken }}
+            - name: CENTRAL_ALLOW_INSECURE_TOKEN
+              value: "true"
+            {{- end }}
             {{- if .Values.centralProxy.tls.skipVerify }}
             - name: CENTRAL_SKIP_TLS_VERIFY
               value: "true"

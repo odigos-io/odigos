@@ -162,11 +162,29 @@
           "required": [],
           "title": "affinity"
         },
+        "allowInsecureToken": {
+          "default": "false",
+          "description": "Allow sending the Central connection token over unencrypted ws:// to a non-cluster host; prefer an https centralBackendURL",
+          "required": [],
+          "title": "allowInsecureToken"
+        },
         "centralBackendURL": {
           "default": "",
           "description": "Central backend URL where this proxy will forward data",
           "required": [],
           "title": "centralBackendURL"
+        },
+        "connectionToken": {
+          "default": "",
+          "description": "Odigos Central connection token (odct_\u003cid\u003e_\u003csecret\u003e) the proxy presents when connecting to Central.\nStored in the Secret 'central-proxy-connection-token' (key: 'token'). Ignored when connectionTokenSecretName is set.",
+          "required": [],
+          "title": "connectionToken"
+        },
+        "connectionTokenSecretName": {
+          "default": "",
+          "description": "Name of an existing Secret containing the Central connection token (key: 'token'). Takes precedence over connectionToken. Restart central-proxy after rotating the Secret.",
+          "required": [],
+          "title": "connectionTokenSecretName"
         },
         "maxMessageSize": {
           "default": "33554432",
