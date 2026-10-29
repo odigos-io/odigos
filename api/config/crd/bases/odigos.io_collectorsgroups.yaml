@@ -78,6 +78,23 @@ spec:
                   it allows for the collector group reconciler to be simplified,
                   and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
                 properties:
+                  agentSpanMetrics:
+                    description: |-
+                      if not nil for node collector, some agents record span metrics themselves: because span
+                      metrics in the agents are enabled, or a trace surge rule covers them. the node collector
+                      routes them, and its span metrics connector does not count the spans they counted.
+                    properties:
+                      destinations:
+                        description: |-
+                          span metrics in the agents are enabled (metricsSources.agentMetrics.spanMetrics.enabled):
+                          they go to the metrics destinations.
+                        type: boolean
+                      insights:
+                        description: |-
+                          trace surge rules exist and odigos insights is on: the agents the rules cover record span
+                          metrics, which go to odigos insights.
+                        type: boolean
+                    type: object
                   agentsTelemetry:
                     description: |-
                       this part controls the metrics which are received from agents in the otlp receiver.
