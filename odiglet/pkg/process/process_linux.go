@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -113,4 +114,46 @@ func GroupByPodContainer(pcs []PodContainer) (map[PodContainerKey]map[int]struct
 	}
 	// fallback to /proc/<pid>/mountinfo parsing
 	return groupByProcMountInfo(pcs)
+}
+
+// PodContainerOfPid returns the pod and container that pid runs in, from the kubelet's bind mount of
+// the container's termination log, <kubelet root>/pods/<pod uid>/containers/<container name>/<id>,
+// in /proc/<pid>/mountinfo (the mount groupByProcMountInfo matches). It needs no env var, so it also
+// resolves a process in a pod that Odigos did not inject.
+func PodContainerOfPid(pid int) (PodContainerKey, bool) {
+	f, err := os.Open(process.ProcFilePath(pid, "mountinfo"))
+	if err != nil {
+		return PodContainerKey{}, false
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		// The root of the mount in its file system is the 4th field (proc(5)).
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 4 {
+			continue
+		}
+		if key, ok := podContainerOfMountRoot(fields[3]); ok {
+			return key, true
+		}
+	}
+	return PodContainerKey{}, false
+}
+
+// podContainerOfMountRoot parses a mount root of the form .../pods/<pod uid>/containers/<container name>/<id>.
+func podContainerOfMountRoot(root string) (PodContainerKey, bool) {
+	i := strings.LastIndex(root, "/pods/")
+	if i < 0 {
+		return PodContainerKey{}, false
+	}
+	uid, rest, ok := strings.Cut(root[i+len("/pods/"):], "/containers/")
+	if !ok || uid == "" || strings.Contains(uid, "/") {
+		return PodContainerKey{}, false
+	}
+	name, _, ok := strings.Cut(rest, "/")
+	if !ok || name == "" {
+		return PodContainerKey{}, false
+	}
+	return PodContainerKey{PodUID: uid, ContainerName: name}, true
 }
