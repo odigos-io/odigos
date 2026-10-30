@@ -41,6 +41,8 @@ func mergeCustomInstrumentations(existing *instrumentationrules.CustomInstrument
 		existing.Java = append(existing.Java, incoming.Java...)
 	case common.PhpProgrammingLanguage:
 		existing.Php = append(existing.Php, incoming.Php...)
+	case common.PythonProgrammingLanguage:
+		existing.Python = append(existing.Python, incoming.Python...)
 	}
 
 	return existing

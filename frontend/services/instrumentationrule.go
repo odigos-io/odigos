@@ -547,6 +547,32 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 		}
 	}
 
+	if input.CustomInstrumentations.Python != nil {
+		customInstrumentations.Python = make([]instrumentationrules.PythonCustomProbeWithMetadata, 0, len(input.CustomInstrumentations.Python))
+		pythonSeen := make(map[instrumentationrules.PythonCustomProbeWithMetadata]struct{})
+		for _, probe := range input.CustomInstrumentations.Python {
+			if probe == nil {
+				continue
+			}
+			apiProbe := instrumentationrules.PythonCustomProbeWithMetadata{}
+			if probe.Module != nil {
+				apiProbe.Module = *probe.Module
+			}
+			if probe.Qualname != nil {
+				apiProbe.Qualname = *probe.Qualname
+			}
+			if probe.ExpiresAt != nil {
+				apiProbe.ExpiresAt = *probe.ExpiresAt
+			}
+			apiProbe.CustomProbeMetadata = customProbeMetadataFromInput(probe.Notes, probe.Category, probe.AddedAt)
+			if _, dup := pythonSeen[apiProbe]; dup {
+				continue
+			}
+			pythonSeen[apiProbe] = struct{}{}
+			customInstrumentations.Python = append(customInstrumentations.Python, apiProbe)
+		}
+	}
+
 	if err := customInstrumentations.Verify(); err != nil {
 		return nil, err
 	}
@@ -956,6 +982,19 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			notes, category, addedAt := customProbeMetadataModel(cppProbe.CustomProbeMetadata)
 			customInstruAsGqlModel.Cpp = append(customInstruAsGqlModel.Cpp, &model.CppCustomProbe{
 				Signature: &cppProbe.Signature,
+				Notes:     notes,
+				Category:  category,
+				AddedAt:   addedAt,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Python != nil {
+		for _, pythonProbe := range customInstruAsInstruRule.Python {
+			notes, category, addedAt := customProbeMetadataModel(pythonProbe.CustomProbeMetadata)
+			customInstruAsGqlModel.Python = append(customInstruAsGqlModel.Python, &model.PythonCustomProbe{
+				Module:    &pythonProbe.Module,
+				Qualname:  &pythonProbe.Qualname,
+				ExpiresAt: StringPtrIfNotEmpty(pythonProbe.ExpiresAt),
 				Notes:     notes,
 				Category:  category,
 				AddedAt:   addedAt,

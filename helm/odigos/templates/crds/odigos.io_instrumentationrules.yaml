@@ -238,6 +238,49 @@ spec:
                       - functionName
                       type: object
                     type: array
+                  python:
+                    items:
+                      description: PythonCustomProbeWithMetadata is a Python probe
+                        plus rule-only metadata.
+                      properties:
+                        addedAt:
+                          description: AddedAt is the time this probe was added, in
+                            RFC3339 form.
+                          format: date-time
+                          type: string
+                        category:
+                          description: Category classifies why this probe was added.
+                          enum:
+                          - observability
+                          - security
+                          - performance
+                          type: string
+                        expiresAt:
+                          description: |-
+                            ExpiresAt is the time, in RFC3339 form, after which the probe is no longer applied.
+                            Empty means it does not expire.
+                          format: date-time
+                          type: string
+                        module:
+                          description: |-
+                            Module is the function's module, as its __module__ attribute names it (ie "app.billing").
+                            Functions of a script run directly are in "__main__".
+                          type: string
+                        notes:
+                          description: |-
+                            Notes is a free-form text field that allows you to attach notes regarding this probe for convenience.
+                            For example: why it was added. Odigos does not use or assume any meaning from this field.
+                          type: string
+                        qualname:
+                          description: |-
+                            Qualname is the function's qualified name, as its __qualname__ attribute names it: "calculate"
+                            for a module-level function, "Invoice.calculate" for a method.
+                          type: string
+                      required:
+                      - module
+                      - qualname
+                      type: object
+                    type: array
                 type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,

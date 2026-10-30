@@ -118,3 +118,77 @@ func TestPhpCustomProbeString(t *testing.T) {
 		t.Fatalf("String() = %q, want %q", got, "bar")
 	}
 }
+
+func TestPythonCustomProbeVerify(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		probe   PythonCustomProbe
+		wantErr bool
+	}{
+		{
+			name:    "method",
+			probe:   PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate"},
+			wantErr: false,
+		},
+		{
+			name:    "with expiry",
+			probe:   PythonCustomProbe{Module: "__main__", Qualname: "handler", ExpiresAt: "2026-10-30T12:00:00Z"},
+			wantErr: false,
+		},
+		{
+			name:    "missing module",
+			probe:   PythonCustomProbe{Qualname: "handler"},
+			wantErr: true,
+		},
+		{
+			name:    "missing qualname",
+			probe:   PythonCustomProbe{Module: "app.billing"},
+			wantErr: true,
+		},
+		{
+			name:    "bad expiry",
+			probe:   PythonCustomProbe{Module: "app.billing", Qualname: "handler", ExpiresAt: "tomorrow"},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := tt.probe.Verify()
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Verify() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestPythonToConfigDropsMetadata(t *testing.T) {
+	t.Parallel()
+
+	rule := &CustomInstrumentationsWithMetadata{
+		Python: []PythonCustomProbeWithMetadata{{
+			PythonCustomProbe:   PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate", ExpiresAt: "2026-10-30T12:00:00Z"},
+			CustomProbeMetadata: CustomProbeMetadata{Notes: "slow checkout", AddedAt: "2026-10-30T11:00:00Z"},
+		}},
+	}
+	if err := rule.Verify(); err != nil {
+		t.Fatalf("Verify() = %v", err)
+	}
+	cfg := rule.ToConfig()
+	if len(cfg.Python) != 1 || cfg.Python[0] != rule.Python[0].PythonCustomProbe {
+		t.Fatalf("python probes = %+v", cfg.Python)
+	}
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatalf("marshal config: %v", err)
+	}
+	if strings.Contains(string(raw), "notes") || strings.Contains(string(raw), "addedAt") {
+		t.Fatalf("config json includes metadata: %s", raw)
+	}
+	if !strings.Contains(string(raw), `"python":[{"module":"app.billing","qualname":"Invoice.calculate","expiresAt":"2026-10-30T12:00:00Z"}]`) {
+		t.Fatalf("config json = %s", raw)
+	}
+}

@@ -364,6 +364,7 @@ type CustomInstrumentations struct {
 	Java   []*JavaCustomProbe   `json:"java,omitempty"`
 	Php    []*PhpCustomProbe    `json:"php,omitempty"`
 	Cpp    []*CppCustomProbe    `json:"cpp,omitempty"`
+	Python []*PythonCustomProbe `json:"python,omitempty"`
 }
 
 type CustomInstrumentationsInput struct {
@@ -371,6 +372,7 @@ type CustomInstrumentationsInput struct {
 	Java   []*JavaCustomProbeInput   `json:"java,omitempty"`
 	Php    []*PhpCustomProbeInput    `json:"php,omitempty"`
 	Cpp    []*CppCustomProbeInput    `json:"cpp,omitempty"`
+	Python []*PythonCustomProbeInput `json:"python,omitempty"`
 }
 
 type CustomReadDataLabel struct {
@@ -2916,6 +2918,24 @@ type ProfilingSlots struct {
 type ProvenanceEntry struct {
 	HelmPath       string `json:"helmPath"`
 	ReconciledFrom string `json:"reconciledFrom"`
+}
+
+type PythonCustomProbe struct {
+	Module    *string              `json:"module,omitempty"`
+	Qualname  *string              `json:"qualname,omitempty"`
+	ExpiresAt *string              `json:"expiresAt,omitempty"`
+	Notes     *string              `json:"notes,omitempty"`
+	Category  *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt   *string              `json:"addedAt,omitempty"`
+}
+
+type PythonCustomProbeInput struct {
+	Module    *string              `json:"module,omitempty"`
+	Qualname  *string              `json:"qualname,omitempty"`
+	ExpiresAt *string              `json:"expiresAt,omitempty"`
+	Notes     *string              `json:"notes,omitempty"`
+	Category  *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt   *string              `json:"addedAt,omitempty"`
 }
 
 type Query struct {

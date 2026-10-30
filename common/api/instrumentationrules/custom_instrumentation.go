@@ -65,6 +65,7 @@ type CustomInstrumentations struct {
 	Java   []JavaCustomProbe   `json:"java,omitempty" yaml:"java,omitempty"`
 	Cpp    []CppCustomProbe    `json:"cpp,omitempty" yaml:"cpp,omitempty"`
 	Php    []PhpCustomProbe    `json:"php,omitempty" yaml:"php,omitempty"`
+	Python []PythonCustomProbe `json:"python,omitempty" yaml:"python,omitempty"`
 }
 
 // Verify iterates all custom instrumentations' probes and validates them.
@@ -91,6 +92,12 @@ func (ci *CustomInstrumentations) Verify() error {
 			return fmt.Errorf("invalid configuration for php custom instrumentation: %w", err)
 		}
 	}
+	// Validate Python probes
+	for _, p := range ci.Python {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for python custom instrumentation: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -103,6 +110,7 @@ type CustomInstrumentationsWithMetadata struct {
 	Java   []JavaCustomProbeWithMetadata   `json:"java,omitempty" yaml:"java,omitempty"`
 	Cpp    []CppCustomProbeWithMetadata    `json:"cpp,omitempty" yaml:"cpp,omitempty"`
 	Php    []PhpCustomProbeWithMetadata    `json:"php,omitempty" yaml:"php,omitempty"`
+	Python []PythonCustomProbeWithMetadata `json:"python,omitempty" yaml:"python,omitempty"`
 }
 
 func (ci *CustomInstrumentationsWithMetadata) Verify() error {
@@ -127,6 +135,11 @@ func (ci *CustomInstrumentationsWithMetadata) Verify() error {
 	for _, p := range ci.Cpp {
 		if err := p.Verify(); err != nil {
 			return fmt.Errorf("invalid configuration for cpp custom instrumentation: %w", err)
+		}
+	}
+	for _, p := range ci.Python {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for python custom instrumentation: %w", err)
 		}
 	}
 	return nil
@@ -160,6 +173,12 @@ func (ci *CustomInstrumentationsWithMetadata) ToConfig() *CustomInstrumentations
 		out.Php = make([]PhpCustomProbe, len(ci.Php))
 		for i := range ci.Php {
 			out.Php[i] = ci.Php[i].PhpCustomProbe
+		}
+	}
+	if ci.Python != nil {
+		out.Python = make([]PythonCustomProbe, len(ci.Python))
+		for i := range ci.Python {
+			out.Python[i] = ci.Python[i].PythonCustomProbe
 		}
 	}
 	return out
@@ -324,4 +343,56 @@ func (pcp *PhpCustomProbe) String() string {
 		return pcp.FunctionName
 	}
 	return fmt.Sprintf("%s::%s", pcp.ClassName, pcp.FunctionName)
+}
+
+// PythonCustomProbe contains the details for a custom probe for Python applications: a function
+// identified by the module that defines it and its qualified name.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type PythonCustomProbe struct {
+	// Module is the function's module, as its __module__ attribute names it (ie "app.billing").
+	// Functions of a script run directly are in "__main__".
+	Module string `json:"module" yaml:"module"`
+	// Qualname is the function's qualified name, as its __qualname__ attribute names it: "calculate"
+	// for a module-level function, "Invoice.calculate" for a method.
+	Qualname string `json:"qualname" yaml:"qualname"`
+	// ExpiresAt is the time, in RFC3339 form, after which the probe is no longer applied.
+	// Empty means it does not expire.
+	// +kubebuilder:validation:Format=date-time
+	ExpiresAt string `json:"expiresAt,omitempty" yaml:"expiresAt,omitempty"`
+}
+
+// PythonCustomProbeWithMetadata is a Python probe plus rule-only metadata.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type PythonCustomProbeWithMetadata struct {
+	PythonCustomProbe   `json:",inline"`
+	CustomProbeMetadata `json:",inline"`
+}
+
+// For python we require both the module and the qualified name
+func (pcp *PythonCustomProbe) Verify() error {
+	if pcp.Module == "" {
+		return errors.New("module is required")
+	}
+	if pcp.Qualname == "" {
+		return errors.New("qualname is required")
+	}
+	if pcp.ExpiresAt != "" {
+		if _, err := time.Parse(time.RFC3339, pcp.ExpiresAt); err != nil {
+			return fmt.Errorf("expiresAt must be an RFC3339 timestamp: %w", err)
+		}
+	}
+	return nil
+}
+
+func (pcp *PythonCustomProbeWithMetadata) Verify() error {
+	if err := pcp.CustomProbeMetadata.Verify(); err != nil {
+		return err
+	}
+	return pcp.PythonCustomProbe.Verify()
+}
+
+func (pcp *PythonCustomProbe) String() string {
+	return fmt.Sprintf("%s:%s", pcp.Module, pcp.Qualname)
 }
