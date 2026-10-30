@@ -348,8 +348,7 @@ func TestPythonCustomInstrumentationsRoundTrip(t *testing.T) {
 	notes := "slow checkout"
 	module := "app.billing"
 	qualname := "Invoice.calculate"
-	expiresAt := "2026-10-30T12:00:00Z"
-	probe := &model.PythonCustomProbeInput{Module: &module, Qualname: &qualname, ExpiresAt: &expiresAt, Notes: &notes}
+	probe := &model.PythonCustomProbeInput{Module: &module, Qualname: &qualname, Notes: &notes}
 
 	got, err := getCustomInstrumentationsInput(model.InstrumentationRuleInput{
 		CustomInstrumentations: &model.CustomInstrumentationsInput{
@@ -358,7 +357,7 @@ func TestPythonCustomInstrumentationsRoundTrip(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, []apirules.PythonCustomProbeWithMetadata{{
-		PythonCustomProbe:   apirules.PythonCustomProbe{Module: module, Qualname: qualname, ExpiresAt: expiresAt},
+		PythonCustomProbe:   apirules.PythonCustomProbe{Module: module, Qualname: qualname},
 		CustomProbeMetadata: apirules.CustomProbeMetadata{Notes: notes},
 	}}, got.Python)
 
@@ -366,7 +365,6 @@ func TestPythonCustomInstrumentationsRoundTrip(t *testing.T) {
 	require.Len(t, out.Python, 1)
 	require.Equal(t, &module, out.Python[0].Module)
 	require.Equal(t, &qualname, out.Python[0].Qualname)
-	require.Equal(t, &expiresAt, out.Python[0].ExpiresAt)
 	require.Equal(t, &notes, out.Python[0].Notes)
 
 	_, err = getCustomInstrumentationsInput(model.InstrumentationRuleInput{

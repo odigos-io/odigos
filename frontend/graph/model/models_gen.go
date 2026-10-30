@@ -2921,21 +2921,19 @@ type ProvenanceEntry struct {
 }
 
 type PythonCustomProbe struct {
-	Module    *string              `json:"module,omitempty"`
-	Qualname  *string              `json:"qualname,omitempty"`
-	ExpiresAt *string              `json:"expiresAt,omitempty"`
-	Notes     *string              `json:"notes,omitempty"`
-	Category  *CustomProbeCategory `json:"category,omitempty"`
-	AddedAt   *string              `json:"addedAt,omitempty"`
+	Module   *string              `json:"module,omitempty"`
+	Qualname *string              `json:"qualname,omitempty"`
+	Notes    *string              `json:"notes,omitempty"`
+	Category *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt  *string              `json:"addedAt,omitempty"`
 }
 
 type PythonCustomProbeInput struct {
-	Module    *string              `json:"module,omitempty"`
-	Qualname  *string              `json:"qualname,omitempty"`
-	ExpiresAt *string              `json:"expiresAt,omitempty"`
-	Notes     *string              `json:"notes,omitempty"`
-	Category  *CustomProbeCategory `json:"category,omitempty"`
-	AddedAt   *string              `json:"addedAt,omitempty"`
+	Module   *string              `json:"module,omitempty"`
+	Qualname *string              `json:"qualname,omitempty"`
+	Notes    *string              `json:"notes,omitempty"`
+	Category *CustomProbeCategory `json:"category,omitempty"`
+	AddedAt  *string              `json:"addedAt,omitempty"`
 }
 
 type Query struct {

@@ -2218,12 +2218,11 @@ type ComplexityRoot struct {
 	}
 
 	PythonCustomProbe struct {
-		AddedAt   func(childComplexity int) int
-		Category  func(childComplexity int) int
-		ExpiresAt func(childComplexity int) int
-		Module    func(childComplexity int) int
-		Notes     func(childComplexity int) int
-		Qualname  func(childComplexity int) int
+		AddedAt  func(childComplexity int) int
+		Category func(childComplexity int) int
+		Module   func(childComplexity int) int
+		Notes    func(childComplexity int) int
+		Qualname func(childComplexity int) int
 	}
 
 	Query struct {
@@ -13115,13 +13114,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PythonCustomProbe.Category(childComplexity), true
-
-	case "PythonCustomProbe.expiresAt":
-		if e.complexity.PythonCustomProbe.ExpiresAt == nil {
-			break
-		}
-
-		return e.complexity.PythonCustomProbe.ExpiresAt(childComplexity), true
 
 	case "PythonCustomProbe.module":
 		if e.complexity.PythonCustomProbe.Module == nil {
@@ -28828,8 +28820,6 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_python(_ context
 				return ec.fieldContext_PythonCustomProbe_module(ctx, field)
 			case "qualname":
 				return ec.fieldContext_PythonCustomProbe_qualname(ctx, field)
-			case "expiresAt":
-				return ec.fieldContext_PythonCustomProbe_expiresAt(ctx, field)
 			case "notes":
 				return ec.fieldContext_PythonCustomProbe_notes(ctx, field)
 			case "category":
@@ -85813,47 +85803,6 @@ func (ec *executionContext) fieldContext_PythonCustomProbe_qualname(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _PythonCustomProbe_expiresAt(ctx context.Context, field graphql.CollectedField, obj *model.PythonCustomProbe) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PythonCustomProbe_expiresAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ExpiresAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PythonCustomProbe_expiresAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PythonCustomProbe",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _PythonCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.PythonCustomProbe) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PythonCustomProbe_notes(ctx, field)
 	if err != nil {
@@ -100649,7 +100598,7 @@ func (ec *executionContext) unmarshalInputPythonCustomProbeInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"module", "qualname", "expiresAt", "notes", "category", "addedAt"}
+	fieldsInOrder := [...]string{"module", "qualname", "notes", "category", "addedAt"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -100670,13 +100619,6 @@ func (ec *executionContext) unmarshalInputPythonCustomProbeInput(ctx context.Con
 				return it, err
 			}
 			it.Qualname = data
-		case "expiresAt":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAt"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExpiresAt = data
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -117392,8 +117334,6 @@ func (ec *executionContext) _PythonCustomProbe(ctx context.Context, sel ast.Sele
 			out.Values[i] = ec._PythonCustomProbe_module(ctx, field, obj)
 		case "qualname":
 			out.Values[i] = ec._PythonCustomProbe_qualname(ctx, field, obj)
-		case "expiresAt":
-			out.Values[i] = ec._PythonCustomProbe_expiresAt(ctx, field, obj)
 		case "notes":
 			out.Values[i] = ec._PythonCustomProbe_notes(ctx, field, obj)
 		case "category":

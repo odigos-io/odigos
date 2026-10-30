@@ -198,7 +198,6 @@ type CppCustomProbe {
 type PythonCustomProbe {
   module: String
   qualname: String
-  expiresAt: String
   notes: String
   category: CustomProbeCategory
   addedAt: String
@@ -248,7 +247,6 @@ input CppCustomProbeInput {
 input PythonCustomProbeInput {
   module: String
   qualname: String
-  expiresAt: String
   notes: String
   category: CustomProbeCategory
   addedAt: String

@@ -133,8 +133,8 @@ func TestPythonCustomProbeVerify(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "with expiry",
-			probe:   PythonCustomProbe{Module: "__main__", Qualname: "handler", ExpiresAt: "2026-10-30T12:00:00Z"},
+			name:    "script function",
+			probe:   PythonCustomProbe{Module: "__main__", Qualname: "handler"},
 			wantErr: false,
 		},
 		{
@@ -145,11 +145,6 @@ func TestPythonCustomProbeVerify(t *testing.T) {
 		{
 			name:    "missing qualname",
 			probe:   PythonCustomProbe{Module: "app.billing"},
-			wantErr: true,
-		},
-		{
-			name:    "bad expiry",
-			probe:   PythonCustomProbe{Module: "app.billing", Qualname: "handler", ExpiresAt: "tomorrow"},
 			wantErr: true,
 		},
 	}
@@ -170,7 +165,7 @@ func TestPythonToConfigDropsMetadata(t *testing.T) {
 
 	rule := &CustomInstrumentationsWithMetadata{
 		Python: []PythonCustomProbeWithMetadata{{
-			PythonCustomProbe:   PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate", ExpiresAt: "2026-10-30T12:00:00Z"},
+			PythonCustomProbe:   PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate"},
 			CustomProbeMetadata: CustomProbeMetadata{Notes: "slow checkout", AddedAt: "2026-10-30T11:00:00Z"},
 		}},
 	}
@@ -188,7 +183,7 @@ func TestPythonToConfigDropsMetadata(t *testing.T) {
 	if strings.Contains(string(raw), "notes") || strings.Contains(string(raw), "addedAt") {
 		t.Fatalf("config json includes metadata: %s", raw)
 	}
-	if !strings.Contains(string(raw), `"python":[{"module":"app.billing","qualname":"Invoice.calculate","expiresAt":"2026-10-30T12:00:00Z"}]`) {
+	if !strings.Contains(string(raw), `"python":[{"module":"app.billing","qualname":"Invoice.calculate"}]`) {
 		t.Fatalf("config json = %s", raw)
 	}
 }

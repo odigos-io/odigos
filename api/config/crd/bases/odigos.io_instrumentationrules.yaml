@@ -255,12 +255,6 @@ spec:
                           - security
                           - performance
                           type: string
-                        expiresAt:
-                          description: |-
-                            ExpiresAt is the time, in RFC3339 form, after which the probe is no longer applied.
-                            Empty means it does not expire.
-                          format: date-time
-                          type: string
                         module:
                           description: |-
                             Module is the function's module, as its __module__ attribute names it (ie "app.billing").

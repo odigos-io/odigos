@@ -18,7 +18,7 @@ func TestCalculateCustomInstrumentationsConfigPython(t *testing.T) {
 	supported := &distro.Traces{CustomInstrumentations: &distro.CustomInstrumentations{Supported: true}}
 	pythonDistro := &distro.OtelDistro{Language: common.PythonProgrammingLanguage, Traces: supported}
 	billing := instrumentationrules.PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate"}
-	handler := instrumentationrules.PythonCustomProbe{Module: "__main__", Qualname: "handler", ExpiresAt: "2026-10-30T12:00:00Z"}
+	handler := instrumentationrules.PythonCustomProbe{Module: "__main__", Qualname: "handler"}
 	rules := []odigosv1.InstrumentationRule{
 		customRule(&instrumentationrules.CustomInstrumentationsWithMetadata{
 			Python: []instrumentationrules.PythonCustomProbeWithMetadata{{

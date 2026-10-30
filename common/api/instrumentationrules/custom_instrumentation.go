@@ -356,10 +356,6 @@ type PythonCustomProbe struct {
 	// Qualname is the function's qualified name, as its __qualname__ attribute names it: "calculate"
 	// for a module-level function, "Invoice.calculate" for a method.
 	Qualname string `json:"qualname" yaml:"qualname"`
-	// ExpiresAt is the time, in RFC3339 form, after which the probe is no longer applied.
-	// Empty means it does not expire.
-	// +kubebuilder:validation:Format=date-time
-	ExpiresAt string `json:"expiresAt,omitempty" yaml:"expiresAt,omitempty"`
 }
 
 // PythonCustomProbeWithMetadata is a Python probe plus rule-only metadata.
@@ -377,11 +373,6 @@ func (pcp *PythonCustomProbe) Verify() error {
 	}
 	if pcp.Qualname == "" {
 		return errors.New("qualname is required")
-	}
-	if pcp.ExpiresAt != "" {
-		if _, err := time.Parse(time.RFC3339, pcp.ExpiresAt); err != nil {
-			return fmt.Errorf("expiresAt must be an RFC3339 timestamp: %w", err)
-		}
 	}
 	return nil
 }

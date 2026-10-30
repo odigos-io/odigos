@@ -561,9 +561,6 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 			if probe.Qualname != nil {
 				apiProbe.Qualname = *probe.Qualname
 			}
-			if probe.ExpiresAt != nil {
-				apiProbe.ExpiresAt = *probe.ExpiresAt
-			}
 			apiProbe.CustomProbeMetadata = customProbeMetadataFromInput(probe.Notes, probe.Category, probe.AddedAt)
 			if _, dup := pythonSeen[apiProbe]; dup {
 				continue
@@ -992,12 +989,11 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 		for _, pythonProbe := range customInstruAsInstruRule.Python {
 			notes, category, addedAt := customProbeMetadataModel(pythonProbe.CustomProbeMetadata)
 			customInstruAsGqlModel.Python = append(customInstruAsGqlModel.Python, &model.PythonCustomProbe{
-				Module:    &pythonProbe.Module,
-				Qualname:  &pythonProbe.Qualname,
-				ExpiresAt: StringPtrIfNotEmpty(pythonProbe.ExpiresAt),
-				Notes:     notes,
-				Category:  category,
-				AddedAt:   addedAt,
+				Module:   &pythonProbe.Module,
+				Qualname: &pythonProbe.Qualname,
+				Notes:    notes,
+				Category: category,
+				AddedAt:  addedAt,
 			})
 		}
 	}
