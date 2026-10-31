@@ -356,6 +356,53 @@ spec:
                                 - functionName
                                 type: object
                               type: array
+                            python:
+                              items:
+                                description: |-
+                                  PythonCustomProbe contains the details for a custom probe for Python applications: a function
+                                  identified by the module that defines it and its qualified name.
+                                properties:
+                                  captures:
+                                    description: Captures are values of each call
+                                      recorded as attributes of its span.
+                                    items:
+                                      description: PythonCapture is one value of a
+                                        probed Python call.
+                                      properties:
+                                        mode:
+                                          description: Mode is what is recorded of
+                                            the value. Empty is the agent's default.
+                                          enum:
+                                          - ""
+                                          - value
+                                          - presence
+                                          - type
+                                          - len
+                                          type: string
+                                        path:
+                                          description: |-
+                                            Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to 15
+                                            lookups, .<attribute>, ["<key>"] or [<index>] (ie arg.order.total, return[0]).
+                                          type: string
+                                      required:
+                                      - path
+                                      type: object
+                                    type: array
+                                  module:
+                                    description: |-
+                                      Module is the function's module, as its __module__ attribute names it (ie "app.billing").
+                                      Functions of a script run directly are in "__main__".
+                                    type: string
+                                  qualname:
+                                    description: |-
+                                      Qualname is the function's qualified name, as its __qualname__ attribute names it: "calculate"
+                                      for a module-level function, "Invoice.calculate" for a method.
+                                    type: string
+                                required:
+                                - module
+                                - qualname
+                                type: object
+                              type: array
                           type: object
                         headSampling:
                           description: |-

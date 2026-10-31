@@ -348,6 +348,7 @@ type ComplexityRoot struct {
 		Golang func(childComplexity int) int
 		Java   func(childComplexity int) int
 		Php    func(childComplexity int) int
+		Python func(childComplexity int) int
 	}
 
 	CustomReadDataLabel struct {
@@ -2214,6 +2215,20 @@ type ComplexityRoot struct {
 	ProvenanceEntry struct {
 		HelmPath       func(childComplexity int) int
 		ReconciledFrom func(childComplexity int) int
+	}
+
+	PythonCapture struct {
+		Mode func(childComplexity int) int
+		Path func(childComplexity int) int
+	}
+
+	PythonCustomProbe struct {
+		AddedAt  func(childComplexity int) int
+		Captures func(childComplexity int) int
+		Category func(childComplexity int) int
+		Module   func(childComplexity int) int
+		Notes    func(childComplexity int) int
+		Qualname func(childComplexity int) int
 	}
 
 	Query struct {
@@ -4161,6 +4176,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CustomInstrumentations.Php(childComplexity), true
+
+	case "CustomInstrumentations.python":
+		if e.complexity.CustomInstrumentations.Python == nil {
+			break
+		}
+
+		return e.complexity.CustomInstrumentations.Python(childComplexity), true
 
 	case "CustomReadDataLabel.condition":
 		if e.complexity.CustomReadDataLabel.Condition == nil {
@@ -13085,6 +13107,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProvenanceEntry.ReconciledFrom(childComplexity), true
 
+	case "PythonCapture.mode":
+		if e.complexity.PythonCapture.Mode == nil {
+			break
+		}
+
+		return e.complexity.PythonCapture.Mode(childComplexity), true
+
+	case "PythonCapture.path":
+		if e.complexity.PythonCapture.Path == nil {
+			break
+		}
+
+		return e.complexity.PythonCapture.Path(childComplexity), true
+
+	case "PythonCustomProbe.addedAt":
+		if e.complexity.PythonCustomProbe.AddedAt == nil {
+			break
+		}
+
+		return e.complexity.PythonCustomProbe.AddedAt(childComplexity), true
+
+	case "PythonCustomProbe.captures":
+		if e.complexity.PythonCustomProbe.Captures == nil {
+			break
+		}
+
+		return e.complexity.PythonCustomProbe.Captures(childComplexity), true
+
+	case "PythonCustomProbe.category":
+		if e.complexity.PythonCustomProbe.Category == nil {
+			break
+		}
+
+		return e.complexity.PythonCustomProbe.Category(childComplexity), true
+
+	case "PythonCustomProbe.module":
+		if e.complexity.PythonCustomProbe.Module == nil {
+			break
+		}
+
+		return e.complexity.PythonCustomProbe.Module(childComplexity), true
+
+	case "PythonCustomProbe.notes":
+		if e.complexity.PythonCustomProbe.Notes == nil {
+			break
+		}
+
+		return e.complexity.PythonCustomProbe.Notes(childComplexity), true
+
+	case "PythonCustomProbe.qualname":
+		if e.complexity.PythonCustomProbe.Qualname == nil {
+			break
+		}
+
+		return e.complexity.PythonCustomProbe.Qualname(childComplexity), true
+
 	case "Query.actionTypes":
 		if e.complexity.Query.ActionTypes == nil {
 			break
@@ -14461,6 +14539,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPersistNamespaceSourceInput,
 		ec.unmarshalInputPhpCustomProbeInput,
 		ec.unmarshalInputPodWorkloadInput,
+		ec.unmarshalInputPythonCaptureInput,
+		ec.unmarshalInputPythonCustomProbeInput,
 		ec.unmarshalInputRemoteConfigInput,
 		ec.unmarshalInputRemoteConfigRolloutInput,
 		ec.unmarshalInputSamplingConfigInput,
@@ -28723,6 +28803,61 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_cpp(_ context.Co
 				return ec.fieldContext_CppCustomProbe_addedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CppCustomProbe", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CustomInstrumentations_python(ctx context.Context, field graphql.CollectedField, obj *model.CustomInstrumentations) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CustomInstrumentations_python(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Python, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.PythonCustomProbe)
+	fc.Result = res
+	return ec.marshalOPythonCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCustomProbe(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CustomInstrumentations_python(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CustomInstrumentations",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "module":
+				return ec.fieldContext_PythonCustomProbe_module(ctx, field)
+			case "qualname":
+				return ec.fieldContext_PythonCustomProbe_qualname(ctx, field)
+			case "captures":
+				return ec.fieldContext_PythonCustomProbe_captures(ctx, field)
+			case "notes":
+				return ec.fieldContext_PythonCustomProbe_notes(ctx, field)
+			case "category":
+				return ec.fieldContext_PythonCustomProbe_category(ctx, field)
+			case "addedAt":
+				return ec.fieldContext_PythonCustomProbe_addedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PythonCustomProbe", field.Name)
 		},
 	}
 	return fc, nil
@@ -62963,6 +63098,8 @@ func (ec *executionContext) fieldContext_InstrumentationRule_customInstrumentati
 				return ec.fieldContext_CustomInstrumentations_php(ctx, field)
 			case "cpp":
 				return ec.fieldContext_CustomInstrumentations_cpp(ctx, field)
+			case "python":
+				return ec.fieldContext_CustomInstrumentations_python(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CustomInstrumentations", field.Name)
 		},
@@ -85614,6 +85751,340 @@ func (ec *executionContext) fieldContext_ProvenanceEntry_reconciledFrom(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _PythonCapture_path(ctx context.Context, field graphql.CollectedField, obj *model.PythonCapture) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PythonCapture_path(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Path, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PythonCapture_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PythonCapture",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PythonCapture_mode(ctx context.Context, field graphql.CollectedField, obj *model.PythonCapture) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PythonCapture_mode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PythonCapture_mode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PythonCapture",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PythonCustomProbe_module(ctx context.Context, field graphql.CollectedField, obj *model.PythonCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PythonCustomProbe_module(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Module, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PythonCustomProbe_module(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PythonCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PythonCustomProbe_qualname(ctx context.Context, field graphql.CollectedField, obj *model.PythonCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PythonCustomProbe_qualname(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Qualname, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PythonCustomProbe_qualname(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PythonCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PythonCustomProbe_captures(ctx context.Context, field graphql.CollectedField, obj *model.PythonCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PythonCustomProbe_captures(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Captures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.PythonCapture)
+	fc.Result = res
+	return ec.marshalOPythonCapture2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCapture(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PythonCustomProbe_captures(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PythonCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_PythonCapture_path(ctx, field)
+			case "mode":
+				return ec.fieldContext_PythonCapture_mode(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PythonCapture", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PythonCustomProbe_notes(ctx context.Context, field graphql.CollectedField, obj *model.PythonCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PythonCustomProbe_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PythonCustomProbe_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PythonCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PythonCustomProbe_category(ctx context.Context, field graphql.CollectedField, obj *model.PythonCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PythonCustomProbe_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CustomProbeCategory)
+	fc.Result = res
+	return ec.marshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PythonCustomProbe_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PythonCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type CustomProbeCategory does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PythonCustomProbe_addedAt(ctx context.Context, field graphql.CollectedField, obj *model.PythonCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PythonCustomProbe_addedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AddedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PythonCustomProbe_addedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PythonCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_computePlatform(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_computePlatform(ctx, field)
 	if err != nil {
@@ -96824,7 +97295,7 @@ func (ec *executionContext) unmarshalInputCustomInstrumentationsInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"golang", "java", "php", "cpp"}
+	fieldsInOrder := [...]string{"golang", "java", "php", "cpp", "python"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -96859,6 +97330,13 @@ func (ec *executionContext) unmarshalInputCustomInstrumentationsInput(ctx contex
 				return it, err
 			}
 			it.Cpp = data
+		case "python":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("python"))
+			data, err := ec.unmarshalOPythonCustomProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCustomProbeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Python = data
 		}
 	}
 
@@ -100272,6 +100750,102 @@ func (ec *executionContext) unmarshalInputPodWorkloadInput(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPythonCaptureInput(ctx context.Context, obj any) (model.PythonCaptureInput, error) {
+	var it model.PythonCaptureInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"path", "mode"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "path":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("path"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Path = data
+		case "mode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mode"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Mode = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPythonCustomProbeInput(ctx context.Context, obj any) (model.PythonCustomProbeInput, error) {
+	var it model.PythonCustomProbeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"module", "qualname", "captures", "notes", "category", "addedAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "module":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("module"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Module = data
+		case "qualname":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("qualname"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Qualname = data
+		case "captures":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("captures"))
+			data, err := ec.unmarshalOPythonCaptureInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCaptureInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Captures = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOCustomProbeCategory2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomProbeCategory(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "addedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addedAt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddedAt = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRemoteConfigInput(ctx context.Context, obj any) (model.RemoteConfigInput, error) {
 	var it model.RemoteConfigInput
 	asMap := map[string]any{}
@@ -102802,6 +103376,8 @@ func (ec *executionContext) _CustomInstrumentations(ctx context.Context, sel ast
 			out.Values[i] = ec._CustomInstrumentations_php(ctx, field, obj)
 		case "cpp":
 			out.Values[i] = ec._CustomInstrumentations_cpp(ctx, field, obj)
+		case "python":
+			out.Values[i] = ec._CustomInstrumentations_python(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -116920,6 +117496,90 @@ func (ec *executionContext) _ProvenanceEntry(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var pythonCaptureImplementors = []string{"PythonCapture"}
+
+func (ec *executionContext) _PythonCapture(ctx context.Context, sel ast.SelectionSet, obj *model.PythonCapture) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pythonCaptureImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PythonCapture")
+		case "path":
+			out.Values[i] = ec._PythonCapture_path(ctx, field, obj)
+		case "mode":
+			out.Values[i] = ec._PythonCapture_mode(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var pythonCustomProbeImplementors = []string{"PythonCustomProbe"}
+
+func (ec *executionContext) _PythonCustomProbe(ctx context.Context, sel ast.SelectionSet, obj *model.PythonCustomProbe) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pythonCustomProbeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PythonCustomProbe")
+		case "module":
+			out.Values[i] = ec._PythonCustomProbe_module(ctx, field, obj)
+		case "qualname":
+			out.Values[i] = ec._PythonCustomProbe_qualname(ctx, field, obj)
+		case "captures":
+			out.Values[i] = ec._PythonCustomProbe_captures(ctx, field, obj)
+		case "notes":
+			out.Values[i] = ec._PythonCustomProbe_notes(ctx, field, obj)
+		case "category":
+			out.Values[i] = ec._PythonCustomProbe_category(ctx, field, obj)
+		case "addedAt":
+			out.Values[i] = ec._PythonCustomProbe_addedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -131551,6 +132211,154 @@ func (ec *executionContext) marshalOProvenanceEntry2ᚕᚖgithubᚗcomᚋodigos�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOPythonCapture2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCapture(ctx context.Context, sel ast.SelectionSet, v []*model.PythonCapture) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOPythonCapture2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCapture(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOPythonCapture2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCapture(ctx context.Context, sel ast.SelectionSet, v *model.PythonCapture) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PythonCapture(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPythonCaptureInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCaptureInput(ctx context.Context, v any) ([]*model.PythonCaptureInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.PythonCaptureInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOPythonCaptureInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCaptureInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOPythonCaptureInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCaptureInput(ctx context.Context, v any) (*model.PythonCaptureInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPythonCaptureInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPythonCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCustomProbe(ctx context.Context, sel ast.SelectionSet, v []*model.PythonCustomProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOPythonCustomProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCustomProbe(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOPythonCustomProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCustomProbe(ctx context.Context, sel ast.SelectionSet, v *model.PythonCustomProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PythonCustomProbe(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPythonCustomProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCustomProbeInput(ctx context.Context, v any) ([]*model.PythonCustomProbeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.PythonCustomProbeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOPythonCustomProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCustomProbeInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOPythonCustomProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPythonCustomProbeInput(ctx context.Context, v any) (*model.PythonCustomProbeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPythonCustomProbeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalORemoteConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfig(ctx context.Context, sel ast.SelectionSet, v *model.RemoteConfig) graphql.Marshaler {

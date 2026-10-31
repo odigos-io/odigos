@@ -238,6 +238,69 @@ spec:
                       - functionName
                       type: object
                     type: array
+                  python:
+                    items:
+                      description: PythonCustomProbeWithMetadata is a Python probe
+                        plus rule-only metadata.
+                      properties:
+                        addedAt:
+                          description: AddedAt is the time this probe was added, in
+                            RFC3339 form.
+                          format: date-time
+                          type: string
+                        captures:
+                          description: Captures are values of each call recorded as
+                            attributes of its span.
+                          items:
+                            description: PythonCapture is one value of a probed Python
+                              call.
+                            properties:
+                              mode:
+                                description: Mode is what is recorded of the value.
+                                  Empty is the agent's default.
+                                enum:
+                                - ""
+                                - value
+                                - presence
+                                - type
+                                - len
+                                type: string
+                              path:
+                                description: |-
+                                  Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to 15
+                                  lookups, .<attribute>, ["<key>"] or [<index>] (ie arg.order.total, return[0]).
+                                type: string
+                            required:
+                            - path
+                            type: object
+                          type: array
+                        category:
+                          description: Category classifies why this probe was added.
+                          enum:
+                          - observability
+                          - security
+                          - performance
+                          type: string
+                        module:
+                          description: |-
+                            Module is the function's module, as its __module__ attribute names it (ie "app.billing").
+                            Functions of a script run directly are in "__main__".
+                          type: string
+                        notes:
+                          description: |-
+                            Notes is a free-form text field that allows you to attach notes regarding this probe for convenience.
+                            For example: why it was added. Odigos does not use or assume any meaning from this field.
+                          type: string
+                        qualname:
+                          description: |-
+                            Qualname is the function's qualified name, as its __qualname__ attribute names it: "calculate"
+                            for a module-level function, "Invoice.calculate" for a method.
+                          type: string
+                      required:
+                      - module
+                      - qualname
+                      type: object
+                    type: array
                 type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,

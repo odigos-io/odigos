@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -547,6 +548,46 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*inst
 		}
 	}
 
+	if input.CustomInstrumentations.Python != nil {
+		customInstrumentations.Python = make([]instrumentationrules.PythonCustomProbeWithMetadata, 0, len(input.CustomInstrumentations.Python))
+		pythonSeen := make(map[string]struct{})
+		for _, probe := range input.CustomInstrumentations.Python {
+			if probe == nil {
+				continue
+			}
+			apiProbe := instrumentationrules.PythonCustomProbeWithMetadata{}
+			if probe.Module != nil {
+				apiProbe.Module = *probe.Module
+			}
+			if probe.Qualname != nil {
+				apiProbe.Qualname = *probe.Qualname
+			}
+			for _, c := range probe.Captures {
+				if c == nil {
+					continue
+				}
+				capture := instrumentationrules.PythonCapture{}
+				if c.Path != nil {
+					capture.Path = *c.Path
+				}
+				if c.Mode != nil {
+					capture.Mode = instrumentationrules.PythonCaptureMode(*c.Mode)
+				}
+				apiProbe.Captures = append(apiProbe.Captures, capture)
+			}
+			apiProbe.CustomProbeMetadata = customProbeMetadataFromInput(probe.Notes, probe.Category, probe.AddedAt)
+			key, err := json.Marshal(apiProbe)
+			if err != nil {
+				return nil, err
+			}
+			if _, dup := pythonSeen[string(key)]; dup {
+				continue
+			}
+			pythonSeen[string(key)] = struct{}{}
+			customInstrumentations.Python = append(customInstrumentations.Python, apiProbe)
+		}
+	}
+
 	if err := customInstrumentations.Verify(); err != nil {
 		return nil, err
 	}
@@ -959,6 +1000,24 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 				Notes:     notes,
 				Category:  category,
 				AddedAt:   addedAt,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Python != nil {
+		for _, pythonProbe := range customInstruAsInstruRule.Python {
+			notes, category, addedAt := customProbeMetadataModel(pythonProbe.CustomProbeMetadata)
+			var captures []*model.PythonCapture
+			for _, c := range pythonProbe.Captures {
+				path, mode := c.Path, string(c.Mode)
+				captures = append(captures, &model.PythonCapture{Path: &path, Mode: &mode})
+			}
+			customInstruAsGqlModel.Python = append(customInstruAsGqlModel.Python, &model.PythonCustomProbe{
+				Module:   &pythonProbe.Module,
+				Qualname: &pythonProbe.Qualname,
+				Captures: captures,
+				Notes:    notes,
+				Category: category,
+				AddedAt:  addedAt,
 			})
 		}
 	}

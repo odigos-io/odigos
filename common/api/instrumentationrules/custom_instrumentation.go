@@ -3,6 +3,7 @@ package instrumentationrules
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -65,6 +66,7 @@ type CustomInstrumentations struct {
 	Java   []JavaCustomProbe   `json:"java,omitempty" yaml:"java,omitempty"`
 	Cpp    []CppCustomProbe    `json:"cpp,omitempty" yaml:"cpp,omitempty"`
 	Php    []PhpCustomProbe    `json:"php,omitempty" yaml:"php,omitempty"`
+	Python []PythonCustomProbe `json:"python,omitempty" yaml:"python,omitempty"`
 }
 
 // Verify iterates all custom instrumentations' probes and validates them.
@@ -91,6 +93,12 @@ func (ci *CustomInstrumentations) Verify() error {
 			return fmt.Errorf("invalid configuration for php custom instrumentation: %w", err)
 		}
 	}
+	// Validate Python probes
+	for _, p := range ci.Python {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for python custom instrumentation: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -103,6 +111,7 @@ type CustomInstrumentationsWithMetadata struct {
 	Java   []JavaCustomProbeWithMetadata   `json:"java,omitempty" yaml:"java,omitempty"`
 	Cpp    []CppCustomProbeWithMetadata    `json:"cpp,omitempty" yaml:"cpp,omitempty"`
 	Php    []PhpCustomProbeWithMetadata    `json:"php,omitempty" yaml:"php,omitempty"`
+	Python []PythonCustomProbeWithMetadata `json:"python,omitempty" yaml:"python,omitempty"`
 }
 
 func (ci *CustomInstrumentationsWithMetadata) Verify() error {
@@ -127,6 +136,11 @@ func (ci *CustomInstrumentationsWithMetadata) Verify() error {
 	for _, p := range ci.Cpp {
 		if err := p.Verify(); err != nil {
 			return fmt.Errorf("invalid configuration for cpp custom instrumentation: %w", err)
+		}
+	}
+	for _, p := range ci.Python {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for python custom instrumentation: %w", err)
 		}
 	}
 	return nil
@@ -160,6 +174,12 @@ func (ci *CustomInstrumentationsWithMetadata) ToConfig() *CustomInstrumentations
 		out.Php = make([]PhpCustomProbe, len(ci.Php))
 		for i := range ci.Php {
 			out.Php[i] = ci.Php[i].PhpCustomProbe
+		}
+	}
+	if ci.Python != nil {
+		out.Python = make([]PythonCustomProbe, len(ci.Python))
+		for i := range ci.Python {
+			out.Python[i] = ci.Python[i].PythonCustomProbe
 		}
 	}
 	return out
@@ -324,4 +344,85 @@ func (pcp *PhpCustomProbe) String() string {
 		return pcp.FunctionName
 	}
 	return fmt.Sprintf("%s::%s", pcp.ClassName, pcp.FunctionName)
+}
+
+// PythonCustomProbe contains the details for a custom probe for Python applications: a function
+// identified by the module that defines it and its qualified name.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type PythonCustomProbe struct {
+	// Module is the function's module, as its __module__ attribute names it (ie "app.billing").
+	// Functions of a script run directly are in "__main__".
+	Module string `json:"module" yaml:"module"`
+	// Qualname is the function's qualified name, as its __qualname__ attribute names it: "calculate"
+	// for a module-level function, "Invoice.calculate" for a method.
+	Qualname string `json:"qualname" yaml:"qualname"`
+	// Captures are values of each call recorded as attributes of its span.
+	// +optional
+	Captures []PythonCapture `json:"captures,omitempty" yaml:"captures,omitempty"`
+}
+
+// PythonCapture is one value of a probed Python call.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type PythonCapture struct {
+	// Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to 15
+	// lookups, .<attribute>, ["<key>"] or [<index>] (ie arg.order.total, return[0]).
+	Path string `json:"path" yaml:"path"`
+	// Mode is what is recorded of the value. Empty is the agent's default.
+	// +kubebuilder:validation:Enum="";value;presence;type;len
+	// +optional
+	Mode PythonCaptureMode `json:"mode,omitempty" yaml:"mode,omitempty"`
+}
+
+// PythonCaptureMode is what a PythonCapture records of its value.
+type PythonCaptureMode string
+
+const (
+	PythonCaptureDefault  PythonCaptureMode = ""
+	PythonCaptureValue    PythonCaptureMode = "value"
+	PythonCapturePresence PythonCaptureMode = "presence"
+	PythonCaptureType     PythonCaptureMode = "type"
+	PythonCaptureLen      PythonCaptureMode = "len"
+)
+
+// PythonCustomProbeWithMetadata is a Python probe plus rule-only metadata.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type PythonCustomProbeWithMetadata struct {
+	PythonCustomProbe   `json:",inline"`
+	CustomProbeMetadata `json:",inline"`
+}
+
+// For python we require both the module and the qualified name
+func (pcp *PythonCustomProbe) Verify() error {
+	if pcp.Module == "" {
+		return errors.New("module is required")
+	}
+	if pcp.Qualname == "" {
+		return errors.New("qualname is required")
+	}
+	for _, c := range pcp.Captures {
+		if strings.TrimSpace(c.Path) == "" {
+			return errors.New("capture path is required")
+		}
+		switch c.Mode {
+		case PythonCaptureDefault, PythonCaptureValue, PythonCapturePresence, PythonCaptureType,
+			PythonCaptureLen:
+		default:
+			return fmt.Errorf("capture %q: unknown mode %q", c.Path, c.Mode)
+		}
+	}
+	return nil
+}
+
+func (pcp *PythonCustomProbeWithMetadata) Verify() error {
+	if err := pcp.CustomProbeMetadata.Verify(); err != nil {
+		return err
+	}
+	return pcp.PythonCustomProbe.Verify()
+}
+
+func (pcp *PythonCustomProbe) String() string {
+	return fmt.Sprintf("%s:%s", pcp.Module, pcp.Qualname)
 }
