@@ -59,11 +59,15 @@ spec:
     - name: Run Cypress tests
       try:
         - script:
-            timeout: 5m10s
+            timeout: 6m
             content: |
               cd ../../../../frontend/webapp
-              yarn install
-              yarn add -D cypress@16
-              # Ensure yarn's global bin dir is on PATH (not always default in CI).
-              export PATH="$(yarn global bin):$PATH"
-              ./node_modules/.bin/cypress run --e2e -q
+              # chainsaw's timeout kills only this shell, and then waits forever on child processes (yarn, Cypress)
+              # that still hold its output pipe. `timeout` kills the whole process group, so a stall fails here.
+              timeout --kill-after=15s 330s sh -c '
+                yarn install
+                yarn add -D cypress@16
+                # Ensure yarn global bin dir is on PATH (not always default in CI).
+                export PATH="$(yarn global bin):$PATH"
+                ./node_modules/.bin/cypress run --e2e -q
+              '
