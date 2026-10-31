@@ -198,6 +198,7 @@ type CppCustomProbe {
 type PythonCustomProbe {
   module: String
   qualname: String
+  captures: [PythonCapture]
   notes: String
   category: CustomProbeCategory
   addedAt: String
@@ -247,9 +248,20 @@ input CppCustomProbeInput {
 input PythonCustomProbeInput {
   module: String
   qualname: String
+  captures: [PythonCaptureInput]
   notes: String
   category: CustomProbeCategory
   addedAt: String
+}
+
+type PythonCapture {
+  path: String
+  mode: String
+}
+
+input PythonCaptureInput {
+  path: String
+  mode: String
 }
 #### END CUSTOM PROBES ####
 

@@ -2,6 +2,7 @@ package instrumentationrules
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -147,6 +148,25 @@ func TestPythonCustomProbeVerify(t *testing.T) {
 			probe:   PythonCustomProbe{Module: "app.billing"},
 			wantErr: true,
 		},
+		{
+			name: "captures",
+			probe: PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate", Captures: []PythonCapture{
+				{Path: "arg.order.total"}, {Path: "arg.user_id", Mode: PythonCaptureHash}, {Path: "return", Mode: PythonCaptureLen},
+			}},
+			wantErr: false,
+		},
+		{
+			name:    "capture without a path",
+			probe:   PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate", Captures: []PythonCapture{{Path: " "}}},
+			wantErr: true,
+		},
+		{
+			name: "capture with an unknown mode",
+			probe: PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate", Captures: []PythonCapture{
+				{Path: "return", Mode: "raw"},
+			}},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -173,7 +193,7 @@ func TestPythonToConfigDropsMetadata(t *testing.T) {
 		t.Fatalf("Verify() = %v", err)
 	}
 	cfg := rule.ToConfig()
-	if len(cfg.Python) != 1 || cfg.Python[0] != rule.Python[0].PythonCustomProbe {
+	if len(cfg.Python) != 1 || !reflect.DeepEqual(cfg.Python[0], rule.Python[0].PythonCustomProbe) {
 		t.Fatalf("python probes = %+v", cfg.Python)
 	}
 	raw, err := json.Marshal(cfg)
@@ -185,5 +205,25 @@ func TestPythonToConfigDropsMetadata(t *testing.T) {
 	}
 	if !strings.Contains(string(raw), `"python":[{"module":"app.billing","qualname":"Invoice.calculate"}]`) {
 		t.Fatalf("config json = %s", raw)
+	}
+}
+
+func TestPythonCapturesJSON(t *testing.T) {
+	t.Parallel()
+
+	probe := PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate", Captures: []PythonCapture{
+		{Path: `arg.headers["x-tenant"]`, Mode: PythonCaptureValue}, {Path: "return"},
+	}}
+	raw, err := json.Marshal(probe)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	want := `{"module":"app.billing","qualname":"Invoice.calculate","captures":[{"path":"arg.headers[\"x-tenant\"]","mode":"value"},{"path":"return"}]}`
+	if string(raw) != want {
+		t.Fatalf("json = %s, want %s", raw, want)
+	}
+	var back PythonCustomProbe
+	if err := json.Unmarshal(raw, &back); err != nil || !reflect.DeepEqual(back, probe) {
+		t.Fatalf("round trip = %+v, %v", back, err)
 	}
 }

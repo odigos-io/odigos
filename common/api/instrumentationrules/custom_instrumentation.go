@@ -3,6 +3,7 @@ package instrumentationrules
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -356,7 +357,35 @@ type PythonCustomProbe struct {
 	// Qualname is the function's qualified name, as its __qualname__ attribute names it: "calculate"
 	// for a module-level function, "Invoice.calculate" for a method.
 	Qualname string `json:"qualname" yaml:"qualname"`
+	// Captures are values of each call recorded as attributes of its span.
+	// +optional
+	Captures []PythonCapture `json:"captures,omitempty" yaml:"captures,omitempty"`
 }
+
+// PythonCapture is one value of a probed Python call.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type PythonCapture struct {
+	// Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to three
+	// lookups, .<attribute>, ["<key>"] or [<index>] (ie arg.order.total, return[0]).
+	Path string `json:"path" yaml:"path"`
+	// Mode is what is recorded of the value. Empty is the agent's default.
+	// +kubebuilder:validation:Enum="";value;hash;presence;type;len
+	// +optional
+	Mode PythonCaptureMode `json:"mode,omitempty" yaml:"mode,omitempty"`
+}
+
+// PythonCaptureMode is what a PythonCapture records of its value.
+type PythonCaptureMode string
+
+const (
+	PythonCaptureDefault  PythonCaptureMode = ""
+	PythonCaptureValue    PythonCaptureMode = "value"
+	PythonCaptureHash     PythonCaptureMode = "hash"
+	PythonCapturePresence PythonCaptureMode = "presence"
+	PythonCaptureType     PythonCaptureMode = "type"
+	PythonCaptureLen      PythonCaptureMode = "len"
+)
 
 // PythonCustomProbeWithMetadata is a Python probe plus rule-only metadata.
 // +kubebuilder:object:generate=true
@@ -373,6 +402,17 @@ func (pcp *PythonCustomProbe) Verify() error {
 	}
 	if pcp.Qualname == "" {
 		return errors.New("qualname is required")
+	}
+	for _, c := range pcp.Captures {
+		if strings.TrimSpace(c.Path) == "" {
+			return errors.New("capture path is required")
+		}
+		switch c.Mode {
+		case PythonCaptureDefault, PythonCaptureValue, PythonCaptureHash, PythonCapturePresence, PythonCaptureType,
+			PythonCaptureLen:
+		default:
+			return fmt.Errorf("capture %q: unknown mode %q", c.Path, c.Mode)
+		}
 	}
 	return nil
 }

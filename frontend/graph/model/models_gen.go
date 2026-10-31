@@ -2920,20 +2920,32 @@ type ProvenanceEntry struct {
 	ReconciledFrom string `json:"reconciledFrom"`
 }
 
+type PythonCapture struct {
+	Path *string `json:"path,omitempty"`
+	Mode *string `json:"mode,omitempty"`
+}
+
+type PythonCaptureInput struct {
+	Path *string `json:"path,omitempty"`
+	Mode *string `json:"mode,omitempty"`
+}
+
 type PythonCustomProbe struct {
 	Module   *string              `json:"module,omitempty"`
 	Qualname *string              `json:"qualname,omitempty"`
+	Captures []*PythonCapture     `json:"captures,omitempty"`
 	Notes    *string              `json:"notes,omitempty"`
 	Category *CustomProbeCategory `json:"category,omitempty"`
 	AddedAt  *string              `json:"addedAt,omitempty"`
 }
 
 type PythonCustomProbeInput struct {
-	Module   *string              `json:"module,omitempty"`
-	Qualname *string              `json:"qualname,omitempty"`
-	Notes    *string              `json:"notes,omitempty"`
-	Category *CustomProbeCategory `json:"category,omitempty"`
-	AddedAt  *string              `json:"addedAt,omitempty"`
+	Module   *string               `json:"module,omitempty"`
+	Qualname *string               `json:"qualname,omitempty"`
+	Captures []*PythonCaptureInput `json:"captures,omitempty"`
+	Notes    *string               `json:"notes,omitempty"`
+	Category *CustomProbeCategory  `json:"category,omitempty"`
+	AddedAt  *string               `json:"addedAt,omitempty"`
 }
 
 type Query struct {

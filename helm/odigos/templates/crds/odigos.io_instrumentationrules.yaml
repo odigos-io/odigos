@@ -248,6 +248,33 @@ spec:
                             RFC3339 form.
                           format: date-time
                           type: string
+                        captures:
+                          description: Captures are values of each call recorded as
+                            attributes of its span.
+                          items:
+                            description: PythonCapture is one value of a probed Python
+                              call.
+                            properties:
+                              mode:
+                                description: Mode is what is recorded of the value.
+                                  Empty is the agent's default.
+                                enum:
+                                - ""
+                                - value
+                                - hash
+                                - presence
+                                - type
+                                - len
+                                type: string
+                              path:
+                                description: |-
+                                  Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to three
+                                  lookups, .<attribute>, ["<key>"] or [<index>] (ie arg.order.total, return[0]).
+                                type: string
+                            required:
+                            - path
+                            type: object
+                          type: array
                         category:
                           description: Category classifies why this probe was added.
                           enum:
