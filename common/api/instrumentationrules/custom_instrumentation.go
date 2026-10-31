@@ -366,7 +366,7 @@ type PythonCustomProbe struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type PythonCapture struct {
-	// Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to three
+	// Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to 15
 	// lookups, .<attribute>, ["<key>"] or [<index>] (ie arg.order.total, return[0]).
 	Path string `json:"path" yaml:"path"`
 	// Mode is what is recorded of the value. Empty is the agent's default.

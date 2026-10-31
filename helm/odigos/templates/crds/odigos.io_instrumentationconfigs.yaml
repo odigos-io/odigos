@@ -382,7 +382,7 @@ spec:
                                           type: string
                                         path:
                                           description: |-
-                                            Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to three
+                                            Path names the value: arg.<name>, arg<N>, local.<name> or return, followed by up to 15
                                             lookups, .<attribute>, ["<key>"] or [<index>] (ie arg.order.total, return[0]).
                                           type: string
                                       required:
