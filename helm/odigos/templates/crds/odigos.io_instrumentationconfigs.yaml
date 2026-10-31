@@ -375,7 +375,6 @@ spec:
                                           enum:
                                           - ""
                                           - value
-                                          - hash
                                           - presence
                                           - type
                                           - len

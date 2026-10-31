@@ -370,7 +370,7 @@ type PythonCapture struct {
 	// lookups, .<attribute>, ["<key>"] or [<index>] (ie arg.order.total, return[0]).
 	Path string `json:"path" yaml:"path"`
 	// Mode is what is recorded of the value. Empty is the agent's default.
-	// +kubebuilder:validation:Enum="";value;hash;presence;type;len
+	// +kubebuilder:validation:Enum="";value;presence;type;len
 	// +optional
 	Mode PythonCaptureMode `json:"mode,omitempty" yaml:"mode,omitempty"`
 }
@@ -381,7 +381,6 @@ type PythonCaptureMode string
 const (
 	PythonCaptureDefault  PythonCaptureMode = ""
 	PythonCaptureValue    PythonCaptureMode = "value"
-	PythonCaptureHash     PythonCaptureMode = "hash"
 	PythonCapturePresence PythonCaptureMode = "presence"
 	PythonCaptureType     PythonCaptureMode = "type"
 	PythonCaptureLen      PythonCaptureMode = "len"
@@ -408,7 +407,7 @@ func (pcp *PythonCustomProbe) Verify() error {
 			return errors.New("capture path is required")
 		}
 		switch c.Mode {
-		case PythonCaptureDefault, PythonCaptureValue, PythonCaptureHash, PythonCapturePresence, PythonCaptureType,
+		case PythonCaptureDefault, PythonCaptureValue, PythonCapturePresence, PythonCaptureType,
 			PythonCaptureLen:
 		default:
 			return fmt.Errorf("capture %q: unknown mode %q", c.Path, c.Mode)

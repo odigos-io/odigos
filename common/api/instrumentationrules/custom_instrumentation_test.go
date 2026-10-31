@@ -151,7 +151,7 @@ func TestPythonCustomProbeVerify(t *testing.T) {
 		{
 			name: "captures",
 			probe: PythonCustomProbe{Module: "app.billing", Qualname: "Invoice.calculate", Captures: []PythonCapture{
-				{Path: "arg.order.total"}, {Path: "arg.user_id", Mode: PythonCaptureHash}, {Path: "return", Mode: PythonCaptureLen},
+				{Path: "arg.order.total"}, {Path: "arg.user_id", Mode: PythonCaptureValue}, {Path: "return", Mode: PythonCaptureLen},
 			}},
 			wantErr: false,
 		},
